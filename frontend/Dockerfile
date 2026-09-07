@@ -44,6 +44,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 # In this Next version the standalone server nests under a folder named after the app
 # (turbopack root "../"), so static assets must land inside that same folder.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./frontend/.next/static
+# Flatten the nested app up to the image root too, so /app/server.js also exists.
+# This makes the image work with ANY start command ("node server.js" or
+# "node frontend/server.js"), regardless of service-level overrides.
+RUN cp -r frontend/. ./
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
@@ -51,4 +56,4 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-CMD ["node", "frontend/server.js"]
+CMD ["node", "server.js"]
