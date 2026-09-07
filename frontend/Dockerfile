@@ -41,7 +41,9 @@ RUN chown nextjs:nodejs .next
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# In this Next version the standalone server nests under a folder named after the app
+# (turbopack root "../"), so static assets must land inside that same folder.
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./frontend/.next/static
 
 USER nextjs
 
@@ -49,4 +51,4 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "frontend/server.js"]
