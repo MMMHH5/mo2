@@ -3,14 +3,18 @@ FROM node:20-alpine AS builder
 
 WORKDIR /usr/src/app
 
+# Build-time placeholder so @prisma/client postinstall + generate succeed.
+# Runtime env vars from Railway OVERRIDE this; generate never connects to the DB.
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+
 COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies
 RUN npm ci
 
-# Generate prisma client (dummy DATABASE_URL: generate doesn't connect to DB)
-RUN DATABASE_URL="postgresql://user:pass@localhost:5432/db" npx prisma generate
+# Generate prisma client (no DB connection needed)
+RUN npx prisma generate
 
 # Copy source code
 COPY . .
@@ -26,6 +30,9 @@ WORKDIR /usr/src/app
 # Prisma requires OpenSSL to run its query engine on Alpine
 RUN apk add --no-cache openssl libc6-compat
 
+# Safe build-time default; overridden at runtime by Railway env vars
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+
 COPY package*.json ./
 COPY prisma ./prisma/
 
@@ -33,7 +40,7 @@ COPY prisma ./prisma/
 RUN npm ci --only=production
 
 # Generate prisma client for production (no DB connection needed)
-RUN DATABASE_URL="postgresql://user:pass@localhost:5432/db" npx prisma generate
+RUN npx prisma generate
 
 # Copy built app from builder
 COPY --from=builder /usr/src/app/dist ./dist
