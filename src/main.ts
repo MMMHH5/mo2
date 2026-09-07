@@ -17,6 +17,21 @@ function validateEnvVars() {
         process.exit(1);
     }
 
+    // Reject Docker build-time placeholder that correctly "exists" but points to nothing.
+    let dbHost = '';
+    try {
+        dbHost = new URL(process.env.DATABASE_URL!).hostname;
+    } catch {
+        dbHost = '';
+    }
+    const isPlaceholder = !dbHost || dbHost === 'localhost' || dbHost === '127.0.0.1';
+    if (isPlaceholder) {
+        console.error('\nCRITICAL ERROR: DATABASE_URL does not point to a real database server.');
+        console.error(`Resolved host: '${dbHost || '(unparseable)'}'.`);
+        console.error('On Railway: open the backend service > Variables, make sure DATABASE_URL is a REFERENCE to the Postgres service (value like ${{Postgres.DATABASE_URL}}), then redeploy.\n');
+        process.exit(1);
+    }
+
     // Enforce minimum JWT_SECRET length to prevent weak signing keys
     const jwtSecret = process.env.JWT_SECRET!;
     if (jwtSecret.length < 32) {
