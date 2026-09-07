@@ -1,0 +1,10 @@
+node_modules
+dist
+frontend
+uploads
+.env
+.env.production
+.git
+test.http
+*.pdf
+*.log
