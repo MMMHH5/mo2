@@ -23,6 +23,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /usr/src/app
 
+# Prisma requires OpenSSL to run its query engine on Alpine
+RUN apk add --no-cache openssl libc6-compat
+
 COPY package*.json ./
 COPY prisma ./prisma/
 
@@ -39,7 +42,10 @@ COPY --from=builder /usr/src/app/dist ./dist
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs && \
     mkdir -p uploads/receipts uploads/cvs && \
-    chown -R nestjs:nodejs uploads
+    # Give the runtime user write access so Prisma can regenerate its engines
+    # (migrations run at container start and may need to write to node_modules)
+    chown -R nestjs:nodejs /usr/src/app && \
+    chmod -R u+w /usr/src/app/node_modules/@prisma
 USER nestjs
 
 # Expose port (nginx proxies /api/ to backend:3000)
