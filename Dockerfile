@@ -9,8 +9,8 @@ COPY prisma ./prisma/
 # Install dependencies
 RUN npm ci
 
-# Generate prisma client
-RUN npx prisma generate
+# Generate prisma client (dummy DATABASE_URL: generate doesn't connect to DB)
+RUN DATABASE_URL="postgresql://user:pass@localhost:5432/db" npx prisma generate
 
 # Copy source code
 COPY . .
@@ -32,8 +32,8 @@ COPY prisma ./prisma/
 # Install ONLY production dependencies
 RUN npm ci --only=production
 
-# Generate prisma client for production
-RUN npx prisma generate
+# Generate prisma client for production (no DB connection needed)
+RUN DATABASE_URL="postgresql://user:pass@localhost:5432/db" npx prisma generate
 
 # Copy built app from builder
 COPY --from=builder /usr/src/app/dist ./dist
@@ -52,4 +52,4 @@ USER nestjs
 EXPOSE 3000
 
 # Start the application with automated migration + seed
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main"]
