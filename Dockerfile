@@ -52,4 +52,4 @@ USER nestjs
 EXPOSE 3000
 
 # Start the application with automated migration + seed
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/prisma/seed.js && node dist/src/main.js"]

@@ -8,6 +8,7 @@
         "target": "es2021",
         "sourceMap": true,
         "outDir": "./dist",
+        "rootDir": ".",
         "baseUrl": "./",
         "strict": true,
         "skipLibCheck": true,
