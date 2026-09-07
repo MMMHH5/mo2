@@ -41,14 +41,13 @@ RUN chown nextjs:nodejs .next
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-# In this Next version the standalone server nests under a folder named after the app
-# (turbopack root "../"), so static assets must land inside that same folder.
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./frontend/.next/static
-# Flatten the nested app up to the image root too, so /app/server.js also exists.
-# This makes the image work with ANY start command ("node server.js" or
-# "node frontend/server.js"), regardless of service-level overrides.
-RUN cp -r frontend/. ./
+# This Next version nests the standalone server under a folder named after the
+# build-root folder (e.g. "app", "frontend", ...). Find the real server.js
+# wherever it is and flatten it to the image root, so /app/server.js always
+# exists regardless of the start command used by the platform.
+RUN dir="$(dirname "$(find /app -maxdepth 2 -name server.js | head -1)")" && cp -r "$dir/." /app/
 RUN chown -R nextjs:nodejs /app
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static /app/.next/static
 
 USER nextjs
 
