@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Base URL used for file preview URLs across the app
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Base URL used for file preview URLs across the app.
+// The NestJS backend has NO global "/api" prefix, so strip a trailing "/api"
+// defensively even if it was baked in at build time from an older variable.
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '');
 
 // Extract a human-readable message from any thrown error (axios, Error, unknown)
 export function getErrorMessage(err: unknown): string {

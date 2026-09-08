@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         source: '/Roboto-Regular.ttf',
         destination: 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
       },
+      {
+        source: '/:locale/Roboto-Regular.ttf',
+        locale: false,
+        destination: 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
+      },
     ];
   },
   async redirects() {

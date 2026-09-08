@@ -18,10 +18,12 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 # NEXT_PUBLIC_* values are inlined at build time, so they must be available here.
 # Railway: set NEXT_PUBLIC_API_URL on the frontend service (it is passed as a build arg).
-ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+# This default is the real deployed backend, so even if no build arg is passed the
+# image bakes the correct URL. Note: no "/api" suffix (backend has no global prefix).
+ARG NEXT_PUBLIC_API_URL=https://backend-production-e991.up.railway.app
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN npm run build
+RUN NEXT_PUBLIC_API_URL="$(echo "$NEXT_PUBLIC_API_URL" | sed 's#/api/*$##')" npm run build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
