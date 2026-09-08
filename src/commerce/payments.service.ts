@@ -5,6 +5,7 @@ import { EmailService } from '../email/email.service';
 import { CouponsService } from './coupons.service';
 import { Role, PaymentStatus } from '@prisma/client';
 import Stripe from 'stripe';
+import { getFrontendUrl } from '../common/frontend-url';
 
 @Injectable()
 export class PaymentsService {
@@ -23,7 +24,7 @@ export class PaymentsService {
   }
 
   private appUrl() {
-    return process.env.FRONTEND_URL || 'http://localhost:3000';
+    return getFrontendUrl();
   }
 
   private async resolveOpening(openingId: string) {

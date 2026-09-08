@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import helmet from 'helmet';
+import { getFrontendUrl } from './common/frontend-url';
 
 function validateEnvVars() {
     const requiredVars = ['DATABASE_URL', 'JWT_SECRET'];
@@ -103,7 +104,7 @@ async function bootstrap() {
 
     // Strict CORS Configuration
     app.enableCors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: getFrontendUrl(),
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
         allowedHeaders: 'Content-Type, Accept, Authorization',

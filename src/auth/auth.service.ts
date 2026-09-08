@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { getFrontendUrl } from '../common/frontend-url';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { generateSecret, verify as verifyOtp } from 'otplib';
@@ -48,7 +49,7 @@ export class AuthService {
     }
 
     private appUrl(): string {
-        return process.env.FRONTEND_URL || 'http://localhost:3000';
+        return getFrontendUrl();
     }
 
     async register(dto: RegisterDto) {

@@ -2,8 +2,9 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ChatService } from './chat.service';
+import { getFrontendUrl } from '../common/frontend-url';
 
-@WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL || 'http://localhost:3000' } })
+@WebSocketGateway({ cors: { origin: getFrontendUrl() } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(private readonly jwtService: JwtService, private readonly chatService: ChatService) { }
 

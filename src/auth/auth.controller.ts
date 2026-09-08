@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { getFrontendUrl } from '../common/frontend-url';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -122,7 +123,7 @@ export class AuthController {
     @UseGuards(AuthGuard('google'))
     async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
         const result = await this.authService.googleLogin(req);
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const frontendUrl = getFrontendUrl();
         // Use hash fragments (#) instead of query params (?) to prevent tokens
         // from being logged in browser history, server logs, referrer headers, etc.
         if (result.requiresTwoFactor) {
