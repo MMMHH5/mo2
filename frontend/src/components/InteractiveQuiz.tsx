@@ -107,7 +107,9 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
     const [result, setResult] = useState<AttemptResult | null>(null);
     const submittingRef = useRef(false);
     const onCompleteRef = useRef(onComplete);
-    onCompleteRef.current = onComplete;
+    useEffect(() => {
+        onCompleteRef.current = onComplete;
+    }, [onComplete]);
 
     useEffect(() => {
         let active = true;

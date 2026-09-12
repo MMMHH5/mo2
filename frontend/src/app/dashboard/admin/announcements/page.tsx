@@ -125,7 +125,20 @@ export default function AdminAnnouncementsPage() {
         }
         setSaving(true);
         try {
-            const payload: any = {
+            const payload: {
+            titleAr: string;
+            titleEn: string;
+            bodyAr: string | null;
+            bodyEn: string | null;
+            mediaType: string;
+            mediaUrl: string | null;
+            linkUrl: string | null;
+            priority: number;
+            isActive: boolean;
+            durationSeconds: number;
+            startsAt: string | null;
+            expiresAt: string | null;
+        } = {
                 titleAr: form.titleAr,
                 titleEn: form.titleEn,
                 bodyAr: form.bodyAr || null,

@@ -117,6 +117,19 @@ interface Announcement {
     author?: { id: string; email: string } | null;
 }
 
+interface ModuleQuiz {
+    id: string;
+    titleAr: string;
+    titleEn: string;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+    passScore?: number;
+    isPublished?: boolean;
+    orderIndex?: number;
+    moduleId?: string | null;
+    questions?: unknown[];
+}
+
 // ---------- Helpers ----------
 
 function getVideoUrl(url?: string | null): { type: 'embed' | 'file'; src: string } | null {
@@ -182,7 +195,7 @@ export default function CoursePlayer({ courseId }: Props) {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [announcementsOpen, setAnnouncementsOpen] = useState(false);
     // Quizzes for current module
-    const [moduleQuizzes, setModuleQuizzes] = useState<any[]>([]);
+    const [moduleQuizzes, setModuleQuizzes] = useState<ModuleQuiz[]>([]);
 
     // ---------- Data loading ----------
     useEffect(() => {
@@ -630,10 +643,10 @@ export default function CoursePlayer({ courseId }: Props) {
                     )}
                     {deckTab === 'quizzes' && progress?.openingId && (
                         <div className="space-y-4">
-                            {moduleQuizzes.filter((q: any) => q.moduleId === selected?.id).length === 0 ? (
+                            {moduleQuizzes.filter((q) => q.moduleId === selected?.id).length === 0 ? (
                                 <p className="text-sm text-gray-400 text-center py-8">{isAr ? 'لا يوجد اختبارات لهذا الدرس بعد' : 'No quizzes for this lesson yet'}</p>
                             ) : (
-                                moduleQuizzes.filter((q: any) => q.moduleId === selected?.id).map((quiz: any) => (
+                                moduleQuizzes.filter((q) => q.moduleId === selected?.id).map((quiz) => (
                                     <div key={quiz.id}>
                                         <p className="text-sm text-gray-400 mb-3">{isAr ? 'اختبر معلوماتك' : 'Test your knowledge'}</p>
                                         <InteractiveQuiz
