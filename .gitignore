@@ -39,7 +39,11 @@ fix-*.js
 list-users.js
 verify-*.js
 test-*.sh
+rotate-*.mjs
 =193
+
+# one-time rotated credentials (never commit)
+.seed-creds
 
 # railway
 frontend/.env.production

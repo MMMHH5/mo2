@@ -65,5 +65,5 @@ USER nestjs
 # Expose port (nginx proxies /api/ to backend:3000)
 EXPOSE 3000
 
-# Start the application with automated migration + seed
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/prisma/seed.js && node dist/main.js"]
+# Start the application with automated migration only (no seeding in production)
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/main.js"]
