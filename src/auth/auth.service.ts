@@ -14,7 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { generateSecret, verify as verifyOtp } from 'otplib';
 import * as qrcode from 'qrcode';
 import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 export interface PublicUser {
     id: string;
