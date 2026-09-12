@@ -1,13 +1,14 @@
 import { Controller, Get, Post, Param, Body, Patch, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlink } from 'fs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
+import { hasValidSignature } from '../common/file-signatures';
 
 
 
@@ -149,12 +150,19 @@ export class ChatController {
             }
         },
         limits: {
-            fileSize: 25 * 1024 * 1024 // Reduced from 100MB to 25MB
+            fileSize: 25 * 1024 * 1024, // Reduced from 100MB to 25MB
+            files: 1,
+            fields: 20,
+            parts: 30,
         },
     }))
     uploadAttachment(@UploadedFile() file: any) {
         if (!file) {
             throw new BadRequestException('File is required.');
+        }
+        if (!hasValidSignature(file.path, file.mimetype)) {
+            unlink(file.path, () => { /* best-effort cleanup */ });
+            throw new BadRequestException('File content does not match its declared type.');
         }
         return {
             url: `/uploads/chat/${file.filename}`,

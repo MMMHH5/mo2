@@ -5,8 +5,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlink } from 'fs';
 import { Role } from '@prisma/client';
+import { hasValidSignature } from '../common/file-signatures';
 
 const uploadDir = './uploads/cvs';
 if (!existsSync(uploadDir)) {
@@ -61,7 +62,7 @@ export class InstructorApplicationsController {
                 cb(new BadRequestException('Only PDF, DOC, DOCX, and TXT files are allowed.'), false);
             }
         },
-        limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+        limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 20, parts: 30 } // 10MB
     }))
     async createApplication(
         @UploadedFile() file: any,
@@ -69,6 +70,10 @@ export class InstructorApplicationsController {
         @Request() req: any
     ) {
         if (!file) throw new BadRequestException('CV file is required.');
+        if (!hasValidSignature(file.path, file.mimetype)) {
+            unlink(file.path, () => { /* best-effort cleanup */ });
+            throw new BadRequestException('CV content does not match its declared type.');
+        }
         const cvFileUrl = `/uploads/cvs/${file.filename}`;
         return this.instructorApplicationsService.createApplication(req.user.id || req.user.userId, data, cvFileUrl);
     }

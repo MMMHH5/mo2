@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Post, Body, Ip, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
@@ -136,6 +137,7 @@ export class PublicController {
 
     @ApiOperation({ summary: 'Submit a contact message' })
     @Post('contact')
+    @Throttle({ default: { ttl: 60_000, limit: 5 } })
     async contact(@Body() body: { name?: string; email?: string; subject?: string; message?: string }, @Ip() ip: string) {
         const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase().slice(0, 254) : '';
         const message = typeof body?.message === 'string' ? body.message.trim().slice(0, 4000) : '';

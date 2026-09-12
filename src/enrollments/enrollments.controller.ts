@@ -7,7 +7,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role, EnrollmentStatus } from '@prisma/client';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlink } from 'fs';
+import { hasValidSignature } from '../common/file-signatures';
 
 // Ensure upload directory exists
 const uploadDir = './uploads/receipts';
@@ -66,7 +67,10 @@ export class EnrollmentsController {
             }
         },
         limits: {
-            fileSize: 5 * 1024 * 1024 // 5MB
+            fileSize: 5 * 1024 * 1024, // 5MB
+            files: 1,
+            fields: 20,
+            parts: 30,
         }
     }))
     enrollWithReceipt(
@@ -77,6 +81,10 @@ export class EnrollmentsController {
     ) {
         if (!file) {
             throw new BadRequestException('Receipt file is required.');
+        }
+        if (!hasValidSignature(file.path, file.mimetype)) {
+            unlink(file.path, () => { /* best-effort cleanup */ });
+            throw new BadRequestException('Receipt content does not match its declared type.');
         }
         if (!openingId) {
             throw new BadRequestException('openingId is required.');

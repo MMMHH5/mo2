@@ -58,6 +58,17 @@ async function bootstrap() {
     // For new files, prefer the authenticated proxy at GET /uploads/* (see health.controller.ts).
     app.useStaticAssets(join(process.cwd(), 'uploads'), {
         prefix: '/uploads',
+        setHeaders: (res, filePath) => {
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            res.setHeader('Cache-Control', 'private, no-store');
+            // Only preview-safe media types render inline; everything else downloads
+            // so an uploaded file can never be interpreted as HTML/SVG active content.
+            const inline = /\.(jpe?g|png|webp|gif|mp4|webm|mov)$/i.test(filePath);
+            if (!inline) {
+                const name = (filePath.split(/[\\/]/).pop() || 'file').replace(/["\\\r\n]/g, '');
+                res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+            }
+        },
     });
 
 // Increase payload limits for normal json bodies as well if needed (optional)

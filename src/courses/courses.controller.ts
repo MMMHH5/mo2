@@ -2,8 +2,9 @@ import { Controller, Get, Post, Patch, Body, Param, Delete, UseGuards, Request, 
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlink } from 'fs';
 import { CoursesService } from './courses.service';
+import { hasValidSignature } from '../common/file-signatures';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -71,7 +72,10 @@ export class CoursesController {
             }
         },
         limits: {
-            fileSize: 100 * 1024 * 1024 // 100MB
+            fileSize: 100 * 1024 * 1024, // 100MB
+            files: 1,
+            fields: 20,
+            parts: 30,
         }
     }))
     uploadMedia(
@@ -81,6 +85,10 @@ export class CoursesController {
     ) {
         if (!file) {
             throw new BadRequestException('File is required.');
+        }
+        if (!hasValidSignature(file.path, file.mimetype)) {
+            unlink(file.path, () => { /* best-effort cleanup */ });
+            throw new BadRequestException('File content does not match its declared type.');
         }
         const safeKind = /^[a-z0-9_-]+$/i.test(kind || '') ? kind : 'general';
         return {
