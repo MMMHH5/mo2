@@ -137,13 +137,15 @@ export class ChatController {
             },
         }),
         fileFilter: (req, file, cb) => {
-            const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-            const isVideo = file.mimetype.startsWith('video/');
-            const isPdf = file.mimetype === 'application/pdf';
-            if (allowedImages.includes(file.mimetype) || isPdf || isVideo) {
+            const allowed = [
+                'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+                'application/pdf',
+                'video/mp4', 'video/webm', 'video/quicktime',
+            ];
+            if (allowed.includes(file.mimetype)) {
                 cb(null, true);
             } else {
-                cb(new BadRequestException('Only images, PDF, and video files are allowed.'), false);
+                cb(new BadRequestException('Only JPEG, PNG, WEBP, GIF images, PDF, and MP4/WEBM/MOV videos are allowed.'), false);
             }
         },
         limits: {
