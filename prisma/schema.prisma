@@ -87,6 +87,7 @@ model User {
   passwordHash String
   role         Role     @default(STUDENT)
   isActive     Boolean  @default(true)
+  mustChangePassword Boolean @default(false) // Force the user to set a new password on next login
   language     String   @default("en")
   emailVerifiedAt DateTime?
   twoFactorSecret String?

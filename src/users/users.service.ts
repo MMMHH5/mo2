@@ -97,6 +97,7 @@ export class UsersService {
             passwordHash?: string;
             metadata?: Prisma.InputJsonObject;
             language?: string;
+            mustChangePassword?: boolean;
         } = {};
 
         if (dto.email && dto.email !== user.email) {
@@ -109,6 +110,8 @@ export class UsersService {
 
         if (dto.password) {
             data.passwordHash = await bcrypt.hash(dto.password, 12);
+            // A voluntary change satisfies any forced-change requirement.
+            data.mustChangePassword = false;
         }
 
         if (dto.language) {
@@ -223,6 +226,8 @@ export class UsersService {
                 passwordHash,
                 role: dto.role ?? Role.STUDENT,
                 isActive: dto.isActive ?? true,
+                // Admin-provided passwords must be replaced by the user on first login.
+                mustChangePassword: dto.mustChangePassword !== false,
             },
             select: { id: true, email: true, role: true, isActive: true, createdAt: true },
         });
@@ -245,11 +250,13 @@ export class UsersService {
             passwordHash?: string;
             role?: Role;
             isActive?: boolean;
+            mustChangePassword?: boolean;
         } = {};
         if (dto.email) data.email = dto.email;
         if (dto.password) data.passwordHash = await bcrypt.hash(dto.password, 10);
         if (dto.role) data.role = dto.role;
         if (typeof dto.isActive === 'boolean') data.isActive = dto.isActive;
+        if (typeof dto.mustChangePassword === 'boolean') data.mustChangePassword = dto.mustChangePassword;
 
         const user = await this.prisma.user.update({
             where: { id },

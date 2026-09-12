@@ -6,6 +6,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { getFrontendUrl } from '../common/frontend-url';
 
@@ -38,6 +39,16 @@ export class AuthController {
     @Post('2fa/verify-login')
     async verifyTwoFactor(@Body('tempToken') tempToken: string, @Body('code') code: string) {
         return this.authService.verify2FALogin(tempToken, code);
+    }
+
+    @ApiOperation({ summary: 'Set a new password when the account requires it (issued via login)' })
+    @ApiResponse({ status: 200, description: 'Password changed successfully.' })
+    @ApiResponse({ status: 401, description: 'Invalid or expired password-change token.' })
+    @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 changes per minute
+    @Post('change-password')
+    async changePassword(@Body() dto: ChangePasswordDto) {
+        return this.authService.changePasswordForced(dto.tempToken, dto.newPassword);
     }
 
     @ApiOperation({ summary: 'Request a password reset email' })
@@ -126,11 +137,16 @@ export class AuthController {
         const frontendUrl = getFrontendUrl();
         // Use hash fragments (#) instead of query params (?) to prevent tokens
         // from being logged in browser history, server logs, referrer headers, etc.
-        if (result.requiresTwoFactor) {
+        if ('access_token' in result) {
+            return res.redirect(
+                `${frontendUrl}/auth/success#token=${encodeURIComponent(result.access_token)}&refresh=${encodeURIComponent(result.refresh_token)}`
+            );
+        }
+        if ('requiresTwoFactor' in result && result.requiresTwoFactor) {
             return res.redirect(`${frontendUrl}/auth/success#twoFactor=1&tempToken=${encodeURIComponent(result.tempToken)}`);
         }
-        return res.redirect(
-            `${frontendUrl}/auth/success#token=${encodeURIComponent(result.access_token)}&refresh=${encodeURIComponent(result.refresh_token)}`
-        );
+        // Google-created accounts have no password, so a forced password change
+        // never applies to them; fall back to sign-in just in case.
+        return res.redirect(`${frontendUrl}/login`);
     }
 }

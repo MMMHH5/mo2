@@ -29,6 +29,7 @@ export interface PublicUser {
 
 export type LoginResult =
     | { requiresTwoFactor: true; tempToken: string }
+    | { requiresPasswordChange: true; tempToken: string }
     | { requiresTwoFactor: false; access_token: string; refresh_token: string; user: PublicUser };
 
 @Injectable()
@@ -76,6 +77,14 @@ export class AuthService {
         const pwMatches = await bcrypt.compare(dto.password, user.passwordHash);
         if (!pwMatches) throw new UnauthorizedException('Invalid credentials');
 
+        if (user.mustChangePassword) {
+            const tempToken = this.jwtService.sign(
+                { sub: user.id, email: user.email, role: user.role, purpose: 'pwd_change' },
+                { expiresIn: '5m' }
+            );
+            return { requiresPasswordChange: true, tempToken };
+        }
+
         if (user.twoFactorEnabled) {
             const tempToken = this.jwtService.sign(
                 { sub: user.id, email: user.email, role: user.role, purpose: '2fa' },
@@ -106,6 +115,29 @@ export class AuthService {
 
         const tokens = await this.issueTokens(user.id, user.email, user.role);
         return { ...tokens, user: this.publicUser(user) };
+    }
+
+    async changePasswordForced(tempToken: string, newPassword: string) {
+        let payload: any;
+        try {
+            payload = this.jwtService.verify(tempToken);
+        } catch {
+            throw new UnauthorizedException('Password change session expired. Please sign in again.');
+        }
+        if (payload.purpose !== 'pwd_change') throw new UnauthorizedException('Invalid password change token');
+
+        const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+        if (!user) throw new UnauthorizedException('User not found');
+        if (!user.mustChangePassword) throw new BadRequestException('Password change is not required for this account');
+
+        const hashed = await bcrypt.hash(newPassword, 12);
+
+        await this.prisma.$transaction([
+            this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: hashed, mustChangePassword: false } }),
+            this.prisma.refreshToken.updateMany({ where: { userId: user.id }, data: { revokedAt: new Date() } }),
+        ]);
+
+        return { ok: true };
     }
 
     private publicUser(user: { id: string; email: string; role: string; emailVerifiedAt: Date | null; twoFactorEnabled: boolean; language: string; isActive: boolean; createdAt: Date }) {
@@ -181,7 +213,7 @@ export class AuthService {
 
         await this.prisma.$transaction([
             this.prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
-            this.prisma.user.update({ where: { id: record.userId }, data: { passwordHash: hashed } }),
+            this.prisma.user.update({ where: { id: record.userId }, data: { passwordHash: hashed, mustChangePassword: false } }),
             this.prisma.refreshToken.updateMany({ where: { userId: record.userId }, data: { revokedAt: new Date() } }),
         ]);
 

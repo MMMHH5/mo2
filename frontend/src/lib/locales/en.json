@@ -1227,7 +1227,11 @@
     "code": "Verification code",
     "verifyCode": "Verify",
     "twoFactorFail": "Invalid verification code.",
-    "resetRequired": "Please fill in all fields."
+    "resetRequired": "Please fill in all fields.",
+    "mustChangeTitle": "Change your password",
+    "mustChangeSub": "For your security, you must create a new password before continuing.",
+    "mustChangeButton": "Save new password",
+    "mustChangeFail": "This password change session is invalid or has expired. Please sign in again."
   },
   "blog": {
     "title": "Blog",

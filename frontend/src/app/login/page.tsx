@@ -37,6 +37,11 @@ function LoginForm() {
                 return;
             }
 
+            if (body.requiresPasswordChange && body.tempToken) {
+                router.push(`/auth/change-password?tempToken=${encodeURIComponent(body.tempToken)}&redirect=${encodeURIComponent(redirect)}`);
+                return;
+            }
+
             const token = body.access_token;
             const refreshToken = body.refresh_token;
 

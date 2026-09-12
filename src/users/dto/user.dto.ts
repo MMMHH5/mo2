@@ -23,6 +23,11 @@ export class CreateUserDto {
     @IsOptional()
     @IsBoolean()
     isActive?: boolean;
+
+    @ApiPropertyOptional({ description: 'Force the user to set a new password on their next login', default: true })
+    @IsOptional()
+    @IsBoolean()
+    mustChangePassword?: boolean;
 }
 
 export class UpdateUserDto {
@@ -46,6 +51,11 @@ export class UpdateUserDto {
     @IsOptional()
     @IsBoolean()
     isActive?: boolean;
+
+    @ApiPropertyOptional({ description: 'Force the user to set a new password on their next login' })
+    @IsOptional()
+    @IsBoolean()
+    mustChangePassword?: boolean;
 }
 
 export class UpdateMeDto {

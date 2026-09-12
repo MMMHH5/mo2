@@ -88,7 +88,7 @@ api.interceptors.response.use(
         if (error?.response?.status !== 401 || !original || original._retried) {
             return Promise.reject(error);
         }
-        if (original.url?.includes('/auth/login') || original.url?.includes('/auth/refresh') || original.url?.includes('/auth/2fa/verify-login')) {
+        if (original.url?.includes('/auth/login') || original.url?.includes('/auth/refresh') || original.url?.includes('/auth/2fa/verify-login') || original.url?.includes('/auth/change-password')) {
             return Promise.reject(error);
         }
 
