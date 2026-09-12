@@ -7,7 +7,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ShieldCheck, Download, Eye } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
-import { API_BASE_URL } from '@/lib/api';
 
 interface CertificateData {
     id: string;

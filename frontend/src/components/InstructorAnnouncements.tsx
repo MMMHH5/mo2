@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { api, getErrorMessage } from '@/lib/api';
-import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import toast from 'react-hot-toast';
 import {
-    Loader, Plus, Pencil, Trash2, X, Check, Megaphone, Eye, EyeOff, Calendar, User, Search,
+    Loader, Plus, Pencil, Trash2, X, Megaphone, Eye, EyeOff, Calendar, User, Search,
 } from 'lucide-react';
 import { EmptyPanel, BtnPrimary } from '@/app/dashboard/admin/components';
 
@@ -39,7 +38,7 @@ const emptyForm: AnnouncementForm = {
 };
 
 export default function InstructorAnnouncements({ openingId }: { openingId: string }) {
-    const { t, pick, locale } = useI18n();
+    const { locale } = useI18n();
     const isAr = locale === 'ar';
 
     const [announcements, setAnnouncements] = useState<Announcement[] | null>(null);
@@ -49,7 +48,6 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
     const [form, setForm] = useState<AnnouncementForm>(emptyForm);
     const [saving, setSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [expandedId, setExpandedId] = useState<string | null>(null);
 
     const load = async (silent = false) => {
         if (!silent) setLoading(true);

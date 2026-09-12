@@ -5,7 +5,7 @@ import { api, getErrorMessage } from '@/lib/api';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Tag, Percent, DollarSign, X } from 'lucide-react';
-import { PageHeader, Badge, EmptyState, BtnPrimary, BtnSoft } from '../../components';
+import { PageHeader, Badge, EmptyState, BtnSoft } from '../../components';
 
 interface CouponCourse {
     id: string;

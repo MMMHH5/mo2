@@ -25,8 +25,8 @@ export class AnalyticsController {
     @ApiOperation({ summary: 'Heartbeat for session' })
     @Roles(Role.STUDENT)
     @Patch('session/:id/heartbeat')
-    heartbeat(@Param('id') id: string) {
-        return this.svc.heartbeat(id);
+    heartbeat(@Param('id') id: string, @Request() req: any) {
+        return this.svc.heartbeat(id, req.user.userId);
     }
 
     @ApiOperation({ summary: 'Get own learning analytics' })
@@ -43,10 +43,10 @@ export class AnalyticsController {
         return this.svc.getStudentCourseAnalytics(req.user.userId, courseId);
     }
 
-    @ApiOperation({ summary: 'Get course analytics (instructor)' })
+    @ApiOperation({ summary: 'Get course analytics (instructor / staff)' })
     @Roles(...STAFF)
     @Get('course/:courseId')
-    getCourse(@Param('courseId') courseId: string) {
-        return this.svc.getCourseAnalytics(courseId);
+    getCourse(@Param('courseId') courseId: string, @Request() req: any) {
+        return this.svc.getCourseAnalytics(courseId, req.user.userId, req.user.role);
     }
 }

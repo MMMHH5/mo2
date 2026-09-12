@@ -7,8 +7,8 @@ import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import toast from 'react-hot-toast';
 import {
-    ArrowLeft, Award, Loader, Sun, Moon, PanelLeftClose, PanelLeft, Search, ChevronDown,
-    PlayCircle, FileText, ClipboardList, Link2, Clock, CheckCircle, Circle, Play, Pause,
+    ArrowLeft, Award, Loader, PanelLeftClose, PanelLeft, Search, ChevronDown,
+    PlayCircle, FileText, ClipboardList, Link2, Clock, CheckCircle, Play, Pause,
     RotateCcw, Volume2, VolumeX, Maximize, ZoomIn, ZoomOut, Maximize2, Download,
     UploadCloud, StickyNote, MessagesSquare, Send, X, Gift, BookMarked, MessageCircle, ArrowRight,
     Bell, Megaphone, Calendar, User,
@@ -269,7 +269,6 @@ export default function CoursePlayer({ courseId }: Props) {
         return () => {
             if (timer) clearInterval(timer);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId, loading]);
 
     // ---------- Derived ----------
@@ -652,7 +651,7 @@ export default function CoursePlayer({ courseId }: Props) {
                                         <InteractiveQuiz
                                             quizId={quiz.id}
                                             enrollmentId={progress.enrollmentId}
-                                            onComplete={(passed, score) => {
+                                            onComplete={(passed) => {
                                                 toast.success(passed ? (isAr ? 'نجحت في الاختبار!' : 'Quiz passed!') : (isAr ? 'حاول مرة أخرى' : 'Try again'));
                                             }}
                                         />

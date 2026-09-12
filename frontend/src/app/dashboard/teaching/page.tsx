@@ -81,7 +81,7 @@ const openingStatusLabelsEn: Record<string, string> = {
 };
 
 export default function TeachingHubPage() {
-    const { t, pick, locale } = useI18n();
+    const { pick, locale } = useI18n();
     const isAr = locale === 'ar';
     const searchParams = useSearchParams();
     const { data: openings, loading, error, refetch } = useFetchData<MyOpening[]>('/openings/mine');

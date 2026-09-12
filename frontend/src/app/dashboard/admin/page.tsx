@@ -3,8 +3,8 @@
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import {
-    Users, BookOpen, CalendarClock, Clock, GraduationCap, Wallet, Activity, ShieldAlert, PlusCircle, CreditCard,
-    ArrowRight, TrendingUp, LifeBuoy, Search, type LucideIcon,
+    Users, BookOpen, CalendarClock, Clock, GraduationCap, Wallet, Activity, PlusCircle, CreditCard,
+    ArrowRight, Search, type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader, StatCard } from './components';

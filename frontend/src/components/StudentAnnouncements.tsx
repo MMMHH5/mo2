@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { api, getErrorMessage } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useFetchData } from '@/lib/useFetchData';
 import { Megaphone, Calendar, User, BookOpen, Loader, Bell } from 'lucide-react';

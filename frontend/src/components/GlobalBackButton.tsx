@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 
 const HIDE_ON = ['/', '/ar', '/en'];

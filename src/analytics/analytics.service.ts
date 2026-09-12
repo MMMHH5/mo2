@@ -1,26 +1,40 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AnalyticsService {
     constructor(private prisma: PrismaService) {}
 
+    private async assertEnrolled(userId: string, courseId: string) {
+        const enrollment = await this.prisma.enrollment.findFirst({
+            where: { studentId: userId, courseId, status: { in: ['APPROVED', 'RESERVED'] } },
+            select: { id: true },
+        });
+        if (!enrollment) {
+            throw new ForbiddenException('You are not enrolled in this course');
+        }
+    }
+
     async startSession(userId: string, courseId: string, moduleId?: string) {
+        await this.assertEnrolled(userId, courseId);
         const session = await this.prisma.learningSession.create({
             data: { userId, courseId, moduleId: moduleId || null, durationSec: 0 },
         });
         return session;
     }
 
-    async heartbeat(sessionId: string) {
-        const session = await this.prisma.learningSession.findUnique({ where: { id: sessionId } });
-        if (!session) return null;
+    async heartbeat(sessionId: string, userId: string) {
+        const session = await this.prisma.learningSession.findFirst({ where: { id: sessionId, userId } });
+        if (!session) throw new NotFoundException('Session not found');
         const now = new Date();
         const elapsed = Math.floor((now.getTime() - session.lastHeartbeat.getTime()) / 1000);
-        return this.prisma.learningSession.update({
-            where: { id: sessionId },
+        const updated = await this.prisma.learningSession.updateMany({
+            where: { id: sessionId, userId },
             data: { lastHeartbeat: now, durationSec: session.durationSec + Math.min(elapsed, 120) },
         });
+        if (updated.count === 0) throw new NotFoundException('Session not found');
+        return this.prisma.learningSession.findUnique({ where: { id: sessionId } });
     }
 
     async getStudentAnalytics(userId: string) {
@@ -80,7 +94,16 @@ export class AnalyticsService {
         };
     }
 
-    async getCourseAnalytics(courseId: string) {
+    async getCourseAnalytics(courseId: string, userId: string, role: Role) {
+        const adminOrManager = role === Role.ADMIN || role === Role.COURSE_MANAGER;
+        if (!adminOrManager) {
+            const owned = await this.prisma.course.findFirst({
+                where: { id: courseId, instructorId: userId },
+                select: { id: true },
+            });
+            if (!owned) throw new ForbiddenException('You do not own this course');
+        }
+
         const enrollments = await this.prisma.enrollment.findMany({
             where: { courseId, status: 'APPROVED' },
         });
@@ -103,6 +126,8 @@ export class AnalyticsService {
     }
 
     async getStudentCourseAnalytics(userId: string, courseId: string) {
+        await this.assertEnrolled(userId, courseId);
+
         const sessions = await this.prisma.learningSession.findMany({
             where: { userId, courseId },
             orderBy: { startedAt: 'asc' },

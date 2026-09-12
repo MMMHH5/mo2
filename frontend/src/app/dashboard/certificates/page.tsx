@@ -24,8 +24,7 @@ interface Certificate {
 
 export default function CertificatesPage() {
     const { data: certificates, loading, error } = useFetchData<Certificate[]>('/certificates/my');
-    const { t, pick, locale } = useI18n();
-    const isAr = locale === 'ar';
+    const { t, pick } = useI18n();
     const router = useRouter();
     const searchParams = useSearchParams();
     const courseId = searchParams.get('courseId');

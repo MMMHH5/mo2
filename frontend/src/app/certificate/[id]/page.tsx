@@ -3,8 +3,7 @@ import CertificateViewClient from './CertificateViewClient';
 
 type Props = { params: Promise<{ id: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { id } = await params;
+export async function generateMetadata(): Promise<Metadata> {
     return {
         title: 'Certificate | Laxalab',
         description: 'View and verify a Laxalab course certificate.',
