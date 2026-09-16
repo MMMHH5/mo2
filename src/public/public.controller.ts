@@ -36,7 +36,6 @@ export class PublicController {
             where: { role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] }, isActive: true },
             select: {
                 id: true,
-                email: true,
                 createdAt: true,
                 _count: { select: { coursesTaught: true, openingsTaught: true } },
             },
@@ -44,7 +43,6 @@ export class PublicController {
         });
         return users.map((u) => ({
             id: u.id,
-            email: u.email,
             joinedAt: u.createdAt,
             courseCount: u._count.coursesTaught,
             openingCount: u._count.openingsTaught,
@@ -58,7 +56,6 @@ export class PublicController {
             where: { id, role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] }, isActive: true },
             select: {
                 id: true,
-                email: true,
                 createdAt: true,
                 coursesTaught: {
                     select: {
@@ -128,11 +125,17 @@ export class PublicController {
 
         return courses.map((course) => ({
             ...course,
-            openings: course.openings.sort((a, b) => {
-                const order: Record<string, number> = { OPEN: 0, ANNOUNCEMENT: 1 };
-                return (order[a.status as string] ?? 2) - (order[b.status as string] ?? 2);
-            }),
-        }));
+            openings: course.openings.map((opening) => ({
+                ...opening,
+                // Public footprint: never expose instructor email (prevents scraping/enumeration).
+                instructor: opening.instructor ? { id: opening.instructor.id } : null,
+            })),
+        }))
+            .map((course) => {
+                // Course ownership fields are internal; keep only what the public needs.
+                const { instructorId, ...rest } = course;
+                return rest;
+            });
     }
 
     @ApiOperation({ summary: 'Submit a contact message' })

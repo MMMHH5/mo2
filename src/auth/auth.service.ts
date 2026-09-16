@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { EncryptionService } from '../encryption/encryption.service';
 import { getFrontendUrl } from '../common/frontend-url';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -38,6 +39,7 @@ export class AuthService {
         private prisma: PrismaService,
         private jwtService: JwtService,
         private email: EmailService,
+        private encryption: EncryptionService,
     ) {}
 
     private hashToken(token: string): string {
@@ -110,7 +112,7 @@ export class AuthService {
         if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
             throw new UnauthorizedException('Two-factor authentication is not enabled for this account');
         }
-        const valid = await verifyOtp({ token: code, secret: user.twoFactorSecret });
+        const valid = await verifyOtp({ token: code, secret: this.encryption.decrypt(user.twoFactorSecret) });
         if (!valid) throw new UnauthorizedException('Incorrect verification code');
 
         const tokens = await this.issueTokens(user.id, user.email, user.role);
@@ -256,7 +258,8 @@ export class AuthService {
         const qrDataUrl = await qrcode.toDataURL(otpauth);
 
         // Store the secret immediately so confirm can verify against it.
-        await this.prisma.user.update({ where: { id: userId }, data: { twoFactorSecret: secret } });
+        // EncryptionService.encrypt() keeps the TOTP secret out of the DB in plaintext.
+        await this.prisma.user.update({ where: { id: userId }, data: { twoFactorSecret: this.encryption.encrypt(secret) } });
 
         return { secret, otpauth, qrDataUrl };
     }
@@ -265,7 +268,7 @@ export class AuthService {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user || !user.twoFactorSecret) throw new BadRequestException('No pending 2FA setup');
 
-        const valid = await verifyOtp({ token: code, secret: user.twoFactorSecret });
+        const valid = await verifyOtp({ token: code, secret: this.encryption.decrypt(user.twoFactorSecret) });
         if (!valid) throw new BadRequestException('Incorrect verification code');
 
         await this.prisma.user.update({ where: { id: userId }, data: { twoFactorEnabled: true } });
@@ -281,7 +284,7 @@ export class AuthService {
 
         if (user.twoFactorEnabled) {
             if (!user.twoFactorSecret) throw new BadRequestException('Two-factor is not configured');
-            const valid = await verifyOtp({ token: code, secret: user.twoFactorSecret });
+            const valid = await verifyOtp({ token: code, secret: this.encryption.decrypt(user.twoFactorSecret) });
             if (!valid) throw new BadRequestException('Incorrect verification code');
         }
 

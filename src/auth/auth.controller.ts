@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { getFrontendUrl } from '../common/frontend-url';
 
@@ -36,6 +37,7 @@ export class AuthController {
 
     @ApiOperation({ summary: 'Complete two-factor sign in with a verification code' })
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 3, ttl: 900000 } }) // 3 OTP attempts per 15 min (anti brute-force)
     @Post('2fa/verify-login')
     async verifyTwoFactor(@Body('tempToken') tempToken: string, @Body('code') code: string) {
         return this.authService.verify2FALogin(tempToken, code);
@@ -61,9 +63,10 @@ export class AuthController {
 
     @ApiOperation({ summary: 'Reset the password using a reset token' })
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 3, ttl: 900000 } }) // 3 attempts per 15 minutes
     @Post('reset-password')
-    async resetPassword(@Body('token') token: string, @Body('newPassword') newPassword: string) {
-        return this.authService.resetPassword(token, newPassword);
+    async resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto.token, dto.newPassword);
     }
 
     @ApiOperation({ summary: 'Verify an email address using a token' })
@@ -100,6 +103,7 @@ export class AuthController {
 
     @ApiOperation({ summary: 'Confirm and enable 2FA with a verification code' })
     @ApiBearerAuth('JWT-auth')
+    @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
     @Post('2fa/confirm')
     @UseGuards(JwtAuthGuard)
     async confirm2FA(@Request() req: any, @Body('code') code: string) {

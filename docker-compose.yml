@@ -6,8 +6,11 @@ services:
     container_name: laxalab-postgres
     restart: always
     environment:
+      # No hardcoded secret — DB_PASSWORD must come from an untracked .env.
+      # Local dev: create a .env with DB_PASSWORD=<random strong value>; production
+      # compose must refuse to start when it is missing.
       POSTGRES_USER: ${DB_USER:-laxalab_admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-SuperSecretPassword123!}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required — create a local .env (see .env.example) and never commit it}
       POSTGRES_DB: ${DB_NAME:-laxalab_db}
     ports:
       - "5432:5432"
