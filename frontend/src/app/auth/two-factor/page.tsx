@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, Role } from '@/lib/auth-context';
 import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
+import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function TwoFactorPage() {
     return (
-        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-brand-navy-dark font-bold text-gray-400">Loading...</div>}>
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-brand-navy-dark dark:text-gray-300 text-gray-600 font-bold">Loading...</div>}>
             <TwoFactorForm />
         </Suspense>
     );
@@ -22,6 +23,7 @@ function TwoFactorForm() {
     const { login } = useAuth();
     const router = useRouter();
     const { t } = useI18n();
+    const { dark } = useTheme();
     const searchParams = useSearchParams();
     const tempToken = searchParams?.get('tempToken') || '';
 
@@ -58,35 +60,35 @@ function TwoFactorForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-brand-navy-dark relative overflow-hidden p-4">
+        <div className={`min-h-screen flex items-center justify-center relative overflow-hidden p-4 ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/10 rounded-full blur-[100px] animate-float opacity-70"></div>
                 <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-gold/5 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
             </div>
 
-            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/5 backdrop-blur-md rounded-full shadow-sm border border-white/10 p-1">
-                <LanguageSwitcher dark />
+            <div className={`absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 rounded-full shadow-sm border p-1 ${dark ? 'bg-white/5 backdrop-blur-md border-white/10' : 'bg-white border-gray-200'}`}>
+                <LanguageSwitcher />
             </div>
-            <div className="w-full max-w-md bg-brand-navy-dark/90 backdrop-blur-2xl p-10 rounded-[2rem] shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 relative z-10 transition-all duration-500 hover:border-white/20">
+            <div className={`w-full max-w-md backdrop-blur-2xl p-10 rounded-[2rem] relative z-10 transition-all duration-500 ${dark ? 'bg-brand-navy-dark/90 shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 hover:border-white/20' : 'bg-white shadow-xl border border-gray-200 hover:shadow-2xl'}`}>
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-black text-white">laxa<span className="text-brand-gold">lab</span></h1>
-                    <p className="text-gray-400 mt-2 font-bold">{t('recovery.twoFactorTitle')}</p>
+                    <h1 className={`text-3xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>laxa<span className="text-brand-gold">lab</span></h1>
+                    <p className={`mt-2 font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('recovery.twoFactorTitle')}</p>
                 </div>
 
-                <p className="text-sm text-gray-400 text-center mb-4">{t('recovery.twoFactorSub')}</p>
+                <p className={`text-sm text-center mb-4 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{t('recovery.twoFactorSub')}</p>
 
-                {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-400/30 text-red-400 rounded-md text-sm font-semibold">{error}</div>}
+                {error && <div className={`mb-4 p-3 rounded-md text-sm font-semibold ${dark ? 'bg-red-500/10 border border-red-400/30 text-red-400' : 'bg-red-50 border border-red-200 text-red-600'}`}>{error}</div>}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-bold text-gray-300">{t('recovery.code')}</label>
+                        <label className={`block text-sm font-bold ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{t('recovery.code')}</label>
                         <input
                             type="text"
                             inputMode="numeric"
                             maxLength={6}
                             required
-                            className="mt-1 block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-center tracking-widest text-white [color-scheme:dark]"
+                            className={`mt-1 block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-brand-gold text-center tracking-widest ${dark ? 'bg-white/5 border-white/10 text-white [color-scheme:dark]' : 'bg-white border-gray-300 text-brand-charcoal'}`}
                             value={code}
                             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                         />
@@ -97,7 +99,7 @@ function TwoFactorForm() {
                 </form>
 
                 <div className="mt-6 text-center">
-                    <a href="/login" className="text-sm text-brand-gold-light font-bold hover:text-brand-gold transition-colors">{t('recovery.backToLogin')}</a>
+                    <a href="/login" className={`text-sm font-bold transition-colors ${dark ? 'text-brand-gold-light hover:text-brand-gold' : 'text-brand-gold-dark hover:text-brand-gold'}`}>{t('recovery.backToLogin')}</a>
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ import localFont from 'next/font/local';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { I18nProvider } from '@/lib/i18n-context';
+import { ThemeProvider } from '@/lib/theme-context';
 import { Toaster } from 'react-hot-toast';
 import CookieBanner from '@/components/CookieBanner';
 import JsonLd from '@/components/JsonLd';
@@ -101,16 +102,23 @@ export default async function RootLayout({
       <head>
         <JsonLd data={organizationJsonLd} />
         <JsonLd data={websiteJsonLd} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{var t=localStorage.getItem('laxalab_theme');if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}}catch(e){}",
+          }}
+        />
       </head>
       <body className={`${tajawal.variable} ${manrope.variable} font-sans min-h-screen bg-brand-white text-brand-charcoal`}>
-        <I18nProvider locale={locale}>
-          <AuthProvider>
-            <Toaster position="top-right" />
-            {children}
-            <GlobalBackButton />
-            <CookieBanner />
-          </AuthProvider>
-        </I18nProvider>
+        <ThemeProvider>
+          <I18nProvider locale={locale}>
+            <AuthProvider>
+              <Toaster position="top-right" />
+              {children}
+              <GlobalBackButton />
+              <CookieBanner />
+            </AuthProvider>
+          </I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

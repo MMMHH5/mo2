@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, API_BASE_URL } from "@/lib/api";
 import { useI18n } from "@/lib/i18n-context";
+import { useTheme } from "@/lib/theme-context";
 import { ChevronLeft, ChevronRight, Play, X, Megaphone } from "lucide-react";
 
 interface BannerItem {
@@ -25,9 +26,10 @@ interface AnnouncementBannerProps {
 
 export default function AnnouncementBanner({
   variant = "dashboard",
-  dark = false,
+  dark,
 }: AnnouncementBannerProps) {
   const { t, locale } = useI18n();
+  const { dark: ctxDark } = useTheme();
   const [items, setItems] = useState<BannerItem[]>([]);
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function AnnouncementBanner({
   if (loading || items.length === 0) return null;
 
   const item = items[current];
-  const isDark = variant === "dashboard" || dark;
+  const isDark = variant === "dashboard" || (dark ?? ctxDark);
   const hasMedia = item.mediaType !== "none" && item.mediaUrl;
   const text = (locale === "ar" ? item.titleAr || item.titleEn : item.titleEn || item.titleAr) || "";
   const body = (locale === "ar" ? item.bodyAr || item.bodyEn : item.bodyEn || item.bodyAr) || "";

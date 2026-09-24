@@ -4,12 +4,15 @@ import Link from 'next/link';
 import { ReactNode } from 'react';
 import { useI18n } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PublicMobileMenu from '@/components/PublicMobileMenu';
+import ThemeToggle from '@/components/ThemeToggle';
 
-export default function MarketingShell({ children, title, subtitle, dark = false }: { children: ReactNode; title?: ReactNode; subtitle?: ReactNode; dark?: boolean }) {
+export default function MarketingShell({ children, title, subtitle }: { children: ReactNode; title?: ReactNode; subtitle?: ReactNode }) {
     const { locale } = useI18n();
     const { user } = useAuth();
+    const { dark } = useTheme();
     const isAr = locale === 'ar';
 
     const linkCls = dark
@@ -21,9 +24,6 @@ export default function MarketingShell({ children, title, subtitle, dark = false
     const footerHeadingCls = dark
         ? 'text-sm font-black text-white mb-3 tracking-wide'
         : 'text-sm font-black text-brand-navy mb-3 tracking-wide';
-    const footerTextCls = dark
-        ? 'pb-0'
-        : 'pb-0';
     const primaryBtnCls = dark
         ? 'bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md'
         : 'bg-brand-navy text-white hover:bg-brand-charcoal px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md';
@@ -41,7 +41,7 @@ export default function MarketingShell({ children, title, subtitle, dark = false
                         className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 hover:scale-[1.02]"
                     />
                 </Link>
-                <nav className={`hidden md:flex items-center gap-7 ${dark ? '' : ''}`}>
+                <nav className="hidden md:flex items-center gap-7">
                     <Link href="/courses" className={linkCls}>
                         {isAr ? 'الدورات' : 'Courses'}
                     </Link>
@@ -56,9 +56,10 @@ export default function MarketingShell({ children, title, subtitle, dark = false
                     </Link>
                 </nav>
                 <div className="flex items-center gap-4">
-                    <PublicMobileMenu dark={dark} />
+                    <PublicMobileMenu />
                     <div className="hidden sm:flex items-center gap-4">
-                        <LanguageSwitcher dark={dark} />
+                        <ThemeToggle />
+                        <LanguageSwitcher />
                         {user ? (
                             <Link href="/dashboard">
                                 <button className={primaryBtnCls}>

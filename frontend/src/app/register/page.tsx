@@ -8,11 +8,13 @@ import Link from 'next/link';
 import { Mail, Lock, User, Phone, LogIn } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n-context';
+import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function RegisterPage() {
     const router = useRouter();
     const { t } = useI18n();
+    const { dark } = useTheme();
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -22,6 +24,9 @@ export default function RegisterPage() {
         confirmPassword: ''
     });
     const [isLoading, setIsLoading] = useState(false);
+
+    const inputCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10 [color-scheme:dark]' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
+    const labelCls = `block text-sm font-black mb-1.5 ${dark ? 'text-gray-300' : 'text-gray-700'}`;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,32 +52,32 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-brand-navy-dark relative overflow-hidden p-4">
+        <div className={`min-h-screen flex flex-col items-center justify-center relative overflow-hidden p-4 ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
                 <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/10 rounded-full blur-[100px] animate-float opacity-70"></div>
                 <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-gold/5 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
             </div>
 
-            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/5 backdrop-blur-md rounded-full shadow-sm border border-white/10 p-1">
-                <LanguageSwitcher dark />
+            <div className={`absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 rounded-full shadow-sm border p-1 ${dark ? 'bg-white/5 backdrop-blur-md border-white/10' : 'bg-white border-gray-200'}`}>
+                <LanguageSwitcher />
             </div>
-            <div className="w-full max-w-md bg-brand-navy-dark/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 overflow-hidden relative z-10 transition-all duration-500 hover:border-white/20 my-8">
-                <div className="bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] p-8 text-center border-b border-white/10 relative overflow-hidden">
-                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            <div className={`w-full max-w-md backdrop-blur-2xl rounded-[2rem] shadow-xl overflow-hidden relative z-10 transition-all duration-500 my-8 ${dark ? 'bg-brand-navy-dark/90 shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 hover:border-white/20' : 'bg-white border border-gray-200'}`}>
+                <div className={`p-8 text-center relative overflow-hidden ${dark ? 'bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] border-b border-white/10' : 'bg-gradient-to-br from-brand-mist via-white to-white border-b border-gray-100 bg-opacity-70'}`}>
+                    <div className={`absolute top-0 inset-x-0 h-px ${dark ? 'bg-gradient-to-r from-transparent via-white/20 to-transparent' : 'bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent'}`}></div>
                     <img
-                        src="/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png"
+                        src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_4K.png'}
                         alt="Laxalab Academy"
                         className="h-10 w-auto object-contain mx-auto mb-4 drop-shadow-lg relative z-10"
                     />
-                    <h2 className="text-2xl font-black text-white mb-2 relative z-10">{t('auth.join_laxalab')}</h2>
-                    <p className="text-brand-gold-light text-sm font-semibold relative z-10 shadow-black/20">{t('auth.start_learning')}</p>
+                    <h2 className={`text-2xl font-black mb-2 relative z-10 ${dark ? 'text-white' : 'text-brand-navy'}`}>{t('auth.join_laxalab')}</h2>
+                    <p className={`text-sm font-semibold relative z-10 ${dark ? 'text-brand-gold-light shadow-black/20' : 'text-brand-gold-dark'}`}>{t('auth.start_learning')}</p>
                 </div>
 
                 <div className="p-8">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.fullName')}</label>
+                            <label className={labelCls}>{t('auth.fullName')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <User size={18} className="text-gray-400" />
@@ -80,7 +85,7 @@ export default function RegisterPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark]"
+                                    className={inputCls}
                                     placeholder="Jane Doe"
                                     value={formData.fullName}
                                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -89,7 +94,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.phone')}</label>
+                            <label className={labelCls}>{t('auth.phone')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Phone size={18} className="text-gray-400" />
@@ -97,7 +102,7 @@ export default function RegisterPage() {
                                 <input
                                     type="tel"
                                     required
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
+                                    className={`${inputCls} text-left`}
                                     placeholder="+1 234 567 890"
                                     dir="ltr"
                                     value={formData.phone}
@@ -107,7 +112,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.email')}</label>
+                            <label className={labelCls}>{t('auth.email')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Mail size={18} className="text-gray-400" />
@@ -115,7 +120,7 @@ export default function RegisterPage() {
                                 <input
                                     type="email"
                                     required
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
+                                    className={`${inputCls} text-left`}
                                     placeholder="you@example.com"
                                     dir="ltr"
                                     value={formData.email}
@@ -125,7 +130,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.password')}</label>
+                            <label className={labelCls}>{t('auth.password')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Lock size={18} className="text-gray-400" />
@@ -134,7 +139,7 @@ export default function RegisterPage() {
                                     type="password"
                                     required
                                     minLength={6}
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
+                                    className={`${inputCls} text-left`}
                                     placeholder="••••••••"
                                     dir="ltr"
                                     value={formData.password}
@@ -144,7 +149,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.confirmPassword')}</label>
+                            <label className={labelCls}>{t('auth.confirmPassword')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Lock size={18} className="text-gray-400" />
@@ -153,7 +158,7 @@ export default function RegisterPage() {
                                     type="password"
                                     required
                                     minLength={6}
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
+                                    className={`${inputCls} text-left`}
                                     placeholder="••••••••"
                                     dir="ltr"
                                     value={formData.confirmPassword}
@@ -175,14 +180,14 @@ export default function RegisterPage() {
                         </button>
 
                         <div className="relative flex items-center justify-center my-6 text-sm mt-8">
-                            <span className="absolute bg-brand-navy-dark px-3 text-gray-400 font-bold z-10">{t('common.or')}</span>
-                            <div className="w-full h-px bg-white/10"></div>
+                            <span className={`absolute px-3 font-bold z-10 ${dark ? 'bg-brand-navy-dark text-gray-400' : 'bg-white text-gray-500'}`}>{t('common.or')}</span>
+                            <div className={`w-full h-px ${dark ? 'bg-white/10' : 'bg-gray-200'}`}></div>
                         </div>
 
                         <button
                             type="button"
                             onClick={() => router.push('/api/auth/google')}
-                            className="w-full flex items-center justify-center gap-3 py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all duration-200"
+                            className={`w-full flex items-center justify-center gap-3 py-4 border font-bold rounded-xl transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white' : 'bg-white border-gray-300 hover:bg-gray-50 text-brand-charcoal'}`}
                         >
                             <svg className="h-5 w-5" viewBox="0 0 24 24">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -195,9 +200,9 @@ export default function RegisterPage() {
                     </form>
 
                     <div className="mt-8 text-center">
-                        <p className="text-gray-400 text-sm font-semibold">
+                        <p className={`text-sm font-semibold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                             {t('auth.already_have_account')}{' '}
-                            <Link href="/login" className="text-brand-gold-light font-black hover:text-brand-gold transition-colors">
+                            <Link href="/login" className={`font-black transition-colors ${dark ? 'text-brand-gold-light hover:text-brand-gold' : 'text-brand-gold-dark hover:text-brand-gold'}`}>
                                 {t('auth.sign_in')}
                             </Link>
                         </p>

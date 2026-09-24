@@ -3,15 +3,17 @@
 import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
+import { useTheme } from '@/lib/theme-context';
 
 export default function UnauthorizedPage() {
     const { t } = useI18n();
+    const { dark } = useTheme();
 
     return (
-        <div className="flex h-screen w-full flex-col items-center justify-center bg-brand-navy-dark">
+        <div className={`flex h-screen w-full flex-col items-center justify-center ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
             <ShieldAlert size={80} className="text-brand-gold mb-6" />
-            <h1 className="text-4xl font-bold text-white">{t('unauthorized.title')}</h1>
-            <p className="text-gray-400 mt-3 max-w-md text-center">
+            <h1 className={`text-4xl font-bold ${dark ? 'text-white' : 'text-brand-navy'}`}>{t('unauthorized.title')}</h1>
+            <p className={`mt-3 max-w-md text-center ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {t('unauthorized.desc')}
             </p>
             <Link href="/dashboard">

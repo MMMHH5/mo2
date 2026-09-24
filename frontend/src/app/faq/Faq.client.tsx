@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
+import { useTheme } from '@/lib/theme-context';
 import MarketingShell from '@/components/MarketingShell';
 
 const FAQS = [
@@ -47,12 +48,12 @@ const FAQS = [
 
 export default function FaqContent() {
     const { locale } = useI18n();
+    const { dark } = useTheme();
     const isAr = locale === 'ar';
     const [open, setOpen] = useState<number | null>(0);
 
     return (
         <MarketingShell
-            dark
             title={isAr ? 'الأسئلة الشائعة' : 'Frequently Asked Questions'}
             subtitle={isAr ? 'إجابات مباشرة على أكثر الأسئلة تكراراً. لم تجد ما تبحث عنه؟ تواصل معنا.' : 'Straight answers to the most common questions. Can’t find what you’re looking for? Contact us.'}
         >
@@ -60,26 +61,26 @@ export default function FaqContent() {
                 {FAQS.map((faq, i) => {
                     const isOpen = open === i;
                     return (
-                        <div key={i} className="bg-brand-navy-dark rounded-2xl border border-white/10 shadow-sm overflow-hidden">
+                        <div key={i} className={`rounded-2xl border shadow-sm overflow-hidden ${dark ? 'bg-brand-navy-dark border-white/10' : 'bg-white border-gray-200'}`}>
                             <button
                                 onClick={() => setOpen(isOpen ? null : i)}
                                 className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
                                 aria-expanded={isOpen}
                             >
-                                <span className="font-bold text-white">{isAr ? faq.qAr : faq.qEn}</span>
+                                <span className={`font-bold ${dark ? 'text-white' : 'text-brand-navy'}`}>{isAr ? faq.qAr : faq.qEn}</span>
                                 <ChevronDown size={20} className={`text-brand-gold shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                             </button>
                             {isOpen && (
-                                <div className="px-6 pb-6 text-gray-300 leading-relaxed">{isAr ? faq.aAr : faq.aEn}</div>
+                                <div className={`px-6 pb-6 leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{isAr ? faq.aAr : faq.aEn}</div>
                             )}
                         </div>
                     );
                 })}
             </div>
 
-            <div className="mt-12 rounded-3xl bg-white/5 border border-white/10 p-8 text-center">
-                <h2 className="text-xl font-black text-white mb-2">{isAr ? 'لم تجد إجابتك؟' : 'Still have a question?'}</h2>
-                <p className="text-gray-300 mb-6">{isAr ? 'فريقنا جاهز لمساعدتك في أي وقت.' : 'Our team is ready to help you any time.'}</p>
+            <div className={`mt-12 rounded-3xl border p-8 text-center ${dark ? 'bg-white/5 border-white/10' : 'bg-brand-mist/40 border-gray-200'}`}>
+                <h2 className={`text-xl font-black mb-2 ${dark ? 'text-white' : 'text-brand-navy'}`}>{isAr ? 'لم تجد إجابتك؟' : 'Still have a question?'}</h2>
+                <p className={`mb-6 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{isAr ? 'فريقنا جاهز لمساعدتك في أي وقت.' : 'Our team is ready to help you any time.'}</p>
                 <Link href="/contact" className="inline-block bg-brand-gold text-brand-navy-dark px-8 py-3.5 rounded-xl font-black hover:bg-brand-gold-light transition">
                     {isAr ? 'تواصل معنا' : 'Contact Us'}
                 </Link>
