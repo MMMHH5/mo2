@@ -20,10 +20,12 @@ interface BannerItem {
 
 interface AnnouncementBannerProps {
   variant?: "dashboard" | "public";
+  dark?: boolean;
 }
 
 export default function AnnouncementBanner({
   variant = "dashboard",
+  dark = false,
 }: AnnouncementBannerProps) {
   const { t, locale } = useI18n();
   const [items, setItems] = useState<BannerItem[]>([]);
@@ -56,7 +58,7 @@ export default function AnnouncementBanner({
   if (loading || items.length === 0) return null;
 
   const item = items[current];
-  const isDark = variant === "dashboard";
+  const isDark = variant === "dashboard" || dark;
   const hasMedia = item.mediaType !== "none" && item.mediaUrl;
   const text = (locale === "ar" ? item.titleAr || item.titleEn : item.titleEn || item.titleAr) || "";
   const body = (locale === "ar" ? item.bodyAr || item.bodyEn : item.bodyEn || item.bodyAr) || "";
