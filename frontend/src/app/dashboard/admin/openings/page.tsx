@@ -140,7 +140,7 @@ export default function AdminOpeningsPage() {
             default:
                 return (
                     <button onClick={() => openAnnounceModal(o)} disabled={disabled}
-                        className={`${base} text-blue-400 hover:bg-blue-500/10`}
+                        className={`${base} text-brand-navy-light hover:bg-brand-navy-light/10`}
                         title={t('manageCourses.action_announce_tooltip')}>
                         <Megaphone size={18} />
                     </button>
@@ -170,7 +170,7 @@ export default function AdminOpeningsPage() {
         <button
             onClick={() => setStatusFilter(key)}
             className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${statusFilter === key
-                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md'
+                ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black shadow-md'
                 : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                 }`}
         >
@@ -196,7 +196,7 @@ export default function AdminOpeningsPage() {
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 placeholder={t('admin.search_openings')}
-                                className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-52 bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-52 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <BtnPrimary href="/dashboard/admin/courses" icon={PlusCircle}>{t('admin.new_opening')}</BtnPrimary>
@@ -246,7 +246,7 @@ export default function AdminOpeningsPage() {
                                             </div>
                                             {pct !== null && (
                                                 <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                                    <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-600" style={{ width: `${pct}%` }} />
+                                                    <div className="h-full rounded-full bg-gradient-to-r from-brand-gold to-brand-gold-dark" style={{ width: `${pct}%` }} />
                                                 </div>
                                             )}
                                         </td>
@@ -259,7 +259,7 @@ export default function AdminOpeningsPage() {
                                         <td className="p-4 text-right whitespace-nowrap">
                                             {lifecycleBtn(o)}
                                             <Link href={`/dashboard/courses/open/${o.courseId}?edit=${o.id}`}>
-                                                <button className="admin-action-btn text-blue-400 hover:bg-blue-500/10 tooltip" title={t('manageCourses.edit_opening_tooltip')}>
+                                                <button className="admin-action-btn text-brand-navy-light hover:bg-brand-navy-light/10 tooltip" title={t('manageCourses.edit_opening_tooltip')}>
                                                     <Pencil size={18} />
                                                 </button>
                                             </Link>
@@ -288,7 +288,7 @@ export default function AdminOpeningsPage() {
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
                     onClick={() => setModal(null)}
                 >
-                    <div className="bg-[#0d1f3c] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                    <div className="bg-brand-navy border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
                         <h3 className="text-xl font-black text-white mb-1">{t('manageCourses.announce_title')}</h3>
                         <p className="text-sm text-gray-400 mb-5">{t('manageCourses.announce_hint')}</p>
                         <div className="grid grid-cols-2 gap-3 mb-5">
@@ -298,7 +298,7 @@ export default function AdminOpeningsPage() {
                                     type="date"
                                     value={modal.startAt}
                                     onChange={e => setModal({ ...modal, startAt: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                    className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
                                 />
                             </div>
                             <div>
@@ -307,7 +307,7 @@ export default function AdminOpeningsPage() {
                                     type="date"
                                     value={modal.endAt}
                                     onChange={e => setModal({ ...modal, endAt: e.target.value })}
-                                    className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                                    className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
                                 />
                             </div>
                         </div>
@@ -315,7 +315,7 @@ export default function AdminOpeningsPage() {
                             <button
                                 onClick={confirmAnnounce}
                                 disabled={!modal.startAt || !modal.endAt || processingId === modal.opening.id}
-                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50 cursor-pointer"
+                                className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-bold py-3 rounded-xl hover:opacity-90 transition disabled:opacity-50 cursor-pointer"
                             >
                                 {t('manageCourses.announce_confirm')}
                             </button>

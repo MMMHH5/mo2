@@ -63,11 +63,17 @@ function LoginForm() {
     };
 
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-gray-50 p-4 relative">
-            <div className="absolute top-4 right-4 rtl:left-4 rtl:right-auto">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden p-4">
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/20 rounded-full blur-[100px] animate-float opacity-70"></div>
+                <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-navy-light/10 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
+            </div>
+
+            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/50 backdrop-blur-md rounded-full shadow-sm border border-gray-100 p-1">
                 <LanguageSwitcher />
             </div>
-            <div className="w-full max-w-md bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-brand-mist/50 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(18,48,90,0.12)]">
+            <div className="w-full max-w-md bg-white/80 backdrop-blur-2xl p-10 rounded-[2rem] shadow-[0_20px_60px_rgb(18,48,90,0.08)] border border-white relative z-10 transition-all duration-500 hover:shadow-[0_20px_60px_rgb(18,48,90,0.12)]">
                 <div className="text-center mb-8">
                     <img
                         src="/logos/LaxaLab_Academy_Stacked_Primary_4K.png"

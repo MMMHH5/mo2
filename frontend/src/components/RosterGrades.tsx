@@ -39,7 +39,7 @@ const statusKey: Record<string, string> = {
 };
 
 const avatarTones = [
-    'bg-amber-500/20 text-amber-400',
+    'bg-brand-gold/20 text-brand-gold-light',
     'bg-emerald-500/20 text-emerald-400',
     'bg-sky-500/20 text-sky-400',
     'bg-violet-500/20 text-violet-400',
@@ -230,7 +230,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
     };
 
     if (loading && !roster) {
-        return <div className="h-64 flex items-center justify-center text-amber-400"><Loader className="animate-spin" size={36} /></div>;
+        return <div className="h-64 flex items-center justify-center text-brand-gold-light"><Loader className="animate-spin" size={36} /></div>;
     }
 
     const assessments = roster?.assessments || [];
@@ -258,10 +258,10 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
         URL.revokeObjectURL(url);
     };
 
-    const inputCls = "w-20 px-2 py-1.5 text-center bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 text-white outline-none text-sm";
+    const inputCls = "w-20 px-2 py-1.5 text-center bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 text-white outline-none text-sm";
 
     return (
-        <div className="bg-[#111f3a] p-6 lg:p-8 rounded-3xl border border-white/5">
+        <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl border border-white/5">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div>
                     <h2 className="text-2xl font-black text-white tracking-tight">{t('roster.tab_label')}</h2>
@@ -281,7 +281,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                     {assessments.map((a) => (
                         <span key={a.id} className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
                             <span className="text-sm font-bold text-white">{pick(a, 'name')} <span className="text-gray-400 font-normal">({a.maxScore})</span></span>
-                            <button onClick={() => openEdit(a)} className="text-gray-400 hover:text-amber-400 transition" title={t('common.edit')}><Pencil size={13} /></button>
+                            <button onClick={() => openEdit(a)} className="text-gray-400 hover:text-brand-gold-light transition" title={t('common.edit')}><Pencil size={13} /></button>
                             <button onClick={() => handleDeleteAssessment(a)} className="text-gray-400 hover:text-red-500 transition" title={t('common.delete')}><Trash2 size={13} /></button>
                         </span>
                     ))}
@@ -297,7 +297,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={`${t('roster.col_student')}...`}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 text-white placeholder:text-gray-500 rounded-xl focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 outline-none transition text-sm"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 text-white placeholder:text-gray-500 rounded-xl focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 outline-none transition text-sm"
                     />
                 </div>
                 <button
@@ -376,7 +376,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                                                 </div>
                                             </td>
                                         ))}
-                                        <td className="p-4 text-center font-black text-amber-400 whitespace-nowrap">
+                                        <td className="p-4 text-center font-black text-brand-gold-light whitespace-nowrap">
                                             {totalOf(e)} <span className="text-gray-400 font-normal">({pctOf(e)})</span>
                                         </td>
                                     </tr>
@@ -388,14 +388,14 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
             )}
 
             <p className="text-xs text-gray-400 mt-5">
-                <Link href="/dashboard/admin/users" className="text-amber-400 font-bold hover:text-amber-300 underline underline-offset-2">
+                <Link href="/dashboard/admin/users" className="text-brand-gold-light font-bold hover:text-brand-gold-light underline underline-offset-2">
                     {t('roster.add_student_hint')}
                 </Link>
             </p>
 
             {modalOpen && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
-                    <div className="bg-[#0d1f3c] rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up" onClick={(ev) => ev.stopPropagation()}>
+                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up" onClick={(ev) => ev.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-white">{editing ? t('roster.edit_assessment') : t('roster.add_assessment')}</h3>
                             <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -403,20 +403,20 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-bold text-gray-300 mb-1">{t('roster.assessment_name_ar')} *</label>
-                                <input value={aNameAr} onChange={(e) => setANameAr(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-amber-500/40 outline-none transition" />
+                                <input value={aNameAr} onChange={(e) => setANameAr(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-brand-gold/40 outline-none transition" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-300 mb-1">{t('roster.assessment_name_en')} *</label>
-                                <input value={aNameEn} onChange={(e) => setANameEn(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-amber-500/40 outline-none transition" />
+                                <input value={aNameEn} onChange={(e) => setANameEn(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-brand-gold/40 outline-none transition" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-300 mb-1">{t('roster.assessment_max_score')}</label>
-                                <input type="number" min={1} value={aMax} onChange={(e) => setAMax(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-amber-500/40 outline-none transition" />
+                                <input type="number" min={1} value={aMax} onChange={(e) => setAMax(e.target.value)} className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-brand-gold/40 outline-none transition" />
                             </div>
                             <button
                                 onClick={handleSaveAssessment}
                                 disabled={savingAssess}
-                                className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-[#0a1830] font-bold py-3.5 rounded-xl transition disabled:opacity-50"
+                                className="w-full inline-flex items-center justify-center gap-2 bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark font-bold py-3.5 rounded-xl transition disabled:opacity-50"
                             >
                                 <Check size={18} /> {savingAssess ? t('common.saving') : t('roster.add_assessment_save')}
                             </button>
@@ -427,7 +427,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
 
             {enrollOpen && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEnrollOpen(false)}>
-                    <div className="bg-[#0d1f3c] rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up" onClick={(ev) => ev.stopPropagation()}>
+                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up" onClick={(ev) => ev.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-white">{t('roster.add_student_title')}</h3>
                             <button onClick={() => setEnrollOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -439,7 +439,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                                     value={selectedStudentId}
                                     onChange={(e) => setSelectedStudentId(e.target.value)}
                                     disabled={loadingEnroll}
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-amber-500/40 outline-none transition disabled:opacity-50"
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-brand-gold/40 outline-none transition disabled:opacity-50"
                                 >
                                     <option value="">{loadingEnroll ? t('common.loading') : t('roster.select_student_placeholder')}</option>
                                     {students.map((s) => (
@@ -456,7 +456,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                                     value={selectedOpeningId}
                                     onChange={(e) => setSelectedOpeningId(e.target.value)}
                                     disabled={loadingEnroll}
-                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-amber-500/40 outline-none transition disabled:opacity-50"
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-brand-gold/40 outline-none transition disabled:opacity-50"
                                 >
                                     {openings.map((o) => (
                                         <option key={o.id} value={o.id}>
@@ -468,7 +468,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                             <button
                                 onClick={handleEnrollStudent}
                                 disabled={savingEnroll}
-                                className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-[#0a1830] font-bold py-3.5 rounded-xl transition disabled:opacity-50"
+                                className="w-full inline-flex items-center justify-center gap-2 bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark font-bold py-3.5 rounded-xl transition disabled:opacity-50"
                             >
                                 <Check size={18} /> {savingEnroll ? t('common.saving') : t('roster.add_student_save')}
                             </button>

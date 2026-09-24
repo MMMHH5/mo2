@@ -5,12 +5,12 @@ import type { LucideIcon } from 'lucide-react';
 /* ---- Reusable design tokens for the admin panel (DARK THEME) ---- */
 
 export const tileColors: Record<string, string> = {
-    blue: 'bg-blue-500/15 text-blue-400',
+    blue: 'bg-brand-navy-light/15 text-brand-navy-light',
     cyan: 'bg-cyan-500/15 text-cyan-400',
     purple: 'bg-purple-500/15 text-purple-400',
     green: 'bg-emerald-500/15 text-emerald-400',
-    amber: 'bg-amber-500/15 text-amber-400',
-    indigo: 'bg-indigo-500/15 text-indigo-400',
+    amber: 'bg-brand-gold/15 text-brand-gold-light',
+    indigo: 'bg-brand-navy-light/15 text-indigo-400',
     orange: 'bg-orange-500/15 text-orange-400',
     gray: 'bg-white/10 text-gray-400',
     teal: 'bg-teal-500/15 text-teal-400',
@@ -21,13 +21,13 @@ export type Tone = 'green' | 'amber' | 'red' | 'gray' | 'blue' | 'purple' | 'gol
 
 const badgeToneMap: Record<Tone, string> = {
     green: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20',
-    amber: 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20',
+    amber: 'bg-brand-gold/15 text-brand-gold-light ring-1 ring-brand-gold/20',
     red: 'bg-red-500/15 text-red-400 ring-1 ring-red-500/20',
     gray: 'bg-white/10 text-gray-400 ring-1 ring-white/10',
-    blue: 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20',
+    blue: 'bg-brand-navy-light/15 text-brand-navy-light ring-1 ring-brand-navy-light/20',
     purple: 'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20',
-    gold: 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20',
-    navy: 'bg-[#0a1830] text-white ring-1 ring-white/10',
+    gold: 'bg-brand-gold/15 text-brand-gold-light ring-1 ring-brand-gold/20',
+    navy: 'bg-brand-navy-dark text-white ring-1 ring-white/10',
     teal: 'bg-teal-500/15 text-teal-400 ring-1 ring-teal-500/20',
 };
 
@@ -36,8 +36,8 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
     return (
         <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center shadow-md shrink-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <div className="w-11 h-11 rounded-xl bg-brand-gold/10 flex items-center justify-center shadow-md shrink-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand-gold-light" />
                 </div>
                 <div>
                     <h2 className="text-2xl font-black text-white tracking-tight">{title}</h2>
@@ -66,7 +66,7 @@ export function StatCard({
     accent?: boolean;
 }) {
     const inner = (
-        <div className={`bg-[#111f3a] border border-white/5 rounded-2xl p-5 h-full ${accent ? 'shadow-lg shadow-black/20' : ''}`}>
+        <div className={`bg-brand-navy-dark border border-white/5 rounded-2xl p-5 h-full ${accent ? 'shadow-lg shadow-black/20' : ''}`}>
             <div className="flex items-center justify-between mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tileColors[color]}`}>
                     <Icon size={20} />
@@ -94,13 +94,13 @@ export function SectionHeader({
     color?: Tone;
 }) {
     const tile = {
-        navy: 'bg-amber-500/10 text-amber-400',
+        navy: 'bg-brand-gold/10 text-brand-gold-light',
         green: 'bg-emerald-500/10 text-emerald-400',
-        amber: 'bg-amber-500/10 text-amber-400',
+        amber: 'bg-brand-gold/10 text-brand-gold-light',
         red: 'bg-red-500/10 text-red-400',
-        blue: 'bg-blue-500/10 text-blue-400',
+        blue: 'bg-brand-navy-light/10 text-brand-navy-light',
         purple: 'bg-purple-500/10 text-purple-400',
-        gold: 'bg-amber-500/10 text-amber-400',
+        gold: 'bg-brand-gold/10 text-brand-gold-light',
         gray: 'bg-white/10 text-gray-400',
         teal: 'bg-teal-500/10 text-teal-400',
     }[color];
@@ -136,11 +136,11 @@ export function EmptyState({ icon: Icon, title, color = 'navy' }: { icon: Lucide
     const tile = {
         navy: 'bg-white/5 text-gray-400',
         green: 'bg-emerald-500/10 text-emerald-400',
-        amber: 'bg-amber-500/10 text-amber-400',
+        amber: 'bg-brand-gold/10 text-brand-gold-light',
         red: 'bg-red-500/10 text-red-400',
-        blue: 'bg-blue-500/10 text-blue-400',
+        blue: 'bg-brand-navy-light/10 text-brand-navy-light',
         purple: 'bg-purple-500/10 text-purple-400',
-        gold: 'bg-amber-500/10 text-amber-400',
+        gold: 'bg-brand-gold/10 text-brand-gold-light',
         gray: 'bg-white/5 text-gray-400',
         teal: 'bg-teal-500/10 text-teal-400',
     }[color];
@@ -164,11 +164,11 @@ export function EmptyPanel({ icon: Icon, title, color = 'navy' }: { icon: Lucide
     const tile = {
         navy: 'bg-white/5 text-gray-400',
         green: 'bg-emerald-500/10 text-emerald-400',
-        amber: 'bg-amber-500/10 text-amber-400',
+        amber: 'bg-brand-gold/10 text-brand-gold-light',
         red: 'bg-red-500/10 text-red-400',
-        blue: 'bg-blue-500/10 text-blue-400',
+        blue: 'bg-brand-navy-light/10 text-brand-navy-light',
         purple: 'bg-purple-500/10 text-purple-400',
-        gold: 'bg-amber-500/10 text-amber-400',
+        gold: 'bg-brand-gold/10 text-brand-gold-light',
         gray: 'bg-white/5 text-gray-400',
         teal: 'bg-teal-500/10 text-teal-400',
     }[color];
@@ -192,7 +192,7 @@ export function BtnPrimary({ icon: Icon, children, onClick, href, disabled, type
     disabled?: boolean;
     type?: 'button' | 'submit';
 }) {
-    const cls = `inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-4 py-2.5 rounded-xl font-bold hover:shadow-lg hover:shadow-amber-500/20 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`;
+    const cls = `inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-4 py-2.5 rounded-xl font-bold hover:shadow-lg hover:shadow-brand-gold/20 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`;
     const inner = (
         <>
             {Icon && <Icon size={18} />}

@@ -53,10 +53,10 @@ const emptyPathForm: PathForm = {
 };
 
 const GRADIENTS = [
-    'from-amber-500/40 via-[#111f3a] to-[#0d1f3c]',
-    'from-blue-500/30 via-[#111f3a] to-[#0d1f3c]',
-    'from-purple-500/25 via-[#111f3a] to-[#0d1f3c]',
-    'from-emerald-500/25 via-[#111f3a] to-[#0d1f3c]',
+    'from-brand-gold/40 via-brand-navy-dark to-brand-navy',
+    'from-brand-navy-light/30 via-brand-navy-dark to-brand-navy',
+    'from-purple-500/25 via-brand-navy-dark to-brand-navy',
+    'from-emerald-500/25 via-brand-navy-dark to-brand-navy',
 ];
 
 export default function LearningPathList({ mode = 'browse' }: Props) {
@@ -163,7 +163,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
 
     if (!manage && mode === 'manage') {
         return (
-            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8 text-center">
+            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
                 <Lock size={32} className="mx-auto text-gray-600 mb-3" />
                 <p className="text-gray-400 font-bold text-sm">
                     {isAr ? 'إدارة المسارات متاحة للمدراء والمدرسين فقط' : 'Path management is available to admins and instructors only'}
@@ -176,14 +176,14 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
         <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="flex items-center gap-2 text-lg font-black text-white">
-                    <Route size={20} className="text-amber-400" />
+                    <Route size={20} className="text-brand-gold-light" />
                     {isAr ? 'مسارات التعلم' : 'Learning Paths'}
                     <span className="text-xs font-bold text-gray-500">({paths.length})</span>
                 </h3>
                 {manage && (
                     <button
                         onClick={openCreate}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition"
                     >
                         <Plus size={16} /> {isAr ? 'مسار جديد' : 'New Path'}
                     </button>
@@ -192,15 +192,15 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
 
             {loading ? (
                 <div className="flex items-center justify-center py-20">
-                    <Loader size={28} className="animate-spin text-amber-400" />
+                    <Loader size={28} className="animate-spin text-brand-gold-light" />
                 </div>
             ) : error ? (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8 text-center">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
                     <Route size={32} className="mx-auto text-gray-600 mb-3" />
                     <p className="text-gray-400 font-bold text-sm">{error}</p>
                 </div>
             ) : paths.length === 0 ? (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-10 text-center">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-10 text-center">
                     <Layers size={32} className="mx-auto text-gray-600 mb-3" />
                     <p className="text-gray-400 font-bold text-sm">{isAr ? 'لا توجد مسارات تعلم بعد' : 'No learning paths yet'}</p>
                 </div>
@@ -212,8 +212,8 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                         return (
                             <div
                                 key={p.id}
-                                className={`bg-[#111f3a] border rounded-2xl overflow-hidden flex flex-col transition-all duration-200 ${
-                                    expanded ? 'border-amber-500/30' : 'border-white/5 hover:border-white/15'
+                                className={`bg-brand-navy-dark border rounded-2xl overflow-hidden flex flex-col transition-all duration-200 ${
+                                    expanded ? 'border-brand-gold/30' : 'border-white/5 hover:border-white/15'
                                 }`}
                             >
                                 {/* Cover */}
@@ -224,7 +224,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                     ) : null}
                                     <div className="relative z-10 w-full flex items-start justify-between gap-2">
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-[11px] font-bold text-white border border-white/10">
-                                            <BookOpen size={12} className="text-amber-400" />
+                                            <BookOpen size={12} className="text-brand-gold-light" />
                                             {courses.length} {isAr ? 'دورة' : courses.length === 1 ? 'course' : 'courses'}
                                         </span>
                                         {mode === 'manage' && (
@@ -252,7 +252,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                             ) : (
                                                 courses.map((pc, i) => (
                                                     <div key={pc.id} className="flex items-center gap-2.5 bg-white/[0.02] border border-white/5 rounded-xl px-3 py-2">
-                                                        <span className="w-6 h-6 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-black flex items-center justify-center shrink-0 tabular-nums">
+                                                        <span className="w-6 h-6 rounded-full bg-brand-gold/15 border border-brand-gold/30 text-brand-gold-light text-[11px] font-black flex items-center justify-center shrink-0 tabular-nums">
                                                             {i + 1}
                                                         </span>
                                                         <span className="text-xs font-bold text-gray-200 truncate">
@@ -276,7 +276,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                             <button
                                                 onClick={() => enroll(p)}
                                                 disabled={enrollingId === p.id}
-                                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition disabled:opacity-50"
+                                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
                                             >
                                                 {enrollingId === p.id ? <Loader size={13} className="animate-spin" /> : <Zap size={13} />}
                                                 {isAr ? 'التسجيل في المسار' : 'Enroll'}
@@ -286,7 +286,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                             <>
                                                 <button
                                                     onClick={() => openEdit(p)}
-                                                    className="p-2 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+                                                    className="p-2 rounded-xl bg-brand-gold/10 text-brand-gold-light hover:bg-brand-gold/20 transition-colors"
                                                     title={isAr ? 'تعديل' : 'Edit'}
                                                 >
                                                     <Pencil size={14} />
@@ -312,7 +312,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
             {modalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalOpen(false)}>
                     <div
-                        className="bg-[#0d1f3c] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+                        className="bg-brand-navy border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-6 border-b border-white/5">
@@ -332,7 +332,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                         value={form.titleAr}
                                         onChange={(e) => setForm({ ...form, titleAr: e.target.value })}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                                 <div>
@@ -342,7 +342,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                         value={form.titleEn}
                                         onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                             </div>
@@ -354,7 +354,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                         onChange={(e) => setForm({ ...form, descriptionAr: e.target.value })}
                                         rows={3}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                     />
                                 </div>
                                 <div>
@@ -364,7 +364,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                         onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })}
                                         rows={3}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                     />
                                 </div>
                             </div>
@@ -376,7 +376,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                     onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })}
                                     dir="ltr"
                                     placeholder="https://..."
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                 />
                             </div>
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -384,7 +384,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                     type="checkbox"
                                     checked={form.isPublished}
                                     onChange={(e) => setForm({ ...form, isPublished: e.target.checked })}
-                                    className="w-4 h-4 rounded border-white/20 bg-white/5 accent-amber-500 cursor-pointer"
+                                    className="w-4 h-4 rounded border-white/20 bg-white/5 accent-brand-gold cursor-pointer"
                                 />
                                 <span className="text-sm text-gray-300 font-bold">{isAr ? 'منشور (مرئي للطلاب)' : 'Published (visible to students)'}</span>
                             </label>
@@ -404,7 +404,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                 <button
                                     onClick={save}
                                     disabled={saving}
-                                    className="px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition-all disabled:opacity-50 flex items-center gap-2"
+                                    className="px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition-all disabled:opacity-50 flex items-center gap-2"
                                 >
                                     {saving && <Loader size={14} className="animate-spin" />}
                                     {editing ? (isAr ? 'تحديث' : 'Update') : (isAr ? 'إنشاء' : 'Create')}

@@ -69,7 +69,7 @@ export default function SupportPage() {
         setSubmitting(false);
     };
 
-    const inputCls = "w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition text-white placeholder:text-gray-500";
+    const inputCls = "w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition text-white placeholder:text-gray-500";
 
     return (
         <ProtectedRoute>
@@ -78,9 +78,9 @@ export default function SupportPage() {
 
                 <div className="grid lg:grid-cols-2 gap-6">
                     {/* New request form */}
-                    <div className="bg-[#111f3a] p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
+                    <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
                         <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2">
-                            <span className="admin-tile w-9 h-9 bg-white/5 text-amber-400"><LifeBuoy size={18} /></span>
+                            <span className="admin-tile w-9 h-9 bg-white/5 text-brand-gold-light"><LifeBuoy size={18} /></span>
                             {t('support.new_ticket_title')}
                         </h3>
                         <div className="space-y-4">
@@ -95,7 +95,7 @@ export default function SupportPage() {
                             <button
                                 onClick={submit}
                                 disabled={submitting}
-                                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold py-3.5 rounded-xl hover:from-amber-400 hover:to-amber-500 shadow-md transition disabled:opacity-50 cursor-pointer"
+                                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-bold py-3.5 rounded-xl hover:from-brand-gold-light hover:to-brand-gold shadow-md transition disabled:opacity-50 cursor-pointer"
                             >
                                 {submitting ? <Loader size={18} className="animate-spin" /> : <Send size={18} />}
                                 {submitting ? t('support.submitting') : t('support.submit')}
@@ -104,19 +104,19 @@ export default function SupportPage() {
                     </div>
 
                     {/* My tickets */}
-                    <div className="bg-[#111f3a] p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
+                    <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
                         <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2">
-                            <span className="admin-tile w-9 h-9 bg-white/5 text-amber-400"><InboxIcon size={18} /></span>
+                            <span className="admin-tile w-9 h-9 bg-white/5 text-brand-gold-light"><InboxIcon size={18} /></span>
                             {t('support.my_tickets')}
                         </h3>
                         {loading ? (
-                            <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-amber-400" size={28} /></div>
+                            <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-brand-gold-light" size={28} /></div>
                         ) : tickets.length === 0 ? (
                             <p className="text-gray-400 font-bold text-sm text-center py-10">{t('support.no_tickets')}</p>
                         ) : (
                             <div className="space-y-3 max-h-[480px] overflow-y-auto admin-scroll">
                                 {tickets.map((tk) => (
-                                    <div key={tk.id} className="border border-white/5 rounded-2xl p-4 bg-[#0d1f3c]">
+                                    <div key={tk.id} className="border border-white/5 rounded-2xl p-4 bg-brand-navy">
                                         <div className="flex items-center justify-between gap-2 mb-1.5">
                                             <span className="font-black text-white text-sm truncate">{tk.subject}</span>
                                             <Badge tone={ticketTone[tk.status] ?? 'gray'}>{t(ticketKey[tk.status] ?? '')}</Badge>

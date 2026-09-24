@@ -191,9 +191,9 @@ export default function AdminAnnouncementsPage() {
 
     const mediaTypeIcon = (mt: string) => {
         switch (mt) {
-            case 'image': return <Image size={14} className="text-amber-400" />;
-            case 'video': return <Video size={14} className="text-amber-400" />;
-            default: return <FileText size={14} className="text-amber-400" />;
+            case 'image': return <Image size={14} className="text-brand-gold-light" />;
+            case 'video': return <Video size={14} className="text-brand-gold-light" />;
+            default: return <FileText size={14} className="text-brand-gold-light" />;
         }
     };
 
@@ -203,23 +203,23 @@ export default function AdminAnnouncementsPage() {
                 title={t('adminAnnouncements.heading')}
                 subtitle={t('adminAnnouncements.subtitle')}
                 actions={
-                    <button onClick={openCreate} className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-4 py-2.5 rounded-xl font-bold hover:from-amber-400 hover:to-amber-500 transition cursor-pointer">
+                    <button onClick={openCreate} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-4 py-2.5 rounded-xl font-bold hover:from-brand-gold-light hover:to-brand-gold transition cursor-pointer">
                         <Plus size={18} /> {t('adminAnnouncements.new')}
                     </button>
                 }
             />
 
             {loading ? (
-                <div className="h-64 flex items-center justify-center text-amber-500">
+                <div className="h-64 flex items-center justify-center text-brand-gold">
                     <Loader className="animate-spin" size={32} />
                 </div>
             ) : items.length === 0 ? (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-12 text-center">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-12 text-center">
                     <FileText size={32} className="mx-auto text-gray-500 mb-3" />
                     <p className="text-gray-400 font-bold text-sm">{t('adminAnnouncements.empty')}</p>
                 </div>
             ) : (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-hidden">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
@@ -281,7 +281,7 @@ export default function AdminAnnouncementsPage() {
             {/* Form Modal */}
             {showForm && (
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-                    <div className="bg-[#111f3a] rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-2xl max-h-[85vh] overflow-y-auto animate-fade-in-up border border-white/10 admin-scroll" onClick={e => e.stopPropagation()}>
+                    <div className="bg-brand-navy-dark rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-2xl max-h-[85vh] overflow-y-auto animate-fade-in-up border border-white/10 admin-scroll" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-white">{editing ? t('adminAnnouncements.edit') : t('adminAnnouncements.new')}</h3>
                             <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -291,29 +291,29 @@ export default function AdminAnnouncementsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.title_en')} *</label>
-                                    <input value={form.titleEn} onChange={e => setForm(f => ({ ...f, titleEn: e.target.value }))} className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white" />
+                                    <input value={form.titleEn} onChange={e => setForm(f => ({ ...f, titleEn: e.target.value }))} className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.title_ar')} *</label>
-                                    <input value={form.titleAr} onChange={e => setForm(f => ({ ...f, titleAr: e.target.value }))} dir="rtl" className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white" />
+                                    <input value={form.titleAr} onChange={e => setForm(f => ({ ...f, titleAr: e.target.value }))} dir="rtl" className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.body_en')}</label>
-                                    <textarea value={form.bodyEn} onChange={e => setForm(f => ({ ...f, bodyEn: e.target.value }))} rows={3} className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white resize-none" />
+                                    <textarea value={form.bodyEn} onChange={e => setForm(f => ({ ...f, bodyEn: e.target.value }))} rows={3} className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white resize-none" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.body_ar')}</label>
-                                    <textarea value={form.bodyAr} onChange={e => setForm(f => ({ ...f, bodyAr: e.target.value }))} rows={3} dir="rtl" className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white resize-none" />
+                                    <textarea value={form.bodyAr} onChange={e => setForm(f => ({ ...f, bodyAr: e.target.value }))} rows={3} dir="rtl" className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white resize-none" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.media_type')}</label>
-                                    <select value={form.mediaType} onChange={e => setForm(f => ({ ...f, mediaType: e.target.value }))} className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white">
+                                    <select value={form.mediaType} onChange={e => setForm(f => ({ ...f, mediaType: e.target.value }))} className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white">
                                         <option value="none">{t('adminAnnouncements.type_none')}</option>
                                         <option value="image">{t('adminAnnouncements.type_image')}</option>
                                         <option value="video">{t('adminAnnouncements.type_video')}</option>
@@ -328,7 +328,7 @@ export default function AdminAnnouncementsPage() {
                                         value={form.durationSeconds}
                                         onChange={e => setForm(f => ({ ...f, durationSeconds: Number(e.target.value) || 5 }))}
                                         disabled={form.mediaType === 'video' && useVideoDuration}
-                                        className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                     {form.mediaType === 'video' && (
                                         <label className="flex items-center gap-2 mt-2 cursor-pointer">
@@ -348,7 +348,7 @@ export default function AdminAnnouncementsPage() {
                                                         };
                                                     }
                                                 }}
-                                                className="w-4 h-4 rounded border-white/20 bg-[#0a1830] text-amber-500 focus:ring-amber-500"
+                                                className="w-4 h-4 rounded border-white/20 bg-brand-navy-dark text-brand-gold focus:ring-brand-gold"
                                             />
                                             <span className="text-xs text-gray-400 font-semibold">{t('adminAnnouncements.use_video_duration')}</span>
                                         </label>
@@ -356,11 +356,11 @@ export default function AdminAnnouncementsPage() {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.priority')}</label>
-                                    <input type="number" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))} className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white" />
+                                    <input type="number" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))} className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white" />
                                 </div>
                                 <div className="flex items-end">
                                     <label className="flex items-center gap-3 cursor-pointer pb-3">
-                                        <input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="w-5 h-5 rounded border-white/20 bg-[#0a1830] text-amber-500 focus:ring-amber-500" />
+                                        <input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="w-5 h-5 rounded border-white/20 bg-brand-navy-dark text-brand-gold focus:ring-brand-gold" />
                                         <span className="text-sm font-bold text-white">{t('adminAnnouncements.active')}</span>
                                     </label>
                                 </div>
@@ -387,23 +387,23 @@ export default function AdminAnnouncementsPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.link_url')}</label>
-                                <input value={form.linkUrl} onChange={e => setForm(f => ({ ...f, linkUrl: e.target.value }))} placeholder="https://..." className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white" />
+                                <input value={form.linkUrl} onChange={e => setForm(f => ({ ...f, linkUrl: e.target.value }))} placeholder="https://..." className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white" />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.starts_at')}</label>
-                                    <input type="datetime-local" value={form.startsAt} onChange={e => setForm(f => ({ ...f, startsAt: e.target.value }))} className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white" />
+                                    <input type="datetime-local" value={form.startsAt} onChange={e => setForm(f => ({ ...f, startsAt: e.target.value }))} className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.expires_at')}</label>
-                                    <input type="datetime-local" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))} className="w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-white" />
+                                    <input type="datetime-local" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))} className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white" />
                                 </div>
                             </div>
 
                             <div className="flex justify-end gap-3 pt-2">
                                 <button onClick={() => setShowForm(false)} className="px-5 py-2.5 text-gray-400 hover:text-white font-bold text-sm transition">{t('common.cancel')}</button>
-                                <button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-amber-500 to-amber-600 text-black px-6 py-2.5 rounded-xl font-bold hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 transition cursor-pointer flex items-center gap-2">
+                                <button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-6 py-2.5 rounded-xl font-bold hover:from-brand-gold-light hover:to-brand-gold disabled:opacity-40 transition cursor-pointer flex items-center gap-2">
                                     {saving && <Loader size={14} className="animate-spin" />}
                                     {t('adminAnnouncements.save')}
                                 </button>

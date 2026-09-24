@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <div className="bg-white rounded-3xl shadow-lg shadow-brand-navy/5 border border-brand-mist min-h-[85vh] flex overflow-hidden">
+            <div className="bg-brand-navy-dark rounded-3xl shadow-lg shadow-black/30 border border-white/5 min-h-[85vh] flex overflow-hidden">
                 {/* Mobile top bar */}
                 <div className="md:hidden sticky top-0 z-40 bg-brand-navy/95 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">

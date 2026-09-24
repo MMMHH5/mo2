@@ -92,14 +92,14 @@ export default function GamificationPanel({ userId }: Props) {
     if (meRes.loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Zap size={28} className="animate-pulse text-amber-400" />
+                <Zap size={28} className="animate-pulse text-brand-gold-light" />
             </div>
         );
     }
 
     if (meRes.error) {
         return (
-            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8 text-center">
+            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
                 <Trophy size={32} className="mx-auto text-gray-600 mb-3" />
                 <p className="text-gray-400 font-bold text-sm">{meRes.error}</p>
             </div>
@@ -110,10 +110,10 @@ export default function GamificationPanel({ userId }: Props) {
         <div className="space-y-5">
             {/* Level / XP / Streak */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2 bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                <div className="lg:col-span-2 bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                     <div className="flex items-center gap-4 mb-4">
-                        <span className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/30 to-amber-500/10 border border-amber-500/40 flex items-center justify-center shrink-0">
-                            <Zap size={26} className="text-amber-400" />
+                        <span className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-gold/30 to-brand-gold/10 border border-brand-gold/40 flex items-center justify-center shrink-0">
+                            <Zap size={26} className="text-brand-gold-light" />
                         </span>
                         <div>
                             <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">{isAr ? 'المستوى' : 'Level'}</p>
@@ -124,13 +124,13 @@ export default function GamificationPanel({ userId }: Props) {
                     </div>
                     <div className="flex items-center justify-between mb-1.5 text-[11px] font-bold">
                         <span className="text-gray-400">{isAr ? 'نقاط الخبرة' : 'XP'}</span>
-                        <span className="text-amber-400 tabular-nums">
+                        <span className="text-brand-gold-light tabular-nums">
                             {points} XP{meRes.data?.xpToNextLevel ? ` · ${isAr ? 'يبقى' : 'to next'} ${Math.max(0, span - inLevel)}` : ''}
                         </span>
                     </div>
                     <div className="h-3 bg-white/5 rounded-full overflow-hidden">
                         <div
-                            className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 transition-all duration-700"
+                            className="h-full rounded-full bg-gradient-to-r from-brand-gold-dark via-brand-gold to-brand-gold-light transition-all duration-700"
                             style={{ width: `${Math.max(3, pct)}%` }}
                         />
                     </div>
@@ -140,7 +140,7 @@ export default function GamificationPanel({ userId }: Props) {
                     </div>
                 </div>
 
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 flex items-center gap-4">
                     <span className={`w-14 h-14 rounded-2xl border flex items-center justify-center shrink-0 ${
                         streak > 0 ? 'bg-orange-500/15 border-orange-500/40' : 'bg-white/5 border-white/10'
                     }`}>
@@ -160,10 +160,10 @@ export default function GamificationPanel({ userId }: Props) {
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
                 {/* Badges */}
-                <div className="lg:col-span-3 bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                <div className="lg:col-span-3 bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="flex items-center gap-2 text-sm font-black text-white">
-                            <Award size={16} className="text-amber-400" />
+                            <Award size={16} className="text-brand-gold-light" />
                             {isAr ? 'مجموعة الشارات' : 'Badge collection'}
                         </h3>
                         <span className="text-[11px] font-bold text-gray-500">
@@ -179,11 +179,11 @@ export default function GamificationPanel({ userId }: Props) {
                                     title={earned ? (isAr ? ar : en) : (isAr ? 'لم يتم كسبها بعد' : 'Not earned yet')}
                                     className={`rounded-xl border p-3 flex flex-col items-center gap-1.5 text-center transition-all ${
                                         earned
-                                            ? 'bg-amber-500/5 border-amber-500/30 hover:border-amber-500/50'
+                                            ? 'bg-brand-gold/5 border-brand-gold/30 hover:border-brand-gold/50'
                                             : 'bg-white/[0.02] border-white/5 opacity-35 grayscale'
                                     }`}
                                 >
-                                    <Icon size={22} className={earned ? 'text-amber-400' : 'text-gray-500'} />
+                                    <Icon size={22} className={earned ? 'text-brand-gold-light' : 'text-gray-500'} />
                                     <span className={`text-[10px] font-bold leading-tight ${earned ? 'text-gray-200' : 'text-gray-500'}`}>
                                         {pick({ labelAr: ar, labelEn: en }, 'label')}
                                     </span>
@@ -194,15 +194,15 @@ export default function GamificationPanel({ userId }: Props) {
                 </div>
 
                 {/* Leaderboard */}
-                <div className="lg:col-span-2 bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                <div className="lg:col-span-2 bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                     <h3 className="flex items-center gap-2 text-sm font-black text-white mb-4">
-                        <Trophy size={16} className="text-amber-400" />
+                        <Trophy size={16} className="text-brand-gold-light" />
                         {isAr ? 'لوحة المتصدرين' : 'Leaderboard'}
                         <span className="text-[10px] font-bold text-gray-500">({isAr ? 'أفضل ١٠' : 'Top 10'})</span>
                     </h3>
                     {boardRes.loading ? (
                         <div className="flex items-center justify-center py-8">
-                            <Loader size={20} className="animate-spin text-amber-400" />
+                            <Loader size={20} className="animate-spin text-brand-gold-light" />
                         </div>
                     ) : leaders.length === 0 ? (
                         <p className="text-gray-500 font-bold text-xs text-center py-8">{isAr ? 'لا توجد بيانات بعد' : 'No data yet'}</p>
@@ -212,25 +212,25 @@ export default function GamificationPanel({ userId }: Props) {
                                 {leaders.map((r, i) => {
                                     const mine = !!myId && rowId(r) === myId;
                                     const rankColor =
-                                        i === 0 ? 'bg-amber-400 text-[#0a1830]'
-                                        : i === 1 ? 'bg-gray-300 text-[#0a1830]'
-                                        : i === 2 ? 'bg-amber-700 text-white'
+                                        i === 0 ? 'bg-brand-gold-light text-brand-navy-dark'
+                                        : i === 1 ? 'bg-gray-300 text-brand-navy-dark'
+                                        : i === 2 ? 'bg-brand-gold-dark text-white'
                                         : 'bg-white/5 text-gray-400';
                                     return (
-                                        <tr key={rowId(r) || i} className={mine ? 'bg-amber-500/5' : ''}>
+                                        <tr key={rowId(r) || i} className={mine ? 'bg-brand-gold/5' : ''}>
                                             <td className="py-2.5 pe-2 w-9">
                                                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${rankColor}`}>
                                                     {i + 1}
                                                 </span>
                                             </td>
                                             <td className="py-2.5 pe-2 min-w-0">
-                                                <span className={`block truncate text-xs font-bold ${mine ? 'text-amber-300' : 'text-gray-300'}`} title={rowName(r)}>
+                                                <span className={`block truncate text-xs font-bold ${mine ? 'text-brand-gold-light' : 'text-gray-300'}`} title={rowName(r)}>
                                                     {mine ? `${isAr ? 'أنت' : 'You'} · ${rowName(r)}` : rowName(r)}
                                                 </span>
                                             </td>
                                             <td className="py-2.5 text-end whitespace-nowrap">
-                                                <span className="inline-flex items-center gap-1 text-xs font-black text-amber-400 tabular-nums">
-                                                    <Star size={11} className="fill-amber-400" /> {Number(r.points ?? 0)}
+                                                <span className="inline-flex items-center gap-1 text-xs font-black text-brand-gold-light tabular-nums">
+                                                    <Star size={11} className="fill-brand-gold-light" /> {Number(r.points ?? 0)}
                                                 </span>
                                                 {typeof r.level === 'number' && (
                                                     <span className="ms-2 text-[10px] text-gray-500 font-bold">L{r.level}</span>

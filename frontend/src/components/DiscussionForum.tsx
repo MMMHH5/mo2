@@ -164,7 +164,7 @@ export default function DiscussionForum({ moduleId }: Props) {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-amber-400" />
+                <Loader size={28} className="animate-spin text-brand-gold-light" />
             </div>
         );
     }
@@ -173,13 +173,13 @@ export default function DiscussionForum({ moduleId }: Props) {
         <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="flex items-center gap-2 text-lg font-black text-white">
-                    <MessageSquare size={20} className="text-amber-400" />
+                    <MessageSquare size={20} className="text-brand-gold-light" />
                     {isAr ? 'مناقشات الدرس' : 'Module Discussions'}
                     <span className="text-xs font-bold text-gray-500">({posts.length})</span>
                 </h3>
                 <button
                     onClick={() => setModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition"
                 >
                     <Plus size={16} /> {isAr ? 'مناقشة جديدة' : 'New Post'}
                 </button>
@@ -190,7 +190,7 @@ export default function DiscussionForum({ moduleId }: Props) {
             )}
 
             {posts.length === 0 ? (
-                <div className="text-center py-14 bg-[#111f3a] border border-white/5 rounded-2xl">
+                <div className="text-center py-14 bg-brand-navy-dark border border-white/5 rounded-2xl">
                     <MessageSquare size={32} className="mx-auto text-gray-600 mb-3" />
                     <p className="text-gray-400 font-bold text-sm">{isAr ? 'لا توجد مناقشات بعد — كن أول من يبدأ!' : 'No discussions yet — be the first to post!'}</p>
                 </div>
@@ -203,8 +203,8 @@ export default function DiscussionForum({ moduleId }: Props) {
                         return (
                             <div
                                 key={post.id}
-                                className={`bg-[#111f3a] border rounded-2xl transition-all duration-200 ${
-                                    expanded ? 'border-amber-500/30' : 'border-white/5 hover:border-white/15'
+                                className={`bg-brand-navy-dark border rounded-2xl transition-all duration-200 ${
+                                    expanded ? 'border-brand-gold/30' : 'border-white/5 hover:border-white/15'
                                 }`}
                             >
                                 <button
@@ -215,7 +215,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                                 {post.isPinned && (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-gold/10 text-brand-gold-light border border-brand-gold/30">
                                                         <Pin size={11} /> {isAr ? 'مثبت' : 'Pinned'}
                                                     </span>
                                                 )}
@@ -232,7 +232,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                                     <User size={11} /> {post.author?.email || (isAr ? 'مستخدم' : 'User')}
                                                 </span>
                                                 <span>{new Date(post.createdAt).toLocaleDateString(isAr ? 'ar' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                                                <span className="text-amber-400/80">
+                                                <span className="text-brand-gold-light/80">
                                                     {replyCount} {isAr ? 'رد' : replyCount === 1 ? 'reply' : 'replies'}
                                                 </span>
                                             </div>
@@ -298,12 +298,12 @@ export default function DiscussionForum({ moduleId }: Props) {
                                                     onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))}
                                                     rows={2}
                                                     placeholder={isAr ? 'اكتب رداً...' : 'Write a reply...'}
-                                                    className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                                    className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                                 />
                                                 <button
                                                     onClick={() => sendReply(post.id)}
                                                     disabled={replyingTo === post.id || !(replyDrafts[post.id] || '').trim()}
-                                                    className="p-2.5 rounded-xl bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition disabled:opacity-40"
+                                                    className="p-2.5 rounded-xl bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-40"
                                                     title={isAr ? 'رد' : 'Reply'}
                                                 >
                                                     {replyingTo === post.id ? <Loader size={16} className="animate-spin" /> : <Send size={16} />}
@@ -346,7 +346,7 @@ export default function DiscussionForum({ moduleId }: Props) {
             {modalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalOpen(false)}>
                     <div
-                        className="bg-[#0d1f3c] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+                        className="bg-brand-navy border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-6 border-b border-white/5">
@@ -364,7 +364,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                         value={form.titleAr}
                                         onChange={(e) => setForm({ ...form, titleAr: e.target.value })}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                         placeholder={isAr ? 'عنوان المناقشة بالعربي' : 'Title in Arabic'}
                                     />
                                 </div>
@@ -375,7 +375,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                         value={form.titleEn}
                                         onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                         placeholder={isAr ? 'عنوان المناقشة بالإنجليزي' : 'Title in English'}
                                     />
                                 </div>
@@ -388,7 +388,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                         onChange={(e) => setForm({ ...form, bodyAr: e.target.value })}
                                         rows={5}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                         placeholder={isAr ? 'اكتب سؤالك أو نقاشك بالعربي...' : 'Write your question in Arabic...'}
                                     />
                                 </div>
@@ -399,7 +399,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                         onChange={(e) => setForm({ ...form, bodyEn: e.target.value })}
                                         rows={5}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                         placeholder={isAr ? 'اكتب سؤالك بالإنجليزي...' : 'Write your question in English...'}
                                     />
                                 </div>
@@ -415,7 +415,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                             <button
                                 onClick={createPost}
                                 disabled={creating}
-                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition-all disabled:opacity-50 flex items-center gap-2"
+                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition-all disabled:opacity-50 flex items-center gap-2"
                             >
                                 {creating && <Loader size={14} className="animate-spin" />}
                                 {isAr ? 'نشر' : 'Post'}

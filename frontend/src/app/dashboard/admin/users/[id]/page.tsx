@@ -93,7 +93,7 @@ export default function AdminUserDetailPage() {
             {/* Back */}
             <Link
                 href="/dashboard/admin/users"
-                className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 bg-[#111f3a] text-white hover:border-white/20 hover:bg-[#1a2d4a] transition"
+                className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 bg-brand-navy-dark text-white hover:border-white/20 hover:bg-[#1a2d4a] transition"
             >
                 <ArrowLeft size={16} className="rtl:rotate-180" /> {t('common.back')}
             </Link>
@@ -101,7 +101,7 @@ export default function AdminUserDetailPage() {
             {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
 
             {loading ? (
-                <div className="h-60 bg-[#111f3a] flex items-center justify-center font-bold text-gray-400 rounded-2xl border border-white/5">
+                <div className="h-60 bg-brand-navy-dark flex items-center justify-center font-bold text-gray-400 rounded-2xl border border-white/5">
                     {t('common.loading')}
                 </div>
             ) : (
@@ -122,9 +122,9 @@ export default function AdminUserDetailPage() {
                     />
 
                     {/* User info card */}
-                    <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 animate-fade-in-up">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 animate-fade-in-up">
                         <div className="flex items-center gap-3 mb-5">
-                            <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-xl bg-brand-navy-light/15 text-brand-navy-light flex items-center justify-center">
                                 <User size={20} />
                             </div>
                             <h3 className="font-black text-white">{t('profile.personal_info')}</h3>
@@ -146,8 +146,8 @@ export default function AdminUserDetailPage() {
                     {/* Gamification stats */}
                     {gamification && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in-up">
-                            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
-                                <div className="w-11 h-11 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+                                <div className="w-11 h-11 rounded-xl bg-brand-gold/15 text-brand-gold-light flex items-center justify-center shrink-0">
                                     <Star size={22} />
                                 </div>
                                 <div>
@@ -155,7 +155,7 @@ export default function AdminUserDetailPage() {
                                     <div className="text-xs font-bold text-gray-400 mt-0.5">{t('gamification.xp')}</div>
                                 </div>
                             </div>
-                            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+                            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex items-center gap-4">
                                 <div className="w-11 h-11 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
                                     <Trophy size={22} />
                                 </div>
@@ -164,7 +164,7 @@ export default function AdminUserDetailPage() {
                                     <div className="text-xs font-bold text-gray-400 mt-0.5">{t('gamification.level')}</div>
                                 </div>
                             </div>
-                            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+                            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex items-center gap-4">
                                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${streak > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-white/10 text-gray-400'}`}>
                                     <Flame size={22} />
                                 </div>
@@ -178,16 +178,16 @@ export default function AdminUserDetailPage() {
 
                     {/* Badges grid */}
                     {badges.length > 0 && (
-                        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 animate-fade-in-up">
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 animate-fade-in-up">
                             <h3 className="font-black text-white mb-4">{t('gamification.badges')}</h3>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                 {badges.map(b => (
                                     <div
                                         key={b.id}
                                         title={b.badgeType}
-                                        className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex flex-col items-center gap-1.5 text-center"
+                                        className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-3 flex flex-col items-center gap-1.5 text-center"
                                     >
-                                        <Trophy size={20} className="text-amber-400" />
+                                        <Trophy size={20} className="text-brand-gold-light" />
                                         <span className="text-[10px] font-bold text-gray-200 leading-tight break-all">{b.badgeType}</span>
                                     </div>
                                 ))}

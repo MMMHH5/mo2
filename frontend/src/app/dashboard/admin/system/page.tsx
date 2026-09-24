@@ -44,8 +44,8 @@ export default function AdminSystemPage() {
         <div className="space-y-6 animate-fade-in">
             <PageHeader title={t('admin.system_heading')} subtitle={t('admin.system_subtitle')} />
 
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0d1f3c] via-[#0e2a52] to-[#111f3a] p-7 flex flex-wrap items-center justify-between gap-4">
-                <div className="absolute -top-16 -right-10 w-56 h-56 bg-amber-500/15 rounded-full blur-3xl" />
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-navy via-[#0e2a52] to-brand-navy-dark p-7 flex flex-wrap items-center justify-between gap-4">
+                <div className="absolute -top-16 -right-10 w-56 h-56 bg-brand-gold/15 rounded-full blur-3xl" />
                 <div className="relative flex items-center gap-5">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur ${healthy ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
                         <Activity size={28} />
@@ -65,17 +65,17 @@ export default function AdminSystemPage() {
             <section>
                 <SectionHeader icon={Activity} title={t('admin.health_check_title')} subtitle={t('admin.health_check_subtitle')} color="green" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-500/15 text-blue-400 rounded-xl flex items-center justify-center"><Database size={20} /></div>
+                                <div className="w-10 h-10 bg-brand-navy-light/15 text-brand-navy-light rounded-xl flex items-center justify-center"><Database size={20} /></div>
                                 <span className="font-black text-white">{t('admin.database_label')}</span>
                             </div>
                             {healthLoading ? loadingBadge : <Badge tone={dbUp ? 'green' : 'red'} dot>{dbUp ? t('admin.status_up') : t('admin.status_down')}</Badge>}
                         </div>
                         <p className="text-xs text-gray-400 font-semibold">PostgreSQL / Prisma</p>
                     </div>
-                    <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-purple-500/15 text-purple-400 rounded-xl flex items-center justify-center"><MemoryStick size={20} /></div>
@@ -90,16 +90,16 @@ export default function AdminSystemPage() {
 
             <section>
                 <SectionHeader icon={Cpu} title={t('admin.platform_info')} subtitle={t('admin.platform_info_desc')} color="navy" />
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <div className="bg-white/5 rounded-xl p-4">
                             <div className="text-xs font-bold text-gray-400 mb-1.5">{t('admin.app_name_label')}</div>
-                            <div className="font-black text-white flex items-center gap-2"><Globe size={16} className="text-amber-400" /> LaxaLab</div>
+                            <div className="font-black text-white flex items-center gap-2"><Globe size={16} className="text-brand-gold-light" /> LaxaLab</div>
                         </div>
                         <div className="bg-white/5 rounded-xl p-4">
                             <div className="text-xs font-bold text-gray-400 mb-1.5">{t('admin.environment')}</div>
                             <div className="font-black text-white flex items-center gap-2">
-                                <Server size={16} className="text-amber-400" />
+                                <Server size={16} className="text-brand-gold-light" />
                                 {env === 'production' ? t('admin.environment_production') : t('admin.environment_development')}
                             </div>
                         </div>
@@ -113,7 +113,7 @@ export default function AdminSystemPage() {
 
             <section>
                 <SectionHeader icon={Settings} title={t('admin.platform_vars')} subtitle={t('admin.platform_vars_desc')} color="amber" />
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                     <div className="grid gap-5 md:grid-cols-2">
                         <div>
                             <label htmlFor="platformName" className="block text-sm font-bold text-gray-300 mb-1">{t('admin.settings_platform_name')}</label>
@@ -123,7 +123,7 @@ export default function AdminSystemPage() {
                                 value={platformName}
                                 onChange={e => setPlatformName(e.target.value)}
                                 placeholder="LaxaLab"
-                                className="w-full px-3 py-2 bg-[#0a1830] border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="w-full px-3 py-2 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <div>
@@ -132,7 +132,7 @@ export default function AdminSystemPage() {
                                 id="platformCurrency"
                                 value={platformCurrency}
                                 onChange={e => setPlatformCurrency(e.target.value)}
-                                className="w-full px-3 py-2 bg-[#0a1830] border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="w-full px-3 py-2 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-brand-gold outline-none transition"
                             >
                                 {['USD', 'EUR', 'SAR', 'AED', 'YER'].map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
@@ -145,7 +145,7 @@ export default function AdminSystemPage() {
                                 min={1}
                                 value={maxUploadSize}
                                 onChange={e => setMaxUploadSize(Number(e.target.value))}
-                                className="w-full px-3 py-2 bg-[#0a1830] border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="w-full px-3 py-2 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <div className="flex items-end pb-2">
@@ -154,7 +154,7 @@ export default function AdminSystemPage() {
                                     type="checkbox"
                                     checked={allowRegistration}
                                     onChange={e => setAllowRegistration(e.target.checked)}
-                                    className="w-4 h-4 accent-amber-500"
+                                    className="w-4 h-4 accent-brand-gold"
                                 />
                                 {t('admin.settings_allow_registration')}
                             </label>
@@ -167,7 +167,7 @@ export default function AdminSystemPage() {
                                 value={smtpHost}
                                 onChange={e => setSmtpHost(e.target.value)}
                                 placeholder="smtp.example.com"
-                                className="w-full px-3 py-2 bg-[#0a1830] border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="w-full px-3 py-2 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <div>
@@ -178,7 +178,7 @@ export default function AdminSystemPage() {
                                 value={smtpPort}
                                 onChange={e => setSmtpPort(e.target.value)}
                                 placeholder="587"
-                                className="w-full px-3 py-2 bg-[#0a1830] border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="w-full px-3 py-2 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                     </div>
@@ -190,7 +190,7 @@ export default function AdminSystemPage() {
             </section>
 
             <Link href="/dashboard/admin/audit">
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 hover:bg-[#152540] transition cursor-pointer">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4 hover:bg-[#152540] transition cursor-pointer">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-red-500/10 text-red-400 rounded-xl flex items-center justify-center"><ShieldAlert size={22} /></div>
                         <div>
@@ -198,7 +198,7 @@ export default function AdminSystemPage() {
                             <p className="text-sm text-gray-400">{t('admin.audit_logs_desc')}</p>
                         </div>
                     </div>
-                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-5 py-2.5 rounded-xl font-bold text-sm hover:from-amber-600 hover:to-amber-700 transition-all duration-200">
+                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-5 py-2.5 rounded-xl font-bold text-sm hover:from-brand-gold-dark hover:to-brand-gold-dark transition-all duration-200">
                         {t('admin.view_audit')}
                     </span>
                 </div>

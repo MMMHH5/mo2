@@ -42,12 +42,12 @@ export default function AdminTicketsPage() {
             key={s}
             onClick={() => setStatusFilter(s)}
             className={`rounded-xl p-3 text-start transition-all duration-200 ${statusFilter === s
-                ? 'bg-gradient-to-br from-[#0d1f3c] to-[#111f3a] text-white shadow-lg shadow-black/25 scale-[1.02] border border-white/10'
-                : 'bg-[#111f3a] border border-white/5 hover:shadow-md'
+                ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 scale-[1.02] border border-white/10'
+                : 'bg-brand-navy-dark border border-white/5 hover:shadow-md'
                 }`}
         >
             <div className="admin-stat-value">{counts[s]}</div>
-            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-amber-400' : 'text-gray-500'}`}>
+            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-brand-gold-light' : 'text-gray-500'}`}>
                 {s === 'ALL' ? t('admin.filter_all') : t('statuses.' + s.toLowerCase())}
             </div>
         </button>
@@ -102,9 +102,9 @@ export default function AdminTicketsPage() {
             </div>
 
             {loading ? (
-                <div className="h-40 flex items-center justify-center text-amber-500"><Loader className="animate-spin" size={32} /></div>
+                <div className="h-40 flex items-center justify-center text-brand-gold"><Loader className="animate-spin" size={32} /></div>
             ) : (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-white/5">
@@ -128,7 +128,7 @@ export default function AdminTicketsPage() {
                                             value={tk.status}
                                             onChange={(e) => changeStatus(tk.id, e.target.value)}
                                             disabled={processing === tk.id}
-                                            className="px-2 py-1.5 border border-white/10 rounded-lg text-sm font-bold focus:ring-2 focus:ring-amber-500 outline-none bg-[#0a1830] text-white"
+                                            className="px-2 py-1.5 border border-white/10 rounded-lg text-sm font-bold focus:ring-2 focus:ring-brand-gold outline-none bg-brand-navy-dark text-white"
                                         >
                                             <option value="OPEN">{t('support.status_open')}</option>
                                             <option value="IN_PROGRESS">{t('support.status_in_progress')}</option>
@@ -142,7 +142,7 @@ export default function AdminTicketsPage() {
                                             value={replies[tk.id] ?? tk.adminNotes ?? ''}
                                             onChange={(e) => setReplies((prev) => ({ ...prev, [tk.id]: e.target.value }))}
                                             placeholder={t('support.reply_placeholder')}
-                                            className="w-full px-3 py-2 bg-[#0a1830] border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition resize-none"
+                                            className="w-full px-3 py-2 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition resize-none"
                                         />
                                         <button
                                             onClick={() => saveReply(tk.id)}

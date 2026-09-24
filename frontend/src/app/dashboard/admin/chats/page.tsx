@@ -97,7 +97,7 @@ export default function AdminChatsPage() {
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
-                            filter === f ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black' : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                            filter === f ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                         }`}
                     >
                         {t(`adminChats.filter_${f}`)}
@@ -106,11 +106,11 @@ export default function AdminChatsPage() {
             </div>
 
             {loading ? (
-                <div className="h-64 flex items-center justify-center text-amber-500">
+                <div className="h-64 flex items-center justify-center text-brand-gold">
                     <Loader className="animate-spin" size={32} />
                 </div>
             ) : (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-hidden">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
@@ -176,10 +176,10 @@ export default function AdminChatsPage() {
             )}
 
             {selectedChat && (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-hidden">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-hidden">
                     <div className="flex items-center justify-between gap-3 p-5 border-b border-white/5">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-amber-500/15 text-amber-400 rounded-xl flex items-center justify-center">
+                            <div className="w-9 h-9 bg-brand-gold/15 text-brand-gold-light rounded-xl flex items-center justify-center">
                                 <MessageCircle size={18} />
                             </div>
                             <div>
@@ -193,14 +193,14 @@ export default function AdminChatsPage() {
                             <X size={20} />
                         </button>
                     </div>
-                    <div className="p-5 h-[420px] overflow-y-auto flex flex-col gap-3 bg-[#0d1f3c]">
+                    <div className="p-5 h-[420px] overflow-y-auto flex flex-col gap-3 bg-brand-navy">
                         {threadLoading ? (
-                            <div className="m-auto text-amber-500">
+                            <div className="m-auto text-brand-gold">
                                 <Loader className="animate-spin" size={28} />
                             </div>
                         ) : thread && thread.length === 0 ? (
                             <div className="m-auto text-center text-gray-400">
-                                <Inbox size={36} className="mx-auto mb-2 text-amber-500/60" />
+                                <Inbox size={36} className="mx-auto mb-2 text-brand-gold/60" />
                                 <p className="font-bold">{t('adminChats.no_messages')}</p>
                             </div>
                         ) : thread ? (
@@ -209,14 +209,14 @@ export default function AdminChatsPage() {
                                     <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
                                         m.senderId === selectedChat.student.id
                                             ? 'bg-white/5 border border-white/10 text-gray-300 rounded-bl-md'
-                                            : 'bg-amber-500/20 text-white rounded-br-md'
+                                            : 'bg-brand-gold/20 text-white rounded-br-md'
                                     }`}>
-                                        <div className="text-[10px] font-bold mb-0.5 text-amber-400">
+                                        <div className="text-[10px] font-bold mb-0.5 text-brand-gold-light">
                                             {m.sender?.email ?? ''}
                                         </div>
                                         {m.content && <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>}
                                         {m.attachmentUrl && (
-                                            <a href={`${API_BASE_URL}${m.attachmentUrl}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 underline text-xs text-amber-400">
+                                            <a href={`${API_BASE_URL}${m.attachmentUrl}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 underline text-xs text-brand-gold-light">
                                                 <FileText size={12} /> {m.attachmentUrl.split('/').pop()}
                                             </a>
                                         )}

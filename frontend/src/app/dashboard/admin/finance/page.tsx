@@ -91,12 +91,12 @@ export default function AdminFinancePage() {
             key={s}
             onClick={() => setStatusFilter(s)}
             className={`rounded-xl p-3 text-start transition-all duration-200 ${statusFilter === s
-                ? 'bg-gradient-to-br from-[#0d1f3c] to-[#111f3a] text-white shadow-lg shadow-black/25 scale-[1.02] border border-white/10'
-                : 'bg-[#111f3a] border border-white/5 hover:shadow-md'
+                ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 scale-[1.02] border border-white/10'
+                : 'bg-brand-navy-dark border border-white/5 hover:shadow-md'
                 }`}
         >
             <div className="admin-stat-value">{counts[s]}</div>
-            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-amber-400' : 'text-gray-500'}`}>
+            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-brand-gold-light' : 'text-gray-500'}`}>
                 {s === 'ALL' ? t('admin.filter_all') : t('statuses.' + s.toLowerCase())}
             </div>
         </button>
@@ -113,11 +113,11 @@ export default function AdminFinancePage() {
             />
 
             {/* Tabs */}
-            <div className="flex gap-2 p-1.5 bg-[#111f3a] border border-white/5 rounded-2xl w-fit animate-fade-in-up">
+            <div className="flex gap-2 p-1.5 bg-brand-navy-dark border border-white/5 rounded-2xl w-fit animate-fade-in-up">
                 <button
                     onClick={() => setActiveTab('enrollments')}
                     className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'enrollments'
-                        ? 'bg-gradient-to-br from-[#0d1f3c] to-[#111f3a] text-white shadow-lg shadow-black/25 border border-white/10'
+                        ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 border border-white/10'
                         : 'text-gray-500 hover:text-gray-300'
                         }`}
                 >
@@ -126,7 +126,7 @@ export default function AdminFinancePage() {
                 <button
                     onClick={() => setActiveTab('payments')}
                     className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'payments'
-                        ? 'bg-gradient-to-br from-[#0d1f3c] to-[#111f3a] text-white shadow-lg shadow-black/25 border border-white/10'
+                        ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 border border-white/10'
                         : 'text-gray-500 hover:text-gray-300'
                         }`}
                 >
@@ -165,7 +165,7 @@ export default function AdminFinancePage() {
                                     </td>
                                     <td className="p-4">
                                         <div className="font-bold text-white">{pick(e.course, 'title')}</div>
-                                        <div className="text-sm font-black text-amber-400">${e.opening?.price ?? '—'}</div>
+                                        <div className="text-sm font-black text-brand-gold-light">${e.opening?.price ?? '—'}</div>
                                         {pick(e.opening, 'name') && <div className="text-xs text-gray-500 mt-0.5">{pick(e.opening, 'name')}</div>}
                                     </td>
                                     <td className="p-4">
@@ -203,8 +203,8 @@ export default function AdminFinancePage() {
             {/* Receipt modal */}
             {selected && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl animate-scale-in">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-[#0d1f3c] to-[#111f3a]">
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl animate-scale-in">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-brand-navy to-brand-navy-dark">
                             <div>
                                 <h3 className="text-xl font-black text-white">{isRejecting ? t('finance.reject_title') : t('finance.verification_title')}</h3>
                                 <p className="text-sm text-gray-400 mt-1">
@@ -214,7 +214,7 @@ export default function AdminFinancePage() {
                             <button onClick={() => { setSelected(null); setIsRejecting(false); setReason(''); }} className="admin-action-btn bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition"><X size={22} /></button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto flex-1 bg-[#0a1830] flex flex-col items-center justify-center relative">
+                        <div className="p-6 overflow-y-auto flex-1 bg-brand-navy-dark flex flex-col items-center justify-center relative">
                             {selected.receiptFileUrl ? (
                                 selected.receiptFileUrl.toLowerCase().endsWith('.pdf') ? (
                                     <iframe src={`${API_BASE_URL}${selected.receiptFileUrl}`} className="w-full h-[500px] rounded-xl shadow-md border border-white/10" title="PDF Receipt" />
@@ -230,16 +230,16 @@ export default function AdminFinancePage() {
                                 </div>
                             )}
                             {selected.receiptFileUrl && (
-                                <a href={`${API_BASE_URL}${selected.receiptFileUrl}`} target="_blank" rel="noreferrer" className="absolute top-8 right-8 bg-[#111f3a] border border-white/10 p-2.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition text-gray-300 hover:text-white">
+                                <a href={`${API_BASE_URL}${selected.receiptFileUrl}`} target="_blank" rel="noreferrer" className="absolute top-8 right-8 bg-brand-navy-dark border border-white/10 p-2.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition text-gray-300 hover:text-white">
                                     <ExternalLink size={20} />
                                 </a>
                             )}
                         </div>
 
                         {isRejecting ? (
-                            <div className="p-6 border-t border-white/10 bg-[#0d1f3c]">
+                            <div className="p-6 border-t border-white/10 bg-brand-navy">
                                 <label className="block text-sm font-bold text-gray-300 mb-2">{t('finance.reason_label')}</label>
-                                <textarea className="w-full border border-white/10 rounded-xl p-4 bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-red-400 outline-none transition" rows={3} placeholder={t('finance.reason_placeholder')} value={reason} onChange={e => setReason(e.target.value)} />
+                                <textarea className="w-full border border-white/10 rounded-xl p-4 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-red-400 outline-none transition" rows={3} placeholder={t('finance.reason_placeholder')} value={reason} onChange={e => setReason(e.target.value)} />
                                 <div className="flex gap-4 mt-4">
                                     <button onClick={() => handleVerify(selected.id, 'REJECTED')} disabled={processing} className="flex-1 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-bold py-3.5 rounded-xl disabled:opacity-50 transition shadow-md shadow-red-500/20">
                                         {processing ? t('common.processing') : t('finance.confirm_rejection')}
@@ -247,8 +247,8 @@ export default function AdminFinancePage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-6 border-t border-white/10 bg-[#0d1f3c] flex gap-4">
-                                <button onClick={() => handleVerify(selected.id, 'APPROVED')} disabled={processing} className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-black font-black py-4 rounded-xl shadow-md shadow-amber-500/25 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                            <div className="p-6 border-t border-white/10 bg-brand-navy flex gap-4">
+                                <button onClick={() => handleVerify(selected.id, 'APPROVED')} disabled={processing} className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:opacity-90 text-black font-black py-4 rounded-xl shadow-md shadow-brand-gold/25 disabled:opacity-50 transition flex items-center justify-center gap-2">
                                     <Check size={20} /> {t('finance.approve_activate')}
                                 </button>
                                 <button onClick={() => setIsRejecting(true)} disabled={processing} className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 font-bold py-4 rounded-xl disabled:opacity-50 transition flex items-center justify-center gap-2">
@@ -284,7 +284,7 @@ export default function AdminFinancePage() {
                                         <tr key={p.id} className="animate-fade-in hover:bg-white/5">
                                             <td className="p-4 font-bold text-gray-200">{p.user?.email || t('finance.unknown_student')}</td>
                                             <td className="p-4 font-bold text-white">{pick(p.enrollment?.course, 'title') || '—'}</td>
-                                            <td className="p-4 font-black text-amber-400">{formatPrice(p.amount, { locale })}</td>
+                                            <td className="p-4 font-black text-brand-gold-light">{formatPrice(p.amount, { locale })}</td>
                                             <td className="p-4">
                                                 <Badge tone={statusTone[p.status] || 'gray'} dot>{t('statuses.' + (p.status || '').toLowerCase())}</Badge>
                                             </td>

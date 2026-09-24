@@ -37,8 +37,8 @@ const EVENT_TYPES = ['deadline', 'live_session', 'exam', 'other'] as const;
 
 const EVENT_STYLES: Record<string, { dot: string; badge: string; ar: string; en: string }> = {
     deadline: { dot: 'bg-red-500', badge: 'bg-red-500/10 text-red-300 border-red-500/30', ar: 'موعد نهائي', en: 'Deadline' },
-    live_session: { dot: 'bg-blue-500', badge: 'bg-blue-500/10 text-blue-300 border-blue-500/30', ar: 'جلسة مباشرة', en: 'Live session' },
-    exam: { dot: 'bg-amber-400', badge: 'bg-amber-500/10 text-amber-300 border-amber-500/30', ar: 'اختبار', en: 'Exam' },
+    live_session: { dot: 'bg-brand-navy-light', badge: 'bg-brand-navy-light/10 text-blue-300 border-brand-navy-light/30', ar: 'جلسة مباشرة', en: 'Live session' },
+    exam: { dot: 'bg-brand-gold-light', badge: 'bg-brand-gold/10 text-brand-gold-light border-brand-gold/30', ar: 'اختبار', en: 'Exam' },
     other: { dot: 'bg-gray-500', badge: 'bg-gray-500/10 text-gray-300 border-gray-500/30', ar: 'أخرى', en: 'Other' },
 };
 
@@ -151,13 +151,13 @@ export default function AcademicCalendar({ openingId }: Props) {
         <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="flex items-center gap-2 text-lg font-black text-white">
-                    <CalendarDays size={20} className="text-amber-400" />
+                    <CalendarDays size={20} className="text-brand-gold-light" />
                     {isAr ? 'التقويم الأكاديمي' : 'Academic Calendar'}
                 </h3>
                 {canCreate && (
                     <button
                         onClick={() => setModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition"
                     >
                         <Plus size={16} /> {isAr ? 'حدث جديد' : 'New Event'}
                     </button>
@@ -179,15 +179,15 @@ export default function AcademicCalendar({ openingId }: Props) {
 
             {loading ? (
                 <div className="flex items-center justify-center py-20">
-                    <Loader size={28} className="animate-spin text-amber-400" />
+                    <Loader size={28} className="animate-spin text-brand-gold-light" />
                 </div>
             ) : error ? (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8 text-center">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
                     <CalendarDays size={32} className="mx-auto text-gray-600 mb-3" />
                     <p className="text-gray-400 font-bold text-sm">{error}</p>
                 </div>
             ) : (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-4 sm:p-5">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-4 sm:p-5">
                     {/* Month nav */}
                     <div className="flex items-center justify-between mb-4">
                         <button
@@ -231,13 +231,13 @@ export default function AcademicCalendar({ openingId }: Props) {
                                     onClick={() => setSelectedDate(isSelected ? null : key)}
                                     className={`relative h-16 sm:h-20 rounded-xl border p-1.5 text-start transition-all ${
                                         isSelected
-                                            ? 'border-amber-500/50 bg-amber-500/10'
+                                            ? 'border-brand-gold/50 bg-brand-gold/10'
                                             : isToday
-                                              ? 'border-amber-500/30 bg-white/[0.03]'
+                                              ? 'border-brand-gold/30 bg-white/[0.03]'
                                               : 'border-white/5 bg-white/[0.02] hover:border-white/15 hover:bg-white/5'
                                     }`}
                                 >
-                                    <span className={`text-xs font-black tabular-nums ${isToday ? 'text-amber-400' : 'text-gray-300'}`}>
+                                    <span className={`text-xs font-black tabular-nums ${isToday ? 'text-brand-gold-light' : 'text-gray-300'}`}>
                                         {day}
                                     </span>
                                     {dayEvents.length > 0 && (
@@ -299,7 +299,7 @@ export default function AcademicCalendar({ openingId }: Props) {
             {modalOpen && openingId && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalOpen(false)}>
                     <div
-                        className="bg-[#0d1f3c] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+                        className="bg-brand-navy border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-6 border-b border-white/5">
@@ -317,7 +317,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                         value={form.titleAr}
                                         onChange={(e) => setForm({ ...form, titleAr: e.target.value })}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                                 <div>
@@ -327,7 +327,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                         value={form.titleEn}
                                         onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                             </div>
@@ -339,7 +339,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                         onChange={(e) => setForm({ ...form, descriptionAr: e.target.value })}
                                         rows={2}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                     />
                                 </div>
                                 <div>
@@ -349,7 +349,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                         onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })}
                                         rows={2}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                     />
                                 </div>
                             </div>
@@ -359,7 +359,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                     <select
                                         value={form.eventType}
                                         onChange={(e) => setForm({ ...form, eventType: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500/50 [&>option]:bg-[#0d1f3c]"
+                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [&>option]:bg-brand-navy"
                                     >
                                         {EVENT_TYPES.map((type) => (
                                             <option key={type} value={type}>
@@ -374,7 +374,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                         type="datetime-local"
                                         value={form.startsAt}
                                         onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 [color-scheme:dark]"
+                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [color-scheme:dark]"
                                     />
                                 </div>
                                 <div>
@@ -383,7 +383,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                         type="datetime-local"
                                         value={form.endsAt}
                                         onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 [color-scheme:dark]"
+                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [color-scheme:dark]"
                                     />
                                 </div>
                             </div>
@@ -398,7 +398,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                             <button
                                 onClick={saveEvent}
                                 disabled={saving}
-                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition-all disabled:opacity-50 flex items-center gap-2"
+                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition-all disabled:opacity-50 flex items-center gap-2"
                             >
                                 {saving && <Loader size={14} className="animate-spin" />}
                                 {isAr ? 'إنشاء' : 'Create'}

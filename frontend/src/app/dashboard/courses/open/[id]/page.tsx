@@ -22,8 +22,8 @@ export default function OpenCoursePage() {
             onClick={() => setTab(key)}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
                 tab === key
-                    ? 'bg-brand-navy text-white shadow-md shadow-brand-navy/20'
-                    : 'text-gray-500 hover:bg-brand-mist/50'
+                    ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black shadow-md shadow-brand-gold/20'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
             }`}
         >
             {icon}
@@ -34,7 +34,7 @@ export default function OpenCoursePage() {
     return (
         <ProtectedRoute allowedRoles={['ADMIN', 'COURSE_MANAGER']}>
             <div className="animate-fade-in space-y-6">
-                <div className="inline-flex items-center gap-1 bg-white border border-brand-mist rounded-2xl p-1 shadow-sm">
+                <div className="inline-flex items-center gap-1 bg-brand-navy-dark border border-white/10 rounded-2xl p-1">
                     {tabBtn('setup', <Settings2 size={16} />, t('roster.tab_setup'))}
                     {tabBtn('students', <Users size={16} />, t('roster.tab_label'))}
                 </div>
@@ -42,11 +42,11 @@ export default function OpenCoursePage() {
                 {tab === 'setup' && <OpeningForm courseId={String(id)} openingId={openingId} />}
 
                 {tab === 'students' && !openingId && (
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-brand-mist text-center">
-                        <p className="text-gray-500 font-bold">{t('roster.save_first_hint')}</p>
+                    <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 text-center">
+                        <p className="text-gray-300 font-bold">{t('roster.save_first_hint')}</p>
                         <button
                             onClick={() => setTab('setup')}
-                            className="mt-4 inline-flex items-center gap-2 bg-brand-navy text-white px-5 py-2.5 rounded-xl font-bold hover:bg-brand-charcoal transition cursor-pointer"
+                            className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-5 py-2.5 rounded-xl font-bold hover:opacity-95 transition cursor-pointer"
                         >
                             <ArrowLeft size={16} /> {t('roster.save_first_btn')}
                         </button>

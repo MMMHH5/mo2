@@ -141,14 +141,14 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-amber-400" />
+                <Loader size={28} className="animate-spin text-brand-gold-light" />
             </div>
         );
     }
 
     if (error || !rubric) {
         return (
-            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8 text-center">
+            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
                 <ClipboardCheck size={32} className="mx-auto text-gray-600 mb-3" />
                 <p className="text-gray-400 font-bold text-sm">{error || (isAr ? 'لا توجد سلسلة تقييم لهذه المهمة' : 'No rubric found for this task')}</p>
             </div>
@@ -159,7 +159,7 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
         <div className="space-y-5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="flex items-center gap-2 text-lg font-black text-white">
-                    <ClipboardCheck size={20} className="text-amber-400" />
+                    <ClipboardCheck size={20} className="text-brand-gold-light" />
                     {pick(rubric, 'title') || (isAr ? 'تقييم الأقران' : 'Peer Review')}
                 </h3>
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500">
@@ -169,14 +169,14 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
             </div>
 
             {/* ===== My review form ===== */}
-            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 space-y-5">
+            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 space-y-5">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                     <h4 className="text-sm font-black text-white">
                         {myReview ? (isAr ? 'تعديل مراجعتك' : 'Update your review') : (isAr ? 'مراجعتك' : 'Your review')}
                     </h4>
                     <span className={`px-3 py-1 rounded-lg text-xs font-black tabular-nums ${
                         totalGiven >= totalMax / 2
-                            ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                            ? 'bg-brand-gold/10 text-brand-gold-light border border-brand-gold/30'
                             : 'bg-red-500/10 text-red-300 border border-red-500/30'
                     }`}>
                         {totalGiven} / {totalMax}
@@ -204,7 +204,7 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                                         <span className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-black tabular-nums ${
                                             val === undefined
                                                 ? 'bg-white/5 text-gray-500'
-                                                : 'bg-amber-500/10 text-amber-300'
+                                                : 'bg-brand-gold/10 text-brand-gold-light'
                                         }`}>
                                             {val === undefined ? `? / ${max}` : `${val} / ${max}`}
                                         </span>
@@ -216,14 +216,14 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                                         step={1}
                                         value={val ?? 0}
                                         onChange={(e) => setScores((prev) => ({ ...prev, [c.id]: Number(e.target.value) }))}
-                                        className="w-full accent-amber-500 cursor-pointer"
+                                        className="w-full accent-brand-gold cursor-pointer"
                                     />
                                     <input
                                         type="text"
                                         value={comments[c.id] || ''}
                                         onChange={(e) => setComments((prev) => ({ ...prev, [c.id]: e.target.value }))}
                                         placeholder={isAr ? `تعليق على "${pick(c, 'title')}" (اختياري)...` : `Comment on "${pick(c, 'title')}" (optional)...`}
-                                        className="mt-2.5 w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="mt-2.5 w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-xs focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                             );
@@ -233,7 +233,7 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
 
                 <div>
                     <label className="flex items-center gap-1.5 text-sm font-bold text-gray-300 mb-1.5">
-                        <MessageSquareQuote size={14} className="text-amber-400" />
+                        <MessageSquareQuote size={14} className="text-brand-gold-light" />
                         {isAr ? 'تعليق عام' : 'Overall comment'}
                     </label>
                     <textarea
@@ -241,14 +241,14 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                         onChange={(e) => setOverall(e.target.value)}
                         rows={3}
                         placeholder={isAr ? 'رأيك العام في هذا العمل...' : 'Your overall feedback on this submission...'}
-                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                     />
                 </div>
 
                 <button
                     onClick={submitReview}
                     disabled={submitting || criteria.length === 0}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-black bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition disabled:opacity-50"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-black bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
                 >
                     {submitting ? <Loader size={15} className="animate-spin" /> : <Send size={15} />}
                     {myReview ? (isAr ? 'تحديث المراجعة' : 'Update review') : (isAr ? 'إرسال المراجعة' : 'Submit review')}
@@ -257,7 +257,7 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
 
             {/* ===== Received reviews summary ===== */}
             {reviews.length > 0 && (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 space-y-5">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 space-y-5">
                     <h4 className="text-sm font-black text-white">{isAr ? 'ملخص المراجعات المستلمة' : 'Received reviews summary'}</h4>
 
                     <div className="space-y-3.5">
@@ -275,7 +275,7 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                                     </div>
                                     <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-700"
+                                            className="h-full rounded-full bg-gradient-to-r from-brand-gold-dark to-brand-gold-light transition-all duration-700"
                                             style={{ width: `${Math.max(2, pct)}%` }}
                                         />
                                     </div>

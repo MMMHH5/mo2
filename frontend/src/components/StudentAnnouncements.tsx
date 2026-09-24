@@ -75,7 +75,7 @@ export default function StudentAnnouncements() {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-12">
-                <Loader size={24} className="animate-spin text-amber-400" />
+                <Loader size={24} className="animate-spin text-brand-gold-light" />
             </div>
         );
     }
@@ -83,8 +83,8 @@ export default function StudentAnnouncements() {
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                    <Bell size={20} className="text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center">
+                    <Bell size={20} className="text-brand-gold-light" />
                 </div>
                 <div>
                     <h3 className="text-xl font-black text-white">{t('announcements.title')}</h3>
@@ -93,7 +93,7 @@ export default function StudentAnnouncements() {
             </div>
 
             {announcements.length === 0 ? (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8">
                     <EmptyPanel icon={Megaphone} title={isAr ? 'لا توجد إعلانات' : 'No announcements yet'} />
                 </div>
             ) : (
@@ -101,11 +101,11 @@ export default function StudentAnnouncements() {
                     {announcements.map((a) => (
                         <div
                             key={a.id}
-                            className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 hover:border-amber-500/20 transition-all duration-200"
+                            className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 hover:border-brand-gold/20 transition-all duration-200"
                         >
                             <div className="flex items-start gap-3">
-                                <div className="shrink-0 w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mt-0.5">
-                                    <Megaphone size={18} className="text-amber-400" />
+                                <div className="shrink-0 w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center mt-0.5">
+                                    <Megaphone size={18} className="text-brand-gold-light" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-white font-bold text-base mb-1">{isAr ? a.titleAr : a.titleEn}</h4>

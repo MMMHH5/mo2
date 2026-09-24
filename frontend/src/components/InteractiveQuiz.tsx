@@ -223,7 +223,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-amber-400" />
+                <Loader size={28} className="animate-spin text-brand-gold-light" />
             </div>
         );
     }
@@ -245,7 +245,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
         const correctCount = questions.filter((q) => detailMap.get(q.id)?.isCorrect).length || (result.score >= passScore ? questions.length : 0);
         return (
             <div className="space-y-5 animate-fade-in">
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
                     <ScoreRing pct={Number(result.score ?? 0)} passed={!!result.passed} />
                     <div className="flex-1 text-center sm:text-start space-y-2">
                         <h3 className={`text-xl font-black ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
@@ -258,7 +258,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         </p>
                         <button
                             onClick={startQuiz}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-brand-gold/10 text-brand-gold-light border border-brand-gold/30 hover:bg-brand-gold/20 transition"
                         >
                             <RotateCcw size={14} /> {isAr ? 'إعادة المحاولة' : 'Retake quiz'}
                         </button>
@@ -273,7 +273,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         const correctIdx = d?.correctAnswer || [];
                         const explanation = isAr ? q.explanationAr : q.explanationEn;
                         return (
-                            <div key={q.id} className={`bg-[#111f3a] border rounded-2xl p-5 ${d?.isCorrect ? 'border-green-500/20' : 'border-red-500/20'}`}>
+                            <div key={q.id} className={`bg-brand-navy-dark border rounded-2xl p-5 ${d?.isCorrect ? 'border-green-500/20' : 'border-red-500/20'}`}>
                                 <div className="flex items-start justify-between gap-3 mb-3">
                                     <h4 className="text-white font-bold text-sm leading-relaxed">
                                         {qi + 1}. {pick(q, 'text')}
@@ -304,7 +304,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                                     })}
                                 </div>
                                 {explanation && (
-                                    <div className="border-s-2 border-amber-500 ps-3 text-xs text-amber-200/80 leading-relaxed">
+                                    <div className="border-s-2 border-brand-gold ps-3 text-xs text-brand-gold-light/70/80 leading-relaxed">
                                         {explanation}
                                     </div>
                                 )}
@@ -324,7 +324,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
         const lowTime = secondsLeft <= 30;
         return (
             <div className="space-y-4">
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                     <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
                         <div>
                             <h3 className="text-white font-black">{pick(quiz, 'title')}</h3>
@@ -339,18 +339,18 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         </span>
                     </div>
                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                        <div className="h-full bg-gradient-to-r from-brand-gold to-brand-gold-light rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                     </div>
                     <p className="text-[11px] text-gray-500 font-bold mt-1.5">
                         {isAr ? `أجبت على ${answeredCount} من ${questions.length}` : `Answered ${answeredCount} of ${questions.length}`}
                     </p>
                 </div>
 
-                <div key={current} className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 animate-fade-in">
+                <div key={current} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 animate-fade-in">
                     <span className={`inline-block mb-4 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
                         isMultiple(q)
-                            ? 'bg-blue-500/10 text-blue-300 border-blue-500/30'
-                            : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                            ? 'bg-brand-navy-light/10 text-blue-300 border-brand-navy-light/30'
+                            : 'bg-brand-gold/10 text-brand-gold-light border-brand-gold/30'
                     }`}>
                         {isMultiple(q)
                             ? (isAr ? 'اختيار متعدد' : 'Multiple choice')
@@ -365,7 +365,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                                     key={oi}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
                                         checked
-                                            ? 'border-amber-500/50 bg-amber-500/10'
+                                            ? 'border-brand-gold/50 bg-brand-gold/10'
                                             : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/5'
                                     }`}
                                 >
@@ -374,7 +374,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                                         name={`q-${q.id}`}
                                         checked={checked}
                                         onChange={() => selectOption(q, oi)}
-                                        className="w-4 h-4 accent-amber-500 cursor-pointer"
+                                        className="w-4 h-4 accent-brand-gold cursor-pointer"
                                     />
                                     <span className={`text-sm font-semibold ${checked ? 'text-white' : 'text-gray-300'}`}>{label}</span>
                                 </label>
@@ -397,7 +397,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         <button
                             onClick={() => setCurrent((c) => Math.min(questions.length - 1, c + 1))}
                             disabled={phase === 'submitting'}
-                            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
                         >
                             {isAr ? 'التالي' : 'Next'}
                             {isAr ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
@@ -406,7 +406,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         <button
                             onClick={() => doSubmit(false)}
                             disabled={phase === 'submitting'}
-                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
                         >
                             {phase === 'submitting' ? <Loader size={14} className="animate-spin" /> : <Send size={14} />}
                             {isAr ? 'إرسال الاختبار' : 'Submit quiz'}
@@ -419,9 +419,9 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
 
     // ===== Idle / intro =====
     return (
-        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8 text-center space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-                <ListChecks size={28} className="text-amber-400" />
+        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center">
+                <ListChecks size={28} className="text-brand-gold-light" />
             </div>
             <h3 className="text-xl font-black text-white">{pick(quiz, 'title')}</h3>
             {pick(quiz, 'description') && (
@@ -462,7 +462,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
 
             <button
                 onClick={startQuiz}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-black bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-black bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition"
             >
                 {previous ? <RotateCcw size={16} /> : <ListChecks size={16} />}
                 {previous ? (isAr ? 'إعادة المحاولة' : 'Retake quiz') : (isAr ? 'ابدأ الاختبار' : 'Start quiz')}

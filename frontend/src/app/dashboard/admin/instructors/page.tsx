@@ -181,7 +181,7 @@ export default function AdminInstructorsPage() {
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         placeholder={t('admin.search_instructors')}
-                        className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-full bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                        className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-full bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                     />
                 </div>
 
@@ -211,7 +211,7 @@ export default function AdminInstructorsPage() {
                                         </td>
                                         <td className="p-4 text-sm text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
                                         <td className="p-4 text-right whitespace-nowrap">
-                                            <button onClick={() => handleToggleActive(u)} disabled={isProcessing === u.id} className={`admin-action-btn ms-1 tooltip disabled:opacity-40 ${u.isActive === false ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white' : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white'}`} title={u.isActive === false ? t('admin.activate_title') : t('admin.suspend_title')}>
+                                            <button onClick={() => handleToggleActive(u)} disabled={isProcessing === u.id} className={`admin-action-btn ms-1 tooltip disabled:opacity-40 ${u.isActive === false ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white' : 'bg-brand-gold/10 text-brand-gold-light hover:bg-brand-gold hover:text-white'}`} title={u.isActive === false ? t('admin.activate_title') : t('admin.suspend_title')}>
                                                 {u.isActive === false ? <Play size={18} /> : <Pause size={18} />}
                                             </button>
                                             <button onClick={() => handleDelete(u)} disabled={isProcessing === u.id} className="admin-action-btn bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white tooltip ms-1 disabled:opacity-40" title={t('admin.delete_user_title')}>

@@ -54,7 +54,7 @@ const VALID_TABS: Tab[] = ['roster', 'tasks', 'announcements', 'calendar', 'cont
 
 const statusColors: Record<string, string> = {
     DRAFT: 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
-    ANNOUNCEMENT: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    ANNOUNCEMENT: 'bg-brand-navy-light/10 text-brand-navy-light border border-brand-navy-light/20',
     OPEN: 'bg-green-500/10 text-green-400 border border-green-500/20',
     STARTED: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
     ENDED: 'bg-gray-500/10 text-gray-500 border border-gray-500/20',
@@ -107,7 +107,7 @@ export default function TeachingWorkspacePage() {
             onClick={() => setTab(key)}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 tab === key
-                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                    ? 'bg-brand-gold/10 text-brand-gold-light border border-brand-gold/20'
                     : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
             }`}
         >
@@ -117,8 +117,8 @@ export default function TeachingWorkspacePage() {
     );
 
     const statPill = (icon: React.ReactNode, value: string | number | null | undefined, label: string) => (
-        <div className="inline-flex items-center gap-3 bg-[#111f3a] border border-white/5 rounded-xl px-4 py-2.5">
-            <div className="text-amber-400">{icon}</div>
+        <div className="inline-flex items-center gap-3 bg-brand-navy-dark border border-white/5 rounded-xl px-4 py-2.5">
+            <div className="text-brand-gold-light">{icon}</div>
             <div>
                 <p className="text-white font-black text-sm leading-tight">{value ?? '—'}</p>
                 <p className="text-gray-400 text-xs">{label}</p>
@@ -128,7 +128,7 @@ export default function TeachingWorkspacePage() {
 
     return (
         <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-            <div className="min-h-screen bg-[#0a1830] animate-fade-in space-y-6 p-6 lg:p-8">
+            <div className="min-h-screen bg-brand-navy-dark animate-fade-in space-y-6 p-6 lg:p-8">
                 <Link
                     href="/dashboard/teaching"
                     className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-white transition mb-2"
@@ -163,7 +163,7 @@ export default function TeachingWorkspacePage() {
                     {statPill(<Hash size={16} />, statusLabel, isAr ? 'الحالة' : 'Status')}
                 </div>
 
-                <div className="inline-flex items-center gap-1 bg-[#111f3a] border border-white/5 rounded-2xl p-1.5 overflow-x-auto max-w-full">
+                <div className="inline-flex items-center gap-1 bg-brand-navy-dark border border-white/5 rounded-2xl p-1.5 overflow-x-auto max-w-full">
                     {tabBtn('roster', <Settings2 size={16} />, isAr ? 'الطلاب والدرجات' : 'Roster')}
                     {tabBtn('tasks', <ClipboardList size={16} />, t('tasks.tasks_title'))}
                     {tabBtn('announcements', <Megaphone size={16} />, isAr ? 'الإعلانات' : 'Announcements')}
@@ -177,7 +177,7 @@ export default function TeachingWorkspacePage() {
                 {tab === 'tasks' && !!openingId && <TasksPanel openingId={String(openingId)} />}
                 {tab === 'announcements' && !!openingId && <InstructorAnnouncements openingId={String(openingId)} />}
                 {tab === 'calendar' && !!openingId && (
-                    <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                         <AcademicCalendar openingId={String(openingId)} />
                     </div>
                 )}
@@ -191,34 +191,34 @@ export default function TeachingWorkspacePage() {
                     />
                 )}
                 {tab === 'chat' && opening && (
-                    <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                         <CourseChat courseId={opening.course.id} />
                     </div>
                 )}
                 {tab === 'analytics' && opening && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                    <Users size={20} className="text-amber-400" />
+                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center">
+                                    <Users size={20} className="text-brand-gold-light" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-bold">{isAr ? 'إجمالي الطلاب' : 'Total Students'}</p>
                             </div>
                             <p className="text-3xl font-black text-white">{studentCount ?? '—'}</p>
                         </div>
-                        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                    <ClipboardList size={20} className="text-amber-400" />
+                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center">
+                                    <ClipboardList size={20} className="text-brand-gold-light" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-bold">{isAr ? 'إجمالي المهام' : 'Total Tasks'}</p>
                             </div>
                             <p className="text-3xl font-black text-white">{taskCount ?? '—'}</p>
                         </div>
-                        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                    <BookOpen size={20} className="text-amber-400" />
+                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center">
+                                    <BookOpen size={20} className="text-brand-gold-light" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-bold">{isAr ? 'الدورة' : 'Course'}</p>
                             </div>
@@ -226,10 +226,10 @@ export default function TeachingWorkspacePage() {
                                 {opening ? pick(opening.course, 'title') : '—'}
                             </p>
                         </div>
-                        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6">
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                    <Hash size={20} className="text-amber-400" />
+                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center">
+                                    <Hash size={20} className="text-brand-gold-light" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-bold">{isAr ? 'الدورة' : 'Opening'}</p>
                             </div>

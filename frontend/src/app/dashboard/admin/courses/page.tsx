@@ -94,7 +94,7 @@ export default function AdminCoursesPage() {
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 placeholder={t('admin.search_courses')}
-                                className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-56 bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-56 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <BtnPrimary href="/dashboard/courses/create" icon={BookOpen}>{t('manageCourses.create_course')}</BtnPrimary>
@@ -134,7 +134,7 @@ export default function AdminCoursesPage() {
                                                 {c.coverImageUrl ? (
                                                     <Image src={`${API_BASE_URL}${c.coverImageUrl}`} alt="" width={48} height={36} unoptimized className="w-12 h-9 object-cover rounded-lg border border-white/10 shadow-sm" />
                                                 ) : (
-                                                    <div className="w-12 h-9 rounded-lg bg-gradient-to-br from-[#0d1f3c] to-[#111f3a] flex items-center justify-center text-amber-400 font-black text-xs">L</div>
+                                                    <div className="w-12 h-9 rounded-lg bg-gradient-to-br from-brand-navy to-brand-navy-dark flex items-center justify-center text-brand-gold-light font-black text-xs">L</div>
                                                 )}
                                                 <div>
                                                     <div className="font-bold text-gray-200">{pick(c, 'title')}</div>
@@ -167,7 +167,7 @@ export default function AdminCoursesPage() {
                                                 </button>
                                             </Link>
                                             <Link href={`/dashboard/courses/edit/${c.id}`}>
-                                                <button className="admin-action-btn text-blue-400 hover:bg-blue-500/10 tooltip" title={t('manageCourses.edit_tooltip')}>
+                                                <button className="admin-action-btn text-brand-navy-light hover:bg-brand-navy-light/10 tooltip" title={t('manageCourses.edit_tooltip')}>
                                                     <Pencil size={18} />
                                                 </button>
                                             </Link>
@@ -194,8 +194,8 @@ export default function AdminCoursesPage() {
             {/* Recent openings */}
             {filtered.length > 0 && (
                 <div className="admin-card p-0 overflow-hidden animate-fade-in-up">
-                    <div className="px-5 py-4 bg-gradient-to-r from-[#0d1f3c] to-[#111f3a] flex items-center gap-3">
-                        <div className="admin-tile w-8 h-8 bg-white/10 text-amber-400">
+                    <div className="px-5 py-4 bg-gradient-to-r from-brand-navy to-brand-navy-dark flex items-center gap-3">
+                        <div className="admin-tile w-8 h-8 bg-white/10 text-brand-gold-light">
                             <Package size={16} />
                         </div>
                         <span className="text-sm font-black text-white uppercase tracking-widest">{t('admin.recent_openings')}</span>

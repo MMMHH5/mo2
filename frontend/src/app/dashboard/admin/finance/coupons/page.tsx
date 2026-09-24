@@ -99,7 +99,7 @@ export default function AdminCouponsPage() {
             {loading ? (
                 <div className="h-40 flex items-center justify-center font-bold text-gray-400">Loading coupons…</div>
             ) : (
-                <div className="admin-table-wrap bg-[#111f3a] border border-white/5 rounded-2xl animate-fade-in-up">
+                <div className="admin-table-wrap bg-brand-navy-dark border border-white/5 rounded-2xl animate-fade-in-up">
                     <table className="admin-table text-left">
                         <thead>
                             <tr>
@@ -119,7 +119,7 @@ export default function AdminCouponsPage() {
                                     <tr key={c.id} className="animate-fade-in hover:bg-white/5">
                                         <td className="p-4">
                                             <span className="inline-flex items-center gap-2 font-mono font-black text-white">
-                                                <Tag size={15} className="text-amber-400" /> {c.code}
+                                                <Tag size={15} className="text-brand-gold-light" /> {c.code}
                                             </span>
                                             {!!c.courses?.length && (
                                                 <div className="text-xs text-gray-500 mt-1">
@@ -127,7 +127,7 @@ export default function AdminCouponsPage() {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="p-4 font-black text-amber-400">
+                                        <td className="p-4 font-black text-brand-gold-light">
                                             {c.type === 'PERCENTAGE' ? `${c.discount}%` : `$${c.discount}`}
                                         </td>
                                         <td className="p-4">
@@ -173,7 +173,7 @@ export default function AdminCouponsPage() {
             {/* Create coupon modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-[#111f3a] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl animate-scale-in">
+                    <div className="bg-brand-navy-dark border border-white/10 rounded-3xl w-full max-w-md shadow-2xl animate-scale-in">
                         <div className="p-6 border-b border-white/10 flex justify-between items-center">
                             <h3 className="text-xl font-black text-white">Create Coupon</h3>
                             <button onClick={() => setShowModal(false)} className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer"><X size={20} /></button>
@@ -185,7 +185,7 @@ export default function AdminCouponsPage() {
                                     value={form.code}
                                     onChange={set('code')}
                                     placeholder="SUMMER25"
-                                    className="w-full border border-white/10 rounded-xl p-3 bg-[#0a1830] text-white uppercase placeholder:text-gray-600 focus:ring-2 focus:ring-amber-400 outline-none transition"
+                                    className="w-full border border-white/10 rounded-xl p-3 bg-brand-navy-dark text-white uppercase placeholder:text-gray-600 focus:ring-2 focus:ring-brand-gold-light outline-none transition"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -197,7 +197,7 @@ export default function AdminCouponsPage() {
                                         value={form.discount}
                                         onChange={set('discount')}
                                         placeholder="25"
-                                        className="w-full border border-white/10 rounded-xl p-3 bg-[#0a1830] text-white placeholder:text-gray-600 focus:ring-2 focus:ring-amber-400 outline-none transition"
+                                        className="w-full border border-white/10 rounded-xl p-3 bg-brand-navy-dark text-white placeholder:text-gray-600 focus:ring-2 focus:ring-brand-gold-light outline-none transition"
                                     />
                                 </div>
                                 <div>
@@ -205,7 +205,7 @@ export default function AdminCouponsPage() {
                                     <select
                                         value={form.type}
                                         onChange={set('type')}
-                                        className="w-full border border-white/10 rounded-xl p-3 bg-[#0a1830] text-white focus:ring-2 focus:ring-amber-400 outline-none transition"
+                                        className="w-full border border-white/10 rounded-xl p-3 bg-brand-navy-dark text-white focus:ring-2 focus:ring-brand-gold-light outline-none transition"
                                     >
                                         <option value="PERCENTAGE">PERCENTAGE</option>
                                         <option value="FIXED">FIXED</option>
@@ -221,7 +221,7 @@ export default function AdminCouponsPage() {
                                         value={form.maxUses}
                                         onChange={set('maxUses')}
                                         placeholder="Unlimited"
-                                        className="w-full border border-white/10 rounded-xl p-3 bg-[#0a1830] text-white placeholder:text-gray-600 focus:ring-2 focus:ring-amber-400 outline-none transition"
+                                        className="w-full border border-white/10 rounded-xl p-3 bg-brand-navy-dark text-white placeholder:text-gray-600 focus:ring-2 focus:ring-brand-gold-light outline-none transition"
                                     />
                                 </div>
                                 <div>
@@ -230,7 +230,7 @@ export default function AdminCouponsPage() {
                                         type="date"
                                         value={form.expiresAt}
                                         onChange={set('expiresAt')}
-                                        className="w-full border border-white/10 rounded-xl p-3 bg-[#0a1830] text-white focus:ring-2 focus:ring-amber-400 outline-none transition"
+                                        className="w-full border border-white/10 rounded-xl p-3 bg-brand-navy-dark text-white focus:ring-2 focus:ring-brand-gold-light outline-none transition"
                                     />
                                 </div>
                             </div>
@@ -239,7 +239,7 @@ export default function AdminCouponsPage() {
                             <button
                                 onClick={handleCreate}
                                 disabled={saving}
-                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 text-black font-black py-3.5 rounded-xl shadow-md shadow-amber-500/25 disabled:opacity-50 transition cursor-pointer"
+                                className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:opacity-90 text-black font-black py-3.5 rounded-xl shadow-md shadow-brand-gold/25 disabled:opacity-50 transition cursor-pointer"
                             >
                                 {saving ? 'Creating…' : 'Create Coupon'}
                             </button>

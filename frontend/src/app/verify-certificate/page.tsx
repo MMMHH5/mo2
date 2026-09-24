@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 export default function VerifyCertificatePage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#0a1830] flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-white/10 border-t-amber-400 rounded-full animate-spin" />
+            <div className="min-h-screen bg-brand-navy-dark flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-white/10 border-t-brand-gold-light rounded-full animate-spin" />
             </div>
         }>
             <VerifyCertificateForm />

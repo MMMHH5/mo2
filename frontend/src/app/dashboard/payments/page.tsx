@@ -117,7 +117,7 @@ export default function PaymentsPage() {
     const statusBadge = (status: string) => {
         const cls = status === 'APPROVED' ? 'bg-green-500/10 text-green-400 border-green-500/20'
             : status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                : status === 'RESERVED' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                : status === 'RESERVED' ? 'bg-brand-navy-light/10 text-brand-navy-light border-brand-navy-light/20'
                     : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
         const Icon = status === 'APPROVED' ? CheckCircle : status === 'REJECTED' ? XCircle : Clock;
         return (
@@ -129,10 +129,10 @@ export default function PaymentsPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
-            <div className="bg-[#111f3a] p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh] space-y-10">
+            <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh] space-y-10">
                 <div className="mb-2">
                     <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                        <Wallet size={32} className="text-amber-400" /> {t('payments.heading')}
+                        <Wallet size={32} className="text-brand-gold-light" /> {t('payments.heading')}
                     </h2>
                     <p className="text-gray-400 mt-2">{t('payments.subtitle')}</p>
                 </div>
@@ -143,13 +143,13 @@ export default function PaymentsPage() {
                 {!loading && announcedCourses.length > 0 && (
                     <section>
                         <h3 className="text-xl font-black text-white mb-4 flex items-center gap-2">
-                            <CalendarCheck size={22} className="text-amber-400" /> {t('payments.reserve_section')}
+                            <CalendarCheck size={22} className="text-brand-gold-light" /> {t('payments.reserve_section')}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {announcedCourses.filter(c => !enrolledCourseIds.has(c.id)).map(course => {
                                 const opening = course.openings!.find(o => o.status === 'ANNOUNCEMENT')!;
                                 return (
-                                    <div key={course.id} className="border border-white/5 rounded-2xl p-5 bg-[#0d1f3c] flex items-center justify-between gap-4">
+                                    <div key={course.id} className="border border-white/5 rounded-2xl p-5 bg-brand-navy flex items-center justify-between gap-4">
                                         <div>
                                             <h4 className="font-bold text-white">{pick(course, 'title')}</h4>
                                             <p className="text-sm text-gray-400 mt-1">
@@ -158,7 +158,7 @@ export default function PaymentsPage() {
                                         </div>
                                         <button
                                             onClick={() => handleReserveClick(course.id)}
-                                            className="bg-gradient-to-r from-amber-500 to-amber-600 text-black text-sm font-bold px-4 py-2.5 rounded-xl hover:from-amber-400 hover:to-amber-500 transition whitespace-nowrap"
+                                            className="bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black text-sm font-bold px-4 py-2.5 rounded-xl hover:from-brand-gold-light hover:to-brand-gold transition whitespace-nowrap"
                                         >
                                             {t('courseDetail.reserve_seat')}
                                         </button>
@@ -181,11 +181,11 @@ export default function PaymentsPage() {
                     ) : (
                         <div className="space-y-4">
                             {(enrollments || []).map((enrollment) => (
-                                <div key={enrollment.id} className="border border-white/5 rounded-2xl p-5 bg-[#0d1f3c]">
+                                <div key={enrollment.id} className="border border-white/5 rounded-2xl p-5 bg-brand-navy">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div className="min-w-0">
                                             <h4 className="font-black text-white text-lg">
-                                                <Link href={`/courses/${enrollment.course.id}`} className="hover:text-amber-400 transition-colors">
+                                                <Link href={`/courses/${enrollment.course.id}`} className="hover:text-brand-gold-light transition-colors">
                                                     {pick(enrollment.course, 'title')}
                                                 </Link>
                                             </h4>
@@ -210,7 +210,7 @@ export default function PaymentsPage() {
                                                 href={`${API_BASE_URL}${enrollment.receiptFileUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 text-white hover:border-amber-500 hover:text-amber-400 transition flex items-center gap-2"
+                                                className="text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 text-white hover:border-brand-gold hover:text-brand-gold-light transition flex items-center gap-2"
                                             >
                                                 <Eye size={16} /> {t('payments.view_receipt')}
                                             </a>
@@ -218,7 +218,7 @@ export default function PaymentsPage() {
                                         {enrollment.status !== 'APPROVED' && (
                                             <button
                                                 onClick={() => openPayModal(enrollment)}
-                                                className="bg-gradient-to-r from-amber-500 to-amber-600 text-black text-sm font-bold px-4 py-2.5 rounded-xl hover:from-amber-400 hover:to-amber-500 transition"
+                                                className="bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black text-sm font-bold px-4 py-2.5 rounded-xl hover:from-brand-gold-light hover:to-brand-gold transition"
                                             >
                                                 {enrollment.status === 'RESERVED' || enrollment.status === 'REJECTED'
                                                     ? t('payments.pay_now')
@@ -242,7 +242,7 @@ export default function PaymentsPage() {
             {/* Upload receipt modal */}
             {payable && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#111f3a] rounded-2xl w-full max-w-lg p-8 shadow-2xl max-h-[90vh] overflow-y-auto border border-white/10">
+                    <div className="bg-brand-navy-dark rounded-2xl w-full max-w-lg p-8 shadow-2xl max-h-[90vh] overflow-y-auto border border-white/10">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-2xl font-black text-white">{t('payments.upload_title')}</h2>
                             <button onClick={closeModal} className="text-gray-400 hover:text-white transition" aria-label="Close">
@@ -259,7 +259,7 @@ export default function PaymentsPage() {
                                 <select
                                     value={openingId}
                                     onChange={(e) => setOpeningId(e.target.value)}
-                                    className="w-full border border-white/10 rounded-xl px-4 py-3 bg-[#0a1830] font-semibold text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    className="w-full border border-white/10 rounded-xl px-4 py-3 bg-brand-navy-dark font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-gold"
                                 >
                                     {payable.enrollment.opening?.id && (
                                         <option value={payable.enrollment.opening.id}>
@@ -280,9 +280,9 @@ export default function PaymentsPage() {
                         {!receiptFile ? (
                             <div
                                 onClick={() => fileInputRef.current?.click()}
-                                className="bg-[#0a1830] border-2 border-dashed border-amber-500/40 rounded-xl p-8 flex flex-col items-center justify-center text-white font-semibold cursor-pointer hover:bg-white/5 transition group"
+                                className="bg-brand-navy-dark border-2 border-dashed border-brand-gold/40 rounded-xl p-8 flex flex-col items-center justify-center text-white font-semibold cursor-pointer hover:bg-white/5 transition group"
                             >
-                                <UploadCloud size={40} className="mb-3 text-amber-400 group-hover:scale-110 transition-transform" />
+                                <UploadCloud size={40} className="mb-3 text-brand-gold-light group-hover:scale-110 transition-transform" />
                                 <span>{t('payment.attach_receipt')}</span>
                                 <span className="text-xs text-gray-500 font-normal mt-2">{t('explore.supports_formats')}</span>
                                 <input
@@ -296,7 +296,7 @@ export default function PaymentsPage() {
                         ) : (
                             <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
                                 <div className="flex items-center space-x-3 rtl:space-x-reverse overflow-hidden">
-                                    <FileImage size={24} className="text-amber-400 flex-shrink-0" />
+                                    <FileImage size={24} className="text-brand-gold-light flex-shrink-0" />
                                     <span className="font-semibold text-white truncate" dir="ltr">{receiptFile.name}</span>
                                 </div>
                                 <button onClick={() => setReceiptFile(null)} className="text-red-400 hover:text-red-300 transition flex-shrink-0">
@@ -309,7 +309,7 @@ export default function PaymentsPage() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || !receiptFile || !openingId}
-                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black py-3 font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+                                className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-light hover:to-brand-gold text-black py-3 font-bold rounded-xl shadow-sm transition disabled:opacity-50"
                             >
                                 {isSubmitting ? t('common.submitting') : t('payments.submit_receipt')}
                             </button>

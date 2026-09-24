@@ -33,7 +33,7 @@ export default function CertificateDetailPage() {
                 <div className="flex items-center gap-3 flex-wrap">
                     <button
                         onClick={() => router.push('/dashboard/certificates')}
-                        className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 bg-[#111f3a] text-white hover:border-white/20 hover:bg-[#1a2d4a] transition"
+                        className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 bg-brand-navy-dark text-white hover:border-white/20 hover:bg-[#1a2d4a] transition"
                     >
                         <ArrowLeft size={16} className="rtl:rotate-180" /> {t('certificates.back')}
                     </button>
@@ -42,11 +42,11 @@ export default function CertificateDetailPage() {
                 {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
 
                 {loading || !cert ? (
-                    <div className="h-60 bg-[#111f3a] flex items-center justify-center font-bold text-gray-400 rounded-3xl border border-white/5">
+                    <div className="h-60 bg-brand-navy-dark flex items-center justify-center font-bold text-gray-400 rounded-3xl border border-white/5">
                         {t('certificates.loading')}
                     </div>
                 ) : (
-                    <div className="bg-[#111f3a] rounded-3xl border border-white/5 shadow-sm overflow-hidden">
+                    <div className="bg-brand-navy-dark rounded-3xl border border-white/5 shadow-sm overflow-hidden">
                         {/* Certificate preview */}
                         <div className="relative p-10 sm:p-14 text-center">
                             <div className="absolute inset-3 border-2 border-white/5 rounded-2xl pointer-events-none" />
@@ -54,11 +54,11 @@ export default function CertificateDetailPage() {
 
                             <div className="relative">
                                 <div className="flex items-center justify-center gap-3 mb-6">
-                                    <div className="w-14 h-14 bg-[#0d1f3c] rounded-2xl flex items-center justify-center border border-white/10">
-                                        <span className="text-amber-400 font-black text-2xl">L</span>
+                                    <div className="w-14 h-14 bg-brand-navy rounded-2xl flex items-center justify-center border border-white/10">
+                                        <span className="text-brand-gold-light font-black text-2xl">L</span>
                                     </div>
                                     <h2 className="text-2xl font-black text-white tracking-tight">
-                                        laxa<span className="text-amber-400">lab</span>
+                                        laxa<span className="text-brand-gold-light">lab</span>
                                     </h2>
                                 </div>
 
@@ -103,7 +103,7 @@ export default function CertificateDetailPage() {
                                 <Link
                                     href={`/certificate/${cert.id}?lang=en`}
                                     target="_blank"
-                                    className="inline-flex items-center justify-center gap-2 bg-white text-[#0a1830] font-black text-sm px-6 py-3.5 rounded-xl hover:bg-gray-100 transition-all duration-200 shadow-lg shadow-white/5"
+                                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-black text-sm px-6 py-3.5 rounded-xl hover:opacity-95 transition-all duration-200 shadow-lg shadow-brand-gold/20"
                                 >
                                     <Download size={16} />
                                     {t('certificates.download')} (English)
@@ -111,7 +111,7 @@ export default function CertificateDetailPage() {
                                 <Link
                                     href={`/certificate/${cert.id}?lang=ar`}
                                     target="_blank"
-                                    className="inline-flex items-center justify-center gap-2 bg-[#0d1f3c] border border-white/10 text-white font-black text-sm px-6 py-3.5 rounded-xl hover:bg-[#1a2d4a] transition-all duration-200"
+                                    className="inline-flex items-center justify-center gap-2 bg-brand-navy border border-white/10 text-white font-black text-sm px-6 py-3.5 rounded-xl hover:bg-[#1a2d4a] transition-all duration-200"
                                 >
                                     <Download size={16} />
                                     {t('certificates.download')} (العربية)

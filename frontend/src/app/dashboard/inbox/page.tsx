@@ -176,13 +176,13 @@ export default function InboxPage() {
                     title={t('inbox.title')}
                     subtitle={t('inbox.subtitle')}
                     actions={
-                        <button onClick={openNew} className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-4 py-2.5 rounded-xl font-bold hover:from-amber-400 hover:to-amber-500 transition cursor-pointer">
+                        <button onClick={openNew} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-4 py-2.5 rounded-xl font-bold hover:from-brand-gold-light hover:to-brand-gold transition cursor-pointer">
                             <MessageSquarePlus size={18} /> {t('inbox.new_message')}
                         </button>
                     }
                 />
 
-                <div className="bg-[#111f3a] rounded-3xl shadow-sm border border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[60vh]">
+                <div className="bg-brand-navy-dark rounded-3xl shadow-sm border border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[60vh]">
                     {/* Conversations list */}
                     <aside className={`md:w-80 border-b md:border-b-0 md:border-e border-white/5 ${active ? 'hidden md:block' : 'block'}`}>
                         <div className="p-4 border-b border-white/5">
@@ -190,7 +190,7 @@ export default function InboxPage() {
                         </div>
                         <div className="overflow-y-auto h-[40vh] md:h-[calc(60vh-57px)] admin-scroll">
                             {loadingConv ? (
-                                <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-amber-400" size={24} /></div>
+                                <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-brand-gold-light" size={24} /></div>
                             ) : conversations.length === 0 ? (
                                 <div className="p-8 text-center">
                                     <InboxIcon size={32} className="mx-auto text-gray-500 mb-3" />
@@ -206,13 +206,13 @@ export default function InboxPage() {
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="font-bold text-white text-sm truncate">{c.otherUser.email}</span>
                                             {c.unreadCount > 0 && (
-                                                <span className="bg-amber-500 text-black text-[10px] font-black rounded-full min-w-5 h-5 px-1.5 inline-flex items-center justify-center">
+                                                <span className="bg-brand-gold text-black text-[10px] font-black rounded-full min-w-5 h-5 px-1.5 inline-flex items-center justify-center">
                                                     {c.unreadCount}
                                                 </span>
                                             )}
                                         </div>
                                         {c.course && (
-                                            <span className="text-xs text-amber-400 font-bold block mt-0.5 truncate">{t('inbox.course')} {pick(c.course, 'title')}</span>
+                                            <span className="text-xs text-brand-gold-light font-bold block mt-0.5 truncate">{t('inbox.course')} {pick(c.course, 'title')}</span>
                                         )}
                                         <div className="flex items-center justify-between gap-2 mt-1">
                                             <span className={`text-xs truncate ${c.unreadCount > 0 ? 'font-bold text-white' : 'text-gray-400'}`}>
@@ -239,15 +239,15 @@ export default function InboxPage() {
                                     <div className="min-w-0">
                                         <p className="font-black text-white truncate">{active.otherUser.email}</p>
                                         {active.course && (
-                                            <p className="text-xs text-amber-400 font-bold truncate">{t('inbox.course')} {pick(active.course, 'title')}</p>
+                                            <p className="text-xs text-brand-gold-light font-bold truncate">{t('inbox.course')} {pick(active.course, 'title')}</p>
                                         )}
                                     </div>
                                     <button onClick={() => setActive(null)} className="md:hidden text-gray-400 hover:text-white"><X size={20} /></button>
                                 </div>
 
-                                <div ref={threadBoxRef} className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#0a1830] h-[40vh] md:h-[calc(60vh-130px)] admin-scroll">
+                                <div ref={threadBoxRef} className="flex-1 overflow-y-auto p-5 space-y-3 bg-brand-navy-dark h-[40vh] md:h-[calc(60vh-130px)] admin-scroll">
                                     {loadingThread ? (
-                                        <div className="flex justify-center pt-8"><Loader className="animate-spin text-amber-400" size={24} /></div>
+                                        <div className="flex justify-center pt-8"><Loader className="animate-spin text-brand-gold-light" size={24} /></div>
                                     ) : thread.length === 0 ? (
                                         <p className="text-center text-gray-400 text-sm pt-8">{t('inbox.select_conversation')}</p>
                                     ) : (
@@ -257,8 +257,8 @@ export default function InboxPage() {
                                                 <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                                                     <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
                                                         mine
-                                                            ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black rounded-br-md'
-                                                            : 'bg-[#111f3a] border border-white/5 text-white rounded-bl-md'
+                                                            ? 'bg-gradient-to-br from-brand-gold to-brand-gold-dark text-black rounded-br-md'
+                                                            : 'bg-brand-navy-dark border border-white/5 text-white rounded-bl-md'
                                                     }`}>
                                                         <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
                                                         <span className={`block text-[10px] mt-1 ${mine ? 'text-black/50' : 'text-gray-400'}`}>
@@ -277,9 +277,9 @@ export default function InboxPage() {
                                         onChange={(e) => setText(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
                                         placeholder={t('inbox.type_message')}
-                                        className="flex-1 px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition text-white placeholder:text-gray-500"
+                                        className="flex-1 px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-white placeholder:text-gray-500"
                                     />
-                                    <button onClick={send} disabled={sending || !text.trim()} className="bg-gradient-to-r from-amber-500 to-amber-600 text-black p-3 rounded-xl hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 transition cursor-pointer">
+                                    <button onClick={send} disabled={sending || !text.trim()} className="bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black p-3 rounded-xl hover:from-brand-gold-light hover:to-brand-gold disabled:opacity-40 transition cursor-pointer">
                                         {sending ? <Loader size={18} className="animate-spin" /> : <Send size={18} />}
                                     </button>
                                 </div>
@@ -291,7 +291,7 @@ export default function InboxPage() {
                 {/* New message modal */}
                 {newOpen && (
                     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setNewOpen(false)}>
-                        <div className="bg-[#111f3a] rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up border border-white/10" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-brand-navy-dark rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up border border-white/10" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-xl font-black text-white">{t('inbox.send_to')}</h3>
                                 <button onClick={() => setNewOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -308,7 +308,7 @@ export default function InboxPage() {
                                                     <button
                                                         key={c.id + (c.course?.id ?? '')}
                                                         onClick={() => startContact(c)}
-                                                        className="w-full text-left px-4 py-3 rounded-xl border border-white/10 bg-[#0d1f3c] hover:bg-white/5 transition cursor-pointer"
+                                                        className="w-full text-left px-4 py-3 rounded-xl border border-white/10 bg-brand-navy hover:bg-white/5 transition cursor-pointer"
                                                     >
                                                         <span className="block font-bold text-white text-sm">{c.email}</span>
                                                         <span className="block text-xs text-gray-400">

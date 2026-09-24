@@ -123,7 +123,7 @@ export default function AdminRequestsPage() {
     const tabBtn = (key: Tab, icon: React.ReactNode, label: string, count: number) => (
         <button onClick={() => setTab(key)}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
-                tab === key ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md shadow-amber-500/20' : 'text-gray-400 hover:bg-white/5'
+                tab === key ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black shadow-md shadow-brand-gold/20' : 'text-gray-400 hover:bg-white/5'
             }`}>
             {icon} {label}
             {count > 0 && (
@@ -143,14 +143,14 @@ export default function AdminRequestsPage() {
                 subtitle={t('adminRequests.subtitle')}
             />
 
-            <div className="inline-flex flex-wrap items-center gap-1 bg-[#111f3a] border border-white/5 rounded-2xl p-1">
+            <div className="inline-flex flex-wrap items-center gap-1 bg-brand-navy-dark border border-white/5 rounded-2xl p-1">
                 {tabBtn('openings', <CalendarPlus size={16} />, t('adminRequests.tab_openings'), pendingCount(openingReqs))}
                 {tabBtn('closures', <Flag size={16} />, t('adminRequests.tab_closures'), pendingCount(closeReqs))}
                 {tabBtn('suggestions', <Lightbulb size={16} />, t('adminRequests.tab_suggestions'), pendingCount(suggestions))}
             </div>
 
             {tab === 'openings' && (
-                <div className="bg-[#111f3a] rounded-2xl border border-white/5 overflow-hidden">
+                <div className="bg-brand-navy-dark rounded-2xl border border-white/5 overflow-hidden">
                     {loadingOpenings ? (
                         <div className="h-40 flex items-center justify-center font-bold text-gray-400"><Loader className="animate-spin me-2" size={20} /> {t('common.loading')}</div>
                     ) : (
@@ -186,7 +186,7 @@ export default function AdminRequestsPage() {
             )}
 
             {tab === 'closures' && (
-                <div className="bg-[#111f3a] rounded-2xl border border-white/5 overflow-hidden">
+                <div className="bg-brand-navy-dark rounded-2xl border border-white/5 overflow-hidden">
                     {loadingClosures ? (
                         <div className="h-40 flex items-center justify-center font-bold text-gray-400"><Loader className="animate-spin me-2" size={20} /> {t('common.loading')}</div>
                     ) : (
@@ -228,7 +228,7 @@ export default function AdminRequestsPage() {
             )}
 
             {tab === 'suggestions' && (
-                <div className="bg-[#111f3a] rounded-2xl border border-white/5 overflow-hidden">
+                <div className="bg-brand-navy-dark rounded-2xl border border-white/5 overflow-hidden">
                     {loadingSuggestions ? (
                         <div className="h-40 flex items-center justify-center font-bold text-gray-400"><Loader className="animate-spin me-2" size={20} /> {t('common.loading')}</div>
                     ) : (

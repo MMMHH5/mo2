@@ -32,7 +32,7 @@ interface RequestRow {
 }
 
 const statusColors: Record<string, string> = {
-    PENDING: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    PENDING: 'bg-brand-gold/10 text-brand-gold-light border border-brand-gold/20',
     APPROVED: 'bg-green-500/10 text-green-400 border border-green-500/20',
     REJECTED: 'bg-red-500/10 text-red-400 border border-red-500/20',
 };
@@ -82,18 +82,18 @@ export default function SuggestionsPage() {
         setSaving(false);
     };
 
-    const inputCls = "w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 outline-none transition";
+    const inputCls = "w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 outline-none transition";
 
     return (
         <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-            <div className="min-h-screen bg-[#0a1830] space-y-6 animate-fade-in p-6 lg:p-8">
+            <div className="min-h-screen bg-brand-navy-dark space-y-6 animate-fade-in p-6 lg:p-8">
                 {/* Tab Navigation */}
-                <div className="flex gap-1 bg-[#111f3a] border border-white/5 rounded-xl p-1 w-fit">
+                <div className="flex gap-1 bg-brand-navy-dark border border-white/5 rounded-xl p-1 w-fit">
                     <Link href="/dashboard/teaching"
                         className="px-4 py-2 rounded-lg text-sm font-bold transition-all text-gray-400 hover:text-white">
                         {isAr ? 'الدورات المسندة' : 'My Openings'}
                     </Link>
-                    <span className="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-amber-500/10 text-amber-400">
+                    <span className="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-brand-gold/10 text-brand-gold-light">
                         {isAr ? 'الاقتراحات' : 'Suggestions'}
                     </span>
                 </div>
@@ -102,7 +102,7 @@ export default function SuggestionsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-2">
-                            <Lightbulb size={28} className="text-amber-400" />
+                            <Lightbulb size={28} className="text-brand-gold-light" />
                             {isAr ? 'الاقتراحات' : 'Suggestions'}
                         </h1>
                         <p className="text-gray-400 text-sm mt-1">
@@ -110,7 +110,7 @@ export default function SuggestionsPage() {
                         </p>
                     </div>
                     <button onClick={openModal}
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-amber-500/20 transition-all">
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-brand-gold/20 transition-all">
                         <Lightbulb size={16} /> {isAr ? 'اقتراح دورة جديدة' : 'Suggest New Course'}
                     </button>
                 </div>
@@ -120,10 +120,10 @@ export default function SuggestionsPage() {
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 gap-4">
                     {[
-                        { icon: ClipboardList, label: isAr ? 'إجمالي الاقتراحات' : 'Total Suggestions', value: totalSuggestions, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                        { icon: Clock, label: isAr ? 'اقتراحات معلقة' : 'Pending Suggestions', value: pendingSuggestions, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                        { icon: ClipboardList, label: isAr ? 'إجمالي الاقتراحات' : 'Total Suggestions', value: totalSuggestions, color: 'text-brand-navy-light', bg: 'bg-brand-navy-light/10' },
+                        { icon: Clock, label: isAr ? 'اقتراحات معلقة' : 'Pending Suggestions', value: pendingSuggestions, color: 'text-brand-gold-light', bg: 'bg-brand-gold/10' },
                     ].map((s, i) => (
-                        <div key={i} className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all">
+                        <div key={i} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className={`w-10 h-10 rounded-xl ${s.bg} ${s.color} flex items-center justify-center`}>
                                     <s.icon size={20} />
@@ -136,9 +136,9 @@ export default function SuggestionsPage() {
                 </div>
 
                 {/* Suggestions Table */}
-                <section className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 lg:p-8">
+                <section className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 lg:p-8">
                     <div className="flex items-center gap-2 mb-6">
-                        <Lightbulb size={18} className="text-amber-400" />
+                        <Lightbulb size={18} className="text-brand-gold-light" />
                         <h3 className="text-lg font-black text-white">{isAr ? 'اقتراحاتي' : 'My Suggestions'}</h3>
                     </div>
 
@@ -177,7 +177,7 @@ export default function SuggestionsPage() {
                 {/* Suggest Course Modal */}
                 {showModal && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-                        <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-white">{isAr ? 'اقتراح دورة جديدة' : 'Suggest New Course'}</h3>
@@ -212,7 +212,7 @@ export default function SuggestionsPage() {
                                 </div>
                             </div>
                             <div className="flex gap-3 mt-6">
-                                <button onClick={suggestCourse} disabled={saving} className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold py-3 rounded-xl hover:opacity-95 transition disabled:opacity-50">
+                                <button onClick={suggestCourse} disabled={saving} className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-bold py-3 rounded-xl hover:opacity-95 transition disabled:opacity-50">
                                     {saving ? (isAr ? 'جاري...' : 'Submitting...') : (isAr ? 'إرسال' : 'Submit')}
                                 </button>
                                 <button onClick={() => setShowModal(false)} className="flex-1 bg-white/5 text-gray-300 hover:bg-white/10 font-bold py-3 rounded-xl transition">

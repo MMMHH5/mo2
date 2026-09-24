@@ -175,7 +175,7 @@ export default function BatchChatsPage() {
                 <img src={`${API_BASE_URL}${m.attachmentUrl}`} alt="attachment" className="max-h-48 rounded-xl border border-white/10" />
             </a>
         ) : (
-            <a href={`${API_BASE_URL}${m.attachmentUrl}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-amber-400 underline text-xs">
+            <a href={`${API_BASE_URL}${m.attachmentUrl}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-brand-gold-light underline text-xs">
                 <FileText size={13} /> {t('courseChat.view_attachment')}
             </a>
         );
@@ -184,10 +184,10 @@ export default function BatchChatsPage() {
     const renderBubble = (m: ChatMsg) => (
         <div className={`flex ${isMine(m) ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
-                isMine(m) ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-black rounded-br-md' : 'bg-[#111f3a] border border-white/5 text-white rounded-bl-md'
+                isMine(m) ? 'bg-gradient-to-br from-brand-gold to-brand-gold-dark text-black rounded-br-md' : 'bg-brand-navy-dark border border-white/5 text-white rounded-bl-md'
             }`}>
                 {!isMine(m) && m.sender && (
-                    <div className="text-[10px] font-bold text-amber-400 mb-0.5">{m.sender.email}</div>
+                    <div className="text-[10px] font-bold text-brand-gold-light mb-0.5">{m.sender.email}</div>
                 )}
                 {m.content && <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>}
                 {renderAttachment(m)}
@@ -205,19 +205,19 @@ export default function BatchChatsPage() {
                 subtitle={t('batchChats.subtitle')}
             />
 
-            <div className="bg-[#111f3a] rounded-3xl shadow-sm border border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[65vh]">
+            <div className="bg-brand-navy-dark rounded-3xl shadow-sm border border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[65vh]">
                 {/* Left sidebar — room list */}
                 <aside className={`md:w-80 lg:w-96 border-b md:border-b-0 md:border-e border-white/5 ${mobileShowChat ? 'hidden md:block' : 'block'}`}>
                     <div className="p-4 border-b border-white/5">
                         <div className="flex items-center gap-2">
-                            <MessagesSquare size={18} className="text-amber-400" />
+                            <MessagesSquare size={18} className="text-brand-gold-light" />
                             <h3 className="font-black text-white text-sm">{t('batchChats.rooms_list')}</h3>
                         </div>
                     </div>
                     <div className="overflow-y-auto h-[50vh] md:h-[calc(65vh-57px)] admin-scroll">
                         {loading ? (
                             <div className="h-40 flex items-center justify-center">
-                                <Loader className="animate-spin text-amber-400" size={24} />
+                                <Loader className="animate-spin text-brand-gold-light" size={24} />
                             </div>
                         ) : rooms.length === 0 ? (
                             <div className="p-8 text-center">
@@ -236,14 +236,14 @@ export default function BatchChatsPage() {
                                         <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-black ${
-                                                    isActive ? 'bg-amber-500 text-black' : 'bg-white/10 text-amber-400'
+                                                    isActive ? 'bg-brand-gold text-black' : 'bg-white/10 text-brand-gold-light'
                                                 }`}>
                                                     <Users size={15} />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <span className="font-bold text-white text-sm truncate block">{room.name}</span>
                                                     {room.course && (
-                                                        <span className="text-[11px] text-amber-400 font-bold truncate block">{room.course.title}</span>
+                                                        <span className="text-[11px] text-brand-gold-light font-bold truncate block">{room.course.title}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -252,7 +252,7 @@ export default function BatchChatsPage() {
                                                     <span className="text-[10px] text-gray-500">{formatTime(room.lastMessage.createdAt)}</span>
                                                 )}
                                                 {(room.unreadCount ?? 0) > 0 && (
-                                                    <span className="bg-amber-500 text-black text-[10px] font-black rounded-full min-w-5 h-5 px-1.5 inline-flex items-center justify-center">
+                                                    <span className="bg-brand-gold text-black text-[10px] font-black rounded-full min-w-5 h-5 px-1.5 inline-flex items-center justify-center">
                                                         {room.unreadCount}
                                                     </span>
                                                 )}
@@ -260,7 +260,7 @@ export default function BatchChatsPage() {
                                         </div>
                                         {room.lastMessage && (
                                             <p className={`text-xs mt-1.5 truncate ml-12 ${isActive ? 'text-gray-300' : 'text-gray-400'}`}>
-                                                {room.lastMessage.fromMe && <span className="text-amber-400">{'You: '}</span>}
+                                                {room.lastMessage.fromMe && <span className="text-brand-gold-light">{'You: '}</span>}
                                                 {room.lastMessage.content || (room.lastMessage.attachmentType ? '📎' : '')}
                                             </p>
                                         )}
@@ -287,13 +287,13 @@ export default function BatchChatsPage() {
                                     <button onClick={() => setMobileShowChat(false)} className="md:hidden text-gray-400 hover:text-white">
                                         <ArrowLeft size={20} />
                                     </button>
-                                    <div className="w-9 h-9 rounded-full bg-white/10 text-amber-400 flex items-center justify-center shrink-0">
+                                    <div className="w-9 h-9 rounded-full bg-white/10 text-brand-gold-light flex items-center justify-center shrink-0">
                                         <Users size={15} />
                                     </div>
                                     <div className="min-w-0">
                                         <p className="font-black text-white truncate">{activeRoom.name}</p>
                                         {activeRoom.course && (
-                                            <p className="text-xs text-amber-400 font-bold truncate">{activeRoom.course.title}</p>
+                                            <p className="text-xs text-brand-gold-light font-bold truncate">{activeRoom.course.title}</p>
                                         )}
                                         <p className="text-[11px] text-gray-400">{activeRoom.memberCount} {t('batchChats.members')}</p>
                                     </div>
@@ -301,10 +301,10 @@ export default function BatchChatsPage() {
                             </div>
 
                             {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#0a1830] h-[40vh] md:h-[calc(65vh-130px)] admin-scroll">
+                            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-brand-navy-dark h-[40vh] md:h-[calc(65vh-130px)] admin-scroll">
                                 {loadingThread ? (
                                     <div className="flex justify-center pt-8">
-                                        <Loader className="animate-spin text-amber-400" size={24} />
+                                        <Loader className="animate-spin text-brand-gold-light" size={24} />
                                     </div>
                                 ) : thread.length === 0 ? (
                                     <div className="text-center pt-8">
@@ -325,8 +325,8 @@ export default function BatchChatsPage() {
                                     <div className="mb-2 flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-3 py-2">
                                         <div className="flex items-center gap-2 text-xs font-bold text-white">
                                             {pendingAttachment.type.startsWith('image/')
-                                                ? <ImageIcon size={14} className="text-amber-400" />
-                                                : <FileText size={14} className="text-amber-400" />}
+                                                ? <ImageIcon size={14} className="text-brand-gold-light" />
+                                                : <FileText size={14} className="text-brand-gold-light" />}
                                             <span className="truncate max-w-[220px]">{pendingAttachment.url.split('/').pop()}</span>
                                         </div>
                                         <button onClick={() => setPendingAttachment(null)} className="text-gray-400 hover:text-red-400 transition">
@@ -346,7 +346,7 @@ export default function BatchChatsPage() {
                                         onClick={() => fileRef.current?.click()}
                                         disabled={uploading}
                                         title={t('courseChat.attach')}
-                                        className="bg-[#0a1830] border border-white/10 hover:border-amber-400/50 text-white p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40"
+                                        className="bg-brand-navy-dark border border-white/10 hover:border-brand-gold-light/50 text-white p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40"
                                     >
                                         {uploading ? <Loader size={16} className="animate-spin" /> : <Paperclip size={16} />}
                                     </button>
@@ -355,12 +355,12 @@ export default function BatchChatsPage() {
                                         onChange={e => setDraft(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
                                         placeholder={t('courseChat.placeholder')}
-                                        className="flex-1 px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition text-white placeholder:text-gray-500 font-medium text-sm"
+                                        className="flex-1 px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-white placeholder:text-gray-500 font-medium text-sm"
                                     />
                                     <button
                                         onClick={handleSend}
                                         disabled={sending || (!draft.trim() && !pendingAttachment)}
-                                        className="bg-gradient-to-r from-amber-500 to-amber-600 text-black p-3 rounded-xl hover:from-amber-400 hover:to-amber-500 disabled:opacity-40 transition cursor-pointer"
+                                        className="bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black p-3 rounded-xl hover:from-brand-gold-light hover:to-brand-gold disabled:opacity-40 transition cursor-pointer"
                                     >
                                         {sending ? <Loader size={18} className="animate-spin" /> : <Send size={18} />}
                                     </button>

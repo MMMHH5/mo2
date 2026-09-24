@@ -51,9 +51,9 @@ export default function AdminOverviewPage() {
     return (
         <div className="space-y-8 animate-fade-in">
             {/* Hero banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0d1f3c] via-[#0e2a52] to-[#111f3a] p-7 lg:p-9">
-                <div className="absolute -top-20 -right-16 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl" />
-                <div className="absolute -bottom-24 -left-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-navy via-[#0e2a52] to-brand-navy-dark p-7 lg:p-9">
+                <div className="absolute -top-20 -right-16 w-72 h-72 bg-brand-gold/15 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-10 w-64 h-64 bg-brand-gold/10 rounded-full blur-3xl" />
                 <div className="relative flex flex-wrap items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur ${healthy ? 'bg-emerald-400/15 text-emerald-300' : 'bg-red-400/15 text-red-300'}`}>
@@ -71,15 +71,15 @@ export default function AdminOverviewPage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="bg-white/10 backdrop-blur px-5 py-3 rounded-xl">
-                            <div className="text-2xl font-black text-amber-400">{s?.users.total ?? 0}</div>
+                            <div className="text-2xl font-black text-brand-gold-light">{s?.users.total ?? 0}</div>
                             <div className="text-[10px] font-black uppercase tracking-wider text-gray-400">{t('admin.stat_total_users')}</div>
                         </div>
                         <div className="bg-white/10 backdrop-blur px-5 py-3 rounded-xl">
-                            <div className="text-2xl font-black text-amber-400">{s?.courses.total ?? 0}</div>
+                            <div className="text-2xl font-black text-brand-gold-light">{s?.courses.total ?? 0}</div>
                             <div className="text-[10px] font-black uppercase tracking-wider text-gray-400">{t('admin.stat_total_courses')}</div>
                         </div>
                         <div className="bg-white/10 backdrop-blur px-5 py-3 rounded-xl">
-                            <div className="text-2xl font-black text-amber-400">{s?.enrollments.pending ?? 0}</div>
+                            <div className="text-2xl font-black text-brand-gold-light">{s?.enrollments.pending ?? 0}</div>
                             <div className="text-[10px] font-black uppercase tracking-wider text-gray-400">{t('admin.stat_pending_reviews')}</div>
                         </div>
                     </div>
@@ -106,9 +106,9 @@ export default function AdminOverviewPage() {
                             <Link key={q.label} href={q.href}>
                                 <div className="admin-card p-5 flex items-center gap-4 group animate-fade-in-up">
                                     <div className={`admin-tile w-12 h-12 shrink-0 ${{
-                                        indigo: 'bg-indigo-500/15 text-indigo-400',
+                                        indigo: 'bg-brand-navy-light/15 text-indigo-400',
                                         green: 'bg-emerald-500/15 text-emerald-400',
-                                        blue: 'bg-blue-500/15 text-blue-400',
+                                        blue: 'bg-brand-navy-light/15 text-brand-navy-light',
                                         orange: 'bg-orange-500/15 text-orange-400',
                                         purple: 'bg-purple-500/15 text-purple-400',
                                         teal: 'bg-teal-500/15 text-teal-400',

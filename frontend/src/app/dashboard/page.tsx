@@ -56,17 +56,17 @@ export default function DashboardPage() {
     return (
         <div className="max-w-6xl mx-auto space-y-6">
             {/* Welcome Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-[#0d1f3c] via-[#132a50] to-[#0d1f3c] rounded-3xl p-8 lg:p-10 text-white shadow-lg shadow-black/20 animate-fade-in">
-                <div className="absolute -top-16 -right-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
-                <div className="absolute -bottom-20 -left-10 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl" />
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-500/40 to-transparent" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy-light to-brand-navy rounded-3xl p-8 lg:p-10 text-white shadow-lg shadow-black/20 animate-fade-in">
+                <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand-gold/10 rounded-full blur-3xl" />
+                <div className="absolute -bottom-20 -left-10 w-72 h-72 bg-brand-gold/5 rounded-full blur-3xl" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-gold via-brand-gold/40 to-transparent" />
                 <div className="relative">
                     <h1 className="text-3xl lg:text-4xl font-black tracking-tight">
                         {t('dashboard.welcome_back')}, {user.email}
                     </h1>
                     <p className="text-gray-400 mt-2 font-semibold">
                         {t('dashboard.secure_login')}{' '}
-                        <span className="font-black text-amber-400">{roleLabel}</span>{' '}
+                        <span className="font-black text-brand-gold-light">{roleLabel}</span>{' '}
                         {t('dashboard.permissions')}
                     </p>
                 </div>
@@ -96,29 +96,29 @@ export default function DashboardPage() {
                 <div className="animate-fade-in-up">
                     <h3 className="text-xl font-black text-white mb-4">{t('dashboard.quick_actions')}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <Link href="/dashboard/explore" className="group bg-[#111f3a] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Link href="/dashboard/explore" className="group bg-brand-navy-dark border border-white/5 rounded-2xl p-6 hover:border-brand-gold/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 text-brand-gold-light flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <Compass size={24} />
                             </div>
                             <div className="font-black text-white">{t('landing.explore_courses')}</div>
                             <div className="text-sm text-gray-400 mt-1">{t('dashboard.explore_desc')}</div>
                         </Link>
-                        <Link href="/dashboard/my-courses" className="group bg-[#111f3a] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Link href="/dashboard/my-courses" className="group bg-brand-navy-dark border border-white/5 rounded-2xl p-6 hover:border-brand-gold/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 text-brand-gold-light flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <BookOpen size={24} />
                             </div>
                             <div className="font-black text-white">{t('sidebar.my_courses')}</div>
                             <div className="text-sm text-gray-400 mt-1">{t('dashboard.my_courses_desc')}</div>
                         </Link>
-                        <Link href="/dashboard/my-grades" className="group bg-[#111f3a] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Link href="/dashboard/my-grades" className="group bg-brand-navy-dark border border-white/5 rounded-2xl p-6 hover:border-brand-gold/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 text-brand-gold-light flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <GraduationCap size={24} />
                             </div>
                             <div className="font-black text-white">{t('sidebar.my_grades')}</div>
                             <div className="text-sm text-gray-400 mt-1">{t('dashboard.my_grades_desc')}</div>
                         </Link>
-                        <Link href="/dashboard/support" className="group bg-[#111f3a] border border-white/5 rounded-2xl p-6 hover:border-amber-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Link href="/dashboard/support" className="group bg-brand-navy-dark border border-white/5 rounded-2xl p-6 hover:border-brand-gold/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 text-brand-gold-light flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                 <LifeBuoy size={24} />
                             </div>
                             <div className="font-black text-white">{t('sidebar.support')}</div>
@@ -140,7 +140,7 @@ export default function DashboardPage() {
                         <LearningPathList mode="browse" />
                     </>
                 ) : (
-                    <div className="bg-[#111f3a] border border-white/5 rounded-3xl p-8 min-h-[400px]">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-3xl p-8 min-h-[400px]">
                         <h3 className="text-xl font-black text-white mb-6">{t('dashboard.recent_activity')}</h3>
                         <div className="flex items-center justify-center text-gray-400 h-64 border-2 border-dashed border-white/10 rounded-2xl bg-white/5 font-semibold">
                             {t('dashboard.detailed_metrics')}

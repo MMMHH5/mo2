@@ -141,7 +141,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-amber-400" />
+                <Loader size={28} className="animate-spin text-brand-gold-light" />
             </div>
         );
     }
@@ -156,7 +156,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                         placeholder={isAr ? 'بحث في الإعلانات...' : 'Search announcements...'}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                     />
                 </div>
                 <BtnPrimary onClick={openCreate}>
@@ -171,7 +171,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                     {filtered.map((a) => (
                         <div
                             key={a.id}
-                            className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 hover:border-amber-500/20 transition-all duration-200"
+                            className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 hover:border-brand-gold/20 transition-all duration-200"
                         >
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1 min-w-0">
@@ -220,7 +220,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                     </button>
                                     <button
                                         onClick={() => openEdit(a)}
-                                        className="p-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+                                        className="p-2 rounded-lg bg-brand-gold/10 text-brand-gold-light hover:bg-brand-gold/20 transition-colors"
                                         title={isAr ? 'تعديل' : 'Edit'}
                                     >
                                         <Pencil size={16} />
@@ -242,7 +242,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
             {modalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalOpen(false)}>
                     <div
-                        className="bg-[#0d1f3c] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+                        className="bg-brand-navy border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-6 border-b border-white/5">
@@ -261,7 +261,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                         type="text"
                                         value={form.titleAr}
                                         onChange={(e) => setForm({ ...form, titleAr: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                         placeholder={isAr ? 'عنوان الإعلان بالعربي' : 'Announcement title in Arabic'}
                                     />
                                 </div>
@@ -271,7 +271,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                         type="text"
                                         value={form.titleEn}
                                         onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                         placeholder={isAr ? 'عنوان الإعلان بالإنجليزي' : 'Announcement title in English'}
                                     />
                                 </div>
@@ -283,7 +283,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                         value={form.contentAr}
                                         onChange={(e) => setForm({ ...form, contentAr: e.target.value })}
                                         rows={5}
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                         placeholder={isAr ? 'محتوى الإعلان بالعربي' : 'Announcement content in Arabic'}
                                     />
                                 </div>
@@ -293,7 +293,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                         value={form.contentEn}
                                         onChange={(e) => setForm({ ...form, contentEn: e.target.value })}
                                         rows={5}
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                         placeholder={isAr ? 'محتوى الإعلان بالإنجليزي' : 'Announcement content in English'}
                                     />
                                 </div>
@@ -304,7 +304,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                         type="checkbox"
                                         checked={form.isPublished}
                                         onChange={(e) => setForm({ ...form, isPublished: e.target.checked })}
-                                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-amber-500 focus:ring-amber-500/50"
+                                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-brand-gold focus:ring-brand-gold/50"
                                     />
                                     <span className="text-sm text-gray-300 font-bold">{isAr ? 'نشر فوراً' : 'Publish immediately'}</span>
                                 </label>
@@ -320,7 +320,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                             <button
                                 onClick={save}
                                 disabled={saving}
-                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition-all disabled:opacity-50 flex items-center gap-2"
+                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition-all disabled:opacity-50 flex items-center gap-2"
                             >
                                 {saving && <Loader size={14} className="animate-spin" />}
                                 {editing ? (isAr ? 'تحديث' : 'Update') : (isAr ? 'إنشاء' : 'Create')}

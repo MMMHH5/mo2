@@ -59,7 +59,7 @@ const statusLabelEn: Record<string, string> = {
 };
 
 const avatarTones = [
-    'bg-amber-500/20 text-amber-400',
+    'bg-brand-gold/20 text-brand-gold-light',
     'bg-emerald-500/20 text-emerald-400',
     'bg-sky-500/20 text-sky-400',
     'bg-violet-500/20 text-violet-400',
@@ -113,7 +113,7 @@ export default function OpeningStudentsPage() {
 
     return (
         <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-            <div className="min-h-screen bg-[#0a1830] animate-fade-in space-y-6 p-6 lg:p-8">
+            <div className="min-h-screen bg-brand-navy-dark animate-fade-in space-y-6 p-6 lg:p-8">
                 <Link
                     href={`/dashboard/teaching/${oid}`}
                     className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-white transition"
@@ -137,11 +137,11 @@ export default function OpeningStudentsPage() {
 
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                     {[
-                        { icon: Users, label: isAr ? 'إجمالي الطلاب' : 'Total Students', value: (roster?.enrollments || []).length, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                        { icon: Users, label: isAr ? 'إجمالي الطلاب' : 'Total Students', value: (roster?.enrollments || []).length, color: 'text-brand-navy-light', bg: 'bg-brand-navy-light/10' },
                         { icon: UserCheck, label: isAr ? 'مقبولون' : 'Approved', value: approvedCount, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                        { icon: TrendingUp, label: isAr ? 'متوسط التقدم' : 'Avg Progress', value: avgProgress != null ? `${avgProgress}%` : '—', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                        { icon: TrendingUp, label: isAr ? 'متوسط التقدم' : 'Avg Progress', value: avgProgress != null ? `${avgProgress}%` : '—', color: 'text-brand-gold-light', bg: 'bg-brand-gold/10' },
                     ].map((s, i) => (
-                        <div key={i} className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all">
+                        <div key={i} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className={`w-10 h-10 rounded-xl ${s.bg} ${s.color} flex items-center justify-center`}>
                                     <s.icon size={20} />
@@ -153,11 +153,11 @@ export default function OpeningStudentsPage() {
                     ))}
                 </div>
 
-                <section className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-hidden">
+                <section className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-hidden">
                     <div className="flex flex-wrap items-center justify-between gap-4 p-5 border-b border-white/5">
                         <div>
                             <h3 className="text-lg font-black text-white flex items-center gap-2">
-                                <GraduationCap size={18} className="text-amber-400" />
+                                <GraduationCap size={18} className="text-brand-gold-light" />
                                 {isAr ? 'قائمة الطلاب' : 'Student Roster'}
                             </h3>
                             <p className="text-sm text-gray-400 mt-0.5">
@@ -170,7 +170,7 @@ export default function OpeningStudentsPage() {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder={isAr ? 'ابحث بالبريد الإلكتروني...' : 'Search by email...'}
-                                className="w-full ps-10 pe-4 py-2.5 bg-[#0a1830] border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 outline-none transition"
+                                className="w-full ps-10 pe-4 py-2.5 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 outline-none transition"
                             />
                         </div>
                     </div>
@@ -222,7 +222,7 @@ export default function OpeningStudentsPage() {
                                                 <div className="flex items-center gap-2.5 min-w-[150px]">
                                                     <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
                                                         <div
-                                                            className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
+                                                            className="h-full bg-gradient-to-r from-brand-gold to-brand-gold-light rounded-full transition-all duration-500"
                                                             style={{ width: `${r.progress ?? 0}%` }}
                                                         />
                                                     </div>

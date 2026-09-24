@@ -30,7 +30,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
                 <Star
                     key={i}
                     size={size}
-                    className={i <= Math.round(value) ? 'fill-amber-400 text-amber-400' : 'text-gray-600'}
+                    className={i <= Math.round(value) ? 'fill-brand-gold-light text-brand-gold-light' : 'text-gray-600'}
                 />
             ))}
         </div>
@@ -107,7 +107,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
 
     return (
         <div className="space-y-4">
-            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
+            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
                 <div className="text-center">
                     <div className="text-5xl font-black text-white tabular-nums">{avg > 0 ? avg.toFixed(1) : '—'}</div>
                     <div className="mt-1.5"><Stars value={avg} size={16} /></div>
@@ -136,7 +136,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                                             <Star
                                                 size={28}
                                                 className={(hover || rating) >= i
-                                                    ? 'fill-amber-400 text-amber-400'
+                                                    ? 'fill-brand-gold-light text-brand-gold-light'
                                                     : 'text-gray-600'}
                                             />
                                         </button>
@@ -147,7 +147,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                                     onChange={(e) => setComment(e.target.value)}
                                     rows={3}
                                     placeholder={isAr ? 'تعليق (اختياري)...' : 'Comment (optional)...'}
-                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                 />
                                 <div className="flex items-center justify-end gap-2">
                                     <button
@@ -159,7 +159,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                                     <button
                                         onClick={submit}
                                         disabled={saving}
-                                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition disabled:opacity-50"
+                                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
                                     >
                                         {saving && <Loader size={12} className="animate-spin" />}
                                         {myRating ? (isAr ? 'تحديث' : 'Update') : (isAr ? 'إرسال' : 'Submit')}
@@ -175,9 +175,9 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                                 )}
                                 <button
                                     onClick={openForm}
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-[#0a1830] hover:bg-amber-400 transition"
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition"
                                 >
-                                    <Star size={14} className={myRating ? 'fill-[#0a1830]' : ''} />
+                                    <Star size={14} className={myRating ? 'fill-brand-navy-dark' : ''} />
                                     {myRating ? (isAr ? 'تعديل تقييمك' : 'Update your rating') : (isAr ? 'قيّم هذا المحاضر' : 'Rate this instructor')}
                                 </button>
                             </div>
@@ -193,7 +193,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
             {items.length > 0 && (
                 <div className="space-y-2.5">
                     {items.map((r) => (
-                        <div key={r.id} className="bg-[#111f3a] border border-white/5 rounded-2xl p-4">
+                        <div key={r.id} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-4">
                             <div className="flex items-center justify-between gap-3 flex-wrap">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                     <span className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">

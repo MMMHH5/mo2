@@ -99,14 +99,14 @@ export default function AdminBlogPage() {
         }
     };
 
-    const inputCls = "mt-1 block w-full px-3 py-2.5 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm text-white placeholder:text-gray-500";
+    const inputCls = "mt-1 block w-full px-3 py-2.5 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-sm text-white placeholder:text-gray-500";
     const labelCls = "block text-sm font-bold text-gray-300";
 
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-black text-white">{t('blog.manageTitle')}</h1>
-                <button onClick={startNew} className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-black rounded-xl transition text-sm">
+                <button onClick={startNew} className="px-4 py-2.5 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-dark hover:to-brand-gold-dark text-black font-black rounded-xl transition text-sm">
                     + {t('blog.newPost')}
                 </button>
             </div>
@@ -115,7 +115,7 @@ export default function AdminBlogPage() {
             {loadError && <div className="mb-4 p-3 bg-red-500/10 text-red-400 border border-red-500/20 rounded-md text-sm font-semibold">{loadError}</div>}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-[#111f3a] rounded-2xl border border-white/5 shadow-sm p-5">
+                <div className="bg-brand-navy-dark rounded-2xl border border-white/5 shadow-sm p-5">
                     <h2 className="font-black text-white mb-4">{editing?.id ? t('blog.editPost') : t('blog.newPost')}</h2>
                     <form onSubmit={save} className="space-y-3">
                         <div>
@@ -152,17 +152,17 @@ export default function AdminBlogPage() {
                                 <input className={`${inputCls} ltr`} dir="ltr" value={form.coverImageUrl} onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })} />
                             </div>
                         </div>
-                        <button type="submit" disabled={busy} className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-black rounded-xl transition disabled:opacity-60 text-sm">
+                        <button type="submit" disabled={busy} className="w-full py-3 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-dark hover:to-brand-gold-dark text-black font-black rounded-xl transition disabled:opacity-60 text-sm">
                             {busy ? t('common.processing') : t('blog.savePost')}
                         </button>
                     </form>
                 </div>
 
-                <div className="bg-[#111f3a] rounded-2xl border border-white/5 shadow-sm p-5 space-y-3">
+                <div className="bg-brand-navy-dark rounded-2xl border border-white/5 shadow-sm p-5 space-y-3">
                     <h2 className="font-black text-white mb-2">{isAr ? 'المقالات' : 'Posts'}</h2>
                     {posts?.length === 0 && <p className="text-sm text-gray-400 font-semibold">{t('blog.empty')}</p>}
                     {posts?.map((post) => (
-                        <div key={post.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-white/5 hover:border-amber-500/30 transition">
+                        <div key={post.id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-white/5 hover:border-brand-gold/30 transition">
                             <div className="min-w-0">
                                 <p className="font-bold text-white truncate">{isAr ? post.titleAr : post.titleEn}</p>
                                 <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${post.isPublished ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-gray-400'}`}>
@@ -171,7 +171,7 @@ export default function AdminBlogPage() {
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <button onClick={() => startEdit(post)} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 transition">{t('common.edit')}</button>
-                                <button onClick={() => publish(post, !post.isPublished)} className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-xs font-bold text-amber-400 transition">
+                                <button onClick={() => publish(post, !post.isPublished)} className="px-3 py-1.5 rounded-lg bg-brand-gold/10 hover:bg-brand-gold/20 text-xs font-bold text-brand-gold-light transition">
                                     {post.isPublished ? t('blog.unpublish') : t('blog.publish')}
                                 </button>
                                 <button onClick={() => remove(post)} className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs font-bold text-red-400 transition">{t('blog.deletePost')}</button>

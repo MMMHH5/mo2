@@ -44,9 +44,9 @@ function CertificateViewInner({ id }: { id: string }) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#0a1830] flex items-center justify-center">
+            <div className="min-h-screen bg-brand-navy-dark flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-white/10 border-t-amber-400 rounded-full animate-spin" />
+                    <div className="w-12 h-12 border-4 border-white/10 border-t-brand-gold-light rounded-full animate-spin" />
                     <p className="text-gray-400 font-bold">Loading certificate...</p>
                 </div>
             </div>
@@ -55,7 +55,7 @@ function CertificateViewInner({ id }: { id: string }) {
 
     if (error || !cert) {
         return (
-            <div className="min-h-screen bg-[#0a1830] flex items-center justify-center px-4">
+            <div className="min-h-screen bg-brand-navy-dark flex items-center justify-center px-4">
                 <div className="text-center max-w-md">
                     <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
                         <svg className="w-10 h-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -79,15 +79,15 @@ function CertificateViewInner({ id }: { id: string }) {
 
     if (showSelector) {
         return (
-            <div className="min-h-screen bg-[#0a1830] flex flex-col">
+            <div className="min-h-screen bg-brand-navy-dark flex flex-col">
                 {/* Header */}
-                <header className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-[#0a1830]/80 backdrop-blur-xl sticky top-0 z-50">
+                <header className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-brand-navy-dark/80 backdrop-blur-xl sticky top-0 z-50">
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
+                        <div className="w-9 h-9 bg-gradient-to-br from-brand-gold to-brand-gold-dark rounded-lg flex items-center justify-center">
                             <span className="text-black font-black text-sm">L</span>
                         </div>
                         <span className="text-xl font-black text-white tracking-tight">
-                            laxa<span className="text-amber-400">lab</span>
+                            laxa<span className="text-brand-gold-light">lab</span>
                         </span>
                     </Link>
                 </header>
@@ -95,8 +95,8 @@ function CertificateViewInner({ id }: { id: string }) {
                 {/* Language selector */}
                 <div className="flex-1 flex items-center justify-center p-4">
                     <div className="text-center max-w-lg">
-                        <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                            <svg className="w-10 h-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <div className="w-20 h-20 bg-brand-gold/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-brand-gold-light" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
                             </svg>
                         </div>
@@ -106,7 +106,7 @@ function CertificateViewInner({ id }: { id: string }) {
                         <div className="flex gap-4 justify-center">
                             <button
                                 onClick={() => { setLang('en'); setShowSelector(false); }}
-                                className="bg-white text-[#0a1830] font-black text-lg px-10 py-5 rounded-2xl hover:bg-gray-100 transition-all duration-200 flex items-center gap-3"
+                                className="bg-white text-brand-navy-dark font-black text-lg px-10 py-5 rounded-2xl hover:bg-gray-100 transition-all duration-200 flex items-center gap-3"
                             >
                                 <span className="text-2xl">🇬🇧</span> English
                             </button>
@@ -129,7 +129,7 @@ function CertificateViewInner({ id }: { id: string }) {
             <div className="no-print fixed bottom-6 right-6 z-50 flex gap-2">
                 <button
                     onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-                    className="bg-[#111f3a] border border-white/10 text-white font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-[#1a2d4a] transition shadow-xl flex items-center gap-2"
+                    className="bg-brand-navy-dark border border-white/10 text-white font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-[#1a2d4a] transition shadow-xl flex items-center gap-2"
                 >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
@@ -149,7 +149,7 @@ function CertificateViewInner({ id }: { id: string }) {
             />
 
             {/* Verification badge — no-print */}
-            <div className="no-print bg-[#0a1830] border-t border-white/5 py-8 px-4">
+            <div className="no-print bg-brand-navy-dark border-t border-white/5 py-8 px-4">
                 <div className="max-w-2xl mx-auto text-center">
                     <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold ${
                         cert.verificationStatus === 'VALID'
@@ -171,8 +171,8 @@ function CertificateViewInner({ id }: { id: string }) {
 export default function CertificateViewClient({ id }: { id: string }) {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#0a1830] flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-white/10 border-t-amber-400 rounded-full animate-spin" />
+            <div className="min-h-screen bg-brand-navy-dark flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-white/10 border-t-brand-gold-light rounded-full animate-spin" />
             </div>
         }>
             <CertificateViewInner id={id} />

@@ -15,7 +15,7 @@ export default function UnauthorizedPage() {
                 {t('unauthorized.desc')}
             </p>
             <Link href="/dashboard">
-                <button className="mt-8 px-6 py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-md hover:bg-indigo-700 transition">
+                <button className="mt-8 px-6 py-3 bg-brand-navy text-white rounded-lg font-bold shadow-md hover:bg-indigo-700 transition">
                     {t('unauthorized.return_dashboard')}
                 </button>
             </Link>

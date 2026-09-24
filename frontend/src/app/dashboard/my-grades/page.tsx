@@ -31,10 +31,10 @@ export default function MyGradesPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
-            <div className="bg-[#111f3a] p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
+            <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                        <GraduationCap size={32} className="text-amber-400" /> {t('myGrades.heading')}
+                        <GraduationCap size={32} className="text-brand-gold-light" /> {t('myGrades.heading')}
                     </h2>
                     <p className="text-gray-400 mt-2">{t('myGrades.subtitle')}</p>
                 </div>
@@ -49,10 +49,10 @@ export default function MyGradesPage() {
                             const avg = courseAvg(enrollment.grades);
                             return (
                                 <div key={enrollment.course.id} className="border border-white/5 rounded-3xl overflow-x-auto">
-                                    <div className="bg-gradient-to-r from-amber-500/20 to-amber-600/10 p-5 flex items-center justify-between gap-4 flex-wrap">
+                                    <div className="bg-gradient-to-r from-brand-gold/20 to-brand-gold-dark/10 p-5 flex items-center justify-between gap-4 flex-wrap">
                                         <div>
                                             <h3 className="text-xl font-black text-white">
-                                                <Link href={`/courses/${enrollment.course.id}`} className="hover:text-amber-400 transition-colors">
+                                                <Link href={`/courses/${enrollment.course.id}`} className="hover:text-brand-gold-light transition-colors">
                                                     {pick(enrollment.course, 'title')}
                                                 </Link>
                                             </h3>
@@ -61,7 +61,7 @@ export default function MyGradesPage() {
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-2xl font-black text-amber-400">{avg}%</div>
+                                            <div className="text-2xl font-black text-brand-gold-light">{avg}%</div>
                                             <div className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">{t('myGrades.average')}</div>
                                         </div>
                                     </div>
@@ -78,7 +78,7 @@ export default function MyGradesPage() {
                                             {enrollment.grades.map((g) => (
                                                 <tr key={g.id}>
                                                     <td className="p-4 font-bold text-gray-300">{pick(g.assessment, 'name')}</td>
-                                                    <td className="p-4 font-black text-amber-400">{g.score} / {g.assessment.maxScore}</td>
+                                                    <td className="p-4 font-black text-brand-gold-light">{g.score} / {g.assessment.maxScore}</td>
                                                     <td className="p-4">
                                                         <span className={`px-2.5 py-1 rounded-full text-xs font-black ${pct(g) >= 60 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
                                                             {pct(g)}%
@@ -98,7 +98,7 @@ export default function MyGradesPage() {
                         {t('myGrades.empty_title')}
                         <div className="mt-2 text-sm font-normal">{t('myGrades.empty_subtitle')}</div>
                         <div className="mt-6">
-                            <Link href="/dashboard/my-courses" className="text-amber-400 hover:underline">{t('sidebar.my_courses')}</Link>
+                            <Link href="/dashboard/my-courses" className="text-brand-gold-light hover:underline">{t('sidebar.my_courses')}</Link>
                         </div>
                     </div>
                 )}

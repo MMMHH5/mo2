@@ -231,14 +231,14 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
         setSavingGrade(null);
     };
 
-    const inputCls = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 outline-none transition placeholder:text-gray-500 text-white";
+    const inputCls = "w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 outline-none transition placeholder:text-gray-500 text-white";
 
     if (loading && !tasks) {
-        return <div className="h-64 flex items-center justify-center text-amber-400"><Loader className="animate-spin" size={36} /></div>;
+        return <div className="h-64 flex items-center justify-center text-brand-gold-light"><Loader className="animate-spin" size={36} /></div>;
     }
 
     return (
-        <div className="bg-[#111f3a] p-6 lg:p-8 rounded-3xl border border-white/5">
+        <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl border border-white/5">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div>
                     <h2 className="text-2xl font-black text-white tracking-tight">{t('tasks.tasks_title')}</h2>
@@ -250,20 +250,20 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
             {tasks?.length === 0 && <EmptyPanel icon={ClipboardList} title={t('tasks.no_tasks')} />}
 
             {tasks && tasks.length > 0 && (
-                <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-[#0d1f3c] rounded-xl border border-white/5">
+                <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-brand-navy rounded-xl border border-white/5">
                     <div className="relative flex-1 min-w-[200px]">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                         <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                             placeholder={isAr ? 'بحث في المهام...' : 'Search tasks...'}
-                            className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500/40 outline-none" />
+                            className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold/40 outline-none" />
                     </div>
                     <select value={filterModule} onChange={e => setFilterModule(e.target.value)}
-                        className="px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-amber-500/40 outline-none">
+                        className="px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-brand-gold/40 outline-none">
                         <option value="all">{isAr ? 'كل الوحدات' : 'All Modules'}</option>
                         {modules.map(m => <option key={m.id} value={m.id}>{pick(m, 'title')}</option>)}
                     </select>
                     <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                        className="px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-amber-500/40 outline-none">
+                        className="px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:ring-2 focus:ring-brand-gold/40 outline-none">
                         <option value="all">{isAr ? 'كل الحالات' : 'All Status'}</option>
                         <option value="has-submissions">{isAr ? 'يوجد تسليمات' : 'Has Submissions'}</option>
                         <option value="no-submissions">{isAr ? 'لا تسليمات' : 'No Submissions'}</option>
@@ -283,14 +283,14 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                         <span className={`w-2 h-2 rounded-full shrink-0 ${task.isPublished !== false ? 'bg-green-400' : 'bg-gray-500'}`} title={task.isPublished !== false ? (isAr ? 'منشور' : 'Published') : (isAr ? 'مسودة' : 'Draft')} />
                                     </h4>
                                     <p className="text-xs text-gray-400 font-semibold mt-0.5">
-                                        {moduleLabel(task) ? <span className="text-amber-400 inline-flex items-center gap-1 mr-2"><ClipboardList size={12} />{moduleLabel(task)}</span> : null}
+                                        {moduleLabel(task) ? <span className="text-brand-gold-light inline-flex items-center gap-1 mr-2"><ClipboardList size={12} />{moduleLabel(task)}</span> : null}
                                         {t('tasks.max_score_label')}: {task.maxScore}
                                         {task.dueDate ? <> · {t('tasks.due_on')} {new Date(task.dueDate).toLocaleDateString()}</> : null}
                                         {task.submissions.length > 0 ? <> · {task.submissions.length} {t('tasks.submissions')}</> : null}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                    <button onClick={() => openEdit(task)} className="admin-action-btn text-blue-400 hover:bg-blue-500/10 tooltip" title={t('common.edit')}>
+                                    <button onClick={() => openEdit(task)} className="admin-action-btn text-brand-navy-light hover:bg-brand-navy-light/10 tooltip" title={t('common.edit')}>
                                         <Pencil size={17} />
                                     </button>
                                     <button onClick={() => deleteTask(task)} className="admin-action-btn text-red-400 hover:bg-red-500/10 tooltip" title={t('common.delete')}>
@@ -311,13 +311,13 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                 <div className="px-5 py-3 border-t border-white/5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
                                     {task.attachmentUrl && (
                                         <a href={task.attachmentUrl.startsWith('/') ? API_BASE_URL + task.attachmentUrl : task.attachmentUrl} target="_blank" rel="noreferrer"
-                                            className="inline-flex items-center gap-1.5 font-bold text-amber-400 hover:text-amber-300 transition">
+                                            className="inline-flex items-center gap-1.5 font-bold text-brand-gold-light hover:text-brand-gold-light transition">
                                             <Paperclip size={15} /> {t('tasks.attachment')}
                                         </a>
                                     )}
                                     {(task.links || []).map((lk, i) => (
                                         <a key={i} href={lk.url} target="_blank" rel="noreferrer"
-                                            className="inline-flex items-center gap-1.5 font-bold text-amber-400 hover:text-amber-300 transition">
+                                            className="inline-flex items-center gap-1.5 font-bold text-brand-gold-light hover:text-brand-gold-light transition">
                                             <Link2 size={15} /> {pick(lk, 'label') || lk.url}
                                         </a>
                                     ))}
@@ -333,9 +333,9 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                             {task.submissions.map((sub) => {
                                                 const email = sub.enrollment?.student?.email ?? '—';
                                                 return (
-                                                    <div key={sub.id} className="border border-white/10 rounded-xl p-4 bg-[#0d1f3c]">
+                                                    <div key={sub.id} className="border border-white/10 rounded-xl p-4 bg-brand-navy">
                                                             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                                                            <div className="flex items-center gap-2 text-sm font-bold text-amber-400">
+                                                            <div className="flex items-center gap-2 text-sm font-bold text-brand-gold-light">
                                                                 <Mail size={14} className="text-gray-400" /> {email}
                                                                 {task.dueDate && new Date(sub.submittedAt) > new Date(task.dueDate) && (
                                                                     <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">LATE</span>
@@ -350,7 +350,7 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                                         </div>
                                                         {sub.attachmentUrl && (
                                                             <a href={sub.attachmentUrl.startsWith('/') ? API_BASE_URL + sub.attachmentUrl : sub.attachmentUrl} target="_blank" rel="noreferrer"
-                                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-400 hover:text-amber-300 transition mb-3">
+                                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-gold-light hover:text-brand-gold-light transition mb-3">
                                                                 <Download size={15} /> {t('tasks.attachment')}
                                                             </a>
                                                         )}
@@ -373,13 +373,13 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                                                 )}
                                                             </div>
                                                             <button onClick={() => gradeSubmission(sub)} disabled={savingGrade === sub.id}
-                                                                className="inline-flex items-center gap-1.5 bg-amber-500 text-[#0a1830] text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+                                                                className="inline-flex items-center gap-1.5 bg-brand-gold text-brand-navy-dark text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-brand-gold-light transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                                                                 {savingGrade === sub.id ? <Loader size={15} className="animate-spin" /> : <Check size={15} />} {t('tasks.grade')}
                                                             </button>
                                                         </div>
                                                         <button
                                                             onClick={() => setPeerReviewSubId(peerReviewSubId === sub.id ? null : sub.id)}
-                                                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition cursor-pointer"
+                                                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-brand-gold-light hover:text-brand-gold-light transition cursor-pointer"
                                                         >
                                                             <ClipboardCheck size={14} />
                                                             {peerReviewSubId === sub.id ? (isAr ? 'إخفاء تقييم الأقران' : 'Hide Peer Review') : (isAr ? 'تقييم الأقران' : 'Peer Review')}
@@ -421,7 +421,7 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
 
             {modalOpen && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
-                    <div className="bg-[#0d1f3c] rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-white">
                                 {editing ? t('tasks.edit_task') : t('tasks.add_task')}
@@ -463,7 +463,7 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                 <input dir="ltr" value={form.attachmentUrl} onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })} className={inputCls} placeholder={t('tasks.attachment_placeholder')} />
                             </div>
                             <div>
-                                <span className="block text-xs font-black text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1"><Link2 size={14} /> {t('tasks.links_heading')}</span>
+                                <span className="block text-xs font-black text-brand-gold-light uppercase tracking-wider mb-2 flex items-center gap-1"><Link2 size={14} /> {t('tasks.links_heading')}</span>
                                 <div className="space-y-2">
                                     {form.links.map((lk, i) => (
                                         <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
@@ -480,7 +480,7 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                     ))}
                                 </div>
                                 <button type="button" onClick={() => setForm((f) => ({ ...f, links: [...f.links, { url: '', labelAr: '', labelEn: '' }] }))}
-                                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-amber-400 hover:text-amber-300 transition cursor-pointer">
+                                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-brand-gold-light hover:text-brand-gold-light transition cursor-pointer">
                                     <Plus size={15} /> {t('tasks.add_link')}
                                 </button>
                             </div>
@@ -495,7 +495,7 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                 </div>
                             </div>
                             <button onClick={saveTask} disabled={saving}
-                                className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-[#0a1830] font-bold py-3.5 rounded-xl shadow-md transition disabled:opacity-50">
+                                className="w-full inline-flex items-center justify-center gap-2 bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark font-bold py-3.5 rounded-xl shadow-md transition disabled:opacity-50">
                                 {saving ? t('common.saving') : t('tasks.save_task')}
                             </button>
                         </div>

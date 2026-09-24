@@ -39,16 +39,16 @@ export default function AdminAuditPage() {
                                 value={actionSearch}
                                 onChange={e => setActionSearch(e.target.value)}
                                 placeholder={t('audit.search_action')}
-                                className="ps-9 pe-3 py-2 border border-white/10 rounded-xl text-sm w-44 bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                                className="ps-9 pe-3 py-2 border border-white/10 rounded-xl text-sm w-44 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <input
                             value={userSearch}
                             onChange={e => setUserSearch(e.target.value)}
                             placeholder={t('audit.search_user')}
-                            className="px-3.5 py-2 border border-white/10 rounded-xl text-sm w-48 bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                            className="px-3.5 py-2 border border-white/10 rounded-xl text-sm w-48 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                         />
-                        <select value={limit} onChange={e => setLimit(Number(e.target.value))} className="px-3.5 py-2 border border-white/10 rounded-xl text-sm bg-[#0a1830] text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold">
+                        <select value={limit} onChange={e => setLimit(Number(e.target.value))} className="px-3.5 py-2 border border-white/10 rounded-xl text-sm bg-brand-navy-dark text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-gold font-bold">
                             <option value={25}>25</option>
                             <option value={50}>50</option>
                             <option value={100}>100</option>
@@ -66,7 +66,7 @@ export default function AdminAuditPage() {
                     <p className="font-bold">{t('audit.loading')}</p>
                 </div>
             ) : (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b border-white/5">
@@ -82,7 +82,7 @@ export default function AdminAuditPage() {
                                     <td className="p-4 font-mono text-gray-400 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
                                     <td className="p-4 text-white font-bold">
                                         <span className="inline-flex items-center gap-2">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                            <span className="w-1.5 h-1.5 rounded-full bg-brand-gold shrink-0" />
                                             {log.action}
                                         </span>
                                     </td>

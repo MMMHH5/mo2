@@ -40,10 +40,10 @@ export default function CertificatesPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
-            <div className="bg-[#111f3a] p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
+            <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                        <Award size={32} className="text-amber-400" /> {t('certificates.heading')}
+                        <Award size={32} className="text-brand-gold-light" /> {t('certificates.heading')}
                     </h2>
                     <p className="text-gray-400 mt-2">{t('certificates.subtitle')}</p>
                 </div>
@@ -60,11 +60,11 @@ export default function CertificatesPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {certificates!.map(cert => (
-                            <div key={cert.id} className="relative border border-white/5 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group bg-[#0d1f3c]">
-                                <div className="absolute inset-x-0 top-0 h-1.5 bg-white/10 group-hover:bg-amber-500/50 transition-all duration-500" />
+                            <div key={cert.id} className="relative border border-white/5 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group bg-brand-navy">
+                                <div className="absolute inset-x-0 top-0 h-1.5 bg-white/10 group-hover:bg-brand-gold/50 transition-all duration-500" />
                                 <div className="p-6">
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-amber-400 group-hover:bg-amber-500/10 transition-all duration-300">
+                                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-brand-gold-light group-hover:bg-brand-gold/10 transition-all duration-300">
                                             <Award size={26} />
                                         </div>
                                         {cert.verificationStatus === 'VALID' && (

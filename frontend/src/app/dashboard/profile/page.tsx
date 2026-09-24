@@ -184,7 +184,7 @@ export default function ProfilePage() {
         { icon: MapPin, label: t('profile.city'), value: (profile?.metadata?.city as string) || '—' },
     ];
 
-    const inputCls = "w-full bg-[#0a1830] border border-white/10 rounded-xl px-4 py-3 font-semibold text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition";
+    const inputCls = "w-full bg-brand-navy-dark border border-white/10 rounded-xl px-4 py-3 font-semibold text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-brand-gold transition";
     const labelCls = "block text-sm font-bold text-gray-300 mb-1.5";
 
     return (
@@ -193,8 +193,8 @@ export default function ProfilePage() {
                 {error && <div className="p-4 bg-red-500/10 text-red-400 rounded-xl font-semibold">{error}</div>}
 
                 {loading || !profile ? (
-                    <div className="bg-[#111f3a] border border-white/5 p-16 rounded-3xl flex flex-col items-center gap-3 font-bold text-gray-400">
-                        <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-amber-500 animate-spin" />
+                    <div className="bg-brand-navy-dark border border-white/5 p-16 rounded-3xl flex flex-col items-center gap-3 font-bold text-gray-400">
+                        <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-brand-gold animate-spin" />
                         {t('profile.loading')}
                     </div>
                 ) : (
@@ -240,9 +240,9 @@ export default function ProfilePage() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Personal info */}
-                            <div className="bg-[#111f3a] border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                            <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
                                 <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-white/5">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                    <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
                                         <UserRound size={20} />
                                     </div>
                                     <h3 className="text-xl font-black text-white">{t('profile.personal_info')}</h3>
@@ -250,7 +250,7 @@ export default function ProfilePage() {
                                 <div className="space-y-1">
                                     {infoRows.map((row) => (
                                         <div key={row.label} className="flex items-center gap-4 py-2.5">
-                                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0">
+                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light shrink-0">
                                                 <row.icon size={18} />
                                             </div>
                                             <div className="min-w-0">
@@ -274,8 +274,8 @@ export default function ProfilePage() {
 
                                 {(profile.metadata?.specialty as string) && (
                                     <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2">
-                                        <GraduationCap size={16} className="text-amber-400 shrink-0" />
-                                        <span dir="auto" className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-black">
+                                        <GraduationCap size={16} className="text-brand-gold-light shrink-0" />
+                                        <span dir="auto" className="px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold-light text-xs font-black">
                                             {profile.metadata?.specialty as string}
                                         </span>
                                     </div>
@@ -285,9 +285,9 @@ export default function ProfilePage() {
                             {/* Account security: email + password */}
                             <div className="space-y-6">
                                 {/* Email change */}
-                                <div className="bg-[#111f3a] border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
                                     <div className="flex items-center gap-2.5 mb-5">
-                                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
                                             <Mail size={20} />
                                         </div>
                                         <h3 className="text-xl font-black text-white">{t('profile.change_email')}</h3>
@@ -316,7 +316,7 @@ export default function ProfilePage() {
                                         <button
                                             onClick={saveEmail}
                                             disabled={savingEmail}
-                                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black py-3 font-bold rounded-xl hover:from-amber-600 hover:to-amber-700 transition disabled:opacity-50"
+                                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
                                         >
                                             {savingEmail ? t('common.saving') : t('profile.save_email')}
                                         </button>
@@ -324,9 +324,9 @@ export default function ProfilePage() {
                                 </div>
 
                                 {/* Password change */}
-                                <div className="bg-[#111f3a] border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
                                     <div className="flex items-center gap-2.5 mb-5">
-                                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
                                             <KeyRound size={20} />
                                         </div>
                                         <h3 className="text-xl font-black text-white">{t('profile.change_password')}</h3>
@@ -362,7 +362,7 @@ export default function ProfilePage() {
                                         <button
                                             onClick={savePassword}
                                             disabled={savingPw}
-                                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black py-3 font-bold rounded-xl hover:from-amber-600 hover:to-amber-700 transition disabled:opacity-50"
+                                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
                                         >
                                             {savingPw ? t('common.saving') : t('profile.save_password')}
                                         </button>
@@ -372,21 +372,21 @@ export default function ProfilePage() {
                         </div>
 
                         {/* GDPR privacy card */}
-                        <div className="bg-[#111f3a] border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
                             <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-white/5">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
                                     <ShieldAlert size={20} />
                                 </div>
                                 <h3 className="text-xl font-black text-white">{t('gdpr.heading')}</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-6">
-                                    <h4 className="font-black text-amber-400 mb-1.5">{t('gdpr.export_title')}</h4>
+                                <div className="bg-brand-gold/5 border border-brand-gold/10 rounded-2xl p-6">
+                                    <h4 className="font-black text-brand-gold-light mb-1.5">{t('gdpr.export_title')}</h4>
                                     <p className="text-sm text-gray-400 mb-5">{t('gdpr.export_desc')}</p>
                                     <button
                                         onClick={exportData}
                                         disabled={exportLoading}
-                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-6 py-3 font-bold rounded-xl hover:from-amber-600 hover:to-amber-700 transition disabled:opacity-50"
+                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-6 py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
                                     >
                                         <Download size={16} /> {exportLoading ? t('gdpr.exporting') : t('gdpr.export_btn')}
                                     </button>
@@ -410,7 +410,7 @@ export default function ProfilePage() {
             {/* Edit personal info modal */}
             {editing && profile && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
                         <div className="flex items-center justify-between mb-7">
                             <h2 className="text-2xl font-black text-white">{t('profile.edit_title')}</h2>
                             <button onClick={() => setEditing(false)} className="w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center" aria-label="Close">
@@ -477,7 +477,7 @@ export default function ProfilePage() {
                             <button
                                 onClick={saveProfile}
                                 disabled={saving}
-                                className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black py-3 font-bold rounded-xl shadow-sm transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                                className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-dark hover:to-brand-gold-dark text-black py-3 font-bold rounded-xl shadow-sm transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
                             >
                                 <Check size={18} /> {saving ? t('common.saving') : t('profile.save')}
                             </button>
@@ -495,7 +495,7 @@ export default function ProfilePage() {
         {/* Delete account confirmation */}
             {confirmDelete && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in">
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-black text-white">{t('gdpr.delete_confirm_title')}</h2>
                             <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center" aria-label="Close">

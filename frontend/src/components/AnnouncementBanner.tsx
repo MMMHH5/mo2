@@ -86,7 +86,7 @@ export default function AnnouncementBanner({
   return (
     <>
       <div
-        className={"relative w-full overflow-hidden group " + (hasMedia ? "rounded-2xl md:rounded-3xl" : isDark ? "bg-[#111f3a] border border-white/[0.06] rounded-2xl md:rounded-3xl" : "bg-white border border-amber-200/40 rounded-2xl md:rounded-3xl")}
+        className={"relative w-full overflow-hidden group " + (hasMedia ? "rounded-2xl md:rounded-3xl" : isDark ? "bg-brand-navy-dark border border-white/[0.06] rounded-2xl md:rounded-3xl" : "bg-white border border-brand-gold-light/70/40 rounded-2xl md:rounded-3xl")}
         style={hasMedia ? { height: 200 } : { minHeight: 140 }}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
@@ -111,25 +111,25 @@ export default function AnnouncementBanner({
             <div className="absolute inset-0 pointer-events-none">
               {isDark ? (
                 <>
-                  <div className="absolute -top-20 -right-20 w-72 h-72 bg-amber-500/[0.06] rounded-full blur-3xl" />
-                  <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-blue-500/[0.04] rounded-full blur-3xl" />
+                  <div className="absolute -top-20 -right-20 w-72 h-72 bg-brand-gold/[0.06] rounded-full blur-3xl" />
+                  <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-brand-navy-light/[0.04] rounded-full blur-3xl" />
                 </>
               ) : (
                 <>
-                  <div className="absolute -top-20 -right-20 w-72 h-72 bg-amber-400/[0.08] rounded-full blur-3xl" />
-                  <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-amber-600/[0.05] rounded-full blur-3xl" />
+                  <div className="absolute -top-20 -right-20 w-72 h-72 bg-brand-gold-light/[0.08] rounded-full blur-3xl" />
+                  <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-brand-gold-dark/[0.05] rounded-full blur-3xl" />
                 </>
               )}
             </div>
             <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 py-8 text-center">
-              <span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-3 " + (isDark ? "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20" : "bg-amber-100 text-amber-700 ring-1 ring-amber-200")}>
+              <span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-3 " + (isDark ? "bg-brand-gold/15 text-brand-gold-light ring-1 ring-brand-gold/20" : "bg-brand-gold/10 text-brand-gold-dark ring-1 ring-brand-gold-light/70")}>
                 <Megaphone size={12} />
                 {isDark ? "ANNOUNCEMENT" : "إعلان"}
               </span>
               <h2 className={"font-black text-2xl md:text-3xl lg:text-4xl leading-tight max-w-3xl " + (isDark ? "text-white" : "text-[#1a2742]")}>{text}</h2>
               {body && <p className={"text-base md:text-lg mt-3 max-w-2xl leading-relaxed " + (isDark ? "text-gray-300" : "text-gray-600")}>{body}</p>}
               {item.linkUrl && (
-                <a href={item.linkUrl} target="_blank" rel="noreferrer" className={"inline-flex items-center gap-2 mt-5 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] " + (isDark ? "bg-amber-500 text-[#0d1a30] hover:bg-amber-400 shadow-lg shadow-amber-500/25" : "bg-[#1a2742] text-white hover:bg-[#253554] shadow-lg")}>
+                <a href={item.linkUrl} target="_blank" rel="noreferrer" className={"inline-flex items-center gap-2 mt-5 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] " + (isDark ? "bg-brand-gold text-[#0d1a30] hover:bg-brand-gold-light shadow-lg shadow-brand-gold/25" : "bg-[#1a2742] text-white hover:bg-[#253554] shadow-lg")}>
                   {t("announcementBanner.learn_more")}
                   <svg className="w-4 h-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                 </a>
@@ -143,14 +143,14 @@ export default function AnnouncementBanner({
             <div className="flex items-end justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <Megaphone size={11} className="text-amber-400 shrink-0" />
-                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">{isDark ? "ANNOUNCEMENT" : "إعلان"}</span>
+                  <Megaphone size={11} className="text-brand-gold-light shrink-0" />
+                  <span className="text-[10px] font-bold text-brand-gold-light uppercase tracking-wider">{isDark ? "ANNOUNCEMENT" : "إعلان"}</span>
                   {items.length > 1 && <span className="text-[10px] text-white/40 font-medium">{current + 1}/{items.length}</span>}
                 </div>
                 <h3 className="font-black text-lg md:text-xl text-white leading-snug drop-shadow-lg">{text}</h3>
                 {body && <p className="text-sm text-white/70 mt-1 line-clamp-2 max-w-lg">{body}</p>}
                 {item.linkUrl && (
-                  <a href={item.linkUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition">
+                  <a href={item.linkUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-brand-gold-light hover:text-brand-gold-light transition">
                     {t("announcementBanner.learn_more")}
                     <svg className="w-3.5 h-3.5 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                   </a>
@@ -174,7 +174,7 @@ export default function AnnouncementBanner({
                 <button key={i} onClick={() => goTo(i)} className="flex-1 h-1 rounded-full overflow-hidden bg-white/15 relative">
                   {i === current && (
                     <div
-                      className="absolute inset-y-0 left-0 bg-amber-500 rounded-full"
+                      className="absolute inset-y-0 left-0 bg-brand-gold rounded-full"
                       key={"bar-" + current + "-" + isPaused}
                       style={{
                         animation: isPaused ? "none" : "shrink " + (it.durationSeconds || 5) + "s linear forwards",
@@ -182,7 +182,7 @@ export default function AnnouncementBanner({
                       }}
                     />
                   )}
-                  {i < current && <div className="absolute inset-y-0 left-0 w-full bg-amber-500/50 rounded-full" />}
+                  {i < current && <div className="absolute inset-y-0 left-0 w-full bg-brand-gold/50 rounded-full" />}
                 </button>
               ))}
             </div>

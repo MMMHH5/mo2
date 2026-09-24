@@ -97,19 +97,19 @@ export default function TasksPage() {
 
     const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString() : '—');
 
-    const inputCls = "w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition placeholder:text-gray-500 text-white";
+    const inputCls = "w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition placeholder:text-gray-500 text-white";
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
             <div className="animate-fade-in space-y-6">
-                <div className="bg-[#111f3a] p-8 rounded-3xl shadow-sm border border-white/5">
+                <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5">
                     <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                        <ClipboardList size={26} className="text-amber-400" /> {t('tasks.teacher_heading')}
+                        <ClipboardList size={26} className="text-brand-gold-light" /> {t('tasks.teacher_heading')}
                     </h2>
                     <p className="text-gray-400 mt-2">{t('tasks.teacher_subtitle')}</p>
                 </div>
 
-                <div className="bg-[#111f3a] p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
+                <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
                     <div className="max-w-xl mb-6">
                         <label className="block text-sm font-bold text-gray-300 mb-1.5">{t('tasks.select_opening')} *</label>
                         <select
@@ -138,7 +138,7 @@ export default function TasksPage() {
 
                     {selectedOpeningId && loading && (
                         <div className="h-40 flex items-center justify-center font-bold text-gray-400">
-                            <Loader className="animate-spin text-amber-400 me-2" size={20} /> {t('common.loading')}
+                            <Loader className="animate-spin text-brand-gold-light me-2" size={20} /> {t('common.loading')}
                         </div>
                     )}
 
@@ -164,7 +164,7 @@ export default function TasksPage() {
                                                         hasGraded ? (
                                                             <span className="inline-flex items-center gap-1 text-emerald-400"><CheckCircle size={13} /> {t('tasks.graded')}: {sub.score}/{task.maxScore}</span>
                                                         ) : (
-                                                            <span className="inline-flex items-center gap-1 text-amber-400"><Clock size={13} /> {t('tasks.submitted')}</span>
+                                                            <span className="inline-flex items-center gap-1 text-brand-gold-light"><Clock size={13} /> {t('tasks.submitted')}</span>
                                                         )
                                                     )}
                                                 </p>
@@ -187,7 +187,7 @@ export default function TasksPage() {
                                                             <p className="text-xs font-black text-gray-400 mb-2 uppercase tracking-wide">{t('tasks.my_submission')} · {new Date(sub.submittedAt).toLocaleString()}</p>
                                                             <p className="text-sm text-gray-300 whitespace-pre-wrap">{sub.content}</p>
                                                             {sub.attachmentUrl && (
-                                                                <a href={sub.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-400 hover:text-amber-300 transition mt-2">
+                                                                <a href={sub.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-gold-light hover:text-brand-gold-light transition mt-2">
                                                                     <Paperclip size={14} /> {t('tasks.attachment')}
                                                                 </a>
                                                             )}
@@ -217,7 +217,7 @@ export default function TasksPage() {
                                                             <button
                                                                 onClick={() => submitAnswer(task)}
                                                                 disabled={savingSubmit === task.id || !(drafts[task.id] ?? '').trim()}
-                                                                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black text-sm font-bold px-5 py-2.5 rounded-xl hover:from-amber-400 hover:to-amber-500 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                                className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black text-sm font-bold px-5 py-2.5 rounded-xl hover:from-brand-gold-light hover:to-brand-gold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                                             >
                                                                 {savingSubmit === task.id ? <Loader size={15} className="animate-spin" /> : <Send size={15} />}
                                                                 {sub ? t('tasks.update_submission') : t('tasks.submit')}

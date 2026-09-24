@@ -66,16 +66,16 @@ export default function NotificationsPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN']}>
-            <div className="bg-[#111f3a] p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
+            <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
                 <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
                     <div>
                         <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                            <Bell size={32} className="text-amber-400" /> {t('notifications.heading')}
+                            <Bell size={32} className="text-brand-gold-light" /> {t('notifications.heading')}
                         </h2>
                         <p className="text-gray-400 mt-2">{t('notifications.subtitle')}</p>
                     </div>
                     {unreadCount > 0 && (
-                        <button onClick={markAllRead} className="inline-flex items-center gap-2 text-sm font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2.5 rounded-xl transition">
+                        <button onClick={markAllRead} className="inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light bg-brand-gold/10 hover:bg-brand-gold/20 px-4 py-2.5 rounded-xl transition">
                             <CheckCheck size={16} /> {t('notifications.mark_all')}
                         </button>
                     )}
@@ -83,7 +83,7 @@ export default function NotificationsPage() {
 
                 {loading ? (
                     <div className="h-40 flex items-center justify-center font-bold text-gray-400">
-                        <Loader className="animate-spin text-amber-400" size={32} />
+                        <Loader className="animate-spin text-brand-gold-light" size={32} />
                     </div>
                 ) : !items || items.length === 0 ? (
                     <div className="h-56 flex flex-col items-center justify-center text-center text-gray-400">
@@ -98,8 +98,8 @@ export default function NotificationsPage() {
                                 onClick={() => !n.readAt && markRead(n.id)}
                                 className={`w-full text-left p-5 rounded-2xl border transition ${
                                     n.readAt
-                                        ? 'bg-[#0d1f3c] border-white/5 opacity-75'
-                                        : 'bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40'
+                                        ? 'bg-brand-navy border-white/5 opacity-75'
+                                        : 'bg-brand-gold/5 border-brand-gold/20 hover:border-brand-gold/40'
                                 }`}
                             >
                                 <div className="flex items-start justify-between gap-3">
@@ -107,7 +107,7 @@ export default function NotificationsPage() {
                                         <span className="text-[11px] font-black uppercase tracking-wider text-gray-400 bg-white/5 px-2.5 py-0.5 rounded-full">
                                             {n.type}
                                         </span>
-                                        {!n.readAt && <span className="w-2 h-2 rounded-full bg-amber-400" />}
+                                        {!n.readAt && <span className="w-2 h-2 rounded-full bg-brand-gold-light" />}
                                     </div>
                                     <span className="text-[11px] text-gray-500 font-semibold shrink-0">
                                         {new Date(n.createdAt).toLocaleString()}

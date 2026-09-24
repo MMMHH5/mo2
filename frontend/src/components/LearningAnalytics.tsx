@@ -96,7 +96,7 @@ function Heatmap({ activity, isAr }: { activity: DailyActivity[] | undefined; is
     }, [byDate]);
 
     const level = (s: number) => (s <= 0 ? 0 : s < 900 ? 1 : s < 1800 ? 2 : s < 3600 ? 3 : 4);
-    const colors = ['bg-white/5', 'bg-amber-500/20', 'bg-amber-500/40', 'bg-amber-500/70', 'bg-amber-400'];
+    const colors = ['bg-white/5', 'bg-brand-gold/20', 'bg-brand-gold/40', 'bg-brand-gold/70', 'bg-brand-gold-light'];
 
     return (
         <div>
@@ -136,14 +136,14 @@ export default function LearningAnalytics({ courseId }: Props) {
     if (!courseId && overallRes.loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-amber-400" />
+                <Loader size={28} className="animate-spin text-brand-gold-light" />
             </div>
         );
     }
     if (courseId && courseRes.loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-amber-400" />
+                <Loader size={28} className="animate-spin text-brand-gold-light" />
             </div>
         );
     }
@@ -151,7 +151,7 @@ export default function LearningAnalytics({ courseId }: Props) {
     const error = courseId ? courseRes.error : overallRes.error;
     if (error) {
         return (
-            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-8 text-center">
+            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
                 <Clock size={32} className="mx-auto text-gray-600 mb-3" />
                 <p className="text-gray-400 font-bold text-sm">{error}</p>
             </div>
@@ -171,26 +171,26 @@ export default function LearningAnalytics({ courseId }: Props) {
         return (
             <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
-                    <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 flex items-center justify-center">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex items-center justify-center">
                         <ProgressRing pct={Number(c?.completionPercent ?? 0)} label={isAr ? 'مكتمل' : 'complete'} />
                     </div>
                     <div className="sm:col-span-2 grid grid-cols-2 gap-4">
-                        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
-                            <Clock size={20} className="text-blue-400 mb-2" />
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
+                            <Clock size={20} className="text-brand-navy-light mb-2" />
                             <p className="text-2xl font-black text-white tabular-nums">{fmtDuration(Number(c?.totalSeconds ?? 0), isAr)}</p>
                             <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mt-1">{isAr ? 'وقت التعلم' : 'Learning time'}</p>
                         </div>
-                        <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
-                            <FileQuestion size={20} className="text-amber-400 mb-2" />
+                        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
+                            <FileQuestion size={20} className="text-brand-gold-light mb-2" />
                             <p className="text-2xl font-black text-white tabular-nums">{quizAvg !== null ? `${quizAvg}%` : '—'}</p>
                             <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mt-1">{isAr ? 'متوسط الاختبارات' : 'Quiz average'}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                     <h3 className="flex items-center gap-2 text-sm font-black text-white mb-4">
-                        <BookOpen size={16} className="text-amber-400" />
+                        <BookOpen size={16} className="text-brand-gold-light" />
                         {isAr ? 'الوقت لكل وحدة' : 'Time per module'}
                     </h3>
                     {modules.length === 0 ? (
@@ -207,7 +207,7 @@ export default function LearningAnalytics({ courseId }: Props) {
                                         </div>
                                         <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
                                             <div
-                                                className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-700"
+                                                className="h-full rounded-full bg-gradient-to-r from-brand-gold-dark to-brand-gold-light transition-all duration-700"
                                                 style={{ width: `${Math.max(2, (secs / maxSeconds) * 100)}%` }}
                                             />
                                         </div>
@@ -219,9 +219,9 @@ export default function LearningAnalytics({ courseId }: Props) {
                 </div>
 
                 {quizzes.length > 0 && (
-                    <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                         <h3 className="flex items-center gap-2 text-sm font-black text-white mb-4">
-                            <FileQuestion size={16} className="text-amber-400" />
+                            <FileQuestion size={16} className="text-brand-gold-light" />
                             {isAr ? 'درجات الاختبارات' : 'Quiz scores'}
                         </h3>
                         <div className="space-y-3">
@@ -246,7 +246,7 @@ export default function LearningAnalytics({ courseId }: Props) {
                     </div>
                 )}
 
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                     <h3 className="text-sm font-black text-white mb-4">{isAr ? 'نشاط آخر ٣٠ يوماً' : 'Last 30 days activity'}</h3>
                     <Heatmap activity={c?.dailyActivity} isAr={isAr} />
                 </div>
@@ -257,8 +257,8 @@ export default function LearningAnalytics({ courseId }: Props) {
     // ===== Overall =====
     const o = overallRes.data;
     const stats = [
-        { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', value: fmtDuration(Number(o?.totalSeconds ?? 0), isAr), label: isAr ? 'إجمالي وقت التعلم' : 'Total learning time' },
-        { icon: BookOpen, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/30', value: String(Number(o?.coursesInProgress ?? 0)), label: isAr ? 'دورات قيد التقدم' : 'Courses in progress' },
+        { icon: Clock, color: 'text-brand-navy-light', bg: 'bg-brand-navy-light/10 border-brand-navy-light/30', value: fmtDuration(Number(o?.totalSeconds ?? 0), isAr), label: isAr ? 'إجمالي وقت التعلم' : 'Total learning time' },
+        { icon: BookOpen, color: 'text-brand-gold-light', bg: 'bg-brand-gold/10 border-brand-gold/30', value: String(Number(o?.coursesInProgress ?? 0)), label: isAr ? 'دورات قيد التقدم' : 'Courses in progress' },
         { icon: CheckCircle2, color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/30', value: String(Number(o?.coursesCompleted ?? 0)), label: isAr ? 'دورات مكتملة' : 'Courses completed' },
         { icon: Flame, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30', value: String(Number(o?.streak ?? 0)), label: isAr ? 'سلسلة الأيام' : 'Current streak' },
     ];
@@ -267,7 +267,7 @@ export default function LearningAnalytics({ courseId }: Props) {
         <div className="space-y-5">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {stats.map(({ icon: Icon, bg, color, value, label }) => (
-                    <div key={label} className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+                    <div key={label} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                         <span className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-3 ${bg}`}>
                             <Icon size={18} className={color} />
                         </span>
@@ -277,7 +277,7 @@ export default function LearningAnalytics({ courseId }: Props) {
                 ))}
             </div>
 
-            <div className="bg-[#111f3a] border border-white/5 rounded-2xl p-5">
+            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                 <h3 className="text-sm font-black text-white mb-4">{isAr ? 'نشاط آخر ٣٠ يوماً' : 'Last 30 days activity'}</h3>
                 <Heatmap activity={o?.dailyActivity} isAr={isAr} />
             </div>

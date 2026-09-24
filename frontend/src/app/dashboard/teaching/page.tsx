@@ -58,7 +58,7 @@ type ModalState =
 
 const openingStatusColors: Record<string, string> = {
     DRAFT: 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
-    ANNOUNCEMENT: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    ANNOUNCEMENT: 'bg-brand-navy-light/10 text-brand-navy-light border border-brand-navy-light/20',
     OPEN: 'bg-green-500/10 text-green-400 border border-green-500/20',
     STARTED: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
     ENDED: 'bg-gray-500/10 text-gray-500 border border-gray-500/20',
@@ -133,11 +133,11 @@ export default function TeachingHubPage() {
     };
 
     const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-    const inputCls = "w-full px-4 py-3 bg-[#0a1830] border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/40 outline-none transition";
+    const inputCls = "w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 outline-none transition";
 
     return (
         <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-            <div className="min-h-screen bg-[#0a1830] space-y-6 animate-fade-in p-6 lg:p-8">
+            <div className="min-h-screen bg-brand-navy-dark space-y-6 animate-fade-in p-6 lg:p-8">
                 {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
@@ -149,7 +149,7 @@ export default function TeachingHubPage() {
                         </p>
                     </div>
                     <button onClick={() => { setSelectedCourseId(''); setReason(''); setModal({ type: 'open' }); }}
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-amber-500/20 transition-all">
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-bold text-sm px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-brand-gold/20 transition-all">
                         <CalendarPlus size={16} /> {isAr ? 'طلب فتح دورة' : 'Request Open'}
                     </button>
                 </div>
@@ -157,9 +157,9 @@ export default function TeachingHubPage() {
                 {error && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl">{error}</div>}
 
                 {/* Tab Navigation */}
-                <div className="inline-flex items-center gap-1 bg-[#111f3a] border border-white/5 rounded-2xl p-1.5">
+                <div className="inline-flex items-center gap-1 bg-brand-navy-dark border border-white/5 rounded-2xl p-1.5">
                     <Link href="/dashboard/teaching"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 bg-brand-gold/10 text-brand-gold-light border border-brand-gold/20">
                         <BookOpen size={16} /> {isAr ? 'الدورات المسندة' : 'My Openings'}
                     </Link>
                     <Link href="/dashboard/teaching/suggestions"
@@ -171,12 +171,12 @@ export default function TeachingHubPage() {
                 {/* Stats Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
-                        { icon: BookOpen, label: isAr ? 'إجمالي الدورات' : 'Total Openings', value: openings?.length ?? 0, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                        { icon: BookOpen, label: isAr ? 'إجمالي الدورات' : 'Total Openings', value: openings?.length ?? 0, color: 'text-brand-navy-light', bg: 'bg-brand-navy-light/10' },
                         { icon: Users, label: isAr ? 'إجمالي الطلاب' : 'Total Students', value: totalStudents, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
                         { icon: ClipboardList, label: isAr ? 'إجمالي المهام' : 'Total Tasks', value: totalTasks, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-                        { icon: Clock, label: isAr ? 'طلبات معلقة' : 'Pending Requests', value: pendingRequests, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                        { icon: Clock, label: isAr ? 'طلبات معلقة' : 'Pending Requests', value: pendingRequests, color: 'text-brand-gold-light', bg: 'bg-brand-gold/10' },
                     ].map((s, i) => (
-                        <div key={i} className="bg-[#111f3a] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all">
+                        <div key={i} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className={`w-10 h-10 rounded-xl ${s.bg} ${s.color} flex items-center justify-center`}>
                                     <s.icon size={20} />
@@ -189,11 +189,11 @@ export default function TeachingHubPage() {
                 </div>
 
                 {/* My Openings */}
-                <section className="bg-[#111f3a] border border-white/5 rounded-2xl p-6 lg:p-8">
+                <section className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 lg:p-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h3 className="text-lg font-black text-white flex items-center gap-2">
-                                <BookOpen size={18} className="text-amber-400" />
+                                <BookOpen size={18} className="text-brand-gold-light" />
                                 {isAr ? 'دوراتي المسندة' : 'My Openings'}
                             </h3>
                             <p className="text-sm text-gray-400 mt-1">{isAr ? 'الدورات المسندة إليك — أدِر الطلاب والدرجات والمهام' : 'Batches assigned to you — manage students, grades and tasks'}</p>
@@ -215,14 +215,14 @@ export default function TeachingHubPage() {
                                 const enrollmentCount = o._count?.enrollments ?? 0;
                                 const taskCount = o._count?.tasks ?? 0;
                                 return (
-                                    <div key={o.id} className="bg-[#0d1f3c] border border-white/5 hover:border-amber-500/20 rounded-2xl overflow-hidden transition-all duration-300 group">
+                                    <div key={o.id} className="bg-brand-navy border border-white/5 hover:border-brand-gold/20 rounded-2xl overflow-hidden transition-all duration-300 group">
                                         {/* Status bar */}
-                                        <div className={`h-1 ${isEnded ? 'bg-gray-500/30' : 'bg-gradient-to-r from-amber-500 to-amber-400'}`} />
+                                        <div className={`h-1 ${isEnded ? 'bg-gray-500/30' : 'bg-gradient-to-r from-brand-gold to-brand-gold-light'}`} />
 
                                         <div className="p-5">
                                             <div className="flex items-start justify-between gap-3 mb-4">
                                                 <div className="min-w-0">
-                                                    <p className="text-xs font-bold text-amber-400/80 mb-1">{pick(o.course, 'title')}</p>
+                                                    <p className="text-xs font-bold text-brand-gold-light/80 mb-1">{pick(o.course, 'title')}</p>
                                                     <h4 className="text-lg font-black text-white truncate">{pick(o, 'name') || (isAr ? 'دورة بدون عنوان' : 'Untitled Batch')}</h4>
                                                 </div>
                                                 <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full shrink-0 ${openingStatusColors[o.status] ?? 'bg-gray-500/10 text-gray-400'}`}>
@@ -232,15 +232,15 @@ export default function TeachingHubPage() {
 
                                             {/* Stats row */}
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-                                                <div className="bg-[#0a1830] rounded-xl py-2.5 text-center border border-white/5">
+                                                <div className="bg-brand-navy-dark rounded-xl py-2.5 text-center border border-white/5">
                                                     <p className="text-lg font-black text-white">{enrollmentCount}</p>
                                                     <p className="text-[10px] font-bold text-gray-500">{isAr ? 'طالب' : 'Students'}</p>
                                                 </div>
-                                                <div className="bg-[#0a1830] rounded-xl py-2.5 text-center border border-white/5">
+                                                <div className="bg-brand-navy-dark rounded-xl py-2.5 text-center border border-white/5">
                                                     <p className="text-lg font-black text-white">{taskCount}</p>
                                                     <p className="text-[10px] font-bold text-gray-500">{isAr ? 'مهمة' : 'Tasks'}</p>
                                                 </div>
-                                                <div className="bg-[#0a1830] rounded-xl py-2.5 text-center border border-white/5">
+                                                <div className="bg-brand-navy-dark rounded-xl py-2.5 text-center border border-white/5">
                                                     <p className="text-lg font-black text-white font-mono">${o.price}</p>
                                                     <p className="text-[10px] font-bold text-gray-500">{isAr ? 'السعر' : 'Price'}</p>
                                                 </div>
@@ -255,7 +255,7 @@ export default function TeachingHubPage() {
                                             {/* Actions */}
                                             <div className="flex gap-2">
                                                 <Link href={`/dashboard/teaching/${o.id}`}
-                                                    className="flex-1 inline-flex items-center justify-center gap-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-sm font-bold py-2.5 rounded-xl hover:bg-amber-500 hover:text-black transition-all">
+                                                    className="flex-1 inline-flex items-center justify-center gap-1.5 bg-brand-gold/10 text-brand-gold-light border border-brand-gold/20 text-sm font-bold py-2.5 rounded-xl hover:bg-brand-gold hover:text-black transition-all">
                                                     {isAr ? 'إدارة' : 'Manage'} <ArrowUpRight size={14} />
                                                 </Link>
                                                 <button
@@ -263,7 +263,7 @@ export default function TeachingHubPage() {
                                                     disabled={isEnded || closePending}
                                                     className={`inline-flex items-center justify-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-xl transition border ${
                                                         isEnded ? 'text-gray-600 border-white/5 cursor-not-allowed'
-                                                        : closePending ? 'text-amber-400 border-amber-500/20 cursor-not-allowed'
+                                                        : closePending ? 'text-brand-gold-light border-brand-gold/20 cursor-not-allowed'
                                                         : 'text-red-400 border-red-500/20 hover:bg-red-500/10'
                                                     }`}
                                                 >
@@ -285,7 +285,7 @@ export default function TeachingHubPage() {
                 {/* Open Request Modal */}
                 {modal?.type === 'open' && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModal(null)}>
-                        <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-white">{isAr ? 'طلب فتح دورة' : 'Request to Open'}</h3>
@@ -307,7 +307,7 @@ export default function TeachingHubPage() {
                                 </div>
                             </div>
                             <div className="flex gap-3 mt-6">
-                                <button onClick={requestOpen} disabled={saving} className="flex-1 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold py-3 rounded-xl hover:opacity-95 transition disabled:opacity-50">
+                                <button onClick={requestOpen} disabled={saving} className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-bold py-3 rounded-xl hover:opacity-95 transition disabled:opacity-50">
                                     {saving ? (isAr ? 'جاري...' : 'Submitting...') : (isAr ? 'إرسال' : 'Submit')}
                                 </button>
                                 <button onClick={() => setModal(null)} className="flex-1 bg-white/5 text-gray-300 hover:bg-white/10 font-bold py-3 rounded-xl transition">
@@ -321,7 +321,7 @@ export default function TeachingHubPage() {
                 {/* Close Modal */}
                 {closeTarget && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeModalOnClose}>
-                        <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-white">{isAr ? 'طلب إغلاق الدورة' : 'Request to Close'}</h3>

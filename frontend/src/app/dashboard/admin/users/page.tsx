@@ -230,14 +230,14 @@ export default function AdminUsersPage() {
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         placeholder={t('admin.search_users')}
-                        className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-64 bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none transition"
+                        className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-64 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                     />
                 </div>
-                <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-3.5 py-2.5 border border-white/10 rounded-xl text-sm bg-[#0a1830] text-white cursor-pointer focus:outline-none">
+                <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-3.5 py-2.5 border border-white/10 rounded-xl text-sm bg-brand-navy-dark text-white cursor-pointer focus:outline-none">
                     <option value="ALL">{t('admin.filter_all')}</option>
                     {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
                 </select>
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3.5 py-2.5 border border-white/10 rounded-xl text-sm bg-[#0a1830] text-white cursor-pointer focus:outline-none">
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3.5 py-2.5 border border-white/10 rounded-xl text-sm bg-brand-navy-dark text-white cursor-pointer focus:outline-none">
                     <option value="ALL">{t('admin.filter_all')}</option>
                     <option value="ACTIVE">{t('admin.status_active')}</option>
                     <option value="SUSPENDED">{t('admin.status_suspended')}</option>
@@ -246,20 +246,20 @@ export default function AdminUsersPage() {
 
             {/* Create form */}
             {showCreate && (
-                <div className="admin-card p-6 animate-scale-in bg-[#111f3a]">
+                <div className="admin-card p-6 animate-scale-in bg-brand-navy-dark">
                     <h4 className="font-black text-lg mb-4 text-white">{t('admin.new_user')}</h4>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 max-w-5xl">
-                        <input type="email" placeholder={t('admin.user_email_ph')} className="p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} />
-                        <input type="password" placeholder={t('admin.user_password_ph')} className="p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} />
-                        <select className="p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white cursor-pointer focus:outline-none" value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })}>
+                        <input type="email" placeholder={t('admin.user_email_ph')} className="p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} />
+                        <input type="password" placeholder={t('admin.user_password_ph')} className="p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} />
+                        <select className="p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white cursor-pointer focus:outline-none" value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })}>
                             {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
                         </select>
                         <div className="flex items-center gap-2 py-3">
-                            <input type="checkbox" id="newUserActive" checked={createForm.isActive} onChange={e => setCreateForm({ ...createForm, isActive: e.target.checked })} className="w-4 h-4 accent-amber-500" />
+                            <input type="checkbox" id="newUserActive" checked={createForm.isActive} onChange={e => setCreateForm({ ...createForm, isActive: e.target.checked })} className="w-4 h-4 accent-brand-gold" />
                             <label htmlFor="newUserActive" className="font-bold cursor-pointer text-sm text-gray-300">{t('admin.account_active')}</label>
                         </div>
                     </div>
-                    <button onClick={handleCreate} disabled={creating} className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black py-3 px-6 rounded-xl mt-3 hover:opacity-90 transition disabled:opacity-50 cursor-pointer">
+                    <button onClick={handleCreate} disabled={creating} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-black py-3 px-6 rounded-xl mt-3 hover:opacity-90 transition disabled:opacity-50 cursor-pointer">
                         {creating ? t('admin.creating_user') : t('admin.create_account_btn')}
                     </button>
                 </div>
@@ -299,10 +299,10 @@ export default function AdminUsersPage() {
                                         <button onClick={() => openEdit(u)} disabled={processingId === u.id} className="admin-action-btn bg-white/5 text-gray-300 hover:bg-white/10 tooltip disabled:opacity-40" title={t('admin.edit_user')}>
                                             <Pencil size={18} />
                                         </button>
-                                        <button onClick={() => openTransfer(u.id)} disabled={processingId === u.id} className="admin-action-btn bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white tooltip disabled:opacity-40 ms-1" title={t('admin.transfer_title')}>
+                                        <button onClick={() => openTransfer(u.id)} disabled={processingId === u.id} className="admin-action-btn bg-brand-navy-light/10 text-brand-navy-light hover:bg-brand-navy-light hover:text-white tooltip disabled:opacity-40 ms-1" title={t('admin.transfer_title')}>
                                             <ArrowRightLeft size={18} />
                                         </button>
-                                        <button onClick={() => handleToggleActive(u)} disabled={processingId === u.id} className={`admin-action-btn ms-1 tooltip disabled:opacity-40 ${u.isActive === false ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white' : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white'}`} title={u.isActive === false ? t('admin.activate_title') : t('admin.suspend_title')}>
+                                        <button onClick={() => handleToggleActive(u)} disabled={processingId === u.id} className={`admin-action-btn ms-1 tooltip disabled:opacity-40 ${u.isActive === false ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white' : 'bg-brand-gold/10 text-brand-gold-light hover:bg-brand-gold hover:text-white'}`} title={u.isActive === false ? t('admin.activate_title') : t('admin.suspend_title')}>
                                             {u.isActive === false ? <Play size={18} /> : <Pause size={18} />}
                                         </button>
                                         <button onClick={() => handleDelete(u)} disabled={processingId === u.id || u.role === 'ADMIN'} className="admin-action-btn bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white tooltip disabled:opacity-40 ms-1" title={u.role === 'ADMIN' ? t('admin.cannot_delete_admin_title') : t('admin.delete_user_title')}>
@@ -322,18 +322,18 @@ export default function AdminUsersPage() {
             {/* Edit modal */}
             {editUser && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setEditUser(null)}>
-                    <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl shadow-2xl max-w-md w-full p-7 animate-scale-in" onClick={e => e.stopPropagation()}>
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl max-w-md w-full p-7 animate-scale-in" onClick={e => e.stopPropagation()}>
                         <h4 className="text-xl font-black text-white mb-5">{t('admin.edit_user_title')}</h4>
                         <div className="space-y-4">
-                            <input type="email" placeholder={t('admin.user_email_ph')} className="w-full p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
-                            <input type="password" placeholder={t('admin.new_password_ph')} className="w-full p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white placeholder:text-gray-500 focus:ring-2 focus:ring-amber-500 outline-none" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} />
-                            <select className="w-full p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white cursor-pointer focus:outline-none" value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })}>
+                            <input type="email" placeholder={t('admin.user_email_ph')} className="w-full p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
+                            <input type="password" placeholder={t('admin.new_password_ph')} className="w-full p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} />
+                            <select className="w-full p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white cursor-pointer focus:outline-none" value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })}>
                                 {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
                             </select>
                         </div>
                         <div className="flex justify-end gap-3 mt-6">
                             <BtnSoft onClick={() => setEditUser(null)}>{t('common.cancel')}</BtnSoft>
-                            <button onClick={handleSaveEdit} disabled={savingEdit} className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition disabled:opacity-50 cursor-pointer">
+                            <button onClick={handleSaveEdit} disabled={savingEdit} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition disabled:opacity-50 cursor-pointer">
                                 {savingEdit ? t('common.saving') : t('common.save')}
                             </button>
                         </div>
@@ -344,16 +344,16 @@ export default function AdminUsersPage() {
             {/* Transfer modal */}
             {transferId && transferUser && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setTransferId(null)}>
-                    <div className="bg-[#0d1f3c] border border-white/10 rounded-3xl shadow-2xl max-w-lg w-full p-7 animate-scale-in" onClick={e => e.stopPropagation()}>
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl max-w-lg w-full p-7 animate-scale-in" onClick={e => e.stopPropagation()}>
                         <h4 className="text-xl font-black text-white mb-1">{t('admin.transfer_user_title')}</h4>
                         <p className="text-gray-400 text-sm mb-5">
                             {t('admin.transfer_user_desc')} <span className="font-bold text-white">{transferUser.email}</span>
                         </p>
-                        <select className="w-full p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white mb-4 cursor-pointer focus:outline-none" value={transferCourseId} onChange={e => { setTransferCourseId(e.target.value); setTransferOpeningId(''); }}>
+                        <select className="w-full p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white mb-4 cursor-pointer focus:outline-none" value={transferCourseId} onChange={e => { setTransferCourseId(e.target.value); setTransferOpeningId(''); }}>
                             <option value="">{t('admin.select_course')}</option>
                             {(courses || []).map(c => <option key={c.id} value={c.id}>{c.titleAr || c.titleEn || c.id}</option>)}
                         </select>
-                        <select className="w-full p-3 border border-white/10 rounded-xl bg-[#0a1830] text-white cursor-pointer focus:outline-none" value={transferOpeningId} onChange={e => setTransferOpeningId(e.target.value)}>
+                        <select className="w-full p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white cursor-pointer focus:outline-none" value={transferOpeningId} onChange={e => setTransferOpeningId(e.target.value)}>
                             <option value="">{t('admin.no_opening_option')}</option>
                             {(courses || []).find(c => c.id === transferCourseId)?.openings?.map(o => (
                                 <option key={o.id} value={o.id}>
@@ -363,7 +363,7 @@ export default function AdminUsersPage() {
                         </select>
                         <div className="flex justify-end gap-3 mt-6">
                             <BtnSoft onClick={() => setTransferId(null)}>{t('common.cancel')}</BtnSoft>
-                            <button onClick={handleTransfer} disabled={transferring} className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-black px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition disabled:opacity-50 cursor-pointer">
+                            <button onClick={handleTransfer} disabled={transferring} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition disabled:opacity-50 cursor-pointer">
                                 {transferring ? t('common.processing') : t('admin.transfer_submit')}
                             </button>
                         </div>
