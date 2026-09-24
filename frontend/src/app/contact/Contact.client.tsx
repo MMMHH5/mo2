@@ -38,10 +38,11 @@ export default function ContactContent() {
     };
 
     const inputCls =
-        'block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition';
+        'block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-white placeholder-gray-500 [color-scheme:dark]';
 
     return (
         <MarketingShell
+            dark
             title={isAr ? 'تواصل معنا' : 'Contact Us'}
             subtitle={
                 isAr
@@ -49,11 +50,11 @@ export default function ContactContent() {
                     : 'We’d love to hear from you. Send a message and our team will reply within 24–48 business hours.'}
         >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 bg-white rounded-3xl border border-brand-mist shadow-sm p-8">
-                    <h2 className="text-xl font-black text-brand-navy mb-6">{isAr ? 'أرسل رسالة' : 'Send a Message'}</h2>
+                <div className="md:col-span-2 bg-brand-navy-dark rounded-3xl border border-white/10 shadow-sm p-8">
+                    <h2 className="text-xl font-black text-white mb-6">{isAr ? 'أرسل رسالة' : 'Send a Message'}</h2>
 
                     {success && (
-                        <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-sm font-semibold text-green-700 flex items-start gap-2">
+                        <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-400/30 text-sm font-semibold text-green-400 flex items-start gap-2">
                             <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
                             {isAr
                                 ? 'تم إرسال رسالتك بنجاح. سنتواصل معك قريباً.'
@@ -62,7 +63,7 @@ export default function ContactContent() {
                     )}
 
                     {error && (
-                        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-sm font-semibold text-red-700">
+                        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-400/30 text-sm font-semibold text-red-400">
                             {error}
                         </div>
                     )}
@@ -70,7 +71,7 @@ export default function ContactContent() {
                     <form onSubmit={submit} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">{isAr ? 'الاسم' : 'Name'}</label>
+                                <label className="block text-sm font-bold text-gray-300 mb-1">{isAr ? 'الاسم' : 'Name'}</label>
                                 <input
                                     type="text"
                                     value={name}
@@ -82,7 +83,7 @@ export default function ContactContent() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">{isAr ? 'البريد الإلكتروني' : 'Email'}</label>
+                                <label className="block text-sm font-bold text-gray-300 mb-1">{isAr ? 'البريد الإلكتروني' : 'Email'}</label>
                                 <input
                                     type="email"
                                     value={email}
@@ -94,7 +95,7 @@ export default function ContactContent() {
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">{isAr ? 'الموضوع' : 'Subject'}</label>
+                            <label className="block text-sm font-bold text-gray-300 mb-1">{isAr ? 'الموضوع' : 'Subject'}</label>
                             <input
                                 type="text"
                                 value={subject}
@@ -105,7 +106,7 @@ export default function ContactContent() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">{isAr ? 'الرسالة' : 'Message'}</label>
+                            <label className="block text-sm font-bold text-gray-300 mb-1">{isAr ? 'الرسالة' : 'Message'}</label>
                             <textarea
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
@@ -126,30 +127,30 @@ export default function ContactContent() {
                 </div>
 
                 <aside className="space-y-5">
-                    <div className="bg-white rounded-3xl border border-brand-mist shadow-sm p-7">
-                        <div className="w-11 h-11 bg-brand-mist/50 rounded-2xl flex items-center justify-center text-brand-navy mb-4">
+                    <div className="bg-brand-navy-dark rounded-3xl border border-white/10 shadow-sm p-7">
+                        <div className="w-11 h-11 bg-brand-gold/15 rounded-2xl flex items-center justify-center text-brand-gold-light mb-4">
                             <Mail size={22} />
                         </div>
-                        <h3 className="font-bold text-brand-navy mb-1">{isAr ? 'دعم المنصة' : 'Platform Support'}</h3>
-                        <p className="text-sm text-gray-500" dir="ltr">support@laxalab.com</p>
+                        <h3 className="font-bold text-white mb-1">{isAr ? 'دعم المنصة' : 'Platform Support'}</h3>
+                        <p className="text-sm text-gray-400" dir="ltr">support@laxalab.com</p>
                     </div>
-                    <div className="bg-white rounded-3xl border border-brand-mist shadow-sm p-7">
-                        <div className="w-11 h-11 bg-brand-mist/50 rounded-2xl flex items-center justify-center text-brand-navy mb-4">
+                    <div className="bg-brand-navy-dark rounded-3xl border border-white/10 shadow-sm p-7">
+                        <div className="w-11 h-11 bg-brand-gold/15 rounded-2xl flex items-center justify-center text-brand-gold-light mb-4">
                             <Clock size={22} />
                         </div>
-                        <h3 className="font-bold text-brand-navy mb-1">{isAr ? 'ساعات العمل' : 'Working Hours'}</h3>
-                        <p className="text-sm text-gray-500 leading-relaxed">
+                        <h3 className="font-bold text-white mb-1">{isAr ? 'ساعات العمل' : 'Working Hours'}</h3>
+                        <p className="text-sm text-gray-400 leading-relaxed">
                             {isAr
                                 ? 'السبت – الخميس، من 9 صباحاً حتى 6 مساءً (بتوقيت مكة المكرمة).'
                                 : 'Saturday – Thursday, 9:00 AM to 6:00 PM (Makkah time).'}
                         </p>
                     </div>
-                    <div className="bg-white rounded-3xl border border-brand-mist shadow-sm p-7">
-                        <div className="w-11 h-11 bg-brand-mist/50 rounded-2xl flex items-center justify-center text-brand-navy mb-4">
+                    <div className="bg-brand-navy-dark rounded-3xl border border-white/10 shadow-sm p-7">
+                        <div className="w-11 h-11 bg-brand-gold/15 rounded-2xl flex items-center justify-center text-brand-gold-light mb-4">
                             <MessageSquare size={22} />
                         </div>
-                        <h3 className="font-bold text-brand-navy mb-1">{isAr ? 'التذاكر' : 'Tickets'}</h3>
-                        <p className="text-sm text-gray-500 leading-relaxed">
+                        <h3 className="font-bold text-white mb-1">{isAr ? 'التذاكر' : 'Tickets'}</h3>
+                        <p className="text-sm text-gray-400 leading-relaxed">
                             {isAr
                                 ? 'المستخدمون المسجلون يمكنهم فتح تذكرة دعم من لوحة التحكم مباشرة.'
                                 : 'Registered users can open a support ticket directly from their dashboard.'}

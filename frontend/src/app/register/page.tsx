@@ -47,17 +47,17 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 relative overflow-hidden p-4">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-brand-navy-dark relative overflow-hidden p-4">
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/20 rounded-full blur-[100px] animate-float opacity-70"></div>
-                <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-navy-light/10 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
+                <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/10 rounded-full blur-[100px] animate-float opacity-70"></div>
+                <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-gold/5 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
             </div>
 
-            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/50 backdrop-blur-md rounded-full shadow-sm border border-gray-100 p-1">
-                <LanguageSwitcher />
+            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/5 backdrop-blur-md rounded-full shadow-sm border border-white/10 p-1">
+                <LanguageSwitcher dark />
             </div>
-            <div className="w-full max-w-md bg-white/80 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgb(18,48,90,0.08)] border border-white overflow-hidden relative z-10 transition-all duration-500 hover:shadow-[0_20px_60px_rgb(18,48,90,0.12)] my-8">
+            <div className="w-full max-w-md bg-brand-navy-dark/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 overflow-hidden relative z-10 transition-all duration-500 hover:border-white/20 my-8">
                 <div className="bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] p-8 text-center border-b border-white/10 relative overflow-hidden">
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                     <img
@@ -72,7 +72,7 @@ export default function RegisterPage() {
                 <div className="p-8">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.fullName')}</label>
+                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.fullName')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <User size={18} className="text-gray-400" />
@@ -80,7 +80,7 @@ export default function RegisterPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark]"
                                     placeholder="Jane Doe"
                                     value={formData.fullName}
                                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.phone')}</label>
+                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.phone')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Phone size={18} className="text-gray-400" />
@@ -97,7 +97,7 @@ export default function RegisterPage() {
                                 <input
                                     type="tel"
                                     required
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
                                     placeholder="+1 234 567 890"
                                     dir="ltr"
                                     value={formData.phone}
@@ -107,7 +107,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.email')}</label>
+                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.email')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Mail size={18} className="text-gray-400" />
@@ -115,7 +115,7 @@ export default function RegisterPage() {
                                 <input
                                     type="email"
                                     required
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
                                     placeholder="you@example.com"
                                     dir="ltr"
                                     value={formData.email}
@@ -125,7 +125,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.password')}</label>
+                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.password')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Lock size={18} className="text-gray-400" />
@@ -134,7 +134,7 @@ export default function RegisterPage() {
                                     type="password"
                                     required
                                     minLength={6}
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
                                     placeholder="••••••••"
                                     dir="ltr"
                                     value={formData.password}
@@ -144,7 +144,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.confirmPassword')}</label>
+                            <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.confirmPassword')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Lock size={18} className="text-gray-400" />
@@ -153,7 +153,7 @@ export default function RegisterPage() {
                                     type="password"
                                     required
                                     minLength={6}
-                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark] text-left"
                                     placeholder="••••••••"
                                     dir="ltr"
                                     value={formData.confirmPassword}
@@ -165,7 +165,7 @@ export default function RegisterPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-brand-gold hover:bg-[#b5924a] text-white focus:ring-4 focus:ring-brand-gold/30 font-black py-4 rounded-xl shadow-lg transition-all duration-300 transform active:scale-[0.98] flex justify-center items-center gap-2 mt-4 disabled:opacity-50"
+                            className="w-full bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark focus:ring-4 focus:ring-brand-gold/30 font-black py-4 rounded-xl shadow-lg transition-all duration-300 transform active:scale-[0.98] flex justify-center items-center gap-2 mt-4 disabled:opacity-50"
                         >
                             {isLoading ? t('auth.creating_account') : (
                                 <>
@@ -175,14 +175,14 @@ export default function RegisterPage() {
                         </button>
 
                         <div className="relative flex items-center justify-center my-6 text-sm mt-8">
-                            <span className="absolute bg-white px-3 text-gray-400 font-bold z-10">{t('common.or')}</span>
-                            <div className="w-full h-px bg-gray-200"></div>
+                            <span className="absolute bg-brand-navy-dark px-3 text-gray-400 font-bold z-10">{t('common.or')}</span>
+                            <div className="w-full h-px bg-white/10"></div>
                         </div>
 
                         <button
                             type="button"
                             onClick={() => router.push('/api/auth/google')}
-                            className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-gray-200 hover:bg-gray-50 hover:border-brand-mist hover:shadow-sm text-gray-700 font-bold rounded-xl transition-all duration-200"
+                            className="w-full flex items-center justify-center gap-3 py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all duration-200"
                         >
                             <svg className="h-5 w-5" viewBox="0 0 24 24">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -195,9 +195,9 @@ export default function RegisterPage() {
                     </form>
 
                     <div className="mt-8 text-center">
-                        <p className="text-gray-500 text-sm font-semibold">
+                        <p className="text-gray-400 text-sm font-semibold">
                             {t('auth.already_have_account')}{' '}
-                            <Link href="/login" className="text-brand-navy font-black hover:text-brand-gold-dark transition-colors">
+                            <Link href="/login" className="text-brand-gold-light font-black hover:text-brand-gold transition-colors">
                                 {t('auth.sign_in')}
                             </Link>
                         </p>

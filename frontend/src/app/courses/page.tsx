@@ -10,11 +10,12 @@ export default function BrowseCoursesPage() {
 
     return (
         <MarketingShell
+            dark
             title={t('explore.heading')}
             subtitle={t('explore.subtitle')}
         >
             <div className="w-full mt-4 pb-20">
-                <ExploreCourses hideHeader />
+                <ExploreCourses hideHeader dark />
             </div>
         </MarketingShell>
     );

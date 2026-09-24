@@ -283,8 +283,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             {/* Header */}
             <header className="px-8 py-6 flex items-center justify-between border-b border-white/5 bg-brand-navy-dark sticky top-0 z-50">
                 <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                        <span className="text-brand-gold-dark font-black text-xl">L</span>
+                    <div className="w-10 h-10 bg-white/10 border border-white/10 rounded-xl flex items-center justify-center shadow-lg">
+                        <span className="text-brand-gold font-black text-xl">L</span>
                     </div>
                     <h1 className="text-2xl font-black text-white tracking-tight">
                         laxa<span className="text-brand-gold">lab</span>
@@ -302,7 +302,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     <PublicMobileMenu dark />
                     <div className="hidden sm:flex items-center gap-4">
                         {user ? (
-                            <button onClick={() => router.push('/dashboard')} className="bg-brand-gold text-brand-navy hover:bg-white px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
+                            <button onClick={() => router.push('/dashboard')} className="bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
                                 {t('courseDetail.dashboard')}
                             </button>
                         ) : (
@@ -310,7 +310,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 <button onClick={() => router.push('/login')} className="text-white hover:text-brand-gold font-bold transition">
                                     {t('auth.login')}
                                 </button>
-                                <button onClick={() => router.push('/register')} className="bg-brand-gold text-brand-navy hover:bg-white px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
+                                <button onClick={() => router.push('/register')} className="bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
                                     {t('auth.register')}
                                 </button>
                             </>
@@ -432,7 +432,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     </button>
                                     {opening.priceOld && Number(opening.priceOld) > Number(opening.price) && (
                                         <span className="text-gray-300 text-sm font-semibold">
-                                            {t('courseDetail.was_price')} <s className="text-gray-500">{formatPrice(opening.priceOld, { locale })}</s>
+                                            {t('courseDetail.was_price')} <s className="text-gray-400">{formatPrice(opening.priceOld, { locale })}</s>
                                         </span>
                                     )}
                                     {announced && (

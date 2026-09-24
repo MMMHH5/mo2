@@ -27,36 +27,36 @@ export default function LegalPage({ titleAr, titleEn, introAr, introEn, updatedA
     const isAr = locale === 'ar';
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4 flex-wrap border-b border-gray-200 bg-white">
-                <Link href="/" className="text-xl md:text-2xl font-black text-brand-navy">
+        <div className="min-h-screen bg-brand-navy-dark">
+            <header className="px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4 flex-wrap border-b border-white/10 bg-brand-navy-dark/80 backdrop-blur-md">
+                <Link href="/" className="text-xl md:text-2xl font-black text-white">
                     laxa<span className="text-brand-gold">lab</span>
                 </Link>
-                <nav className="flex items-center gap-4 md:gap-6 text-xs md:text-sm font-bold text-gray-600">
+                <nav className="flex items-center gap-4 md:gap-6 text-xs md:text-sm font-bold text-gray-300">
                     <Link href="/courses" className="hover:text-brand-gold transition">{isAr ? 'الدورات' : 'Courses'}</Link>
                     <Link href="/blog" className="hover:text-brand-gold transition">{isAr ? 'المدونة' : 'Blog'}</Link>
-                    <Link href="/login" className="hover:text-brand-navy transition">{isAr ? 'تسجيل الدخول' : 'Sign in'}</Link>
+                    <Link href="/login" className="hover:text-brand-gold-light transition">{isAr ? 'تسجيل الدخول' : 'Sign in'}</Link>
                 </nav>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 md:px-6 py-12">
-                <h1 className="text-3xl font-black text-brand-navy mb-2">{isAr ? titleAr : titleEn}</h1>
+                <h1 className="text-3xl font-black text-white mb-2">{isAr ? titleAr : titleEn}</h1>
                 {((isAr ? updatedAr : updatedEn) || '') && (
                     <p className="text-sm text-gray-400 mb-6 font-semibold">{isAr ? updatedAr : updatedEn}</p>
                 )}
                 {((isAr ? introAr : introEn) || '') && (
-                    <p className="text-gray-600 leading-relaxed mb-8">{isAr ? introAr : introEn}</p>
+                    <p className="text-gray-300 leading-relaxed mb-8">{isAr ? introAr : introEn}</p>
                 )}
 
                 <div className="space-y-10">
                     {sections.map((section, i) => (
                         <section key={i}>
-                            <h2 className="text-xl font-bold text-brand-navy mb-3">{isAr ? section.titleAr : section.titleEn}</h2>
+                            <h2 className="text-xl font-bold text-white mb-3">{isAr ? section.titleAr : section.titleEn}</h2>
                             {((isAr ? section.bodyAr : section.bodyEn) || '') && (
-                                <p className="text-gray-600 leading-relaxed mb-2">{isAr ? section.bodyAr : section.bodyEn}</p>
+                                <p className="text-gray-300 leading-relaxed mb-2">{isAr ? section.bodyAr : section.bodyEn}</p>
                             )}
                             {((isAr ? section.itemsAr : section.itemsEn) || []).length > 0 && (
-                                <ul className="list-disc pl-6 space-y-1 text-gray-600 leading-relaxed">
+                                <ul className="list-disc pl-6 space-y-1 text-gray-300 leading-relaxed">
                                     {(isAr ? section.itemsAr : section.itemsEn)?.map((item, j) => (
                                         <li key={j}>{item}</li>
                                     ))}
@@ -66,7 +66,7 @@ export default function LegalPage({ titleAr, titleEn, introAr, introEn, updatedA
                     ))}
                 </div>
 
-                <div className="mt-12 pt-8 border-t border-gray-200 flex flex-wrap gap-6 text-sm font-bold text-gray-600">
+                <div className="mt-12 pt-8 border-t border-white/10 flex flex-wrap gap-6 text-sm font-bold text-gray-300">
                     <Link href="/terms" className="hover:text-brand-gold transition">{isAr ? 'الشروط والأحكام' : 'Terms of Service'}</Link>
                     <Link href="/privacy" className="hover:text-brand-gold transition">{isAr ? 'سياسة الخصوصية' : 'Privacy Policy'}</Link>
                     <Link href="/refund-policy" className="hover:text-brand-gold transition">{isAr ? 'سياسة الاسترداد' : 'Refund Policy'}</Link>
@@ -74,7 +74,7 @@ export default function LegalPage({ titleAr, titleEn, introAr, introEn, updatedA
                 </div>
             </main>
 
-            <footer className="py-8 text-center text-sm text-gray-400 font-semibold">
+            <footer className="py-8 text-center text-sm text-gray-400 font-semibold border-t border-white/5">
                 &copy; {new Date().getFullYear()} Laxalab. All rights reserved.
             </footer>
         </div>

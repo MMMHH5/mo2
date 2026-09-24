@@ -49,10 +49,10 @@ function SuccessHandler() {
     }, [router, login]);
 
     return (
-        <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+        <div className="flex h-screen w-full items-center justify-center bg-brand-navy-dark">
             <div className="animate-pulse flex flex-col items-center">
                 <div className="h-12 w-12 rounded-full border-4 border-brand-gold border-t-transparent animate-spin mb-4"></div>
-                <p className="text-brand-navy font-bold">{t('authSuccess.completing')}</p>
+                <p className="text-brand-gold-light font-bold">{t('authSuccess.completing')}</p>
             </div>
         </div>
     );

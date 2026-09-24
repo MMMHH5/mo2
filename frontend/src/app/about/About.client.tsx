@@ -20,6 +20,7 @@ export default function AboutContent() {
 
     return (
         <MarketingShell
+            dark
             title={isAr ? 'عن Laxalab' : 'About Laxalab'}
             subtitle={
                 isAr
@@ -28,13 +29,13 @@ export default function AboutContent() {
             }
         >
             <section className="space-y-6">
-                <h2 className="text-2xl font-black text-brand-navy">{isAr ? 'قصتنا' : 'Our Story'}</h2>
-                <p className="text-gray-600 leading-relaxed">
+                <h2 className="text-2xl font-black text-white">{isAr ? 'قصتنا' : 'Our Story'}</h2>
+                <p className="text-gray-300 leading-relaxed">
                     {isAr
                         ? 'انطلقت Laxalab من إيمان بسيط: المعرفة لا حدود لها، ويجب أن تكون متاحة للجميع بلغة يفهمونها. منذ بدايتنا، نعمل على بناء منصة تعليمية رقمية تقدم دورات عملية عالية الجودة تغطي التكنولوجيا والأعمال والمهارات الشخصية، بلهجتي العربية والإنجليزية، مع مرونة تناسب المتعلم العربي والمتعلم من أي مكان في العالم.'
                         : 'Laxalab started from a simple belief: knowledge has no borders, and it should be accessible to everyone in a language they understand. From day one, we have been building a digital learning platform that offers practical, high-quality courses across technology, business, and personal skills — in both Arabic and English — with flexibility that suits learners in the Arab world and beyond.'}
                 </p>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-gray-300 leading-relaxed">
                     {isAr
                         ? 'اليوم، نقدم تجربة تعلم متكاملة تشمل تتبع التقدم، والواجبات، والاختبارات، والإصدار الآلي للشهادات، فضلاً عن مجتمع داعم من المدربين والطلاب. مهمتنا أن نكون الخيار الأول للتعلم الرقمي الناطق بالعربية، دون المساس بالمعايير الدولية للجودة.'
                         : 'Today, we offer a complete learning experience including progress tracking, assignments, quizzes, automated certificate issuance, and a supportive community of instructors and students. Our mission is to be the first choice for Arabic-speaking digital learning — without compromising international quality standards.'}
@@ -42,15 +43,15 @@ export default function AboutContent() {
             </section>
 
             <section className="mt-14 space-y-6">
-                <h2 className="text-2xl font-black text-brand-navy">{isAr ? 'قيمنا' : 'Our Values'}</h2>
+                <h2 className="text-2xl font-black text-white">{isAr ? 'قيمنا' : 'Our Values'}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {VALUES.map((v, i) => (
-                        <div key={i} className="bg-white p-7 rounded-3xl border border-brand-mist shadow-sm hover:shadow-xl transition-all duration-300">
-                            <div className="w-12 h-12 bg-brand-mist/50 rounded-2xl flex items-center justify-center text-brand-navy mb-5">
+                        <div key={i} className="bg-brand-navy-dark p-7 rounded-3xl border border-white/10 shadow-sm hover:shadow-xl hover:border-brand-gold/40 transition-all duration-300">
+                            <div className="w-12 h-12 bg-brand-gold/15 rounded-2xl flex items-center justify-center text-brand-gold-light mb-5">
                                 <v.icon size={24} />
                             </div>
-                            <h3 className="text-lg font-bold text-brand-charcoal mb-2">{isAr ? v.titleAr : v.titleEn}</h3>
-                            <p className="text-sm text-gray-500 leading-relaxed">{isAr ? v.descAr : v.descEn}</p>
+                            <h3 className="text-lg font-bold text-white mb-2">{isAr ? v.titleAr : v.titleEn}</h3>
+                            <p className="text-sm text-gray-400 leading-relaxed">{isAr ? v.descAr : v.descEn}</p>
                         </div>
                     ))}
                 </div>

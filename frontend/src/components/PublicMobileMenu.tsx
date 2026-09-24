@@ -13,6 +13,14 @@ export default function PublicMobileMenu({ dark = false }: { dark?: boolean }) {
     const [open, setOpen] = useState(false);
 
     const tone = dark ? 'text-white hover:text-brand-gold' : 'text-brand-navy hover:text-brand-charcoal';
+    const drawerCls = dark
+        ? 'absolute inset-y-0 right-0 w-72 max-w-[85vw] bg-brand-navy-dark shadow-2xl flex flex-col'
+        : 'absolute inset-y-0 right-0 w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col';
+    const linkCls = dark
+        ? 'block px-3.5 py-3 rounded-xl font-bold text-white hover:bg-white/10 transition'
+        : 'block px-3.5 py-3 rounded-xl font-bold text-brand-navy hover:bg-brand-mist transition';
+    const dividerCls = dark ? 'border-white/10' : 'border-brand-mist';
+    const closeCls = dark ? 'text-gray-400 hover:text-white transition' : 'text-gray-400 hover:text-gray-700 transition';
 
     return (
         <>
@@ -27,43 +35,43 @@ export default function PublicMobileMenu({ dark = false }: { dark?: boolean }) {
             {open && (
                 <div className="fixed inset-0 z-50 md:hidden">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-                    <div className="absolute inset-y-0 right-0 w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col">
-                        <div className="p-5 border-b border-brand-mist flex items-center justify-between">
+                    <div className={drawerCls}>
+                        <div className={`p-5 border-b ${dividerCls} flex items-center justify-between`}>
                             <img
-                                src="/logos/LaxaLab_Academy_Horizontal_Primary_4K.png"
+                                src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
                                 alt="Laxalab Academy"
                                 className="h-8 w-auto object-contain"
                             />
-                            <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-700 transition" aria-label="Close">
+                            <button onClick={() => setOpen(false)} className={closeCls} aria-label="Close">
                                 <X size={24} />
                             </button>
                         </div>
 
                         <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
-                            <Link href="/courses" onClick={() => setOpen(false)} className="block px-3.5 py-3 rounded-xl font-bold text-brand-navy hover:bg-brand-mist transition">
+                            <Link href="/courses" onClick={() => setOpen(false)} className={linkCls}>
                                 {t('landing.explore_courses')}
                             </Link>
-                            <Link href="/join-as-instructor" onClick={() => setOpen(false)} className="block px-3.5 py-3 rounded-xl font-bold text-brand-navy hover:bg-brand-mist transition">
+                            <Link href="/join-as-instructor" onClick={() => setOpen(false)} className={linkCls}>
                                 {t('landing.join_as_instructor')}
                             </Link>
                             {user ? (
-                                <Link href="/dashboard" onClick={() => setOpen(false)} className="block px-3.5 py-3 rounded-xl font-bold bg-brand-navy text-white text-center transition">
+                                <Link href="/dashboard" onClick={() => setOpen(false)} className={`${dark ? 'bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light' : 'bg-brand-navy text-white'} block px-3.5 py-3 rounded-xl font-bold text-center transition`}>
                                     {t('courseDetail.dashboard')}
                                 </Link>
                             ) : (
                                 <>
-                                    <Link href="/login" onClick={() => setOpen(false)} className="block px-3.5 py-3 rounded-xl font-bold text-brand-navy hover:bg-brand-mist transition">
+                                    <Link href="/login" onClick={() => setOpen(false)} className={linkCls}>
                                         {t('auth.login')}
                                     </Link>
-                                    <Link href="/register" onClick={() => setOpen(false)} className="block px-3.5 py-3 rounded-xl font-bold bg-brand-navy text-white text-center transition">
+                                    <Link href="/register" onClick={() => setOpen(false)} className={`${dark ? 'bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light' : 'bg-brand-navy text-white'} block px-3.5 py-3 rounded-xl font-bold text-center transition`}>
                                         {t('auth.register')}
                                     </Link>
                                 </>
                             )}
                         </nav>
 
-                        <div className="p-4 border-t border-brand-mist">
-                            <LanguageSwitcher />
+                        <div className={`p-4 border-t ${dividerCls}`}>
+                            <LanguageSwitcher dark={dark} />
                         </div>
                     </div>
                 </div>

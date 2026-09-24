@@ -59,12 +59,12 @@ export default function JoinAsInstructorPage() {
 
     if (success) {
         return (
-            <MarketingShell>
+            <MarketingShell dark>
                 <div className="flex items-center justify-center p-4 py-20">
-                    <div className="bg-white p-12 rounded-3xl shadow-xl max-w-lg w-full text-center border border-gray-100">
+                    <div className="bg-brand-navy-dark p-12 rounded-3xl shadow-black/30 max-w-lg w-full text-center border border-white/10">
                         <CheckCircle className="w-24 h-24 text-green-500 mx-auto mb-6" />
-                        <h2 className="text-3xl font-black text-brand-navy mb-4">{t('joinInstructor.success_title')}</h2>
-                        <p className="text-gray-500 mb-8">
+                        <h2 className="text-3xl font-black text-white mb-4">{t('joinInstructor.success_title')}</h2>
+                        <p className="text-gray-400 mb-8">
                             {t('joinInstructor.success_desc')}
                         </p>
                         <button
@@ -81,37 +81,38 @@ export default function JoinAsInstructorPage() {
 
     return (
         <MarketingShell
+            dark
             title={t('joinInstructor.teach_title')}
             subtitle={t('joinInstructor.teach_desc')}
         >
             {/* Application Form */}
             <div className="max-w-3xl mx-auto -mt-32 relative z-10 pb-20">
-                <div className="bg-white p-8 md:p-12 rounded-3xl shadow-[0_8px_30px_rgb(18,48,90,0.08)] border border-gray-100">
-                    <h2 className="text-2xl font-black text-brand-charcoal mb-8 border-b border-gray-100 pb-4">{t('joinInstructor.app_heading')}</h2>
+                <div className="bg-brand-navy-dark p-8 md:p-12 rounded-3xl shadow-black/30 border border-white/10">
+                    <h2 className="text-2xl font-black text-white mb-8 border-b border-white/10 pb-4">{t('joinInstructor.app_heading')}</h2>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                <label className="block text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
                                     <User size={16} /> {t('joinInstructor.full_name_label')}
                                 </label>
                                 <input
                                     type="text"
                                     required
-                                    className="w-full border border-gray-200 bg-gray-50/50 hover:bg-white rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all"
+                                    className="w-full border border-white/10 bg-white/5 hover:bg-white/10 rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all text-white [color-scheme:dark]"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                <label className="block text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
                                     <Briefcase size={16} /> {t('joinInstructor.specialty_label')}
                                 </label>
                                 <input
                                     type="text"
                                     required
                                     placeholder={t('joinInstructor.specialty_placeholder')}
-                                    className="w-full border border-gray-200 bg-gray-50/50 hover:bg-white rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all"
+                                    className="w-full border border-white/10 bg-white/5 hover:bg-white/10 rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all text-white [color-scheme:dark]"
                                     value={formData.specialty}
                                     onChange={e => setFormData({ ...formData, specialty: e.target.value })}
                                 />
@@ -119,35 +120,35 @@ export default function JoinAsInstructorPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <label className="block text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
                                 <Video size={16} /> {t('joinInstructor.video_label')}
                             </label>
                             <input
                                 type="url"
                                 placeholder={t('joinInstructor.video_placeholder')}
-                                className="w-full border border-gray-200 bg-gray-50/50 hover:bg-white rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all"
+                                className="w-full border border-white/10 bg-white/5 hover:bg-white/10 rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all text-white [color-scheme:dark]"
                                 value={formData.videoIntroUrl}
                                 onChange={e => setFormData({ ...formData, videoIntroUrl: e.target.value })}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('joinInstructor.bio_label')}</label>
+                            <label className="block text-sm font-bold text-gray-300 mb-2">{t('joinInstructor.bio_label')}</label>
                             <textarea
                                 required
                                 rows={4}
                                 placeholder={t('joinInstructor.bio_placeholder')}
-                                className="w-full border border-gray-200 bg-gray-50/50 hover:bg-white rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all"
+                                className="w-full border border-white/10 bg-white/5 hover:bg-white/10 rounded-xl p-4 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all text-white [color-scheme:dark]"
                                 value={formData.bio}
                                 onChange={e => setFormData({ ...formData, bio: e.target.value })}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('joinInstructor.cv_label')}</label>
-                            <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-8 cursor-pointer transition ${cvFile ? 'border-brand-gold bg-brand-gold/10' : 'border-gray-300 hover:bg-gray-50 hover:border-gray-400'}`}>
-                                <UploadCloud className={cvFile ? "text-brand-gold mb-2" : "text-gray-400 mb-2 group-hover:text-gray-500"} size={32} />
-                                <span className={cvFile ? "font-bold text-brand-navy" : "text-gray-500 font-medium"}>
+                            <label className="block text-sm font-bold text-gray-300 mb-2">{t('joinInstructor.cv_label')}</label>
+                            <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-8 cursor-pointer transition ${cvFile ? 'border-brand-gold bg-brand-gold/10' : 'border-white/15 hover:bg-white/5 hover:border-white/25'}`}>
+                                <UploadCloud className={cvFile ? "text-brand-gold mb-2" : "text-gray-500 mb-2"} size={32} />
+                                <span className={cvFile ? "font-bold text-brand-gold-light" : "text-gray-400 font-medium"}>
                                     {cvFile ? cvFile.name : t('joinInstructor.cv_placeholder')}
                                 </span>
                                 <input
@@ -162,7 +163,7 @@ export default function JoinAsInstructorPage() {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-brand-navy hover:bg-brand-charcoal hover:-translate-y-1 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all duration-300 w-full disabled:opacity-50 mt-8 disabled:hover:translate-y-0"
+                            className="bg-brand-gold hover:bg-brand-gold-light hover:-translate-y-1 text-brand-navy-dark font-bold py-4 px-8 rounded-xl shadow-lg transition-all duration-300 w-full disabled:opacity-50 mt-8 disabled:hover:translate-y-0"
                         >
                             {isSubmitting ? t('joinInstructor.submitting') : t('joinInstructor.submit_application')}
                         </button>

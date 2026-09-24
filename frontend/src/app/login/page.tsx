@@ -9,7 +9,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-gray-50 font-bold text-gray-500">Loading...</div>}>
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-brand-navy-dark font-bold text-gray-400">Loading...</div>}>
             <LoginForm />
         </Suspense>
     );
@@ -63,62 +63,62 @@ function LoginForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden p-4">
+        <div className="min-h-screen flex items-center justify-center bg-brand-navy-dark relative overflow-hidden p-4">
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/20 rounded-full blur-[100px] animate-float opacity-70"></div>
-                <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-navy-light/10 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
+                <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/10 rounded-full blur-[100px] animate-float opacity-70"></div>
+                <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-gold/5 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
             </div>
 
-            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/50 backdrop-blur-md rounded-full shadow-sm border border-gray-100 p-1">
-                <LanguageSwitcher />
+            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/5 backdrop-blur-md rounded-full shadow-sm border border-white/10 p-1">
+                <LanguageSwitcher dark />
             </div>
-            <div className="w-full max-w-md bg-white/80 backdrop-blur-2xl p-10 rounded-[2rem] shadow-[0_20px_60px_rgb(18,48,90,0.08)] border border-white relative z-10 transition-all duration-500 hover:shadow-[0_20px_60px_rgb(18,48,90,0.12)]">
+            <div className="w-full max-w-md bg-brand-navy-dark/90 backdrop-blur-2xl p-10 rounded-[2rem] shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 relative z-10 transition-all duration-500 hover:border-white/20">
                 <div className="text-center mb-8">
                     <img
-                        src="/logos/LaxaLab_Academy_Stacked_Primary_4K.png"
+                        src="/logos/LaxaLab_Academy_Stacked_Reverse_4K.png"
                         alt="Laxalab Academy"
                         className="h-24 w-auto object-contain mx-auto mb-2 drop-shadow-sm"
                     />
-                    <p className="text-gray-500 mt-2 font-bold">{t('auth.welcome_back')}</p>
+                    <p className="text-gray-400 mt-2 font-bold">{t('auth.welcome_back')}</p>
                 </div>
 
-                {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm font-semibold animate-fade-in-up">{error}</div>}
+                {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-400/30 text-red-400 rounded-md text-sm font-semibold animate-fade-in-up">{error}</div>}
 
                 <form onSubmit={handleLogin} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.email')}</label>
+                        <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.email')}</label>
                         <input
                             type="email"
                             required
-                            className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white"
+                            className="block w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark]"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.password')}</label>
+                        <label className="block text-sm font-black text-gray-300 mb-1.5">{t('auth.password')}</label>
                         <input
                             type="password"
                             required
-                            className="block w-full px-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white"
+                            className="block w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white/10 text-white [color-scheme:dark]"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
-                    <button type="submit" className="w-full py-4 bg-brand-gold hover:bg-[#b5924a] text-white focus:ring-4 focus:ring-brand-gold/30 font-black rounded-xl shadow-md transition-all duration-300 transform active:scale-[0.98] animate-fade-in-up">
+                    <button type="submit" className="w-full py-4 bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark focus:ring-4 focus:ring-brand-gold/30 font-black rounded-xl shadow-md transition-all duration-300 transform active:scale-[0.98] animate-fade-in-up">
                         {t('auth.sign_in')}
                     </button>
 
                     <div className="relative flex items-center justify-center my-6 text-sm">
-                        <span className="absolute bg-white px-3 text-gray-400 font-bold z-10">{t('common.or')}</span>
-                        <div className="w-full h-px bg-gray-200"></div>
+                        <span className="absolute bg-brand-navy-dark px-3 text-gray-400 font-bold z-10">{t('common.or')}</span>
+                        <div className="w-full h-px bg-white/10"></div>
                     </div>
 
                     <button
                         type="button"
                         onClick={() => router.push('/api/auth/google')}
-                        className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-gray-200 hover:bg-gray-50 hover:border-brand-mist hover:shadow-sm text-gray-700 font-bold rounded-xl transition-all duration-200"
+                        className="w-full flex items-center justify-center gap-3 py-4 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all duration-200"
                     >
                         <svg className="h-5 w-5" viewBox="0 0 24 24">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -131,14 +131,14 @@ function LoginForm() {
                 </form>
 
                 <div className="mt-8 text-center space-y-3">
-                    <p className="text-gray-500 text-sm font-semibold">
+                    <p className="text-gray-400 text-sm font-semibold">
                         {t('auth.dont_have_account')}{' '}
-                        <a href="/register" className="text-brand-navy font-black hover:text-brand-gold-dark transition-colors">
+                        <a href="/register" className="text-brand-gold-light font-black hover:text-brand-gold transition-colors">
                             {t('auth.register_now')}
                         </a>
                     </p>
                     <p className="text-sm">
-                        <a href="/forgot-password" className="text-brand-gold flex items-center justify-center font-bold hover:text-brand-gold-dark transition-colors">
+                        <a href="/forgot-password" className="text-brand-gold flex items-center justify-center font-bold hover:text-brand-gold-light transition-colors">
                             {t('recovery.forgotLink')}
                         </a>
                     </p>

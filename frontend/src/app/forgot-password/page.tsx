@@ -27,53 +27,53 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden p-4">
+        <div className="min-h-screen flex items-center justify-center bg-brand-navy-dark relative overflow-hidden p-4">
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/20 rounded-full blur-[100px] animate-float opacity-70"></div>
-                <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-navy-light/10 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
+                <div className="absolute -top-32 -right-32 w-96 h-96 bg-brand-gold/10 rounded-full blur-[100px] animate-float opacity-70"></div>
+                <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-brand-gold/5 rounded-full blur-[120px] animate-float opacity-70" style={{ animationDelay: '2s', animationDuration: '8s' }}></div>
             </div>
 
-            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/50 backdrop-blur-md rounded-full shadow-sm border border-gray-100 p-1">
-                <LanguageSwitcher />
+            <div className="absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 bg-white/5 backdrop-blur-md rounded-full shadow-sm border border-white/10 p-1">
+                <LanguageSwitcher dark />
             </div>
-            <div className="w-full max-w-md bg-white/80 backdrop-blur-2xl p-10 rounded-[2rem] shadow-[0_20px_60px_rgb(18,48,90,0.08)] border border-white relative z-10 transition-all duration-500 hover:shadow-[0_20px_60px_rgb(18,48,90,0.12)]">
+            <div className="w-full max-w-md bg-brand-navy-dark/90 backdrop-blur-2xl p-10 rounded-[2rem] shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 relative z-10 transition-all duration-500 hover:border-white/20">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-black text-brand-navy">laxa<span className="text-brand-gold-dark">lab</span></h1>
-                    <p className="text-gray-500 mt-2 font-bold">{t('recovery.forgotTitle')}</p>
+                    <h1 className="text-3xl font-black text-white">laxa<span className="text-brand-gold">lab</span></h1>
+                    <p className="text-gray-400 mt-2 font-bold">{t('recovery.forgotTitle')}</p>
                 </div>
 
                 {sent ? (
                     <div className="text-center space-y-4">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center text-2xl">&#10003;</div>
-                        <h2 className="text-lg font-bold text-brand-navy">{t('recovery.sentTitle')}</h2>
-                        <p className="text-sm text-gray-500">{t('recovery.sentBody')}</p>
-                        <a href="/login" className="inline-block mt-2 text-brand-navy font-bold hover:underline">{t('recovery.backToLogin')}</a>
+                        <div className="w-16 h-16 mx-auto rounded-full bg-green-500/15 flex items-center justify-center text-2xl text-green-400">&#10003;</div>
+                        <h2 className="text-lg font-bold text-white">{t('recovery.sentTitle')}</h2>
+                        <p className="text-sm text-gray-400">{t('recovery.sentBody')}</p>
+                        <a href="/login" className="inline-block mt-2 text-brand-gold-light font-bold hover:text-brand-gold transition-colors">{t('recovery.backToLogin')}</a>
                     </div>
                 ) : (
                     <>
-                        <p className="text-sm text-gray-500 text-center mb-4">{t('recovery.forgotSub')}</p>
+                        <p className="text-sm text-gray-400 text-center mb-4">{t('recovery.forgotSub')}</p>
 
-                        {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm font-semibold">{error}</div>}
+                        {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-400/30 text-red-400 rounded-md text-sm font-semibold">{error}</div>}
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700">{t('recovery.emailLabel')}</label>
+                                <label className="block text-sm font-bold text-gray-300">{t('recovery.emailLabel')}</label>
                                 <input
                                     type="email"
                                     required
-                                    className="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none"
+                                    className="mt-1 block w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white [color-scheme:dark]"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
                             </div>
-                            <button type="submit" disabled={submitting} className="w-full py-4 bg-brand-gold hover:bg-[#b08e50] text-brand-navy font-black rounded-xl shadow-md transition disabled:opacity-60">
+                            <button type="submit" disabled={submitting} className="w-full py-4 bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark font-black rounded-xl shadow-md transition disabled:opacity-60">
                                 {submitting ? t('common.processing') : t('recovery.sendResetLink')}
                             </button>
                         </form>
 
                         <div className="mt-6 text-center">
-                            <a href="/login" className="text-sm text-brand-navy font-bold hover:underline">{t('recovery.backToLogin')}</a>
+                            <a href="/login" className="text-sm text-brand-gold-light font-bold hover:text-brand-gold transition-colors">{t('recovery.backToLogin')}</a>
                         </div>
                     </>
                 )}

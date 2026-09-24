@@ -27,15 +27,15 @@ export default function BlogPost({ slug }: { slug: string }) {
 
     if (error && !post) {
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
-                <h1 className="text-3xl font-black text-brand-navy mb-3">{isAr ? 'لم يتم العثور على المقالة' : 'Post not found'}</h1>
-                <Link href="/blog" className="text-brand-gold font-bold hover:underline">{t('blog.backToBlog')}</Link>
+            <div className="min-h-screen bg-brand-navy-dark flex flex-col items-center justify-center px-6 text-center">
+                <h1 className="text-3xl font-black text-white mb-3">{isAr ? 'لم يتم العثور على المقالة' : 'Post not found'}</h1>
+                <Link href="/blog" className="text-brand-gold font-bold hover:text-brand-gold-light transition-colors">{t('blog.backToBlog')}</Link>
             </div>
         );
     }
 
     if (!post) {
-        return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="font-bold text-gray-400">{t('common.loading')}</p></div>;
+        return <div className="min-h-screen bg-brand-navy-dark flex items-center justify-center"><p className="font-bold text-gray-400">{t('common.loading')}</p></div>;
     }
 
     const body = (isAr ? post.contentAr : post.contentEn) || '';
@@ -44,38 +44,38 @@ export default function BlogPost({ slug }: { slug: string }) {
     const excerpt = isAr ? post.excerptAr : post.excerptEn;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-16">
-            <header className="px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4 flex-wrap border-b border-gray-200 bg-white">
-                <Link href="/" className="text-xl md:text-2xl font-black text-brand-navy">
+        <div className="min-h-screen bg-brand-navy-dark pb-16">
+            <header className="px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4 flex-wrap border-b border-white/10 bg-brand-navy-dark/80 backdrop-blur-md">
+                <Link href="/" className="text-xl md:text-2xl font-black text-white">
                     laxa<span className="text-brand-gold">lab</span>
                 </Link>
-                <nav className="flex items-center gap-4 md:gap-6 text-xs md:text-sm font-bold text-gray-600">
+                <nav className="flex items-center gap-4 md:gap-6 text-xs md:text-sm font-bold text-gray-300">
                     <Link href="/blog" className="hover:text-brand-gold transition">{t('blog.title')}</Link>
                     <Link href="/courses" className="hover:text-brand-gold transition">{isAr ? 'الدورات' : 'Courses'}</Link>
-                    <Link href="/login" className="hover:text-brand-navy transition">{isAr ? 'تسجيل الدخول' : 'Sign in'}</Link>
+                    <Link href="/login" className="hover:text-brand-gold-light transition">{isAr ? 'تسجيل الدخول' : 'Sign in'}</Link>
                 </nav>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 md:px-6 py-12">
-                <Link href="/blog" className="text-sm font-bold text-brand-gold hover:underline mb-6 inline-block">&larr; {t('blog.backToPosts')}</Link>
+                <Link href="/blog" className="text-sm font-bold text-brand-gold hover:text-brand-gold-light transition-colors mb-6 inline-block">&larr; {t('blog.backToPosts')}</Link>
 
                 {post.coverImageUrl && (
-                    <div className="w-full h-64 md:h-80 bg-gray-100 rounded-3xl overflow-hidden mb-8">
+                    <div className="w-full h-64 md:h-80 bg-brand-navy rounded-3xl overflow-hidden mb-8">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={post.coverImageUrl} alt={title} className="w-full h-full object-cover" />
                     </div>
                 )}
 
-                <h1 className="text-3xl md:text-4xl font-black text-brand-navy leading-tight mb-4">{title}</h1>
+                <h1 className="text-3xl md:text-4xl font-black text-white leading-tight mb-4">{title}</h1>
                 <div className="text-sm text-gray-400 font-semibold mb-8 flex items-center gap-2">
                     <span>{t('blog.byAuthor')} {post.author?.email}</span>
                     <span>•</span>
                     <span>{t('blog.publishedOn')} {new Date(post.publishedAt || post.createdAt).toLocaleDateString()}</span>
                 </div>
 
-                {excerpt && <p className="text-gray-600 font-semibold text-lg mb-6 leading-relaxed">{excerpt}</p>}
+                {excerpt && <p className="text-brand-mist font-semibold text-lg mb-6 leading-relaxed">{excerpt}</p>}
 
-                <article className="prose prose-lg max-w-none text-gray-700 leading-relaxed space-y-4">
+                <article className="prose prose-lg max-w-none text-gray-300 leading-relaxed space-y-4">
                     {paragraphs.map((p: string, i: number) => (
                         <p key={i}>{p}</p>
                     ))}
