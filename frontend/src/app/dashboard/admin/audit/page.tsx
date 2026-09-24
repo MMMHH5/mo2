@@ -66,7 +66,7 @@ export default function AdminAuditPage() {
                     <p className="font-bold">{t('audit.loading')}</p>
                 </div>
             ) : (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-hidden animate-fade-in-up">
+                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b border-white/5">

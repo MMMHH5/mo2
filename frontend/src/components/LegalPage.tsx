@@ -28,18 +28,18 @@ export default function LegalPage({ titleAr, titleEn, introAr, introEn, updatedA
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <header className="px-8 py-6 flex items-center justify-between border-b border-gray-200 bg-white">
-                <Link href="/" className="text-2xl font-black text-brand-navy">
+            <header className="px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4 flex-wrap border-b border-gray-200 bg-white">
+                <Link href="/" className="text-xl md:text-2xl font-black text-brand-navy">
                     laxa<span className="text-brand-gold">lab</span>
                 </Link>
-                <nav className="flex items-center gap-6 text-sm font-bold text-gray-600">
+                <nav className="flex items-center gap-4 md:gap-6 text-xs md:text-sm font-bold text-gray-600">
                     <Link href="/courses" className="hover:text-brand-gold transition">{isAr ? 'الدورات' : 'Courses'}</Link>
                     <Link href="/blog" className="hover:text-brand-gold transition">{isAr ? 'المدونة' : 'Blog'}</Link>
                     <Link href="/login" className="hover:text-brand-navy transition">{isAr ? 'تسجيل الدخول' : 'Sign in'}</Link>
                 </nav>
             </header>
 
-            <main className="max-w-3xl mx-auto px-6 py-12">
+            <main className="max-w-3xl mx-auto px-4 md:px-6 py-12">
                 <h1 className="text-3xl font-black text-brand-navy mb-2">{isAr ? titleAr : titleEn}</h1>
                 {((isAr ? updatedAr : updatedEn) || '') && (
                     <p className="text-sm text-gray-400 mb-6 font-semibold">{isAr ? updatedAr : updatedEn}</p>

@@ -47,20 +47,26 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flexflex-col flex items-center justify-center p-4 relative">
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 relative">
             <div className="absolute top-4 right-4 rtl:left-4 rtl:right-auto">
                 <LanguageSwitcher />
             </div>
-            <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                <div className="bg-brand-navy p-8 text-center">
-                    <h2 className="text-3xl font-black text-brand-gold mb-2">{t('auth.join_laxalab')}</h2>
-                    <p className="text-brand-mist/80">{t('auth.start_learning')}</p>
+            <div className="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-brand-mist/50 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(18,48,90,0.12)] my-8">
+                <div className="bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] p-8 text-center border-b border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                    <img
+                        src="/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png"
+                        alt="Laxalab Academy"
+                        className="h-10 w-auto object-contain mx-auto mb-4 drop-shadow-lg relative z-10"
+                    />
+                    <h2 className="text-2xl font-black text-white mb-2 relative z-10">{t('auth.join_laxalab')}</h2>
+                    <p className="text-brand-gold-light text-sm font-semibold relative z-10 shadow-black/20">{t('auth.start_learning')}</p>
                 </div>
 
                 <div className="p-8">
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('auth.fullName')}</label>
+                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.fullName')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <User size={18} className="text-gray-400" />
@@ -68,7 +74,7 @@ export default function RegisterPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white"
                                     placeholder="Jane Doe"
                                     value={formData.fullName}
                                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
@@ -77,7 +83,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('auth.phone')}</label>
+                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.phone')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Phone size={18} className="text-gray-400" />
@@ -85,7 +91,7 @@ export default function RegisterPage() {
                                 <input
                                     type="tel"
                                     required
-                                    className="w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
                                     placeholder="+1 234 567 890"
                                     dir="ltr"
                                     value={formData.phone}
@@ -95,7 +101,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('auth.email')}</label>
+                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.email')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Mail size={18} className="text-gray-400" />
@@ -103,7 +109,7 @@ export default function RegisterPage() {
                                 <input
                                     type="email"
                                     required
-                                    className="w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
                                     placeholder="you@example.com"
                                     dir="ltr"
                                     value={formData.email}
@@ -113,7 +119,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('auth.password')}</label>
+                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.password')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Lock size={18} className="text-gray-400" />
@@ -122,7 +128,7 @@ export default function RegisterPage() {
                                     type="password"
                                     required
                                     minLength={6}
-                                    className="w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
                                     placeholder="••••••••"
                                     dir="ltr"
                                     value={formData.password}
@@ -132,7 +138,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">{t('auth.confirmPassword')}</label>
+                            <label className="block text-sm font-black text-brand-navy mb-1.5">{t('auth.confirmPassword')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Lock size={18} className="text-gray-400" />
@@ -141,7 +147,7 @@ export default function RegisterPage() {
                                     type="password"
                                     required
                                     minLength={6}
-                                    className="w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-left"
+                                    className="block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 hover:bg-white text-left"
                                     placeholder="••••••••"
                                     dir="ltr"
                                     value={formData.confirmPassword}
@@ -153,7 +159,7 @@ export default function RegisterPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-brand-gold hover:bg-[#b08e50] text-brand-navy font-black py-4 rounded-xl shadow-lg transition flex justify-center items-center gap-2 mt-4 disabled:opacity-50"
+                            className="w-full bg-brand-gold hover:bg-[#b5924a] text-white focus:ring-4 focus:ring-brand-gold/30 font-black py-4 rounded-xl shadow-lg transition-all duration-300 transform active:scale-[0.98] flex justify-center items-center gap-2 mt-4 disabled:opacity-50"
                         >
                             {isLoading ? t('auth.creating_account') : (
                                 <>
@@ -162,15 +168,15 @@ export default function RegisterPage() {
                             )}
                         </button>
 
-                        <div className="relative flex items-center justify-center my-4 text-sm mt-6">
-                            <span className="absolute bg-white px-2 text-gray-500 font-bold z-10">{t('common.or')}</span>
+                        <div className="relative flex items-center justify-center my-6 text-sm mt-8">
+                            <span className="absolute bg-white px-3 text-gray-400 font-bold z-10">{t('common.or')}</span>
                             <div className="w-full h-px bg-gray-200"></div>
                         </div>
 
                         <button
                             type="button"
                             onClick={() => router.push('/api/auth/google')}
-                            className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl shadow-sm transition"
+                            className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-gray-200 hover:bg-gray-50 hover:border-brand-mist hover:shadow-sm text-gray-700 font-bold rounded-xl transition-all duration-200"
                         >
                             <svg className="h-5 w-5" viewBox="0 0 24 24">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -183,9 +189,9 @@ export default function RegisterPage() {
                     </form>
 
                     <div className="mt-8 text-center">
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500 text-sm font-semibold">
                             {t('auth.already_have_account')}{' '}
-                            <Link href="/login" className="text-brand-navy font-bold hover:underline">
+                            <Link href="/login" className="text-brand-navy font-black hover:text-brand-gold-dark transition-colors">
                                 {t('auth.sign_in')}
                             </Link>
                         </p>

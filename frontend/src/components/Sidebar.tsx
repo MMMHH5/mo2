@@ -47,18 +47,15 @@ export default function Sidebar() {
         <aside className="w-64 shrink-0 bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c] h-screen flex flex-col justify-between hidden md:flex sticky top-0">
             <div>
                 <div className="p-5 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                            <span className="text-brand-gold font-black text-xl">L</span>
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-black text-white tracking-tight leading-none">
-                                laxa<span className="text-brand-gold">lab</span>
-                            </h2>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-mist/50">
-                                {t('roles.' + user.role.toLowerCase())}
-                            </span>
-                        </div>
+                    <div className="flex flex-col gap-2">
+                        <img
+                            src="/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png"
+                            alt="Laxalab Academy"
+                            className="h-10 w-auto object-contain mx-auto"
+                        />
+                        <span className="text-[10px] text-center font-black uppercase tracking-[0.2em] text-brand-mist/50">
+                            {t('roles.' + user.role.toLowerCase())}
+                        </span>
                     </div>
                 </div>
 
@@ -68,11 +65,10 @@ export default function Sidebar() {
                         const Icon = link.icon;
                         return (
                             <Link key={link.href} href={link.href}>
-                                <div className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all duration-200 ${
-                                    isActive
+                                <div className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all duration-200 ${isActive
                                         ? 'bg-gradient-to-r from-brand-gold/20 to-transparent text-brand-gold shadow-inner'
                                         : 'text-brand-mist/70 hover:bg-white/10 hover:text-white'
-                                }`}>
+                                    }`}>
                                     {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-brand-gold" />}
                                     <Icon size={19} className={`transition-colors ${isActive ? 'text-brand-gold' : 'text-brand-mist/50 group-hover:text-brand-mist'}`} />
                                     <span>{link.name}</span>

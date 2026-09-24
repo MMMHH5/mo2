@@ -48,7 +48,7 @@ export default function MyGradesPage() {
                         {graded.map((enrollment) => {
                             const avg = courseAvg(enrollment.grades);
                             return (
-                                <div key={enrollment.course.id} className="border border-white/5 rounded-3xl overflow-hidden">
+                                <div key={enrollment.course.id} className="border border-white/5 rounded-3xl overflow-x-auto">
                                     <div className="bg-gradient-to-r from-amber-500/20 to-amber-600/10 p-5 flex items-center justify-between gap-4 flex-wrap">
                                         <div>
                                             <h3 className="text-xl font-black text-white">

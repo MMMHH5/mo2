@@ -35,12 +35,11 @@ export default function MobileSidebar() {
                     <div className="absolute inset-y-0 right-0 w-72 max-w-[85vw] bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c] shadow-2xl flex flex-col">
                         <div className="flex items-center justify-between p-5 border-b border-white/10">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                                    <span className="text-brand-gold font-black text-xl">L</span>
-                                </div>
-                                <h2 className="text-xl font-black text-white tracking-tight">
-                                    laxa<span className="text-brand-gold">lab</span>
-                                </h2>
+                                <img
+                                    src="/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png"
+                                    alt="Laxalab Academy"
+                                    className="h-8 w-auto object-contain"
+                                />
                             </div>
                             <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition" aria-label="Close">
                                 <X size={24} />
@@ -53,9 +52,8 @@ export default function MobileSidebar() {
                                 const Icon = link.icon;
                                 return (
                                     <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
-                                        <div className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors ${
-                                            isActive ? 'bg-brand-gold/20 text-brand-gold' : 'text-brand-mist/70 hover:bg-white/10 hover:text-white'
-                                        }`}>
+                                        <div className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors ${isActive ? 'bg-brand-gold/20 text-brand-gold' : 'text-brand-mist/70 hover:bg-white/10 hover:text-white'
+                                            }`}>
                                             <Icon size={19} />
                                             <span>{link.name}</span>
                                         </div>

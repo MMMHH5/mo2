@@ -46,7 +46,7 @@ export default function StudentGradesPanel({ courseId }: Props) {
             ) : !enrollment || grades.length === 0 ? (
                 <div className="text-center text-gray-400 font-bold py-16">{t('myGrades.no_grades')}</div>
             ) : (
-                <div className="border border-brand-mist rounded-3xl overflow-hidden">
+                <div className="border border-brand-mist rounded-3xl overflow-x-auto">
                     <div className="bg-gradient-to-r from-brand-navy to-brand-charcoal text-white p-5 flex items-center justify-between gap-4 flex-wrap">
                         <div>
                             <h3 className="text-xl font-black">{pick(enrollment.course, 'title')}</h3>

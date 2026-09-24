@@ -1,6 +1,7 @@
 "use client";
 
 import ProtectedRoute from '@/components/ProtectedRoute';
+import MobileSidebar from '@/components/MobileSidebar';
 import { useI18n } from '@/lib/i18n-context';
 import { useAuth, type Role } from '@/lib/auth-context';
 import Link from 'next/link';
@@ -85,8 +86,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <ProtectedRoute allowedRoles={ALL_ROLES}>
             <div className="bg-white rounded-3xl shadow-lg shadow-brand-navy/5 border border-brand-mist min-h-[85vh] flex overflow-hidden">
+                {/* Mobile top bar */}
+                <div className="md:hidden sticky top-0 z-40 bg-brand-navy/95 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-brand-gold/10 rounded-lg flex items-center justify-center">
+                            <span className="text-brand-gold font-black text-sm">L</span>
+                        </div>
+                        <span className="font-black text-white tracking-tight">
+                            laxa<span className="text-brand-gold">lab</span>
+                        </span>
+                    </div>
+                    <MobileSidebar />
+                </div>
+
                 {/* Dark navy sidebar */}
-                <aside className="w-64 shrink-0 bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c] flex flex-col">
+                <aside className="hidden md:flex w-64 shrink-0 bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c] flex-col">
                     <div className="p-5 border-b border-white/10">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">

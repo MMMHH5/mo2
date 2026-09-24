@@ -105,7 +105,7 @@ export default function TeachingWorkspacePage() {
     const tabBtn = (key: Tab, icon: React.ReactNode, label: string) => (
         <button
             onClick={() => setTab(key)}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                 tab === key
                     ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
@@ -163,7 +163,7 @@ export default function TeachingWorkspacePage() {
                     {statPill(<Hash size={16} />, statusLabel, isAr ? 'الحالة' : 'Status')}
                 </div>
 
-                <div className="inline-flex items-center gap-1 bg-[#111f3a] border border-white/5 rounded-2xl p-1.5">
+                <div className="inline-flex items-center gap-1 bg-[#111f3a] border border-white/5 rounded-2xl p-1.5 overflow-x-auto max-w-full">
                     {tabBtn('roster', <Settings2 size={16} />, isAr ? 'الطلاب والدرجات' : 'Roster')}
                     {tabBtn('tasks', <ClipboardList size={16} />, t('tasks.tasks_title'))}
                     {tabBtn('announcements', <Megaphone size={16} />, isAr ? 'الإعلانات' : 'Announcements')}

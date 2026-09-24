@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import QRCode from 'qrcode';
 
 export interface CertificateProps {
@@ -52,9 +52,25 @@ function OrnamentLine({ side }: { side: 'left' | 'right' }) {
 
 export default function CertificateBilingual({ studentName, courseName, instructorName, issueDate, verificationCode, verificationUrl, lang }: CertificateProps) {
     const isAr = lang === 'ar';
+    const [scale, setScale] = useState(1);
+    const certRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = useCallback(() => {
         window.print();
+    }, []);
+
+    useEffect(() => {
+        const el = certRef.current;
+        if (!el) return;
+        const fit = () => {
+            const w = el.getBoundingClientRect().width;
+            setScale(Math.min(1, w / 1056));
+        };
+        fit();
+        const ro = new ResizeObserver(fit);
+        ro.observe(el);
+        window.addEventListener('resize', fit);
+        return () => { ro.disconnect(); window.removeEventListener('resize', fit); };
     }, []);
 
     useEffect(() => {
@@ -98,11 +114,20 @@ export default function CertificateBilingual({ studentName, courseName, instruct
 
             {/* Certificate */}
             <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4 sm:p-8 print:bg-white print:p-0">
-                <div
-                    className="certificate-wrap bg-white shadow-2xl print:shadow-none print:w-full"
-                    style={{ width: '1056px', minHeight: '748px' }}
-                >
-                    <div className="relative w-full h-full" style={{ minHeight: '748px' }}>
+                <div ref={certRef} className="w-full relative print:relative">
+                    <div className="print:hidden" style={{ height: `${748 * scale}px` }} />
+                    <div
+                        className="certificate-wrap bg-white shadow-2xl print:shadow-none print:w-full"
+                        style={{
+                            position: 'absolute' as const,
+                            top: 0,
+                            left: 0,
+                            width: '1056px',
+                            height: '748px',
+                            transform: `scale(${scale})`,
+                            transformOrigin: 'top left',
+                        }}
+                    >
 
                         {/* === DECORATIVE BORDER === */}
                         <div className="absolute inset-0 border-[8px] border-[#12305A]" />
@@ -277,7 +302,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                     @page { size: landscape; margin: 0; }
                     body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                     .no-print { display: none !important; }
-                    .certificate-wrap { box-shadow: none !important; width: 100% !important; margin: 0 !important; }
+                    .certificate-wrap { box-shadow: none !important; width: 100% !important; margin: 0 !important; position: relative !important; transform: none !important; height: 748px !important; }
                     .min-h-screen { background: white !important; padding: 0 !important; display: block !important; }
                     .min-h-screen > div { margin: 0 !important; }
                 }

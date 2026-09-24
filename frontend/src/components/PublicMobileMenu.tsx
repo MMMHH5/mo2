@@ -29,9 +29,11 @@ export default function PublicMobileMenu({ dark = false }: { dark?: boolean }) {
                     <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
                     <div className="absolute inset-y-0 right-0 w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col">
                         <div className="p-5 border-b border-brand-mist flex items-center justify-between">
-                            <span className="font-black text-brand-navy text-xl tracking-tight">
-                                laxa<span className="text-brand-gold">lab</span>
-                            </span>
+                            <img
+                                src="/logos/LaxaLab_Academy_Horizontal_Primary_4K.png"
+                                alt="Laxalab Academy"
+                                className="h-8 w-auto object-contain"
+                            />
                             <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-700 transition" aria-label="Close">
                                 <X size={24} />
                             </button>

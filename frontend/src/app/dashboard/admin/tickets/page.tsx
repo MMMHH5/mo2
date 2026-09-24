@@ -104,7 +104,7 @@ export default function AdminTicketsPage() {
             {loading ? (
                 <div className="h-40 flex items-center justify-center text-amber-500"><Loader className="animate-spin" size={32} /></div>
             ) : (
-                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-hidden animate-fade-in-up">
+                <div className="bg-[#111f3a] border border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-white/5">

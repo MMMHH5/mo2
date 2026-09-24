@@ -231,7 +231,7 @@ export default function TeachingHubPage() {
                                             </div>
 
                                             {/* Stats row */}
-                                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
                                                 <div className="bg-[#0a1830] rounded-xl py-2.5 text-center border border-white/5">
                                                     <p className="text-lg font-black text-white">{enrollmentCount}</p>
                                                     <p className="text-[10px] font-bold text-gray-500">{isAr ? 'طالب' : 'Students'}</p>

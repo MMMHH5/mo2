@@ -14,17 +14,14 @@ export default function MarketingShell({ children, title, subtitle }: { children
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <header className="px-8 py-6 flex items-center justify-between border-b border-brand-mist/50 bg-white/80 backdrop-blur-md sticky top-0 z-50">
-                <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-brand-navy rounded-xl flex items-center justify-center shadow-lg shadow-brand-navy/20">
-                        <span className="text-brand-gold-dark font-black text-xl">L</span>
-                    </div>
-                    <Link href="/">
-                        <span className="text-2xl font-black text-brand-navy tracking-tight">
-                            laxa<span className="text-brand-gold-dark">lab</span>
-                        </span>
-                    </Link>
-                </div>
+            <header className="px-8 py-4 flex items-center justify-between glass-panel sticky top-0 z-50">
+                <Link href="/" className="flex items-center">
+                    <img
+                        src="/logos/LaxaLab_Academy_Horizontal_Primary_4K.png"
+                        alt="Laxalab Academy Logo"
+                        className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 hover:scale-[1.02]"
+                    />
+                </Link>
                 <nav className="hidden md:flex items-center gap-7">
                     <Link href="/courses" className="text-gray-600 font-bold hover:text-brand-gold-dark transition">
                         {isAr ? 'الدورات' : 'Courses'}
@@ -81,9 +78,11 @@ export default function MarketingShell({ children, title, subtitle }: { children
             <footer className="py-12 bg-white border-t border-gray-200">
                 <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-10">
                     <div>
-                        <p className="text-2xl font-black text-brand-navy mb-3">
-                            laxa<span className="text-brand-gold-dark">lab</span>
-                        </p>
+                        <img
+                            src="/logos/LaxaLab_Academy_Stacked_Primary_4K.png"
+                            alt="Laxalab Logo"
+                            className="h-20 w-auto object-contain mb-4"
+                        />
                         <p className="text-sm text-gray-500 leading-relaxed">
                             {isAr
                                 ? 'منصة تعليمية رقمية تجمع بين التميز العربي والعالمي لتقديم دورات عملية بشهادات معتمدة.'

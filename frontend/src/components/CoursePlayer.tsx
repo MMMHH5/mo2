@@ -739,7 +739,7 @@ export default function CoursePlayer({ courseId }: Props) {
                             {announcementsOpen && (
                                 <>
                                     <div className="fixed inset-0 z-40" onClick={() => setAnnouncementsOpen(false)} />
-                                    <div className="absolute top-12 right-0 z-50 w-[380px] max-h-[420px] overflow-y-auto bg-[#0d1f3c] border border-white/10 rounded-2xl shadow-2xl shadow-black/40 admin-scroll">
+                                    <div className="absolute top-12 right-0 z-50 w-[85vw] max-w-[380px] max-h-[420px] overflow-y-auto bg-[#0d1f3c] border border-white/10 rounded-2xl shadow-2xl shadow-black/40 admin-scroll">
                                         <div className="p-4 border-b border-white/5 sticky top-0 bg-[#0d1f3c] z-10">
                                             <div className="flex items-center gap-2">
                                                 <Megaphone size={16} className="text-amber-400" />
