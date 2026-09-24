@@ -61,6 +61,8 @@ async function bootstrap() {
         setHeaders: (res, filePath) => {
             res.setHeader('X-Content-Type-Options', 'nosniff');
             res.setHeader('Cache-Control', 'private, no-store');
+            // Allow the frontend origin to embed uploaded media (helmet defaults CORP to same-origin)
+            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
             // Only preview-safe media types render inline; everything else downloads
             // so an uploaded file can never be interpreted as HTML/SVG active content.
             const inline = /\.(jpe?g|png|webp|gif|mp4|webm|mov)$/i.test(filePath);

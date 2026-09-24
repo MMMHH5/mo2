@@ -48,6 +48,8 @@ export class HealthController {
         if (!resolved.startsWith(uploadsRoot)) {
             throw new ForbiddenException('Access denied');
         }
+        // Allow the frontend origin to embed uploaded media (helmet defaults CORP to same-origin)
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
         return res.sendFile(resolved);
     }
 
