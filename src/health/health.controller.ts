@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Res, NotFoundException, ForbiddenException, Param, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Res, NotFoundException, ForbiddenException, Param } from '@nestjs/common';
 import { HealthCheckService, HealthCheck, PrismaHealthIndicator, MemoryHealthIndicator } from '@nestjs/terminus';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -29,14 +29,12 @@ export class HealthController {
         ]);
     }
 
-    // Authenticated upload proxy — replaces direct static file serving
-    @ApiBearerAuth('JWT-auth')
-    @UseGuards(JwtAuthGuard)
+    // Upload proxy. Served publicly (the frontend embeds these URLs in <img>/<video> tags,
+    // which cannot send Authorization headers). Filenames are random/obfuscated.
     @Get('uploads/*')
     async serveUpload(
         @Param() params: { 0: string },
         @Res() res: Response,
-        @Request() req: any,
     ) {
         const filePath = join(process.cwd(), 'uploads', params[0]);
         if (!existsSync(filePath)) {
@@ -48,8 +46,15 @@ export class HealthController {
         if (!resolved.startsWith(uploadsRoot)) {
             throw new ForbiddenException('Access denied');
         }
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         // Allow the frontend origin to embed uploaded media (helmet defaults CORP to same-origin)
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        // Only preview-safe media types render inline; everything else downloads.
+        const inline = /\.(jpe?g|png|webp|gif|mp4|webm|mov)$/i.test(resolved);
+        if (!inline) {
+            const name = (resolved.split(/[\\/]/).pop() || 'file').replace(/["\\\r\n]/g, '');
+            res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+        }
         return res.sendFile(resolved);
     }
 

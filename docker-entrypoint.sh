@@ -7,4 +7,7 @@ UPLOADS_DIR="/usr/src/app/uploads"
 mkdir -p "$UPLOADS_DIR/receipts" "$UPLOADS_DIR/cvs" "$UPLOADS_DIR/chat" "$UPLOADS_DIR/courses" 2>/dev/null || true
 chown -R nestjs:nodejs "$UPLOADS_DIR" 2>/dev/null || true
 
+# TEMP PROBE (remove after verification)
+echo "laxalab-probe-ok" > "$UPLOADS_DIR/__probe.txt" 2>/dev/null || true
+
 exec su-exec nestjs:nodejs "$@"
