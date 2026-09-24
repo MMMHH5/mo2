@@ -30,7 +30,8 @@ WORKDIR /usr/src/app
 ENV NODE_ENV=production
 
 # Prisma requires OpenSSL to run its query engine on Alpine
-RUN apk add --no-cache openssl libc6-compat
+# su-exec lets the entrypoint fix volume ownership then drop to a non-root user
+RUN apk add --no-cache openssl libc6-compat su-exec
 
 # Safe build-time default; overridden at runtime by Railway env vars
 ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
@@ -55,12 +56,16 @@ RUN cp -r dist/src/. dist/
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs && \
-    mkdir -p uploads/receipts uploads/cvs && \
+    mkdir -p uploads/receipts uploads/cvs uploads/chat uploads/courses && \
     # Give the runtime user write access so Prisma can regenerate its engines
     # (migrations run at container start and may need to write to node_modules)
     chown -R nestjs:nodejs /usr/src/app && \
     chmod -R u+w /usr/src/app/node_modules/@prisma
-USER nestjs
+
+# Entrypoint runs as root only to chown the mounted uploads volume, then drops to nestjs
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Expose port (nginx proxies /api/ to backend:3000)
 EXPOSE 3000
