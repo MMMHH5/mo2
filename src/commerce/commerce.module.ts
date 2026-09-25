@@ -8,9 +8,10 @@ import { CommerceController } from './commerce.controller';
 import { WishlistController } from './wishlist.controller';
 import { ReferralsController } from './referrals.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, ChatModule],
   controllers: [CommerceController, WishlistController, ReferralsController],
   providers: [PaymentsService, CurrenciesService, CouponsService, WishlistService, ReferralsService],
   exports: [PaymentsService, CurrenciesService, CouponsService, ReferralsService],

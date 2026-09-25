@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EnrollmentStatus, CourseOpeningStatus, Role } from '@prisma/client';
+import { EnrollmentStatus, CourseOpeningStatus, Role, PaymentStatus } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ChatService } from '../chat/chat.service';
@@ -222,40 +222,79 @@ export class EnrollmentsService {
     }
 
     async enrollWithReceipt(openingId: string, receiptUrl: string, studentId: string, ipAddress?: string) {
-        const opening = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
+        const opening = await this.prisma.courseOpening.findUnique({
+            where: { id: openingId },
+            include: { course: { select: { id: true, titleEn: true, titleAr: true } } },
+        });
         if (!opening) throw new NotFoundException('Opening not found');
         if (opening.status !== CourseOpeningStatus.OPEN) {
             throw new BadRequestException('This course opening is not open for registration yet');
         }
 
         const courseId = opening.courseId;
-        let existing = await this.prisma.enrollment.findUnique({
-            where: { studentId_courseId: { studentId, courseId } }
-        });
 
-        if (existing) {
-            if (existing.status === 'RESERVED' || existing.status === 'PENDING') {
-                return this.prisma.enrollment.update({
-                    where: { id: existing.id },
-                    data: { openingId, receiptFileUrl: receiptUrl, status: EnrollmentStatus.PENDING }
+        return this.prisma.$transaction(async (tx) => {
+            let existing = await tx.enrollment.findUnique({
+                where: { studentId_courseId: { studentId, courseId } }
+            });
+
+            if (existing) {
+                if (existing.status === 'RESERVED' || existing.status === 'PENDING') {
+                    existing = await tx.enrollment.update({
+                        where: { id: existing.id },
+                        data: { openingId, receiptFileUrl: receiptUrl, status: EnrollmentStatus.PENDING }
+                    });
+                } else {
+                    throw new ConflictException('Already enrolled in this course');
+                }
+            } else {
+                existing = await tx.enrollment.create({
+                    data: {
+                        courseId,
+                        studentId,
+                        openingId,
+                        receiptFileUrl: receiptUrl,
+                        status: EnrollmentStatus.PENDING,
+                    }
                 });
             }
-            throw new ConflictException('Already enrolled in this course');
-        }
 
-        const enrollment = await this.prisma.enrollment.create({
-            data: {
-                courseId,
-                studentId,
-                openingId,
-                receiptFileUrl: receiptUrl,
-                status: EnrollmentStatus.PENDING,
+            // Link the receipt upload to a manual Payment row so the finance
+            // ledger and the enrollment stay consistent (unified manual flow).
+            if (existing) {
+                const payment = await tx.payment.findFirst({
+                    where: { studentId, openingId },
+                    orderBy: { createdAt: 'desc' },
+                });
+                const amount = Number(opening.price) || 0;
+                if (payment && payment.status === PaymentStatus.PENDING && payment.provider === 'MANUAL') {
+                    await tx.payment.update({
+                        where: { id: payment.id },
+                        data: { receiptFileUrl: receiptUrl, enrollmentId: existing.id },
+                    });
+                } else {
+                    await tx.payment.create({
+                        data: {
+                            studentId,
+                            openingId,
+                            enrollmentId: existing.id,
+                            amount,
+                            currency: opening.currency,
+                            provider: 'MANUAL',
+                            method: 'RECEIPT',
+                            description: `Receipt enrollment in ${opening.course.titleEn}`,
+                            receiptFileUrl: receiptUrl,
+                        },
+                    });
+                }
             }
+
+            await tx.auditLog.create({
+                data: { userId: studentId, ipAddress, action: `Uploaded receipt and enrolled in Course ${courseId} (opening ${openingId})` },
+            });
+
+            return existing;
         });
-
-        await this.audit.logAction(`Uploaded receipt and enrolled in Course ${courseId} (opening ${openingId})`, ipAddress, studentId);
-
-        return enrollment;
     }
 
     async reserveSeat(courseId: string, studentId: string, ipAddress?: string) {
@@ -290,26 +329,54 @@ export class EnrollmentsService {
     }
 
     async review(enrollmentId: string, status: EnrollmentStatus, reviewerId: string, ipAddress?: string, notes?: string) {
-        // Log action
+        if (status !== EnrollmentStatus.APPROVED && status !== EnrollmentStatus.REJECTED) {
+            throw new BadRequestException('Review status must be APPROVED or REJECTED');
+        }
+
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { id: enrollmentId },
+            include: {
+                student: true,
+                course: { select: { id: true, titleAr: true, titleEn: true } },
+                payments: { orderBy: { createdAt: 'desc' } },
+                opening: { select: { id: true } },
+            },
+        });
+        if (!enrollment) throw new NotFoundException('Enrollment not found');
+
+        // Restrict transitions: only PENDING enrollments awaiting review can be
+        // decided, and only once. Already-decided / reserved / revoked records
+        // must not be re-reviewed into an inconsistent state.
+        if (enrollment.status !== EnrollmentStatus.PENDING) {
+            throw new ConflictException(`Enrollment is in "${enrollment.status}" state and cannot be reviewed`);
+        }
+
+        const pendingPayment = enrollment.payments.find(p => p.status === PaymentStatus.PENDING);
+
+        // The manual payment flow anchors on the pending Payment: approval marks
+        // it PAID, rejection marks it REJECTED — in the same transaction as the
+        // enrollment decision so the ledger can never drift from the enrollment.
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const u = await tx.enrollment.update({
+                where: { id: enrollmentId },
+                data: { status, financeOfficerNotes: notes },
+            });
+            if (pendingPayment) {
+                await tx.payment.update({
+                    where: { id: pendingPayment.id },
+                    data: status === EnrollmentStatus.APPROVED
+                        ? { status: PaymentStatus.PAID, paidAt: new Date(), reviewedAt: new Date() }
+                        : { status: PaymentStatus.REJECTED, reviewedAt: new Date() },
+                });
+            }
+            return u;
+        });
+
         await this.audit.logAction(
             `Finance reviewed Enrollment ${enrollmentId} with status ${status}`,
             ipAddress,
             reviewerId
         );
-
-        const enrollment = await this.prisma.enrollment.findUnique({
-            where: { id: enrollmentId },
-            include: { student: true, course: { select: { id: true, titleAr: true, titleEn: true } } },
-        });
-        if (!enrollment) throw new NotFoundException('Enrollment not found');
-
-        const updated = await this.prisma.enrollment.update({
-            where: { id: enrollmentId },
-            data: {
-                status,
-                financeOfficerNotes: notes,
-            }
-        });
 
         const courseTitle = enrollment.course.titleEn;
         await this.notifications.notify({

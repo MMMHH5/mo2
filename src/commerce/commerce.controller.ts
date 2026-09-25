@@ -51,6 +51,13 @@ export class CommerceController {
     return this.payments.refund(id, req.user.userId, req.user.role, reason);
   }
 
+  @ApiOperation({ summary: 'Cancel a pending payment (owner student, admin, or finance)' })
+  @Roles(Role.ADMIN, Role.FINANCE, Role.STUDENT)
+  @Post('payments/:id/cancel')
+  cancel(@Param('id') id: string, @Request() req: any) {
+    return this.payments.cancel(id, req.user.userId, req.user.role);
+  }
+
   // ---------- Currencies ----------
 
   @ApiOperation({ summary: 'List supported currencies' })

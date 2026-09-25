@@ -1,9 +1,11 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
+import { AuditService } from '../audit/audit.service';
+import { ChatService } from '../chat/chat.service';
 import { CouponsService } from './coupons.service';
-import { Role, PaymentStatus } from '@prisma/client';
+import { Role, PaymentStatus, EnrollmentStatus } from '@prisma/client';
 import Stripe from 'stripe';
 import { getFrontendUrl } from '../common/frontend-url';
 
@@ -15,6 +17,8 @@ export class PaymentsService {
     private prisma: PrismaService,
     private notifications: NotificationsService,
     private email: EmailService,
+    private audit: AuditService,
+    private chatService: ChatService,
     private coupons: CouponsService,
   ) {
     const key = process.env.STRIPE_SECRET_KEY;
@@ -164,16 +168,76 @@ export class PaymentsService {
       await this.stripe.refunds.create({ payment_intent: payment.providerRef, ...(refundReason ? { reason: refundReason } : {}) });
     }
 
-    await this.prisma.payment.update({ where: { id: paymentId }, data: { status: PaymentStatus.REFUNDED, refundedAt: new Date() } });
+    // Refund disables the enrollment in the same transaction: the student no
+    // longer has an active seat (enrollment -> REVOKED), so they can't keep
+    // course access after the money has been returned.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const p = await tx.payment.update({
+        where: { id: paymentId },
+        data: { status: PaymentStatus.REFUNDED, refundedAt: new Date() },
+      });
+      if (payment.enrollmentId) {
+        await tx.enrollment.update({
+          where: { id: payment.enrollmentId },
+          data: { status: EnrollmentStatus.REVOKED },
+        });
+      }
+      return p;
+    });
+
+    await this.audit.logAction(`Finance refunded Payment ${paymentId}${reason ? ` (${reason})` : ''}`, undefined, actorId);
     await this.notifications.notify({
       userId: payment.studentId,
       type: 'payment.refunded',
       titleAr: 'تم استرداد المبلغ',
       titleEn: 'Payment refunded',
-      bodyAr: reason ?? 'تم استرداد مبلغ دفعتك.',
-      bodyEn: reason ?? 'Your payment has been refunded.',
+      bodyAr: reason ?? 'تم استرداد مبلغ دفعتك وتم إلغاء تسجيلك في الدورة.',
+      bodyEn: reason ?? 'Your payment has been refunded and your enrollment was cancelled.',
       data: { paymentId },
     }).catch(() => {});
-    return { ok: true };
+    // REVOKED members must leave the batch chat room (membership syncs only APPROVED/RESERVED).
+    if (payment.openingId) {
+      try {
+        const room = await this.chatService.getOrCreateRoomForOpening(payment.openingId);
+        await this.chatService.syncRoomMembers(room.id);
+      } catch { /* don't fail refund if chat sync fails */ }
+    }
+    return { ok: true, status: updated.status, enrollmentStatus: payment.enrollmentId ? EnrollmentStatus.REVOKED : null };
+  }
+
+  async cancel(paymentId: string, actorId: string, role: Role) {
+    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
+    if (!payment) throw new NotFoundException('Payment not found');
+
+    const allowed = role === Role.ADMIN || role === Role.FINANCE || payment.studentId === actorId;
+    if (!allowed) throw new ForbiddenException('You can only cancel your own pending payments');
+
+    // Only a pending manual payment can be cancelled before review/approval;
+    // cancelling an already-decided payment would produce an invalid transition.
+    if (payment.status !== PaymentStatus.PENDING) {
+      throw new ConflictException(`Only pending payments can be cancelled (current status: ${payment.status})`);
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const p = await tx.payment.update({
+        where: { id: paymentId },
+        data: { status: PaymentStatus.CANCELLED },
+      });
+      // If the linked enrollment is still awaiting review for this payment,
+      // release it back to RESERVED so the student can re-apply later.
+      if (payment.enrollmentId) {
+        const enrollment = await tx.enrollment.findUnique({ where: { id: payment.enrollmentId } });
+        if (enrollment && (enrollment.status === EnrollmentStatus.PENDING || enrollment.status === EnrollmentStatus.RESERVED)) {
+          await tx.enrollment.update({
+            where: { id: payment.enrollmentId },
+            data: { status: EnrollmentStatus.RESERVED },
+          });
+        }
+      }
+      return p;
+    });
+
+    await this.audit.logAction(`Payment ${paymentId} cancelled`, undefined, actorId);
+    return { ok: true, status: updated.status };
   }
 }

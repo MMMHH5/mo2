@@ -146,7 +146,12 @@
         "ended": "Ended",
         "started": "Started",
         "draft": "Draft",
-        "announcement": "Announced"
+        "announcement": "Announced",
+        "paid": "Paid",
+        "failed": "Failed",
+        "refunded": "Refunded",
+        "cancelled": "Cancelled",
+        "revoked": "Revoked"
     },
     "sidebar": {
         "dashboard": "Dashboard",

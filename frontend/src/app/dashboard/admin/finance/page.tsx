@@ -36,6 +36,11 @@ const statusTone: Record<string, Tone> = {
     APPROVED: 'green',
     REJECTED: 'red',
     RESERVED: 'blue',
+    PAID: 'green',
+    FAILED: 'red',
+    REFUNDED: 'purple',
+    CANCELLED: 'gray',
+    REVOKED: 'navy',
 };
 
 type Filter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'RESERVED';

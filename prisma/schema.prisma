@@ -20,6 +20,7 @@ enum EnrollmentStatus {
   APPROVED
   REJECTED
   RESERVED
+  REVOKED
 }
 
 enum CourseOpeningStatus {
@@ -61,6 +62,7 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   CANCELLED
+  REJECTED
 }
 
 enum CouponType {
@@ -811,6 +813,8 @@ model Payment {
   method      String?
   description String?
   couponCode  String?
+  receiptFileUrl String?
+  reviewedAt  DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   paidAt      DateTime?

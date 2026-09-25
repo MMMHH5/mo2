@@ -146,7 +146,12 @@
         "ended": "منتهي",
         "started": "بدأ",
         "draft": "مسودة",
-        "announcement": "إعلان"
+        "announcement": "إعلان",
+        "paid": "مدفوع",
+        "failed": "فشل",
+        "refunded": "مسترد",
+        "cancelled": "ملغي",
+        "revoked": "ملغي الوصول"
     },
     "sidebar": {
         "dashboard": "لوحة القيادة",
