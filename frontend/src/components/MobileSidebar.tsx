@@ -33,16 +33,15 @@ export default function MobileSidebar() {
 
     if (!user) return null;
 
-    const links = buildNavLinks(t).filter(link => link.roles.includes(user.role));
-    const adminLinks = pathname.startsWith('/dashboard/admin')
-        ? ADMIN_EXTRA_LINKS.map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) }))
-        : [];
+    const roleLinks = buildNavLinks(t).filter(link => link.roles.includes(user.role));
+    const links = roleLinks.length > 0 ? roleLinks : buildNavLinks(t);
+    const adminLinks = pathname?.startsWith('/dashboard/admin') ? ADMIN_EXTRA_LINKS.map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) })) : [];
 
     return (
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="md:hidden p-2 text-brand-navy hover:bg-brand-mist rounded-xl transition"
+                className="md:hidden p-2 text-brand-navy dark:text-brand-mist hover:bg-brand-mist dark:hover:bg-white/10 rounded-xl transition"
                 aria-label="Menu"
             >
                 <Menu size={24} />

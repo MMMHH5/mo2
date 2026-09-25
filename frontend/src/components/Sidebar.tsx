@@ -44,7 +44,8 @@ export default function Sidebar() {
 
     if (!user) return null;
 
-    const links = buildNavLinks(t).filter(link => link.roles.includes(user.role));
+    const roleLinks = buildNavLinks(t).filter(link => link.roles.includes(user.role));
+    const links = roleLinks.length > 0 ? roleLinks : buildNavLinks(t);
 
     return (
         <aside className={`w-64 shrink-0 h-screen flex flex-col justify-between hidden md:flex sticky top-0 ${dark ? 'bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c]' : 'bg-white border-r border-gray-200 shadow-sm'}`}>
