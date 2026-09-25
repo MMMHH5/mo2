@@ -44,7 +44,8 @@ export default function Sidebar() {
 
     if (!user) return null;
 
-    const roleLinks = buildNavLinks(t).filter(link => link.roles.includes(user.role));
+    const roleKey = (user.role || '').toUpperCase();
+    const roleLinks = buildNavLinks(t).filter(link => link.roles.some(r => r.toUpperCase() === roleKey));
     const links = roleLinks.length > 0 ? roleLinks : buildNavLinks(t);
 
     return (

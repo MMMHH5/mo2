@@ -33,7 +33,8 @@ export default function MobileSidebar() {
 
     if (!user) return null;
 
-    const roleLinks = buildNavLinks(t).filter(link => link.roles.includes(user.role));
+    const roleKey = (user.role || '').toUpperCase();
+    const roleLinks = buildNavLinks(t).filter(link => link.roles.some(r => r.toUpperCase() === roleKey));
     const links = roleLinks.length > 0 ? roleLinks : buildNavLinks(t);
     const adminLinks = pathname?.startsWith('/dashboard/admin') ? ADMIN_EXTRA_LINKS.map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) })) : [];
 
@@ -49,8 +50,8 @@ export default function MobileSidebar() {
 
             {open && (
                 <div className="fixed inset-0 z-50 md:hidden">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-                    <div className={`absolute inset-y-0 right-0 w-72 max-w-[85vw] shadow-2xl flex flex-col ${dark ? 'bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c]' : 'bg-white'}`}>
+                    <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
+                    <div className={`fixed top-0 bottom-0 end-0 w-[85%] max-w-xs overflow-y-auto shadow-2xl ${dark ? 'bg-brand-navy-dark text-white' : 'bg-white text-brand-navy'}`}>
                         <div className={`flex items-center justify-between p-5 border-b ${dark ? 'border-white/10' : 'border-gray-200'}`}>
                             <div className="flex items-center gap-3">
                                 <img
@@ -64,7 +65,7 @@ export default function MobileSidebar() {
                             </button>
                         </div>
 
-                        <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+                        <div className="p-4 space-y-2">
                             {links.map((link) => {
                                 const isActive = (pathname.startsWith(link.href) && link.href !== '/dashboard') || pathname === link.href;
                                 const Icon = link.icon;
@@ -95,7 +96,7 @@ export default function MobileSidebar() {
                                     </Link>
                                 );
                             })}
-                        </nav>
+                        </div>
 
                         <div className={`p-4 border-t space-y-4 ${dark ? 'border-white/10' : 'border-gray-200'}`}>
                             <LanguageSwitcher />
