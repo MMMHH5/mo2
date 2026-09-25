@@ -167,11 +167,11 @@
         "teach_hub": "Teaching Hub",
         "tasks": "My Tasks",
         "notifications": "Notifications",
-        "batch_chats": "Batch Chats"
+        "batch_chats": "Course Chat"
     },
     "batchChats": {
-        "title": "Batch Chats",
-        "subtitle": "Group conversations with your course batches.",
+        "title": "Course Chat",
+        "subtitle": "Group conversations with students in your course.",
         "rooms_list": "Chat Rooms",
         "no_rooms": "No chat rooms yet.",
         "select_room": "Select a chat room",
