@@ -14,16 +14,16 @@ import { createPortal } from 'react-dom';
 import { CalendarClock, Users as UsersIcon, Newspaper, CreditCard, Settings, LifeBuoy, CalendarPlus, MessageCircle, Megaphone } from 'lucide-react';
 
 const ADMIN_EXTRA_LINKS = [
-    { href: '/dashboard/admin/openings', icon: CalendarClock },
-    { href: '/dashboard/admin/users', icon: UsersIcon },
-    { href: '/dashboard/admin/blog', icon: Newspaper },
-    { href: '/dashboard/admin/gateways', icon: CreditCard },
-    { href: '/dashboard/admin/system', icon: Settings },
-    { href: '/dashboard/admin/tickets', icon: LifeBuoy },
-    { href: '/dashboard/admin/requests', icon: CalendarPlus },
-    { href: '/dashboard/admin/chats', icon: MessageCircle },
-    { href: '/dashboard/admin/announcements', icon: Megaphone },
-] as const;
+    { href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['COURSE_MANAGER', 'ADMIN'] },
+    { href: '/dashboard/admin/users', icon: UsersIcon, roles: ['ADMIN'] },
+    { href: '/dashboard/admin/blog', icon: Newspaper, roles: ['COURSE_MANAGER', 'ADMIN'] },
+    { href: '/dashboard/admin/gateways', icon: CreditCard, roles: ['ADMIN'] },
+    { href: '/dashboard/admin/system', icon: Settings, roles: ['ADMIN'] },
+    { href: '/dashboard/admin/tickets', icon: LifeBuoy, roles: ['COURSE_MANAGER', 'ADMIN'] },
+    { href: '/dashboard/admin/requests', icon: CalendarPlus, roles: ['COURSE_MANAGER', 'ADMIN'] },
+    { href: '/dashboard/admin/chats', icon: MessageCircle, roles: ['COURSE_MANAGER', 'ADMIN'] },
+    { href: '/dashboard/admin/announcements', icon: Megaphone, roles: ['COURSE_MANAGER', 'ADMIN'] },
+] as Array<{ href: string; icon: typeof CalendarClock; roles: string[] }>;
 
 export default function MobileSidebar() {
     const { user, logout } = useAuth();
@@ -35,9 +35,14 @@ export default function MobileSidebar() {
     if (!user) return null;
 
     const roleKey = (user.role || '').toUpperCase();
-    const roleLinks = buildNavLinks(t).filter(link => link.roles.some(r => r.toUpperCase() === roleKey));
-    const links = roleLinks.length > 0 ? roleLinks : buildNavLinks(t);
-    const adminLinks = pathname?.startsWith('/dashboard/admin') ? ADMIN_EXTRA_LINKS.map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) })) : [];
+    const allNav = buildNavLinks(t);
+    const roleLinks = allNav.filter(link => link.roles.some(r => r.toUpperCase() === roleKey));
+    const links = roleLinks.length > 0
+        ? roleLinks
+        : allNav.filter(link => ['/dashboard', '/dashboard/profile', '/dashboard/support'].includes(link.href));
+    const adminLinks = pathname?.startsWith('/dashboard/admin')
+        ? ADMIN_EXTRA_LINKS.filter(l => l.roles.includes(roleKey)).map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) }))
+        : [];
 
     return (
         <>

@@ -8,6 +8,7 @@ import { io, Socket } from 'socket.io-client';
 import toast from 'react-hot-toast';
 import { Loader, Send, MessagesSquare, Users, Inbox, ArrowLeft, Paperclip, FileText, ImageIcon, X } from 'lucide-react';
 import { PageHeader } from '@/app/dashboard/admin/components';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface ChatRoom {
     id: string;
@@ -199,6 +200,7 @@ export default function BatchChatsPage() {
     );
 
     return (
+        <ProtectedRoute allowedRoles={['INSTRUCTOR', 'COURSE_MANAGER', 'ADMIN']}>
         <div className="space-y-6 animate-fade-in">
             <PageHeader
                 title={t('batchChats.title')}
@@ -371,5 +373,6 @@ export default function BatchChatsPage() {
                 </section>
             </div>
         </div>
+        </ProtectedRoute>
     );
 }
