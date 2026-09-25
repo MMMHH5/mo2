@@ -8,6 +8,7 @@ import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import { createPortal } from 'react-dom';
 
 export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
     const { t } = useI18n();
@@ -38,8 +39,8 @@ export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
                 <Menu size={24} />
             </button>
 
-            {open && (
-                <div className="fixed inset-0 z-50 lg:hidden">
+{open && createPortal(
+            <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
                     <div className={drawerCls}>
                         <div className={`p-5 border-b ${dividerCls} flex items-center justify-between`}>
@@ -99,7 +100,8 @@ export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
                             <ThemeToggle />
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

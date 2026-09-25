@@ -10,6 +10,7 @@ import { useTheme } from '@/lib/theme-context';
 import { buildNavLinks } from '@/lib/nav-links';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import { createPortal } from 'react-dom';
 import { CalendarClock, Users as UsersIcon, Newspaper, CreditCard, Settings, LifeBuoy, CalendarPlus, MessageCircle, Megaphone } from 'lucide-react';
 
 const ADMIN_EXTRA_LINKS = [
@@ -48,7 +49,7 @@ export default function MobileSidebar() {
                 <Menu size={24} />
             </button>
 
-            {open && (
+            {open && createPortal(
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
                     <div className={`fixed top-0 bottom-0 end-0 w-[85%] max-w-xs overflow-y-auto shadow-2xl ${dark ? 'bg-brand-navy-dark text-white' : 'bg-white text-brand-navy'}`}>
@@ -107,7 +108,8 @@ export default function MobileSidebar() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
