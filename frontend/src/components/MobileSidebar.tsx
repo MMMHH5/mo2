@@ -55,7 +55,7 @@ export default function MobileSidebar() {
                         <div className={`flex items-center justify-between p-5 border-b ${dark ? 'border-white/10' : 'border-gray-200'}`}>
                             <div className="flex items-center gap-3">
                                 <img
-                                    src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_4K.png'}
+                                    src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
                                     alt="Laxalab Academy"
                                     className="h-8 w-auto object-contain"
                                 />

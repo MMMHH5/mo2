@@ -78,9 +78,9 @@ export default function BlogList() {
                                 {(isAr ? post.excerptAr : post.excerptEn) && (
                                     <p className={`text-sm leading-relaxed line-clamp-2 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{isAr ? post.excerptAr : post.excerptEn}</p>
                                 )}
-                                <div className={`mt-4 flex items-center justify-between text-xs font-semibold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                    <span>{post.author?.email}</span>
-                                    <span>{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : ''}</span>
+                                <div className={`mt-4 flex items-center justify-between gap-2 min-w-0 text-xs font-semibold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    <span className="min-w-0 truncate">{post.author?.email}</span>
+                                    <span className="shrink-0">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : ''}</span>
                                 </div>
                             </div>
                         </Link>

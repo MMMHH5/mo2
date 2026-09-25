@@ -187,7 +187,7 @@ export default function ExploreCourses({ hideHeader = false, dark: darkProp = fa
             )}
 
             {/* Toolbar */}
-            <div className={`rounded-2xl border p-4 sticky top-16 md:top-20 z-30 backdrop-blur-md space-y-4 ${isDark ? 'bg-brand-navy-dark/90 border-white/10 shadow-lg shadow-black/20' : 'bg-white/90 border-brand-mist shadow-sm'}`}>
+            <div className={`rounded-2xl border p-4 sticky top-[72px] md:top-20 z-30 backdrop-blur-md space-y-4 ${isDark ? 'bg-brand-navy-dark/90 border-white/10 shadow-lg shadow-black/20' : 'bg-white/90 border-brand-mist shadow-sm'}`}>
                 <div className="flex flex-col md:flex-row gap-3">
                     <div className="flex-1 relative">
                         <Search size={18} className={`absolute start-4 top-1/2 -translate-y-1/2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />

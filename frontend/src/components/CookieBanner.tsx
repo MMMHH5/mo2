@@ -50,7 +50,7 @@ export default function CookieBanner() {
         : 'border border-gray-300 hover:bg-brand-mist text-gray-600';
 
     return (
-        <div className={`fixed bottom-4 inset-x-4 sm:inset-x-auto sm:left-4 sm:right-auto z-[60] w-full max-w-md ${containerCls} rounded-2xl shadow-2xl p-5`} dir={isAr ? 'rtl' : 'ltr'}>
+        <div className={`fixed bottom-4 inset-x-4 sm:inset-x-auto sm:left-4 sm:right-auto z-[60] max-w-md ${containerCls} rounded-2xl shadow-2xl p-5`} dir={isAr ? 'rtl' : 'ltr'}>
             <p className={`text-sm ${textCls} leading-relaxed mb-4`}>
                 {isAr
                     ? 'نستخدم ملفات الارتباط لتحسين تجربتك. يمكنك اختيار الفئات المسموح بها قبل الموافقة. لمزيد من التفاصيل، راجع سياسة ملفات الارتباط.'

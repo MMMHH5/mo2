@@ -103,16 +103,16 @@ function CertificateViewInner({ id }: { id: string }) {
                         <h1 className="text-3xl font-black text-brand-navy dark:text-white mb-3">Choose Language</h1>
                         <h2 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">اختر اللغة</h2>
                         <p className="text-gray-600 dark:text-gray-400 text-sm mb-8">Select the certificate language to view</p>
-                        <div className="flex gap-4 justify-center">
+                        <div className="flex flex-wrap gap-4 justify-center w-full">
                             <button
                                 onClick={() => { setLang('en'); setShowSelector(false); }}
-                                className="bg-brand-navy dark:bg-white text-white dark:text-brand-navy-dark font-black text-lg px-10 py-5 rounded-2xl hover:bg-brand-charcoal dark:hover:bg-gray-100 transition-all duration-200 flex items-center gap-3"
+                                className="bg-brand-navy dark:bg-white text-white dark:text-brand-navy-dark font-black text-lg px-6 sm:px-10 py-5 w-full sm:w-auto justify-center rounded-2xl hover:bg-brand-charcoal dark:hover:bg-gray-100 transition-all duration-200 flex items-center gap-3"
                             >
                                 <span className="text-2xl">🇬🇧</span> English
                             </button>
                             <button
                                 onClick={() => { setLang('ar'); setShowSelector(false); }}
-                                className="bg-white border border-gray-200 text-brand-navy font-black text-lg px-10 py-5 rounded-2xl hover:bg-gray-50 dark:bg-white/10 dark:border-white/10 dark:text-white dark:hover:bg-white/15 transition-all duration-200 flex items-center gap-3"
+                                className="bg-white border border-gray-200 text-brand-navy font-black text-lg px-6 sm:px-10 py-5 w-full sm:w-auto justify-center rounded-2xl hover:bg-gray-50 dark:bg-white/10 dark:border-white/10 dark:text-white dark:hover:bg-white/15 transition-all duration-200 flex items-center gap-3"
                             >
                                 <span className="text-2xl">🇸🇦</span> العربية
                             </button>

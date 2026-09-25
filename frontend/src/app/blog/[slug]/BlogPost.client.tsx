@@ -69,10 +69,10 @@ export default function BlogPost({ slug }: { slug: string }) {
                 )}
 
                 <h1 className={`text-3xl md:text-4xl font-black leading-tight mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>{title}</h1>
-                <div className={`text-sm font-semibold mb-8 flex items-center gap-2 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <span>{t('blog.byAuthor')} {post.author?.email}</span>
-                    <span>•</span>
-                    <span>{t('blog.publishedOn')} {new Date(post.publishedAt || post.createdAt).toLocaleDateString()}</span>
+                <div className={`text-sm font-semibold mb-8 flex flex-wrap items-center gap-2 min-w-0 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <span className="min-w-0 truncate max-w-full">{t('blog.byAuthor')} {post.author?.email}</span>
+                    <span className="shrink-0">•</span>
+                    <span className="shrink-0">{t('blog.publishedOn')} {new Date(post.publishedAt || post.createdAt).toLocaleDateString()}</span>
                 </div>
 
                 {excerpt && <p className={`font-semibold text-lg mb-6 leading-relaxed ${dark ? 'text-brand-mist' : 'text-brand-gold-dark'}`}>{excerpt}</p>}

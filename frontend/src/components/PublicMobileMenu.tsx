@@ -32,14 +32,14 @@ export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className={`md:hidden p-2 ${tone} transition`}
+                className={`lg:hidden p-2 ${tone} transition`}
                 aria-label="Menu"
             >
                 <Menu size={24} />
             </button>
 
             {open && (
-                <div className="fixed inset-0 z-50 md:hidden">
+                <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
                     <div className={drawerCls}>
                         <div className={`p-5 border-b ${dividerCls} flex items-center justify-between`}>

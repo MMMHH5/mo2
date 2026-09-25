@@ -113,10 +113,10 @@ export default function AdminFinancePage() {
             />
 
             {/* Tabs */}
-            <div className="flex gap-2 p-1.5 bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl w-fit animate-fade-in-up">
+            <div className="flex gap-2 p-1.5 bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl w-full max-w-full overflow-x-auto animate-fade-in-up">
                 <button
                     onClick={() => setActiveTab('enrollments')}
-                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'enrollments'
+                    className={`inline-flex shrink-0 whitespace-nowrap items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'enrollments'
                         ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 border border-white/10'
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                         }`}
@@ -125,7 +125,7 @@ export default function AdminFinancePage() {
                 </button>
                 <button
                     onClick={() => setActiveTab('payments')}
-                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'payments'
+                    className={`inline-flex shrink-0 whitespace-nowrap items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'payments'
                         ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 border border-white/10'
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                         }`}
@@ -204,11 +204,11 @@ export default function AdminFinancePage() {
             {selected && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
                     <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl animate-scale-in">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-brand-navy to-brand-navy-dark">
-                            <div>
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center gap-4 bg-gradient-to-r from-brand-navy to-brand-navy-dark">
+                            <div className="min-w-0">
                                 <h3 className="text-xl font-black text-white">{isRejecting ? t('finance.reject_title') : t('finance.verification_title')}</h3>
-                                <p className="text-sm text-gray-400 mt-1">
-                                    {t('finance.student_label')} <span className="font-bold text-white">{selected.student?.email}</span> | {t('finance.course_label')} <span className="font-bold text-white">{pick(selected.course, 'title')}</span>
+                                <p className="text-sm text-gray-400 mt-1 min-w-0">
+                                    {t('finance.student_label')} <span className="font-bold text-white break-all">{selected.student?.email}</span> | {t('finance.course_label')} <span className="font-bold text-white break-all">{pick(selected.course, 'title')}</span>
                                 </p>
                             </div>
                             <button onClick={() => { setSelected(null); setIsRejecting(false); setReason(''); }} className="admin-action-btn bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition"><X size={22} /></button>

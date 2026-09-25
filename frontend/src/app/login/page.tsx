@@ -81,7 +81,7 @@ function LoginForm() {
             <div className={`w-full max-w-md backdrop-blur-2xl p-6 sm:p-10 rounded-[2rem] relative z-10 transition-all duration-500 ${dark ? 'bg-brand-navy-dark/90 shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 hover:border-white/20' : 'bg-white shadow-xl border border-gray-200 hover:shadow-2xl'}`}>
                 <div className="text-center mb-8">
                     <img
-                        src={dark ? '/logos/LaxaLab_Academy_Stacked_Reverse_4K.png' : '/logos/LaxaLab_Academy_Stacked_4K.png'}
+                        src={dark ? '/logos/LaxaLab_Academy_Stacked_Reverse_4K.png' : '/logos/LaxaLab_Academy_Stacked_Primary_4K.png'}
                         alt="Laxalab Academy"
                         className="h-24 w-auto object-contain mx-auto mb-2 drop-shadow-sm"
                     />

@@ -188,7 +188,7 @@ export default function AdminCouponsPage() {
                                     className="w-full border border-white/10 rounded-xl p-3 bg-brand-navy-dark text-white uppercase placeholder:text-gray-600 focus:ring-2 focus:ring-brand-gold-light outline-none transition"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-300 mb-1.5">Discount *</label>
                                     <input
@@ -212,7 +212,7 @@ export default function AdminCouponsPage() {
                                     </select>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-300 mb-1.5">Max Uses</label>
                                     <input

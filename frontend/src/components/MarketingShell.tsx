@@ -33,15 +33,15 @@ export default function MarketingShell({ children, title, subtitle }: { children
 
     return (
         <div className={`${dark ? 'bg-brand-navy-dark' : 'bg-white'} min-h-screen flex flex-col`}>
-            <header className={`px-8 py-4 flex items-center justify-between sticky top-0 z-50 ${dark ? 'bg-brand-navy-dark/85 backdrop-blur-xl border-b border-white/5' : 'glass-panel'}`}>
+            <header className={`px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-x-4 gap-y-3 sticky top-0 z-50 ${dark ? 'bg-brand-navy-dark/85 backdrop-blur-xl border-b border-white/5' : 'glass-panel'}`}>
                 <Link href="/" className="flex items-center">
                     <img
                         src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
                         alt="Laxalab Academy Logo"
-                        className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 hover:scale-[1.02]"
+                        className="h-9 sm:h-10 lg:h-12 w-auto max-w-[50vw] object-contain transition-transform duration-300 hover:scale-[1.02]"
                     />
                 </Link>
-                <nav className="hidden md:flex items-center gap-7">
+                <nav className="hidden lg:flex items-center gap-7">
                     <Link href="/courses" className={linkCls}>
                         {isAr ? 'الدورات' : 'Courses'}
                     </Link>

@@ -104,7 +104,7 @@ export default function VerifyCertificateForm() {
                             <input
                                 type="text"
                                 required
-                                className={`flex-1 bg-transparent font-mono text-sm tracking-wider pl-12 pr-4 py-4 outline-none rtl:pl-4 rtl:pr-12 ${dark ? 'text-white placeholder-gray-500' : 'text-brand-charcoal placeholder-gray-400'}`}
+                                className={`flex-1 min-w-0 bg-transparent font-mono text-sm tracking-wider pl-12 pr-4 py-4 outline-none rtl:pl-4 rtl:pr-12 ${dark ? 'text-white placeholder-gray-500' : 'text-brand-charcoal placeholder-gray-400'}`}
                                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                                 value={code}
                                 dir="ltr"

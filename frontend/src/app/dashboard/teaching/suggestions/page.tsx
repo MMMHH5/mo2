@@ -186,7 +186,7 @@ export default function SuggestionsPage() {
                                 <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
                             </div>
                             <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-300 mb-1">{isAr ? 'العنوان بالعربي' : 'Title (AR)'} *</label>
                                         <input value={sTitleAr} onChange={e => setSTitleAr(e.target.value)} className={inputCls} />
@@ -196,7 +196,7 @@ export default function SuggestionsPage() {
                                         <input value={sTitleEn} onChange={e => setSTitleEn(e.target.value)} className={inputCls} />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label className="block text-sm font-bold text-gray-300 mb-1">{isAr ? 'الفئة بالعربي' : 'Category (AR)'}</label>
                                         <input value={sCatAr} onChange={e => setSCatAr(e.target.value)} className={inputCls} />

@@ -492,7 +492,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                             {gallery.length > 0 && (
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                                     {gallery.map((url, idx) => (
-                                        <div key={idx} className="relative group">
+                                        <div key={idx} className="relative group min-w-0">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img src={`${API_BASE_URL}${url}`} alt={`gallery-${idx}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
                                             <button type="button" onClick={() => removeByIndex(setGallery, idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600">

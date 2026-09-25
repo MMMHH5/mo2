@@ -92,7 +92,7 @@ export default function JoinAsInstructorPage() {
             subtitle={t('joinInstructor.teach_desc')}
         >
             {/* Application Form */}
-            <div className="max-w-3xl mx-auto mt-0 md:-mt-32 relative z-10 pb-20">
+            <div className="max-w-3xl mx-auto mt-0 md:-mt-24 relative z-10 pb-20">
                 <div className={`p-8 md:p-12 rounded-3xl shadow-sm border ${dark ? 'bg-brand-navy-dark border-white/10' : 'bg-white border-gray-200'}`}>
                     <h2 className={`text-2xl font-black mb-8 border-b pb-4 ${dark ? 'text-white border-white/10' : 'text-brand-navy border-gray-200'}`}>{t('joinInstructor.app_heading')}</h2>
 

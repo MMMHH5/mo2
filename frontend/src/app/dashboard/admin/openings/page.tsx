@@ -291,7 +291,7 @@ export default function AdminOpeningsPage() {
                     <div className="bg-brand-navy border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-xl animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <h3 className="text-xl font-black text-white mb-1">{t('manageCourses.announce_title')}</h3>
                         <p className="text-sm text-gray-400 mb-5">{t('manageCourses.announce_hint')}</p>
-                        <div className="grid grid-cols-2 gap-3 mb-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
                             <div>
                                 <label className="block text-sm font-bold text-gray-300 mb-1">{t('manageCourses.announce_start_at')}</label>
                                 <input

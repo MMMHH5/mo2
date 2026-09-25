@@ -66,7 +66,7 @@ export default function RegisterPage() {
                 <div className={`p-8 text-center relative overflow-hidden ${dark ? 'bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] border-b border-white/10' : 'bg-gradient-to-br from-brand-mist via-white to-white border-b border-gray-100 bg-opacity-70'}`}>
                     <div className={`absolute top-0 inset-x-0 h-px ${dark ? 'bg-gradient-to-r from-transparent via-white/20 to-transparent' : 'bg-gradient-to-r from-transparent via-brand-gold/30 to-transparent'}`}></div>
                     <img
-                        src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_4K.png'}
+                        src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
                         alt="Laxalab Academy"
                         className="h-10 w-auto object-contain mx-auto mb-4 drop-shadow-lg relative z-10"
                     />
