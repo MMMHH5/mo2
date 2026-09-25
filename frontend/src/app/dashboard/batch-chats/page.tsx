@@ -200,7 +200,7 @@ export default function BatchChatsPage() {
     );
 
     return (
-        <ProtectedRoute allowedRoles={['INSTRUCTOR', 'COURSE_MANAGER', 'ADMIN']}>
+        <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'ADMIN']}>
         <div className="space-y-6 animate-fade-in">
             <PageHeader
                 title={t('batchChats.title')}
