@@ -128,51 +128,51 @@ export default function AdminGatewaysPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-xl animate-fade-in-up">
                 {[
-                    { value: (gateways || []).length, label: t('admin.stat_gateways'), color: 'text-white' },
-                    { value: activeCount, label: t('admin.active_tag'), color: 'text-emerald-400' },
-                    { value: (gateways || []).length - activeCount, label: t('admin.inactive_tag'), color: 'text-gray-400' },
+                    { value: (gateways || []).length, label: t('admin.stat_gateways'), color: 'text-brand-navy dark:text-white' },
+                    { value: activeCount, label: t('admin.active_tag'), color: 'text-emerald-600 dark:text-emerald-400' },
+                    { value: (gateways || []).length - activeCount, label: t('admin.inactive_tag'), color: 'text-gray-500 dark:text-gray-400' },
                 ].map((s, i) => (
-                    <div key={i} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-4">
+                    <div key={i} className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-4">
                         <div className={`text-3xl font-black ${s.color}`}>{s.value}</div>
-                        <div className="text-xs font-bold text-gray-400 mt-1">{s.label}</div>
+                        <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1">{s.label}</div>
                     </div>
                 ))}
             </div>
 
-            {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
+            {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{error}</div>}
 
             {loading ? (
-                <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('admin.loading_gateways')}</div>
+                <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('admin.loading_gateways')}</div>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 animate-fade-in-up">
                     {gateways?.map(g => (
-                        <div key={g.id} className={`bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex flex-col ${!g.isActive ? 'opacity-70' : ''}`}>
+                        <div key={g.id} className={`bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-5 flex flex-col ${!g.isActive ? 'opacity-70' : ''}`}>
                             <div className="flex items-start justify-between gap-3 mb-3">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${g.isActive ? 'bg-teal-500/15 text-teal-400' : 'bg-white/5 text-gray-500'}`}>
+                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${g.isActive ? 'bg-teal-50 dark:bg-teal-500/15 text-teal-600 dark:text-teal-400' : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400'}`}>
                                         <CreditCard size={20} />
                                     </div>
-                                    <h4 className="font-black text-white">{g.name}</h4>
+                                    <h4 className="font-black text-brand-navy dark:text-white">{g.name}</h4>
                                 </div>
                                 <Badge tone={isActiveTone(g.isActive)} dot>
                                     {g.isActive ? t('admin.active_tag') : t('admin.inactive_tag')}
                                 </Badge>
                             </div>
-                            <p className="text-sm text-gray-300 whitespace-pre-wrap mb-4 flex-1 leading-relaxed">{g.instructions}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap mb-4 flex-1 leading-relaxed">{g.instructions}</p>
                             {fileUrl(g.walletGuideImageUrl) && (
-                                <a href={fileUrl(g.walletGuideImageUrl)!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-brand-gold-light font-bold text-sm hover:underline mb-4 w-fit">
+                                <a href={fileUrl(g.walletGuideImageUrl)!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-brand-gold-dark dark:text-brand-gold-light font-bold text-sm hover:underline mb-4 w-fit">
                                     <ImageIcon size={16} /> {t('admin.view_image')} <ExternalLink size={14} />
                                 </a>
                             )}
-                            <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                <button onClick={() => handleToggleActive(g)} disabled={processingId === g.id} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition disabled:opacity-40 cursor-pointer ${g.isActive ? 'bg-white/5 text-gray-400 hover:bg-white/10' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 ring-1 ring-emerald-500/30'}`}>
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-white/5">
+                                <button onClick={() => handleToggleActive(g)} disabled={processingId === g.id} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition disabled:opacity-40 cursor-pointer ${g.isActive ? 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 ring-1 ring-emerald-200 dark:ring-emerald-500/30'}`}>
                                     {g.isActive ? t('admin.deactivate') : t('admin.activate')}
                                 </button>
                                 <div className="flex gap-1.5">
-                                    <button onClick={() => openEdit(g)} disabled={processingId === g.id} className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 disabled:opacity-40 transition cursor-pointer tooltip" title={t('admin.edit_gateway')}>
+                                    <button onClick={() => openEdit(g)} disabled={processingId === g.id} className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40 transition cursor-pointer tooltip" title={t('admin.edit_gateway')}>
                                         <Pencil size={16} />
                                     </button>
-                                    <button onClick={() => handleDelete(g)} disabled={processingId === g.id} className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition cursor-pointer tooltip" title={t('admin.delete_user_title')}>
+                                    <button onClick={() => handleDelete(g)} disabled={processingId === g.id} className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-40 transition cursor-pointer tooltip" title={t('admin.delete_user_title')}>
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -180,7 +180,7 @@ export default function AdminGatewaysPage() {
                         </div>
                     ))}
                     {gateways?.length === 0 && (
-                        <div className="col-span-full bg-brand-navy-dark border border-white/5 rounded-2xl p-4">
+                        <div className="col-span-full bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-4">
                             <EmptyPanel icon={Wallet} title={t('admin.no_gateways')} color="teal" />
                         </div>
                     )}

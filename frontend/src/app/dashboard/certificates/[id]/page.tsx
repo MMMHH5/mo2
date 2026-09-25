@@ -39,7 +39,7 @@ export default function CertificateDetailPage() {
                     </button>
                 </div>
 
-                {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
+                {error && <div className="p-4 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 rounded-xl">{error}</div>}
 
                 {loading || !cert ? (
                     <div className="h-60 bg-brand-navy-dark flex items-center justify-center font-bold text-gray-400 rounded-3xl border border-white/5">

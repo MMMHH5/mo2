@@ -82,16 +82,16 @@ export default function MyCoursesPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
-            <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
+            <div className="bg-white dark:bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 min-h-[80vh]">
                 <div className="mb-8">
-                    <h2 className="text-3xl font-black text-white">{t('myCourses.heading')}</h2>
-                    <p className="text-gray-400 mt-2">{t('myCourses.subtitle')}</p>
+                    <h2 className="text-3xl font-black text-brand-navy dark:text-white">{t('myCourses.heading')}</h2>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">{t('myCourses.subtitle')}</p>
                 </div>
 
-                {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl mb-6">{error}</div>}
+                {error && <div className="p-4 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 rounded-xl mb-6">{error}</div>}
 
                 {loading ? (
-                    <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('myCourses.loading')}</div>
+                    <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('myCourses.loading')}</div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {enrollments?.map((enrollment) => (
@@ -193,10 +193,10 @@ export default function MyCoursesPage() {
                             </div>
                         ))}
                         {enrollments?.length === 0 && (
-                            <div className="col-span-full text-center py-16 text-gray-400 font-semibold text-lg border-2 border-dashed border-white/10 rounded-xl">
+                            <div className="col-span-full text-center py-16 text-gray-500 dark:text-gray-400 font-semibold text-lg border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl bg-gray-100/50 dark:bg-transparent">
                                 {t('myCourses.empty_title')}
                                 <div className="mt-4">
-                                    <Link href="/courses" className="text-brand-gold-light hover:underline">{t('landing.explore_courses')}</Link>
+                                    <Link href="/courses" className="text-brand-gold-dark dark:text-brand-gold-light hover:underline">{t('landing.explore_courses')}</Link>
                                 </div>
                             </div>
                         )}

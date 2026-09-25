@@ -94,12 +94,12 @@ export default function AdminCouponsPage() {
                 }
             />
 
-            {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
+            {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{error}</div>}
 
             {loading ? (
-                <div className="h-40 flex items-center justify-center font-bold text-gray-400">Loading coupons…</div>
+                <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">Loading coupons…</div>
             ) : (
-                <div className="admin-table-wrap bg-brand-navy-dark border border-white/5 rounded-2xl animate-fade-in-up">
+                <div className="admin-table-wrap bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl animate-fade-in-up">
                     <table className="admin-table text-left">
                         <thead>
                             <tr>
@@ -111,23 +111,23 @@ export default function AdminCouponsPage() {
                                 <th className="text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                             {(coupons || []).map(c => {
                                 const expired = c.expiresAt ? new Date(c.expiresAt) < new Date() : false;
                                 const exhausted = c.maxUses != null && c.usedCount >= c.maxUses;
                                 return (
-                                    <tr key={c.id} className="animate-fade-in hover:bg-white/5">
+                                    <tr key={c.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
                                         <td className="p-4">
-                                            <span className="inline-flex items-center gap-2 font-mono font-black text-white">
-                                                <Tag size={15} className="text-brand-gold-light" /> {c.code}
+                                            <span className="inline-flex items-center gap-2 font-mono font-black text-brand-navy dark:text-white">
+                                                <Tag size={15} className="text-brand-gold-dark dark:text-brand-gold-light" /> {c.code}
                                             </span>
                                             {!!c.courses?.length && (
-                                                <div className="text-xs text-gray-500 mt-1">
+                                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                     {c.courses.map(cc => cc.titleEn || cc.titleAr).filter(Boolean).join(', ')}
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="p-4 font-black text-brand-gold-light">
+                                        <td className="p-4 font-black text-brand-gold-dark dark:text-brand-gold-light">
                                             {c.type === 'PERCENTAGE' ? `${c.discount}%` : `$${c.discount}`}
                                         </td>
                                         <td className="p-4">
@@ -138,15 +138,15 @@ export default function AdminCouponsPage() {
                                         </td>
                                         <td className="p-4 text-sm">
                                             {c.expiresAt ? (
-                                                <span className={expired ? 'text-red-400 font-bold' : 'text-gray-400'}>
+                                                <span className={expired ? 'text-red-600 dark:text-red-400 font-bold' : 'text-gray-500 dark:text-gray-400'}>
                                                     {new Date(c.expiresAt).toLocaleDateString()}
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-600">—</span>
+                                                <span className="text-gray-600 dark:text-gray-300">—</span>
                                             )}
                                         </td>
                                         <td className="p-4 text-center">
-                                            <span className={`font-bold ${exhausted ? 'text-red-400' : 'text-gray-300'}`}>
+                                            <span className={`font-bold ${exhausted ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-300'}`}>
                                                 {c.usedCount}{c.maxUses != null ? ` / ${c.maxUses}` : ''}
                                             </span>
                                         </td>
@@ -154,7 +154,7 @@ export default function AdminCouponsPage() {
                                             <button
                                                 onClick={() => handleDelete(c.id)}
                                                 disabled={deletingId === c.id}
-                                                className="inline-flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 ring-1 ring-red-500/20 px-3.5 py-2 rounded-lg text-sm font-bold transition disabled:opacity-40 cursor-pointer"
+                                                className="inline-flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-500/20 px-3.5 py-2 rounded-lg text-sm font-bold transition disabled:opacity-40 cursor-pointer"
                                             >
                                                 <Trash2 size={16} /> Delete
                                             </button>

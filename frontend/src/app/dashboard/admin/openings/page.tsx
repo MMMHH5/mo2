@@ -115,7 +115,7 @@ export default function AdminOpeningsPage() {
             case 'ANNOUNCEMENT':
                 return (
                     <button onClick={() => runLifecycle(o, 'open')} disabled={disabled}
-                        className={`${base} text-emerald-400 hover:bg-emerald-500/10`}
+                        className={`${base} text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10`}
                         title={t('manageCourses.action_open_tooltip')}>
                         <Unlock size={18} />
                     </button>
@@ -123,7 +123,7 @@ export default function AdminOpeningsPage() {
             case 'OPEN':
                 return (
                     <button onClick={() => runLifecycle(o, 'start')} disabled={disabled}
-                        className={`${base} text-teal-400 hover:bg-teal-500/10`}
+                        className={`${base} text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-500/10`}
                         title={t('manageCourses.action_start_tooltip')}>
                         <Play size={18} />
                     </button>
@@ -131,7 +131,7 @@ export default function AdminOpeningsPage() {
             case 'STARTED':
                 return (
                     <button onClick={() => runLifecycle(o, 'end')} disabled={disabled}
-                        className={`${base} text-red-400 hover:bg-red-500/10`}
+                        className={`${base} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10`}
                         title={t('manageCourses.action_end_tooltip')}>
                         <Flag size={18} />
                     </button>
@@ -140,7 +140,7 @@ export default function AdminOpeningsPage() {
             default:
                 return (
                     <button onClick={() => openAnnounceModal(o)} disabled={disabled}
-                        className={`${base} text-brand-navy-light hover:bg-brand-navy-light/10`}
+                        className={`${base} text-brand-navy dark:text-brand-navy-light hover:bg-brand-navy/10 dark:hover:bg-brand-navy-light/10`}
                         title={t('manageCourses.action_announce_tooltip')}>
                         <Megaphone size={18} />
                     </button>
@@ -171,7 +171,7 @@ export default function AdminOpeningsPage() {
             onClick={() => setStatusFilter(key)}
             className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${statusFilter === key
                 ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black shadow-md'
-                : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-white/10 hover:bg-gray-200 dark:hover:bg-white/10'
                 }`}
         >
             {label}
@@ -185,18 +185,18 @@ export default function AdminOpeningsPage() {
                 subtitle={t('admin.openings_subtitle')}
                 actions={
                     <>
-                        <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1">
+                        <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/5 rounded-xl p-1">
                             {filterBtn('ALL', t('admin.filter_all'))}
                             {filterBtn('OPEN', `${t('admin.filter_open')} · ${openCount}`)}
                             {filterBtn('PLANNED', `${t('admin.filter_planned')} · ${plannedCount}`)}
                         </div>
                         <div className="relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
                             <input
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 placeholder={t('admin.search_openings')}
-                                className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-52 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
+                                className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-52 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <BtnPrimary href="/dashboard/admin/courses" icon={PlusCircle}>{t('admin.new_opening')}</BtnPrimary>
@@ -204,10 +204,10 @@ export default function AdminOpeningsPage() {
                 }
             />
 
-            {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
+            {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{error}</div>}
 
             {loading ? (
-                <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('admin.loading_courses')}</div>
+                <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('admin.loading_courses')}</div>
             ) : (
                 <div className="admin-table-wrap animate-fade-in-up">
                     <table className="admin-table text-left">
@@ -224,33 +224,33 @@ export default function AdminOpeningsPage() {
                                 <th className="text-right">{t('manageCourses.col_actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                             {filtered.map((o) => {
                                 const pct = seatsPct(o);
                                 const meta = statusMeta(o.status);
                                 return (
-                                    <tr key={o.id} className="animate-fade-in hover:bg-white/5">
-                                        <td className="p-4 font-bold text-gray-200 min-w-[150px]">
+                                    <tr key={o.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
+                                        <td className="p-4 font-bold text-brand-navy dark:text-gray-200 min-w-[150px]">
                                             {pick(o, 'name') || t('manageCourses.opening_default')}
-                                            {o.priceOld && <span className="block text-xs text-gray-500 line-through font-normal mt-0.5">${o.priceOld}</span>}
+                                            {o.priceOld && <span className="block text-xs text-gray-500 dark:text-gray-400 line-through font-normal mt-0.5">${o.priceOld}</span>}
                                         </td>
-                                        <td className="p-4 text-sm text-gray-400">{pick(o.course, 'title') || o.courseId.slice(0, 8)}</td>
-                                        <td className="p-4 text-sm text-gray-400">
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{pick(o.course, 'title') || o.courseId.slice(0, 8)}</td>
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400">
                                             <div>{fmtDate(o.startDate)} → {fmtDate(o.endDate)}</div>
                                         </td>
-                                        <td className="p-4 text-sm text-gray-400">{fmtDate(o.enrollmentDeadline)}</td>
-                                        <td className="p-4 font-black text-emerald-400">${o.price}</td>
-                                        <td className="p-4 text-sm text-gray-400 w-40">
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{fmtDate(o.enrollmentDeadline)}</td>
+                                        <td className="p-4 font-black text-emerald-600 dark:text-emerald-400">${o.price}</td>
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400 w-40">
                                             <div className="flex items-center justify-between mb-1.5">
-                                                <span className="inline-flex items-center gap-1.5 font-bold"><Users size={14} className="text-gray-500" /> {seatsLabel(o)}</span>
+                                                <span className="inline-flex items-center gap-1.5 font-bold"><Users size={14} className="text-gray-500 dark:text-gray-400" /> {seatsLabel(o)}</span>
                                             </div>
                                             {pct !== null && (
-                                                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                                <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/5 overflow-hidden">
                                                     <div className="h-full rounded-full bg-gradient-to-r from-brand-gold to-brand-gold-dark" style={{ width: `${pct}%` }} />
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="p-4 text-sm text-gray-500 max-w-[180px] truncate">{o.instructor?.email || '—'}</td>
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400 max-w-[180px] truncate">{o.instructor?.email || '—'}</td>
                                         <td className="p-4">
                                             <Badge tone={meta.tone} dot>
                                                 {meta.label}
@@ -259,14 +259,14 @@ export default function AdminOpeningsPage() {
                                         <td className="p-4 text-right whitespace-nowrap">
                                             {lifecycleBtn(o)}
                                             <Link href={`/dashboard/courses/open/${o.courseId}?edit=${o.id}`}>
-                                                <button className="admin-action-btn text-brand-navy-light hover:bg-brand-navy-light/10 tooltip" title={t('manageCourses.edit_opening_tooltip')}>
+                                                <button className="admin-action-btn text-brand-navy dark:text-brand-navy-light hover:bg-brand-navy/10 dark:hover:bg-brand-navy-light/10 tooltip" title={t('manageCourses.edit_opening_tooltip')}>
                                                     <Pencil size={18} />
                                                 </button>
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(o)}
                                                 disabled={processingId === o.id}
-                                                className="admin-action-btn tooltip disabled:opacity-40 text-red-400 hover:bg-red-500/10"
+                                                className="admin-action-btn tooltip disabled:opacity-40 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
                                                 title={t('manageCourses.delete_tooltip')}
                                             >
                                                 <Trash2 size={18} />

@@ -89,12 +89,12 @@ export default function AdminCoursesPage() {
                 actions={
                     <>
                         <div className="relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
                             <input
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 placeholder={t('admin.search_courses')}
-                                className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-56 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
+                                className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-56 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <BtnPrimary href="/dashboard/courses/create" icon={BookOpen}>{t('manageCourses.create_course')}</BtnPrimary>
@@ -102,10 +102,10 @@ export default function AdminCoursesPage() {
                 }
             />
 
-            {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
+            {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{error}</div>}
 
             {loading ? (
-                <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('admin.loading_courses')}</div>
+                <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('admin.loading_courses')}</div>
             ) : (
                 <div className="admin-table-wrap animate-fade-in-up">
                     <table className="admin-table text-left">
@@ -121,60 +121,60 @@ export default function AdminCoursesPage() {
                                 <th className="text-right">{t('manageCourses.col_actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                             {filtered.map((c) => {
                                 const pub = publishedOpenings(c);
                                 const endedCount = (c.openings || []).filter(o => o.status === 'ENDED').length;
                                 const status = statusTone(pub.length, (c.openings || []).length, endedCount);
                                 const hasEnrollments = (c._count?.enrollments ?? 0) > 0 || totalEnrollments(c) > 0;
                                 return (
-                                    <tr key={c.id} className="animate-fade-in hover:bg-white/5">
+                                    <tr key={c.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
                                         <td className="p-4">
                                             <div className="flex items-center gap-3 min-w-[240px]">
                                                 {c.coverImageUrl ? (
-                                                    <Image src={`${API_BASE_URL}${c.coverImageUrl}`} alt="" width={48} height={36} unoptimized className="w-12 h-9 object-cover rounded-lg border border-white/10 shadow-sm" />
+                                                    <Image src={`${API_BASE_URL}${c.coverImageUrl}`} alt="" width={48} height={36} unoptimized className="w-12 h-9 object-cover rounded-lg border border-gray-300 dark:border-white/10 shadow-sm" />
                                                 ) : (
                                                     <div className="w-12 h-9 rounded-lg bg-gradient-to-br from-brand-navy to-brand-navy-dark flex items-center justify-center text-brand-gold-light font-black text-xs">L</div>
                                                 )}
                                                 <div>
-                                                    <div className="font-bold text-gray-200">{pick(c, 'title')}</div>
-                                                    <div className="text-xs text-gray-500">{c.hoursOfContent ? `${c.hoursOfContent}h` : '—'}</div>
+                                                    <div className="font-bold text-brand-navy dark:text-gray-200">{pick(c, 'title')}</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">{c.hoursOfContent ? `${c.hoursOfContent}h` : '—'}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="p-4 text-sm text-gray-400">{pick(c, 'category') || '—'}</td>
-                                        <td className="p-4 text-sm text-gray-400">{c.level ? t('course.level_' + String(c.level).toLowerCase()) : '—'}</td>
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{pick(c, 'category') || '—'}</td>
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{c.level ? t('course.level_' + String(c.level).toLowerCase()) : '—'}</td>
                                         <td className="p-4 text-sm">
-                                            <span className="font-bold text-white">{(c.openings || []).length}</span>
-                                            <span className="text-gray-500 text-xs ms-1">({pub.length} {t('admin.published_short')})</span>
+                                            <span className="font-bold text-brand-navy dark:text-white">{(c.openings || []).length}</span>
+                                            <span className="text-gray-500 dark:text-gray-400 text-xs ms-1">({pub.length} {t('admin.published_short')})</span>
                                         </td>
-                                        <td className="p-4 font-black text-emerald-400">{currentPrice(c) ? `$${currentPrice(c)}` : '—'}</td>
+                                        <td className="p-4 font-black text-emerald-600 dark:text-emerald-400">{currentPrice(c) ? `$${currentPrice(c)}` : '—'}</td>
                                         <td className="p-4">
                                             <Badge tone={status.tone}>{t('admin.course_' + status.label)}</Badge>
                                         </td>
-                                        <td className="p-4 text-sm text-gray-400">
-                                            <span className="inline-flex items-center gap-1.5 font-bold"><Users size={14} className="text-gray-500" /> {totalEnrollments(c)}</span>
+                                        <td className="p-4 text-sm text-gray-500 dark:text-gray-400">
+                                            <span className="inline-flex items-center gap-1.5 font-bold"><Users size={14} className="text-gray-500 dark:text-gray-400" /> {totalEnrollments(c)}</span>
                                         </td>
                                         <td className="p-4 text-right whitespace-nowrap">
                                             <Link href={`/courses/${c.id}`}>
-                                                <button className="admin-action-btn text-gray-400 hover:bg-white/10 tooltip" title={t('admin.view_course')}>
+                                                <button className="admin-action-btn text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 tooltip" title={t('admin.view_course')}>
                                                     <ArrowUpRight size={18} />
                                                 </button>
                                             </Link>
                                             <Link href={`/dashboard/courses/open/${c.id}`}>
-                                                <button className="admin-action-btn text-orange-400 hover:bg-orange-500/10 tooltip" title={t('manageCourses.open_course_tooltip')}>
+                                                <button className="admin-action-btn text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 tooltip" title={t('manageCourses.open_course_tooltip')}>
                                                     <CalendarPlus size={18} />
                                                 </button>
                                             </Link>
                                             <Link href={`/dashboard/courses/edit/${c.id}`}>
-                                                <button className="admin-action-btn text-brand-navy-light hover:bg-brand-navy-light/10 tooltip" title={t('manageCourses.edit_tooltip')}>
+                                                <button className="admin-action-btn text-brand-navy dark:text-brand-navy-light hover:bg-brand-navy/10 dark:hover:bg-brand-navy-light/10 tooltip" title={t('manageCourses.edit_tooltip')}>
                                                     <Pencil size={18} />
                                                 </button>
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(c)}
                                                 disabled={deletingId === c.id || hasEnrollments}
-                                                className={`admin-action-btn tooltip disabled:opacity-40 ${hasEnrollments ? 'text-gray-600 cursor-not-allowed' : 'text-red-400 hover:bg-red-500/10'}`}
+                                                className={`admin-action-btn tooltip disabled:opacity-40 ${hasEnrollments ? 'text-gray-600 dark:text-gray-400 cursor-not-allowed' : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10'}`}
                                                 title={hasEnrollments ? t('admin.cannot_delete_enrollments') : t('manageCourses.delete_tooltip')}
                                             >
                                                 <Trash2 size={18} />
@@ -200,17 +200,17 @@ export default function AdminCoursesPage() {
                         </div>
                         <span className="text-sm font-black text-white uppercase tracking-widest">{t('admin.recent_openings')}</span>
                     </div>
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-gray-200 dark:divide-white/5">
                         {filtered.slice(0, 8).flatMap((c) => (c.openings || []).map((o) => (
-                            <div key={o.id} className="flex flex-wrap items-center gap-4 px-5 py-3.5 text-sm hover:bg-white/5 transition">
-                                <span className="font-bold text-gray-200">{pick(o, 'name') || pick(c, 'title')}</span>
+                            <div key={o.id} className="flex flex-wrap items-center gap-4 px-5 py-3.5 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition">
+                                <span className="font-bold text-brand-navy dark:text-gray-200">{pick(o, 'name') || pick(c, 'title')}</span>
                                 <Badge tone={o.isPublished ? 'green' : 'amber'} dot>
                                     {o.isPublished ? t('admin.published_short') : t('admin.draft_tag')}
                                 </Badge>
-                                <span className="text-gray-500 text-xs">{t('opening.start_date')}: {fmtDate(o.startDate)}</span>
-                                <span className="text-gray-500 text-xs">{t('opening.end_date')}: {fmtDate(o.endDate)}</span>
-                                <span className="font-black text-emerald-400">${o.price}</span>
-                                <span className="ms-auto text-gray-500 text-xs truncate">{o.instructor?.email || '—'}</span>
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">{t('opening.start_date')}: {fmtDate(o.startDate)}</span>
+                                <span className="text-gray-500 dark:text-gray-400 text-xs">{t('opening.end_date')}: {fmtDate(o.endDate)}</span>
+                                <span className="font-black text-emerald-600 dark:text-emerald-400">${o.price}</span>
+                                <span className="ms-auto text-gray-500 dark:text-gray-400 text-xs truncate">{o.instructor?.email || '—'}</span>
                             </div>
                         )))}
                     </div>

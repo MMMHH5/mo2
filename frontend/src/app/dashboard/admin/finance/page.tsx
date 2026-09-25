@@ -92,11 +92,11 @@ export default function AdminFinancePage() {
             onClick={() => setStatusFilter(s)}
             className={`rounded-xl p-3 text-start transition-all duration-200 ${statusFilter === s
                 ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 scale-[1.02] border border-white/10'
-                : 'bg-brand-navy-dark border border-white/5 hover:shadow-md'
+                : 'bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 hover:shadow-md'
                 }`}
         >
             <div className="admin-stat-value">{counts[s]}</div>
-            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-brand-gold-light' : 'text-gray-500'}`}>
+            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-brand-gold-light' : 'text-gray-500 dark:text-gray-400'}`}>
                 {s === 'ALL' ? t('admin.filter_all') : t('statuses.' + s.toLowerCase())}
             </div>
         </button>
@@ -113,12 +113,12 @@ export default function AdminFinancePage() {
             />
 
             {/* Tabs */}
-            <div className="flex gap-2 p-1.5 bg-brand-navy-dark border border-white/5 rounded-2xl w-fit animate-fade-in-up">
+            <div className="flex gap-2 p-1.5 bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl w-fit animate-fade-in-up">
                 <button
                     onClick={() => setActiveTab('enrollments')}
                     className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'enrollments'
                         ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 border border-white/10'
-                        : 'text-gray-500 hover:text-gray-300'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                         }`}
                 >
                     <ShieldCheck size={16} /> {t('finance.tab_enrollments')}
@@ -127,7 +127,7 @@ export default function AdminFinancePage() {
                     onClick={() => setActiveTab('payments')}
                     className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all duration-200 ${activeTab === 'payments'
                         ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 border border-white/10'
-                        : 'text-gray-500 hover:text-gray-300'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                         }`}
                 >
                     <Wallet size={16} /> {t('finance.tab_payments')}
@@ -140,10 +140,10 @@ export default function AdminFinancePage() {
                 {(['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'RESERVED'] as const).map(s => statBtn(s))}
             </div>
 
-            {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
+            {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{error}</div>}
 
             {loading ? (
-                <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('finance.loading')}</div>
+                <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('finance.loading')}</div>
             ) : (
                 <div className="admin-table-wrap animate-fade-in-up">
                     <table className="admin-table text-left">
@@ -156,38 +156,38 @@ export default function AdminFinancePage() {
                                 <th className="text-right">{t('finance.col_actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                             {filtered.map(e => (
-                                <tr key={e.id} className="animate-fade-in hover:bg-white/5">
+                                <tr key={e.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
                                     <td className="p-4">
-                                        <div className="font-bold text-gray-200">{e.student?.email || t('finance.unknown_student')}</div>
-                                        <div className="text-xs text-gray-500 mt-1">{new Date(e.createdAt).toLocaleDateString()}</div>
+                                        <div className="font-bold text-brand-navy dark:text-gray-200">{e.student?.email || t('finance.unknown_student')}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(e.createdAt).toLocaleDateString()}</div>
                                     </td>
                                     <td className="p-4">
-                                        <div className="font-bold text-white">{pick(e.course, 'title')}</div>
-                                        <div className="text-sm font-black text-brand-gold-light">${e.opening?.price ?? '—'}</div>
-                                        {pick(e.opening, 'name') && <div className="text-xs text-gray-500 mt-0.5">{pick(e.opening, 'name')}</div>}
+                                        <div className="font-bold text-brand-navy dark:text-white">{pick(e.course, 'title')}</div>
+                                        <div className="text-sm font-black text-brand-gold-dark dark:text-brand-gold-light">${e.opening?.price ?? '—'}</div>
+                                        {pick(e.opening, 'name') && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{pick(e.opening, 'name')}</div>}
                                     </td>
                                     <td className="p-4">
                                         <Badge tone={statusTone[e.status] || 'gray'} dot>{t('statuses.' + (e.status || '').toLowerCase())}</Badge>
                                     </td>
                                     <td className="p-4 text-center">
-                                        <button onClick={() => openReceipt(e)} className="inline-flex items-center gap-2 px-3.5 py-2 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white rounded-xl text-sm font-bold transition-all duration-200">
+                                        <button onClick={() => openReceipt(e)} className="inline-flex items-center gap-2 px-3.5 py-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-brand-navy dark:hover:text-white rounded-xl text-sm font-bold transition-all duration-200">
                                             <FileImage size={16} /> {t('finance.view_receipt')}
                                         </button>
                                     </td>
                                     <td className="p-4 text-right whitespace-nowrap">
                                         {e.status === 'PENDING' ? (
                                             <>
-                                                <button onClick={() => handleVerify(e.id, 'APPROVED')} disabled={processing} className="inline-flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/20 px-3.5 py-2 rounded-lg text-sm font-bold transition disabled:opacity-40">
+                                                <button onClick={() => handleVerify(e.id, 'APPROVED')} disabled={processing} className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-500/20 px-3.5 py-2 rounded-lg text-sm font-bold transition disabled:opacity-40">
                                                     <Check size={16} /> {t('finance.approve')}
                                                 </button>
-                                                <button onClick={() => openReceipt(e, true)} disabled={processing} className="inline-flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 ring-1 ring-red-500/20 px-3.5 py-2 rounded-lg text-sm font-bold transition disabled:opacity-40 ms-2">
+                                                <button onClick={() => openReceipt(e, true)} disabled={processing} className="inline-flex items-center gap-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-500/20 px-3.5 py-2 rounded-lg text-sm font-bold transition disabled:opacity-40 ms-2">
                                                     <X size={16} /> {t('finance.reject')}
                                                 </button>
                                             </>
                                         ) : (
-                                            <span className="text-xs text-gray-500">{t('admin.no_action')}</span>
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">{t('admin.no_action')}</span>
                                         )}
                                     </td>
                                 </tr>
@@ -262,10 +262,10 @@ export default function AdminFinancePage() {
 
             {activeTab === 'payments' && (
                 <>
-                    {paymentsError && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{paymentsError}</div>}
+                    {paymentsError && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{paymentsError}</div>}
 
                     {paymentsLoading ? (
-                        <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('payments.loading')}</div>
+                        <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('payments.loading')}</div>
                     ) : (
                         <div className="admin-table-wrap animate-fade-in-up">
                             <table className="admin-table text-left">
@@ -279,25 +279,25 @@ export default function AdminFinancePage() {
                                         <th>{t('finance.col_date')}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/5">
+                                <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                                     {(payments || []).map(p => (
-                                        <tr key={p.id} className="animate-fade-in hover:bg-white/5">
-                                            <td className="p-4 font-bold text-gray-200">{p.user?.email || t('finance.unknown_student')}</td>
-                                            <td className="p-4 font-bold text-white">{pick(p.enrollment?.course, 'title') || '—'}</td>
-                                            <td className="p-4 font-black text-brand-gold-light">{formatPrice(p.amount, { locale })}</td>
+                                        <tr key={p.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
+                                            <td className="p-4 font-bold text-brand-navy dark:text-gray-200">{p.user?.email || t('finance.unknown_student')}</td>
+                                            <td className="p-4 font-bold text-brand-navy dark:text-white">{pick(p.enrollment?.course, 'title') || '—'}</td>
+                                            <td className="p-4 font-black text-brand-gold-dark dark:text-brand-gold-light">{formatPrice(p.amount, { locale })}</td>
                                             <td className="p-4">
                                                 <Badge tone={statusTone[p.status] || 'gray'} dot>{t('statuses.' + (p.status || '').toLowerCase())}</Badge>
                                             </td>
                                             <td className="p-4">
                                                 {p.method ? (
-                                                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300">
+                                                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-gray-300">
                                                         <CreditCard size={14} /> {p.method}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-gray-600">—</span>
+                                                    <span className="text-gray-600 dark:text-gray-300">—</span>
                                                 )}
                                             </td>
-                                            <td className="p-4 text-sm text-gray-500">{new Date(p.createdAt).toLocaleDateString()}</td>
+                                            <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{new Date(p.createdAt).toLocaleDateString()}</td>
                                         </tr>
                                     ))}
                                     {(payments || []).length === 0 && (

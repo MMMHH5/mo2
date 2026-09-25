@@ -43,11 +43,11 @@ export default function AdminTicketsPage() {
             onClick={() => setStatusFilter(s)}
             className={`rounded-xl p-3 text-start transition-all duration-200 ${statusFilter === s
                 ? 'bg-gradient-to-br from-brand-navy to-brand-navy-dark text-white shadow-lg shadow-black/25 scale-[1.02] border border-white/10'
-                : 'bg-brand-navy-dark border border-white/5 hover:shadow-md'
+                : 'bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 hover:shadow-md'
                 }`}
         >
             <div className="admin-stat-value">{counts[s]}</div>
-            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-brand-gold-light' : 'text-gray-500'}`}>
+            <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-brand-gold-light' : 'text-gray-500 dark:text-gray-400'}`}>
                 {s === 'ALL' ? t('admin.filter_all') : t('statuses.' + s.toLowerCase())}
             </div>
         </button>
@@ -102,59 +102,59 @@ export default function AdminTicketsPage() {
             </div>
 
             {loading ? (
-                <div className="h-40 flex items-center justify-center text-brand-gold"><Loader className="animate-spin" size={32} /></div>
+                <div className="h-40 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold"><Loader className="animate-spin" size={32} /></div>
             ) : (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
+                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl overflow-x-auto animate-fade-in-up">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-white/5">
-                                <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">{t('support.col_ticket')}</th>
-                                <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">{t('support.col_user')}</th>
-                                <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">{t('support.col_status')}</th>
-                                <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">{t('support.col_date')}</th>
-                                <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">{t('support.admin_response')}</th>
+                            <tr className="border-b border-gray-200 dark:border-white/5">
+                                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('support.col_ticket')}</th>
+                                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('support.col_user')}</th>
+                                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('support.col_status')}</th>
+                                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('support.col_date')}</th>
+                                <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('support.admin_response')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                             {filtered.map((tk) => (
-                                <tr key={tk.id} className="align-top animate-fade-in">
+                                <tr key={tk.id} className="align-top animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
                                     <td className="p-4 max-w-[280px]">
-                                        <p className="font-bold text-white">{tk.subject}</p>
-                                        <p className="text-sm text-gray-400 whitespace-pre-wrap break-words mt-1">{tk.message}</p>
+                                        <p className="font-bold text-brand-navy dark:text-white">{tk.subject}</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap break-words mt-1">{tk.message}</p>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-300">{tk.user.email}</td>
+                                    <td className="p-4 text-sm text-gray-600 dark:text-gray-300">{tk.user.email}</td>
                                     <td className="p-4">
                                         <select
                                             value={tk.status}
                                             onChange={(e) => changeStatus(tk.id, e.target.value)}
                                             disabled={processing === tk.id}
-                                            className="px-2 py-1.5 border border-white/10 rounded-lg text-sm font-bold focus:ring-2 focus:ring-brand-gold outline-none bg-brand-navy-dark text-white"
+                                            className="px-2 py-1.5 border border-gray-300 dark:border-white/10 rounded-lg text-sm font-bold focus:ring-2 focus:ring-brand-gold outline-none bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white"
                                         >
                                             <option value="OPEN">{t('support.status_open')}</option>
                                             <option value="IN_PROGRESS">{t('support.status_in_progress')}</option>
                                             <option value="CLOSED">{t('support.status_closed')}</option>
                                         </select>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-400 whitespace-nowrap">{new Date(tk.createdAt).toLocaleDateString()}</td>
+                                    <td className="p-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(tk.createdAt).toLocaleDateString()}</td>
                                     <td className="p-4 min-w-[260px]">
                                         <textarea
                                             rows={2}
                                             value={replies[tk.id] ?? tk.adminNotes ?? ''}
                                             onChange={(e) => setReplies((prev) => ({ ...prev, [tk.id]: e.target.value }))}
                                             placeholder={t('support.reply_placeholder')}
-                                            className="w-full px-3 py-2 bg-brand-navy-dark border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition resize-none"
+                                            className="w-full px-3 py-2 bg-white dark:bg-brand-navy-dark border border-gray-300 dark:border-white/10 rounded-xl text-sm text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition resize-none"
                                         />
                                         <button
                                             onClick={() => saveReply(tk.id)}
                                             disabled={processing === tk.id || (replies[tk.id] ?? tk.adminNotes ?? '') === ''}
-                                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition disabled:opacity-40 cursor-pointer"
+                                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy dark:text-white bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 px-3 py-1.5 rounded-lg transition disabled:opacity-40 cursor-pointer"
                                         >
                                             <Save size={13} /> {t('support.save_reply')}
                                         </button>
                                         {tk.adminNotes && (
-                                            <div className="mt-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
-                                                <p className="text-[11px] font-black text-emerald-400 mb-0.5">{t('support.admin_response')}</p>
-                                                <p className="text-xs text-emerald-300 whitespace-pre-wrap break-words">{tk.adminNotes}</p>
+                                            <div className="mt-2 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg px-3 py-2">
+                                                <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 mb-0.5">{t('support.admin_response')}</p>
+                                                <p className="text-xs text-emerald-700 dark:text-emerald-300 whitespace-pre-wrap break-words">{tk.adminNotes}</p>
                                             </div>
                                         )}
                                     </td>

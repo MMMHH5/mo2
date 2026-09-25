@@ -73,10 +73,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link key={item.href} href={item.href}>
                 <div className={`group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${active
                     ? 'bg-gradient-to-r from-brand-gold/20 to-transparent text-brand-gold shadow-inner'
-                    : 'text-brand-mist/70 hover:bg-white/10 hover:text-white'
+                    : 'text-gray-500 dark:text-brand-mist/70 hover:bg-brand-navy/5 dark:hover:bg-white/10 hover:text-brand-navy dark:hover:text-white'
                     }`}>
                     {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-brand-gold" />}
-                    <Icon size={19} className={`transition-colors ${active ? 'text-brand-gold' : 'text-brand-mist/50 group-hover:text-brand-mist'}`} />
+                    <Icon size={19} className={`transition-colors ${active ? 'text-brand-gold' : 'text-gray-400 dark:text-brand-mist/50 group-hover:text-brand-gold-dark dark:group-hover:text-brand-mist'}`} />
                     <span>{item.label}</span>
                 </div>
             </Link>
@@ -85,58 +85,58 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return (
         <ProtectedRoute allowedRoles={ALL_ROLES}>
-            <div className="bg-brand-navy-dark rounded-3xl shadow-lg shadow-black/30 border border-white/5 min-h-[85vh] flex overflow-hidden">
+            <div className="bg-white dark:bg-brand-navy-dark rounded-3xl shadow-lg shadow-brand-navy/10 dark:shadow-black/30 border border-gray-200 dark:border-white/5 min-h-[85vh] flex overflow-hidden">
                 {/* Mobile top bar */}
-                <div className="md:hidden sticky top-0 z-40 bg-brand-navy/95 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between">
+                <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-brand-navy/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/5 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-brand-gold/10 rounded-lg flex items-center justify-center">
-                            <span className="text-brand-gold font-black text-sm">L</span>
+                            <span className="text-brand-gold-dark dark:text-brand-gold font-black text-sm">L</span>
                         </div>
-                        <span className="font-black text-white tracking-tight">
-                            laxa<span className="text-brand-gold">lab</span>
+                        <span className="font-black text-brand-navy dark:text-white tracking-tight">
+                            laxa<span className="text-brand-gold-dark dark:text-brand-gold">lab</span>
                         </span>
                     </div>
                     <MobileSidebar />
                 </div>
 
                 {/* Dark navy sidebar */}
-                <aside className="hidden md:flex w-64 shrink-0 bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c] flex-col">
-                    <div className="p-5 border-b border-white/10">
+                <aside className="hidden md:flex w-64 shrink-0 bg-white dark:bg-gradient-to-b dark:from-brand-navy dark:via-[#0e2a52] dark:to-[#0a1e3c] border-e border-gray-200 dark:border-white/10 flex-col">
+                    <div className="p-5 border-b border-gray-200 dark:border-white/10">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                                <span className="text-brand-gold font-black text-xl">L</span>
+                            <div className="w-10 h-10 rounded-xl bg-brand-navy/10 dark:bg-white/10 flex items-center justify-center">
+                                <span className="text-brand-gold-dark dark:text-brand-gold font-black text-xl">L</span>
                             </div>
                             <div>
-                                <h2 className="text-xl font-black text-white tracking-tight leading-none">
-                                    laxa<span className="text-brand-gold">lab</span>
+                                <h2 className="text-xl font-black text-brand-navy dark:text-white tracking-tight leading-none">
+                                    laxa<span className="text-brand-gold-dark dark:text-brand-gold">lab</span>
                                 </h2>
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-mist/50">Admin Suite</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 dark:text-brand-mist/50">Admin Suite</span>
                             </div>
                         </div>
                     </div>
 
                     <nav className="p-3 space-y-2 overflow-y-auto flex-1 admin-scroll">
                         {allowedMain.length > 0 && (
-                            <p className="px-3.5 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-brand-mist/40">
+                            <p className="px-3.5 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-brand-mist/40">
                                 {t('admin.nav_group_main')}
                             </p>
                         )}
                         {allowedMain.map(renderItem)}
                         {allowedPlatform.length > 0 && (
-                            <p className="px-3.5 pt-4 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-brand-mist/40">
+                            <p className="px-3.5 pt-4 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 dark:text-brand-mist/40">
                                 {t('admin.nav_group_platform')}
                             </p>
                         )}
                         {allowedPlatform.map(renderItem)}
                     </nav>
 
-                    <div className="p-4 border-t border-white/10">
-                        <div className="flex items-center gap-2.5 bg-white/5 rounded-xl px-3.5 py-3">
+                    <div className="p-4 border-t border-gray-200 dark:border-white/10">
+                        <div className="flex items-center gap-2.5 bg-gray-100 dark:bg-white/5 rounded-xl px-3.5 py-3">
                             <span className="relative flex h-2.5 w-2.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
                                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
                             </span>
-                            <span className="text-[11px] font-bold text-brand-mist/80">{t('admin.online')}</span>
+                            <span className="text-[11px] font-bold text-gray-600 dark:text-brand-mist/80">{t('admin.online')}</span>
                         </div>
                     </div>
                 </aside>

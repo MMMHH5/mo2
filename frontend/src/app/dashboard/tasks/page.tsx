@@ -97,21 +97,21 @@ export default function TasksPage() {
 
     const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString() : '—');
 
-    const inputCls = "w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition placeholder:text-gray-500 text-white";
+    const inputCls = "w-full px-4 py-3 bg-white dark:bg-brand-navy-dark border border-gray-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition placeholder:text-gray-400 dark:placeholder:text-gray-500 text-brand-navy dark:text-white";
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
             <div className="animate-fade-in space-y-6">
-                <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5">
-                    <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                        <ClipboardList size={26} className="text-brand-gold-light" /> {t('tasks.teacher_heading')}
+                <div className="bg-white dark:bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5">
+                    <h2 className="text-3xl font-black text-brand-navy dark:text-white flex items-center gap-3">
+                        <ClipboardList size={26} className="text-brand-gold-dark dark:text-brand-gold-light" /> {t('tasks.teacher_heading')}
                     </h2>
-                    <p className="text-gray-400 mt-2">{t('tasks.teacher_subtitle')}</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">{t('tasks.teacher_subtitle')}</p>
                 </div>
 
-                <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
+                <div className="bg-white dark:bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5">
                     <div className="max-w-xl mb-6">
-                        <label className="block text-sm font-bold text-gray-300 mb-1.5">{t('tasks.select_opening')} *</label>
+                        <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1.5">{t('tasks.select_opening')} *</label>
                         <select
                             value={selectedOpeningId}
                             onChange={(e) => {
@@ -133,17 +133,17 @@ export default function TasksPage() {
                     </div>
 
                     {!selectedOpeningId && (
-                        <div className="py-12 text-center text-gray-400 font-bold">{t('tasks.pick_hint')}</div>
+                        <div className="py-12 text-center text-gray-500 dark:text-gray-400 font-bold">{t('tasks.pick_hint')}</div>
                     )}
 
                     {selectedOpeningId && loading && (
-                        <div className="h-40 flex items-center justify-center font-bold text-gray-400">
-                            <Loader className="animate-spin text-brand-gold-light me-2" size={20} /> {t('common.loading')}
+                        <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">
+                            <Loader className="animate-spin text-brand-gold-dark dark:text-brand-gold-light me-2" size={20} /> {t('common.loading')}
                         </div>
                     )}
 
                     {selectedOpeningId && !loading && tasks?.length === 0 && (
-                        <div className="py-12 text-center text-gray-400 font-bold">{t('tasks.no_tasks')}</div>
+                        <div className="py-12 text-center text-gray-500 dark:text-gray-400 font-bold">{t('tasks.no_tasks')}</div>
                     )}
 
                     {selectedOpeningId && !loading && (
@@ -153,54 +153,48 @@ export default function TasksPage() {
                                 const sub = mySubmission(task);
                                 const hasGraded = sub && sub.score != null;
                                 return (
-                                    <div key={task.id} className="border border-white/5 rounded-2xl overflow-hidden">
-                                        <div className="flex items-center justify-between gap-3 px-5 py-4 bg-gradient-to-r from-white/5 to-transparent">
+<div key={task.id} className="border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden">
+                                        <div className="flex items-center justify-between gap-3 px-5 py-4 bg-gradient-to-r from-gray-50 dark:from-white/5 to-transparent">
                                             <div className="min-w-0">
-                                                <h4 className="font-black text-white truncate">{pick(task, 'title')}</h4>
-                                                <p className="text-xs text-gray-400 font-semibold mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                <h4 className="font-black text-brand-navy dark:text-white truncate">{pick(task, 'title')}</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                                                     <span className="inline-flex items-center gap-1"><CalendarClock size={13} /> {t('tasks.due_on')} {fmtDate(task.dueDate)}</span>
                                                     <span>{t('tasks.max_score_label')}: {task.maxScore}</span>
                                                     {sub && (
                                                         hasGraded ? (
-                                                            <span className="inline-flex items-center gap-1 text-emerald-400"><CheckCircle size={13} /> {t('tasks.graded')}: {sub.score}/{task.maxScore}</span>
+                                                            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><CheckCircle size={13} /> {t('tasks.graded')}: {sub.score}/{task.maxScore}</span>
                                                         ) : (
-                                                            <span className="inline-flex items-center gap-1 text-brand-gold-light"><Clock size={13} /> {t('tasks.submitted')}</span>
+                                                            <span className="inline-flex items-center gap-1 text-brand-gold-dark dark:text-brand-gold-light"><Clock size={13} /> {t('tasks.submitted')}</span>
                                                         )
                                                     )}
                                                 </p>
                                             </div>
                                             <button onClick={() => setExpandedId(expanded ? null : task.id)}
-                                                className="admin-action-btn text-gray-400 hover:bg-white/10 tooltip" title={t('tasks.view_details')}>
+                                                className="admin-action-btn text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 tooltip" title={t('tasks.view_details')}>
                                                 {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                             </button>
                                         </div>
 
-                                        <div className="px-5 py-3 text-sm text-gray-400 border-t border-white/5">
+                                        <div className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-white/5">
                                             {pick(task, 'description') || t('tasks.no_description')}
                                         </div>
 
                                         {expanded && (
-                                            <div className="px-5 pb-5 border-t border-white/5">
+                                            <div className="px-5 pb-5 border-t border-gray-200 dark:border-white/5">
                                                 <div className="space-y-4 mt-4">
                                                     {sub?.content && (
-                                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                                            <p className="text-xs font-black text-gray-400 mb-2 uppercase tracking-wide">{t('tasks.my_submission')} · {new Date(sub.submittedAt).toLocaleString()}</p>
-                                                            <p className="text-sm text-gray-300 whitespace-pre-wrap">{sub.content}</p>
+                                                        <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100/60 dark:bg-white/5 p-4">
+                                                            <p className="text-xs font-black text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">{t('tasks.my_submission')} · {new Date(sub.submittedAt).toLocaleString()}</p>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{sub.content}</p>
                                                             {sub.attachmentUrl && (
-                                                                <a href={sub.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-gold-light hover:text-brand-gold-light transition mt-2">
+                                                                <a href={sub.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light hover:text-brand-gold-dark dark:hover:text-brand-gold-light transition mt-2">
                                                                     <Paperclip size={14} /> {t('tasks.attachment')}
                                                                 </a>
                                                             )}
                                                         </div>
                                                     )}
-                                                    {hasGraded && (
-                                                        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-4 text-sm">
-                                                            <p className="font-black text-emerald-400">{t('tasks.grade')}: {sub.score}/{task.maxScore}</p>
-                                                            {sub.notes && <p className="text-emerald-300 mt-1">{sub.notes}</p>}
-                                                        </div>
-                                                    )}
                                                     <div>
-                                                        <label className="block text-sm font-bold text-gray-300 mb-1.5">{t('tasks.your_answer')}</label>
+                                                        <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1.5">{t('tasks.your_answer')}</label>
                                                         <textarea
                                                             value={drafts[task.id] ?? ''}
                                                             onChange={(e) => setDrafts((p) => ({ ...p, [task.id]: e.target.value }))}
@@ -210,7 +204,7 @@ export default function TasksPage() {
                                                         />
                                                         <div className="flex items-center justify-end gap-3 mt-3">
                                                             {sub && !hasGraded && (
-                                                                <span className="text-xs text-gray-400 font-semibold inline-flex items-center gap-1">
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold inline-flex items-center gap-1">
                                                                     <Clock size={13} /> {t('tasks.awaiting_grade')}
                                                                 </span>
                                                             )}

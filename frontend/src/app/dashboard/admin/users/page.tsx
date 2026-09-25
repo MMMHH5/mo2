@@ -217,7 +217,7 @@ export default function AdminUsersPage() {
                 {ROLES.map(r => (
                     <div key={r} className="admin-card p-4 flex items-center justify-between">
                         <Badge tone={roleTone[r]} dot={false}>{roleLabel(r)}</Badge>
-                        <span className="admin-stat-value text-white">{counts[r] || 0}</span>
+                        <span className="admin-stat-value text-brand-navy dark:text-white">{counts[r] || 0}</span>
                     </div>
                 ))}
             </div>
@@ -225,19 +225,19 @@ export default function AdminUsersPage() {
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3">
                 <div className="relative">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
                     <input
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         placeholder={t('admin.search_users')}
-                        className="ps-9 pe-3 py-2.5 border border-white/10 rounded-xl text-sm w-64 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
+                        className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-64 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                     />
                 </div>
-                <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-3.5 py-2.5 border border-white/10 rounded-xl text-sm bg-brand-navy-dark text-white cursor-pointer focus:outline-none">
+                <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-3.5 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white cursor-pointer focus:outline-none">
                     <option value="ALL">{t('admin.filter_all')}</option>
                     {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
                 </select>
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3.5 py-2.5 border border-white/10 rounded-xl text-sm bg-brand-navy-dark text-white cursor-pointer focus:outline-none">
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as typeof statusFilter)} className="px-3.5 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white cursor-pointer focus:outline-none">
                     <option value="ALL">{t('admin.filter_all')}</option>
                     <option value="ACTIVE">{t('admin.status_active')}</option>
                     <option value="SUSPENDED">{t('admin.status_suspended')}</option>
@@ -246,17 +246,17 @@ export default function AdminUsersPage() {
 
             {/* Create form */}
             {showCreate && (
-                <div className="admin-card p-6 animate-scale-in bg-brand-navy-dark">
-                    <h4 className="font-black text-lg mb-4 text-white">{t('admin.new_user')}</h4>
+                <div className="admin-card p-6 animate-scale-in bg-white dark:bg-brand-navy-dark">
+                    <h4 className="font-black text-lg mb-4 text-brand-navy dark:text-white">{t('admin.new_user')}</h4>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 max-w-5xl">
-                        <input type="email" placeholder={t('admin.user_email_ph')} className="p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} />
-                        <input type="password" placeholder={t('admin.user_password_ph')} className="p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} />
-                        <select className="p-3 border border-white/10 rounded-xl bg-brand-navy-dark text-white cursor-pointer focus:outline-none" value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })}>
+                        <input type="email" placeholder={t('admin.user_email_ph')} className="p-3 border border-gray-300 dark:border-white/10 rounded-xl bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} />
+                        <input type="password" placeholder={t('admin.user_password_ph')} className="p-3 border border-gray-300 dark:border-white/10 rounded-xl bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} />
+                        <select className="p-3 border border-gray-300 dark:border-white/10 rounded-xl bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white cursor-pointer focus:outline-none" value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })}>
                             {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
                         </select>
                         <div className="flex items-center gap-2 py-3">
                             <input type="checkbox" id="newUserActive" checked={createForm.isActive} onChange={e => setCreateForm({ ...createForm, isActive: e.target.checked })} className="w-4 h-4 accent-brand-gold" />
-                            <label htmlFor="newUserActive" className="font-bold cursor-pointer text-sm text-gray-300">{t('admin.account_active')}</label>
+                            <label htmlFor="newUserActive" className="font-bold cursor-pointer text-sm text-gray-600 dark:text-gray-300">{t('admin.account_active')}</label>
                         </div>
                     </div>
                     <button onClick={handleCreate} disabled={creating} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black font-black py-3 px-6 rounded-xl mt-3 hover:opacity-90 transition disabled:opacity-50 cursor-pointer">
@@ -265,11 +265,11 @@ export default function AdminUsersPage() {
                 </div>
             )}
 
-            {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl">{error}</div>}
+            {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{error}</div>}
 
             {/* Users table */}
             {loading ? (
-                <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('admin.loading_users')}</div>
+                <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('admin.loading_users')}</div>
             ) : (
                 <div className="admin-table-wrap animate-fade-in-up">
                     <table className="admin-table text-left">
@@ -282,10 +282,10 @@ export default function AdminUsersPage() {
                                 <th className="text-right">{t('admin.col_admin_actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                             {filtered.map(u => (
-                                <tr key={u.id} className={`animate-fade-in hover:bg-white/5 ${u.isActive === false ? 'opacity-60' : ''}`}>
-                                    <td className="p-4 font-bold text-gray-200">{u.email}</td>
+                                <tr key={u.id} className={`animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5 ${u.isActive === false ? 'opacity-60' : ''}`}>
+                                    <td className="p-4 font-bold text-brand-navy dark:text-gray-200">{u.email}</td>
                                     <td className="p-4">
                                         <Badge tone={roleTone[u.role]} dot={false}>{roleLabel(u.role)}</Badge>
                                     </td>
@@ -294,18 +294,18 @@ export default function AdminUsersPage() {
                                             {u.isActive === false ? t('admin.status_suspended') : t('admin.status_active')}
                                         </Badge>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
+                                    <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
                                     <td className="p-4 text-right whitespace-nowrap">
-                                        <button onClick={() => openEdit(u)} disabled={processingId === u.id} className="admin-action-btn bg-white/5 text-gray-300 hover:bg-white/10 tooltip disabled:opacity-40" title={t('admin.edit_user')}>
+                                        <button onClick={() => openEdit(u)} disabled={processingId === u.id} className="admin-action-btn bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 tooltip disabled:opacity-40" title={t('admin.edit_user')}>
                                             <Pencil size={18} />
                                         </button>
-                                        <button onClick={() => openTransfer(u.id)} disabled={processingId === u.id} className="admin-action-btn bg-brand-navy-light/10 text-brand-navy-light hover:bg-brand-navy-light hover:text-white tooltip disabled:opacity-40 ms-1" title={t('admin.transfer_title')}>
+                                        <button onClick={() => openTransfer(u.id)} disabled={processingId === u.id} className="admin-action-btn bg-brand-navy/10 text-brand-navy dark:bg-brand-navy-light/10 dark:text-brand-navy-light hover:bg-brand-navy dark:hover:bg-brand-navy-light hover:text-white tooltip disabled:opacity-40 ms-1" title={t('admin.transfer_title')}>
                                             <ArrowRightLeft size={18} />
                                         </button>
-                                        <button onClick={() => handleToggleActive(u)} disabled={processingId === u.id} className={`admin-action-btn ms-1 tooltip disabled:opacity-40 ${u.isActive === false ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white' : 'bg-brand-gold/10 text-brand-gold-light hover:bg-brand-gold hover:text-white'}`} title={u.isActive === false ? t('admin.activate_title') : t('admin.suspend_title')}>
+                                        <button onClick={() => handleToggleActive(u)} disabled={processingId === u.id} className={`admin-action-btn ms-1 tooltip disabled:opacity-40 ${u.isActive === false ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white' : 'bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light hover:bg-brand-gold hover:text-white'}`} title={u.isActive === false ? t('admin.activate_title') : t('admin.suspend_title')}>
                                             {u.isActive === false ? <Play size={18} /> : <Pause size={18} />}
                                         </button>
-                                        <button onClick={() => handleDelete(u)} disabled={processingId === u.id || u.role === 'ADMIN'} className="admin-action-btn bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white tooltip disabled:opacity-40 ms-1" title={u.role === 'ADMIN' ? t('admin.cannot_delete_admin_title') : t('admin.delete_user_title')}>
+                                        <button onClick={() => handleDelete(u)} disabled={processingId === u.id || u.role === 'ADMIN'} className="admin-action-btn bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white tooltip disabled:opacity-40 ms-1" title={u.role === 'ADMIN' ? t('admin.cannot_delete_admin_title') : t('admin.delete_user_title')}>
                                             <Trash2 size={18} />
                                         </button>
                                     </td>

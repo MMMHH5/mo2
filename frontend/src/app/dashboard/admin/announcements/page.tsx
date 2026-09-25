@@ -191,9 +191,9 @@ export default function AdminAnnouncementsPage() {
 
     const mediaTypeIcon = (mt: string) => {
         switch (mt) {
-            case 'image': return <Image size={14} className="text-brand-gold-light" />;
-            case 'video': return <Video size={14} className="text-brand-gold-light" />;
-            default: return <FileText size={14} className="text-brand-gold-light" />;
+            case 'image': return <Image size={14} className="text-brand-gold-dark dark:text-brand-gold-light" />;
+            case 'video': return <Video size={14} className="text-brand-gold-dark dark:text-brand-gold-light" />;
+            default: return <FileText size={14} className="text-brand-gold-dark dark:text-brand-gold-light" />;
         }
     };
 
@@ -210,52 +210,52 @@ export default function AdminAnnouncementsPage() {
             />
 
             {loading ? (
-                <div className="h-64 flex items-center justify-center text-brand-gold">
+                <div className="h-64 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold">
                     <Loader className="animate-spin" size={32} />
                 </div>
             ) : items.length === 0 ? (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-12 text-center">
-                    <FileText size={32} className="mx-auto text-gray-500 mb-3" />
-                    <p className="text-gray-400 font-bold text-sm">{t('adminAnnouncements.empty')}</p>
+                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-12 text-center">
+                    <FileText size={32} className="mx-auto text-gray-500 dark:text-gray-400 mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">{t('adminAnnouncements.empty')}</p>
                 </div>
             ) : (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-hidden">
+                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-white/5">
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_title')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_type')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_priority')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_status')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_dates')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">{''}</th>
+                                <tr className="border-b border-gray-200 dark:border-white/5">
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_title')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_type')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_priority')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_status')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminAnnouncements.col_dates')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">{''}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                                 {items.map(item => (
-                                    <tr key={item.id} className="hover:bg-white/5 transition">
+                                    <tr key={item.id} className="hover:bg-gray-100 dark:hover:bg-white/5 transition">
                                         <td className="p-4">
-                                            <div className="font-bold text-sm text-white truncate max-w-[280px]">{item.titleEn}</div>
-                                            <div className="text-xs text-gray-400 truncate max-w-[280px]">{item.titleAr}</div>
+                                            <div className="font-bold text-sm text-brand-navy dark:text-white truncate max-w-[280px]">{item.titleEn}</div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[280px]">{item.titleAr}</div>
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-1.5">
                                                 {mediaTypeIcon(item.mediaType)}
-                                                <span className="text-xs text-gray-300 capitalize">{item.mediaType}</span>
+                                                <span className="text-xs text-gray-600 dark:text-gray-300 capitalize">{item.mediaType}</span>
                                             </div>
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-1">
-                                                <ArrowUpDown size={12} className="text-gray-400" />
-                                                <span className="text-sm text-gray-300 font-bold">{item.priority}</span>
+                                                <ArrowUpDown size={12} className="text-gray-500 dark:text-gray-400" />
+                                                <span className="text-sm text-gray-600 dark:text-gray-300 font-bold">{item.priority}</span>
                                             </div>
                                         </td>
                                         <td className="p-4">
                                             <Badge tone={item.isActive ? 'green' : 'gray'}>{item.isActive ? t('adminAnnouncements.active') : t('adminAnnouncements.inactive')}</Badge>
                                         </td>
                                         <td className="p-4">
-                                            <div className="text-[11px] text-gray-400">
+                                            <div className="text-[11px] text-gray-500 dark:text-gray-400">
                                                 {item.startsAt && <div>{t('adminAnnouncements.from')} {new Date(item.startsAt).toLocaleDateString()}</div>}
                                                 {item.expiresAt && <div>{t('adminAnnouncements.until')} {new Date(item.expiresAt).toLocaleDateString()}</div>}
                                                 {!item.startsAt && !item.expiresAt && <span>{t('adminAnnouncements.always')}</span>}

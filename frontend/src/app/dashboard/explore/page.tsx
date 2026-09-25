@@ -3,5 +3,5 @@
 import ExploreCourses from '@/components/ExploreCourses';
 
 export default function ExploreCoursesPage() {
-    return <ExploreCourses dark />;
+    return <ExploreCourses />;
 }

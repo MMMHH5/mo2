@@ -40,20 +40,20 @@ export default function CertificatesPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
-            <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
+            <div className="bg-white dark:bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 min-h-[80vh]">
                 <div className="mb-8">
-                    <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                        <Award size={32} className="text-brand-gold-light" /> {t('certificates.heading')}
+                    <h2 className="text-3xl font-black text-brand-navy dark:text-white flex items-center gap-3">
+                        <Award size={32} className="text-brand-gold-dark dark:text-brand-gold-light" /> {t('certificates.heading')}
                     </h2>
-                    <p className="text-gray-400 mt-2">{t('certificates.subtitle')}</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">{t('certificates.subtitle')}</p>
                 </div>
 
-                {error && <div className="p-4 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl mb-6">{error}</div>}
+                {error && <div className="p-4 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 rounded-xl mb-6">{error}</div>}
 
                 {loading ? (
-                    <div className="h-40 flex items-center justify-center font-bold text-gray-400">{t('certificates.loading')}</div>
+                    <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('certificates.loading')}</div>
                 ) : (certificates || []).length === 0 ? (
-                    <div className="text-center py-16 text-gray-400 font-semibold text-lg border-2 border-dashed border-white/10 rounded-xl">
+                    <div className="text-center py-16 text-gray-500 dark:text-gray-400 font-semibold text-lg border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl bg-gray-100/50 dark:bg-transparent">
                         {t('certificates.empty_title')}
                         <div className="mt-2 text-sm font-normal">{t('certificates.empty_subtitle')}</div>
                     </div>

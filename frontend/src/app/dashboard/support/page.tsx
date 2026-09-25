@@ -69,7 +69,7 @@ export default function SupportPage() {
         setSubmitting(false);
     };
 
-    const inputCls = "w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition text-white placeholder:text-gray-500";
+    const inputCls = "w-full px-4 py-3 bg-white dark:bg-brand-navy-dark border border-gray-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500";
 
     return (
         <ProtectedRoute>
@@ -78,18 +78,18 @@ export default function SupportPage() {
 
                 <div className="grid lg:grid-cols-2 gap-6">
                     {/* New request form */}
-                    <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
-                        <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2">
-                            <span className="admin-tile w-9 h-9 bg-white/5 text-brand-gold-light"><LifeBuoy size={18} /></span>
+                    <div className="bg-white dark:bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5">
+                        <h3 className="text-xl font-black text-brand-navy dark:text-white mb-5 flex items-center gap-2">
+                            <span className="admin-tile w-9 h-9 bg-brand-navy/5 dark:bg-white/5 text-brand-gold-dark dark:text-brand-gold-light"><LifeBuoy size={18} /></span>
                             {t('support.new_ticket_title')}
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-bold text-gray-300 mb-1">{t('support.subject')} *</label>
+                                <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1">{t('support.subject')} *</label>
                                 <input value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls} placeholder={t('support.subject_placeholder')} />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-300 mb-1">{t('support.message')} *</label>
+                                <label className="block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1">{t('support.message')} *</label>
                                 <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className={`${inputCls} resize-none`} placeholder={t('support.message_placeholder')} />
                             </div>
                             <button
@@ -104,15 +104,15 @@ export default function SupportPage() {
                     </div>
 
                     {/* My tickets */}
-                    <div className="bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-white/5">
-                        <h3 className="text-xl font-black text-white mb-5 flex items-center gap-2">
-                            <span className="admin-tile w-9 h-9 bg-white/5 text-brand-gold-light"><InboxIcon size={18} /></span>
+                    <div className="bg-white dark:bg-brand-navy-dark p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5">
+                        <h3 className="text-xl font-black text-brand-navy dark:text-white mb-5 flex items-center gap-2">
+                            <span className="admin-tile w-9 h-9 bg-brand-navy/5 dark:bg-white/5 text-brand-gold-dark dark:text-brand-gold-light"><InboxIcon size={18} /></span>
                             {t('support.my_tickets')}
                         </h3>
                         {loading ? (
-                            <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-brand-gold-light" size={28} /></div>
+                            <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-brand-gold-dark dark:text-brand-gold-light" size={28} /></div>
                         ) : tickets.length === 0 ? (
-                            <p className="text-gray-400 font-bold text-sm text-center py-10">{t('support.no_tickets')}</p>
+                            <p className="text-gray-500 dark:text-gray-400 font-bold text-sm text-center py-10">{t('support.no_tickets')}</p>
                         ) : (
                             <div className="space-y-3 max-h-[480px] overflow-y-auto admin-scroll">
                                 {tickets.map((tk) => (

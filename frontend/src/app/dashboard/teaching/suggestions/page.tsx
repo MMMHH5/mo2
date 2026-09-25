@@ -86,7 +86,7 @@ export default function SuggestionsPage() {
 
     return (
         <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-            <div className="min-h-screen bg-brand-navy-dark space-y-6 animate-fade-in p-6 lg:p-8">
+            <div className="min-h-screen bg-gray-50 dark:bg-brand-navy-dark space-y-6 animate-fade-in p-6 lg:p-8">
                 {/* Tab Navigation */}
                 <div className="flex gap-1 bg-brand-navy-dark border border-white/5 rounded-xl p-1 w-fit">
                     <Link href="/dashboard/teaching"

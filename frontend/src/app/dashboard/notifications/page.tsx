@@ -66,28 +66,28 @@ export default function NotificationsPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN']}>
-            <div className="bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-white/5 min-h-[80vh]">
+            <div className="bg-white dark:bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 min-h-[80vh]">
                 <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
                     <div>
-                        <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                            <Bell size={32} className="text-brand-gold-light" /> {t('notifications.heading')}
+                        <h2 className="text-3xl font-black text-brand-navy dark:text-white flex items-center gap-3">
+                            <Bell size={32} className="text-brand-gold-dark dark:text-brand-gold-light" /> {t('notifications.heading')}
                         </h2>
-                        <p className="text-gray-400 mt-2">{t('notifications.subtitle')}</p>
+                        <p className="text-gray-500 dark:text-gray-400 mt-2">{t('notifications.subtitle')}</p>
                     </div>
                     {unreadCount > 0 && (
-                        <button onClick={markAllRead} className="inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light bg-brand-gold/10 hover:bg-brand-gold/20 px-4 py-2.5 rounded-xl transition">
+                        <button onClick={markAllRead} className="inline-flex items-center gap-2 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light bg-brand-gold/10 hover:bg-brand-gold/20 px-4 py-2.5 rounded-xl transition">
                             <CheckCheck size={16} /> {t('notifications.mark_all')}
                         </button>
                     )}
                 </div>
 
                 {loading ? (
-                    <div className="h-40 flex items-center justify-center font-bold text-gray-400">
-                        <Loader className="animate-spin text-brand-gold-light" size={32} />
+                    <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">
+                        <Loader className="animate-spin text-brand-gold-dark dark:text-brand-gold-light" size={32} />
                     </div>
                 ) : !items || items.length === 0 ? (
-                    <div className="h-56 flex flex-col items-center justify-center text-center text-gray-400">
-                        <Inbox size={44} className="mb-3 text-gray-500" />
+                    <div className="h-56 flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400">
+                        <Inbox size={44} className="mb-3 text-gray-400 dark:text-gray-500" />
                         <p className="font-bold">{t('notifications.empty')}</p>
                     </div>
                 ) : (
@@ -98,8 +98,8 @@ export default function NotificationsPage() {
                                 onClick={() => !n.readAt && markRead(n.id)}
                                 className={`w-full text-left p-5 rounded-2xl border transition ${
                                     n.readAt
-                                        ? 'bg-brand-navy border-white/5 opacity-75'
-                                        : 'bg-brand-gold/5 border-brand-gold/20 hover:border-brand-gold/40'
+                                        ? 'bg-brand-navy border-gray-200 dark:border-white/5 opacity-75'
+                                        : 'bg-brand-navy-dark border-brand-gold/30 hover:border-brand-gold/60'
                                 }`}
                             >
                                 <div className="flex items-start justify-between gap-3">

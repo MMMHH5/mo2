@@ -184,17 +184,17 @@ export default function ProfilePage() {
         { icon: MapPin, label: t('profile.city'), value: (profile?.metadata?.city as string) || '—' },
     ];
 
-    const inputCls = "w-full bg-brand-navy-dark border border-white/10 rounded-xl px-4 py-3 font-semibold text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-brand-gold transition";
-    const labelCls = "block text-sm font-bold text-gray-300 mb-1.5";
+    const inputCls = "w-full bg-white dark:bg-brand-navy-dark border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 font-semibold text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-brand-gold transition";
+    const labelCls = "block text-sm font-bold text-gray-600 dark:text-gray-300 mb-1.5";
 
     return (
         <ProtectedRoute>
             <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-                {error && <div className="p-4 bg-red-500/10 text-red-400 rounded-xl font-semibold">{error}</div>}
+{error && <div className="p-4 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 rounded-xl font-semibold">{error}</div>}
 
                 {loading || !profile ? (
-                    <div className="bg-brand-navy-dark border border-white/5 p-16 rounded-3xl flex flex-col items-center gap-3 font-bold text-gray-400">
-                        <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-brand-gold animate-spin" />
+                    <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 p-16 rounded-3xl flex flex-col items-center gap-3 font-bold text-gray-500 dark:text-gray-400">
+                        <div className="w-12 h-12 rounded-full border-4 border-gray-200 dark:border-white/10 border-t-brand-gold animate-spin" />
                         {t('profile.loading')}
                     </div>
                 ) : (
@@ -240,42 +240,42 @@ export default function ProfilePage() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Personal info */}
-                            <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                                <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-white/5">
-                                    <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
+                            <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-gray-200 dark:border-white/5">
+                                    <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
                                         <UserRound size={20} />
                                     </div>
-                                    <h3 className="text-xl font-black text-white">{t('profile.personal_info')}</h3>
+                                    <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.personal_info')}</h3>
                                 </div>
                                 <div className="space-y-1">
                                     {infoRows.map((row) => (
                                         <div key={row.label} className="flex items-center gap-4 py-2.5">
-                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light shrink-0">
+                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
                                                 <row.icon size={18} />
                                             </div>
                                             <div className="min-w-0">
-                                                <div className="text-xs font-bold text-gray-400 tracking-wide">{row.label}</div>
-                                                <div className="font-bold text-white truncate" dir="auto">{row.value}</div>
+<div className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wide">{row.label}</div>
+                                                 <div className="font-bold text-brand-navy dark:text-white truncate" dir="auto">{row.value}</div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
                                 {(profile.metadata?.bio as string) && (
-                                    <div className="mt-5 pt-5 border-t border-white/5">
-                                        <div className="text-xs font-bold text-gray-400 mb-2 flex items-center gap-1.5">
+                                    <div className="mt-5 pt-5 border-t border-gray-200 dark:border-white/5">
+                                        <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
                                             <FileText size={14} /> {t('profile.bio')}
                                         </div>
-                                        <p className="text-sm text-gray-300 leading-relaxed" dir="auto">
+                                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" dir="auto">
                                             {profile.metadata?.bio as string}
                                         </p>
                                     </div>
                                 )}
 
                                 {(profile.metadata?.specialty as string) && (
-                                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2">
-                                        <GraduationCap size={16} className="text-brand-gold-light shrink-0" />
-                                        <span dir="auto" className="px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold-light text-xs font-black">
+                                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/5 flex items-center gap-2">
+                                        <GraduationCap size={16} className="text-brand-gold-dark dark:text-brand-gold-light shrink-0" />
+                                        <span dir="auto" className="px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light text-xs font-black">
                                             {profile.metadata?.specialty as string}
                                         </span>
                                     </div>
@@ -285,12 +285,12 @@ export default function ProfilePage() {
                             {/* Account security: email + password */}
                             <div className="space-y-6">
                                 {/* Email change */}
-                                <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
                                     <div className="flex items-center gap-2.5 mb-5">
-                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
+                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
                                             <Mail size={20} />
                                         </div>
-                                        <h3 className="text-xl font-black text-white">{t('profile.change_email')}</h3>
+                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.change_email')}</h3>
                                     </div>
                                     <div className="space-y-4">
                                         <div>
@@ -324,12 +324,12 @@ export default function ProfilePage() {
                                 </div>
 
                                 {/* Password change */}
-                                <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
                                     <div className="flex items-center gap-2.5 mb-5">
-                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
+                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
                                             <KeyRound size={20} />
                                         </div>
-                                        <h3 className="text-xl font-black text-white">{t('profile.change_password')}</h3>
+                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.change_password')}</h3>
                                     </div>
                                     <div className="space-y-4">
                                         <div>
@@ -372,17 +372,17 @@ export default function ProfilePage() {
                         </div>
 
                         {/* GDPR privacy card */}
-                        <div className="bg-brand-navy-dark border border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                            <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-white/5">
-                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-light">
+                        <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                            <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-gray-200 dark:border-white/5">
+                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
                                     <ShieldAlert size={20} />
                                 </div>
-                                <h3 className="text-xl font-black text-white">{t('gdpr.heading')}</h3>
+                                <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('gdpr.heading')}</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="bg-brand-gold/5 border border-brand-gold/10 rounded-2xl p-6">
-                                    <h4 className="font-black text-brand-gold-light mb-1.5">{t('gdpr.export_title')}</h4>
-                                    <p className="text-sm text-gray-400 mb-5">{t('gdpr.export_desc')}</p>
+                                    <h4 className="font-black text-brand-gold-dark dark:text-brand-gold-light mb-1.5">{t('gdpr.export_title')}</h4>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{t('gdpr.export_desc')}</p>
                                     <button
                                         onClick={exportData}
                                         disabled={exportLoading}
@@ -392,8 +392,8 @@ export default function ProfilePage() {
                                     </button>
                                 </div>
                                 <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-6">
-                                    <h4 className="font-black text-red-400 mb-1.5">{t('gdpr.delete_title')}</h4>
-                                    <p className="text-sm text-gray-400 mb-5">{t('gdpr.delete_desc')}</p>
+                                    <h4 className="font-black text-red-600 dark:text-red-400 mb-1.5">{t('gdpr.delete_title')}</h4>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{t('gdpr.delete_desc')}</p>
                                     <button
                                         onClick={() => setConfirmDelete(true)}
                                         className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 font-bold rounded-xl hover:bg-red-700 transition"

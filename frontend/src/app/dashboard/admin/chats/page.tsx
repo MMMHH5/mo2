@@ -97,7 +97,7 @@ export default function AdminChatsPage() {
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-4 py-2 rounded-xl text-sm font-bold transition ${
-                            filter === f ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black' : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                            filter === f ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
                         }`}
                     >
                         {t(`adminChats.filter_${f}`)}
@@ -106,39 +106,39 @@ export default function AdminChatsPage() {
             </div>
 
             {loading ? (
-                <div className="h-64 flex items-center justify-center text-brand-gold">
+                <div className="h-64 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold">
                     <Loader className="animate-spin" size={32} />
                 </div>
             ) : (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-hidden">
+                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-white/5">
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminChats.student')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminChats.instructor')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminChats.course')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{t('adminChats.last_message')}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{''}</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-left">{''}</th>
+                                <tr className="border-b border-gray-200 dark:border-white/5">
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminChats.student')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminChats.instructor')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminChats.course')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{t('adminChats.last_message')}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{''}</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">{''}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                                 {filtered.length === 0 ? (
                                     <EmptyState icon={MessageCircle} title={t('adminChats.empty')} />
                                 ) : filtered.map(chat => (
-                                    <tr key={chat.id} className="hover:bg-white/5 transition">
+                                    <tr key={chat.id} className="hover:bg-gray-100 dark:hover:bg-white/5 transition">
                                         <td className="p-4">
-                                            <div className="font-bold text-sm text-white">{chat.student.email}</div>
+                                            <div className="font-bold text-sm text-brand-navy dark:text-white">{chat.student.email}</div>
                                         </td>
                                         <td className="p-4">
-                                            <div className="font-bold text-sm text-white">{chat.instructor.email}</div>
+                                            <div className="font-bold text-sm text-brand-navy dark:text-white">{chat.instructor.email}</div>
                                         </td>
                                         <td className="p-4">
-                                            <div className="text-sm text-gray-300 max-w-[220px] truncate">{chat.course.title}</div>
+                                            <div className="text-sm text-gray-600 dark:text-gray-300 max-w-[220px] truncate">{chat.course.title}</div>
                                         </td>
                                         <td className="p-4">
-                                            <div className="text-xs text-gray-400 max-w-[220px] truncate">
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 max-w-[220px] truncate">
                                                 {chat.lastMessage
                                                     ? (chat.lastMessage.content || (chat.lastMessage.attachmentType ? '📎' : ''))
                                                     : '—'}
@@ -176,20 +176,20 @@ export default function AdminChatsPage() {
             )}
 
             {selectedChat && (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl overflow-hidden">
-                    <div className="flex items-center justify-between gap-3 p-5 border-b border-white/5">
+                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between gap-3 p-5 border-b border-gray-200 dark:border-white/5">
                         <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-brand-gold/15 text-brand-gold-light rounded-xl flex items-center justify-center">
+                            <div className="w-9 h-9 bg-brand-gold/15 text-brand-gold-dark dark:text-brand-gold-light rounded-xl flex items-center justify-center">
                                 <MessageCircle size={18} />
                             </div>
                             <div>
-                                <h3 className="font-black text-white">{t('adminChats.thread_title')}</h3>
-                                <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                                <h3 className="font-black text-brand-navy dark:text-white">{t('adminChats.thread_title')}</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">
                                     {selectedChat.student.email} ↔ {selectedChat.instructor.email}
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setSelectedChat(null)} className="text-gray-400 hover:text-red-400 transition">
+                        <button onClick={() => setSelectedChat(null)} className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition">
                             <X size={20} />
                         </button>
                     </div>
@@ -228,7 +228,7 @@ export default function AdminChatsPage() {
                             ))
                         ) : null}
                     </div>
-                    <div className="flex justify-end px-5 py-3 border-t border-white/5">
+                    <div className="flex justify-end px-5 py-3 border-t border-gray-200 dark:border-white/5">
                         <BtnSoft
                             icon={selectedChat.archived ? ArchiveRestore : Archive}
                             onClick={() => toggleArchive(selectedChat)}

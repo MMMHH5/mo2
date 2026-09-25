@@ -86,7 +86,7 @@ export default function DashboardPage() {
 
             {/* Error or Dashboard specific elements */}
             {coursesError && (
-                <div className="p-4 bg-red-500/10 text-red-400 rounded-xl border border-red-500/20 font-semibold">
+                <div className="p-4 text-red-600 dark:text-red-400 rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 font-semibold">
                     {t('dashboard.failed_metrics')} {coursesError}
                 </div>
             )}
@@ -94,7 +94,7 @@ export default function DashboardPage() {
             {/* Quick Actions (students) */}
             {user.role === 'STUDENT' && (
                 <div className="animate-fade-in-up">
-                    <h3 className="text-xl font-black text-white mb-4">{t('dashboard.quick_actions')}</h3>
+                    <h3 className="text-xl font-black text-brand-navy dark:text-white mb-4">{t('dashboard.quick_actions')}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <Link href="/dashboard/explore" className="group bg-brand-navy-dark border border-white/5 rounded-2xl p-6 hover:border-brand-gold/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
                             <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 text-brand-gold-light flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -140,9 +140,9 @@ export default function DashboardPage() {
                         <LearningPathList mode="browse" />
                     </>
                 ) : (
-                    <div className="bg-brand-navy-dark border border-white/5 rounded-3xl p-8 min-h-[400px]">
-                        <h3 className="text-xl font-black text-white mb-6">{t('dashboard.recent_activity')}</h3>
-                        <div className="flex items-center justify-center text-gray-400 h-64 border-2 border-dashed border-white/10 rounded-2xl bg-white/5 font-semibold">
+                    <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-3xl p-8 min-h-[400px] shadow-sm">
+                        <h3 className="text-xl font-black text-brand-navy dark:text-white mb-6">{t('dashboard.recent_activity')}</h3>
+                        <div className="flex items-center justify-center text-gray-500 dark:text-gray-400 h-64 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-2xl bg-gray-100 dark:bg-white/5 font-semibold">
                             {t('dashboard.detailed_metrics')}
                         </div>
                     </div>

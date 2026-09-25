@@ -23,7 +23,7 @@ const badgeToneMap: Record<Tone, string> = {
     green: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20',
     amber: 'bg-brand-gold/15 text-brand-gold-light ring-1 ring-brand-gold/20',
     red: 'bg-red-500/15 text-red-400 ring-1 ring-red-500/20',
-    gray: 'bg-white/10 text-gray-400 ring-1 ring-white/10',
+    gray: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 ring-1 ring-gray-200 dark:ring-white/10',
     blue: 'bg-brand-navy-light/15 text-brand-navy-light ring-1 ring-brand-navy-light/20',
     purple: 'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20',
     gold: 'bg-brand-gold/15 text-brand-gold-light ring-1 ring-brand-gold/20',
@@ -37,11 +37,11 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
         <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-brand-gold/10 flex items-center justify-center shadow-md shrink-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand-gold-light" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand-gold-dark dark:bg-brand-gold-light" />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight">{title}</h2>
-                    {subtitle && <p className="text-gray-400 text-sm mt-0.5">{subtitle}</p>}
+                    <h2 className="text-2xl font-black text-brand-navy dark:text-white tracking-tight">{title}</h2>
+                    {subtitle && <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">{subtitle}</p>}
                 </div>
             </div>
             {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
@@ -66,14 +66,14 @@ export function StatCard({
     accent?: boolean;
 }) {
     const inner = (
-        <div className={`bg-brand-navy-dark border border-white/5 rounded-2xl p-5 h-full ${accent ? 'shadow-lg shadow-black/20' : ''}`}>
+        <div className={`bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-5 h-full ${accent ? 'shadow-lg shadow-brand-navy/10 dark:shadow-black/20' : 'shadow-sm'}`}>
             <div className="flex items-center justify-between mb-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tileColors[color]}`}>
                     <Icon size={20} />
                 </div>
             </div>
-            <div className="text-2xl font-black text-white">{value}</div>
-            <div className="text-xs font-bold text-gray-400 mt-1.5">{label}</div>
+            <div className="text-2xl font-black text-brand-navy dark:text-white">{value}</div>
+            <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1.5">{label}</div>
         </div>
     );
     return href ? <Link href={href} className="block h-full">{inner}</Link> : inner;
@@ -101,7 +101,7 @@ export function SectionHeader({
         blue: 'bg-brand-navy-light/10 text-brand-navy-light',
         purple: 'bg-purple-500/10 text-purple-400',
         gold: 'bg-brand-gold/10 text-brand-gold-light',
-        gray: 'bg-white/10 text-gray-400',
+gray: 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400',
         teal: 'bg-teal-500/10 text-teal-400',
     }[color];
 
@@ -112,8 +112,8 @@ export function SectionHeader({
                     <Icon size={18} />
                 </div>
                 <div>
-                    <h3 className="font-black text-white leading-tight">{title}</h3>
-                    {subtitle && <p className="text-xs text-gray-400 font-semibold mt-0.5">{subtitle}</p>}
+                    <h3 className="font-black text-brand-navy dark:text-white leading-tight">{title}</h3>
+                    {subtitle && <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">{subtitle}</p>}
                 </div>
             </div>
             {action}
@@ -134,14 +134,14 @@ export function Badge({ tone = 'gray', dot = true, children }: { tone?: Tone; do
 /** Empty / no-data state for tables (renders a <tr>) */
 export function EmptyState({ icon: Icon, title, color = 'navy' }: { icon: LucideIcon; title: string; color?: Tone }) {
     const tile = {
-        navy: 'bg-white/5 text-gray-400',
+        navy: 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400',
         green: 'bg-emerald-500/10 text-emerald-400',
         amber: 'bg-brand-gold/10 text-brand-gold-light',
         red: 'bg-red-500/10 text-red-400',
         blue: 'bg-brand-navy-light/10 text-brand-navy-light',
         purple: 'bg-purple-500/10 text-purple-400',
         gold: 'bg-brand-gold/10 text-brand-gold-light',
-        gray: 'bg-white/5 text-gray-400',
+        gray: 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400',
         teal: 'bg-teal-500/10 text-teal-400',
     }[color];
 
@@ -152,7 +152,7 @@ export function EmptyState({ icon: Icon, title, color = 'navy' }: { icon: Lucide
                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${tile} mb-4`}>
                         <Icon size={30} />
                     </div>
-                    <p className="text-gray-400 font-bold text-sm max-w-sm">{title}</p>
+                    <p className="text-gray-500 dark:text-gray-400 font-bold text-sm max-w-sm">{title}</p>
                 </div>
             </td>
         </tr>
@@ -162,14 +162,14 @@ export function EmptyState({ icon: Icon, title, color = 'navy' }: { icon: Lucide
 /** Empty / no-data state for cards and sections (renders a <div>) */
 export function EmptyPanel({ icon: Icon, title, color = 'navy' }: { icon: LucideIcon; title: string; color?: Tone }) {
     const tile = {
-        navy: 'bg-white/5 text-gray-400',
+        navy: 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400',
         green: 'bg-emerald-500/10 text-emerald-400',
         amber: 'bg-brand-gold/10 text-brand-gold-light',
         red: 'bg-red-500/10 text-red-400',
         blue: 'bg-brand-navy-light/10 text-brand-navy-light',
         purple: 'bg-purple-500/10 text-purple-400',
         gold: 'bg-brand-gold/10 text-brand-gold-light',
-        gray: 'bg-white/5 text-gray-400',
+        gray: 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400',
         teal: 'bg-teal-500/10 text-teal-400',
     }[color];
 
@@ -178,7 +178,7 @@ export function EmptyPanel({ icon: Icon, title, color = 'navy' }: { icon: Lucide
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${tile} mb-4`}>
                 <Icon size={30} />
             </div>
-            <p className="text-gray-400 font-bold text-sm max-w-sm">{title}</p>
+            <p className="text-gray-500 dark:text-gray-400 font-bold text-sm max-w-sm">{title}</p>
         </div>
     );
 }
@@ -217,7 +217,7 @@ export function BtnSoft({ icon: Icon, children, onClick, disabled }: {
             type="button"
             onClick={onClick}
             disabled={disabled}
-            className="inline-flex items-center gap-2 bg-white/5 text-gray-300 border border-white/10 px-4 py-2 rounded-xl font-bold hover:bg-white/10 hover:text-white transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
+            className="inline-flex items-center gap-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 px-4 py-2 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-white/10 hover:text-brand-navy dark:hover:text-white transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
         >
             {Icon && <Icon size={16} />}
             {children}

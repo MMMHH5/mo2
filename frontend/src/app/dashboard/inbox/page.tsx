@@ -182,29 +182,29 @@ export default function InboxPage() {
                     }
                 />
 
-                <div className="bg-brand-navy-dark rounded-3xl shadow-sm border border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[60vh]">
+                <div className="bg-white dark:bg-brand-navy-dark rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden flex flex-col md:flex-row min-h-[60vh]">
                     {/* Conversations list */}
-                    <aside className={`md:w-80 border-b md:border-b-0 md:border-e border-white/5 ${active ? 'hidden md:block' : 'block'}`}>
-                        <div className="p-4 border-b border-white/5">
-                            <h3 className="font-black text-white">{t('inbox.conversations')}</h3>
+                    <aside className={`md:w-80 border-b md:border-b-0 md:border-e border-gray-200 dark:border-white/5 ${active ? 'hidden md:block' : 'block'}`}>
+                        <div className="p-4 border-b border-gray-200 dark:border-white/5">
+                            <h3 className="font-black text-brand-navy dark:text-white">{t('inbox.conversations')}</h3>
                         </div>
                         <div className="overflow-y-auto h-[40vh] md:h-[calc(60vh-57px)] admin-scroll">
                             {loadingConv ? (
-                                <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-brand-gold-light" size={24} /></div>
+                                <div className="h-40 flex items-center justify-center"><Loader className="animate-spin text-brand-gold-dark dark:text-brand-gold-light" size={24} /></div>
                             ) : conversations.length === 0 ? (
                                 <div className="p-8 text-center">
-                                    <InboxIcon size={32} className="mx-auto text-gray-500 mb-3" />
-                                    <p className="text-gray-400 font-bold text-sm">{t('inbox.no_conversations')}</p>
+                                    <InboxIcon size={32} className="mx-auto text-gray-400 dark:text-gray-500 mb-3" />
+                                    <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">{t('inbox.no_conversations')}</p>
                                 </div>
                             ) : (
                                 conversations.map((c) => (
                                     <button
                                         key={c.id}
                                         onClick={() => openThread(c, true)}
-                                        className={`w-full text-left px-4 py-3.5 border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${active?.id === c.id ? 'bg-white/5' : ''}`}
+                                        className={`w-full text-left px-4 py-3.5 border-b border-gray-200 dark:border-white/5 hover:bg-brand-navy/5 dark:hover:bg-white/5 transition cursor-pointer ${active?.id === c.id ? 'bg-brand-navy/5 dark:bg-white/10' : ''}`}
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="font-bold text-white text-sm truncate">{c.otherUser.email}</span>
+                                            <span className="font-bold text-brand-navy dark:text-white text-sm truncate">{c.otherUser.email}</span>
                                             {c.unreadCount > 0 && (
                                                 <span className="bg-brand-gold text-black text-[10px] font-black rounded-full min-w-5 h-5 px-1.5 inline-flex items-center justify-center">
                                                     {c.unreadCount}
@@ -212,13 +212,13 @@ export default function InboxPage() {
                                             )}
                                         </div>
                                         {c.course && (
-                                            <span className="text-xs text-brand-gold-light font-bold block mt-0.5 truncate">{t('inbox.course')} {pick(c.course, 'title')}</span>
+                                            <span className="text-xs text-brand-gold-dark dark:text-brand-gold-light font-bold block mt-0.5 truncate">{t('inbox.course')} {pick(c.course, 'title')}</span>
                                         )}
                                         <div className="flex items-center justify-between gap-2 mt-1">
-                                            <span className={`text-xs truncate ${c.unreadCount > 0 ? 'font-bold text-white' : 'text-gray-400'}`}>
+                                            <span className={`text-xs truncate ${c.unreadCount > 0 ? 'font-bold text-brand-navy dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                                                 {c.lastMessage.content}
                                             </span>
-                                            {c.lastMessage.createdAt && <span className="text-[10px] text-gray-500 shrink-0">{fmtDay(c.lastMessage.createdAt)}</span>}
+                                            {c.lastMessage.createdAt && <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">{fmtDay(c.lastMessage.createdAt)}</span>}
                                         </div>
                                     </button>
                                 ))
@@ -230,26 +230,26 @@ export default function InboxPage() {
                     <section className={`flex-1 flex flex-col ${active ? 'flex' : 'hidden md:flex'}`}>
                         {!active ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
-                                <MessageSquarePlus size={40} className="text-gray-600 mb-4" />
-                                <p className="text-gray-400 font-bold">{t('inbox.select_conversation')}</p>
+                                <MessageSquarePlus size={40} className="text-gray-400 dark:text-gray-600 mb-4" />
+                                <p className="text-gray-500 dark:text-gray-400 font-bold">{t('inbox.select_conversation')}</p>
                             </div>
                         ) : (
                             <>
-                                <div className="px-5 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between gap-3">
+                                <div className="px-5 py-4 border-b border-gray-200 dark:border-white/5 bg-gray-50/80 dark:bg-white/5 flex items-center justify-between gap-3">
                                     <div className="min-w-0">
-                                        <p className="font-black text-white truncate">{active.otherUser.email}</p>
+                                        <p className="font-black text-brand-navy dark:text-white truncate">{active.otherUser.email}</p>
                                         {active.course && (
-                                            <p className="text-xs text-brand-gold-light font-bold truncate">{t('inbox.course')} {pick(active.course, 'title')}</p>
+                                            <p className="text-xs text-brand-gold-dark dark:text-brand-gold-light font-bold truncate">{t('inbox.course')} {pick(active.course, 'title')}</p>
                                         )}
                                     </div>
-                                    <button onClick={() => setActive(null)} className="md:hidden text-gray-400 hover:text-white"><X size={20} /></button>
+                                    <button onClick={() => setActive(null)} className="md:hidden text-gray-500 dark:text-gray-400 hover:text-brand-navy dark:hover:text-white"><X size={20} /></button>
                                 </div>
 
-                                <div ref={threadBoxRef} className="flex-1 overflow-y-auto p-5 space-y-3 bg-brand-navy-dark h-[40vh] md:h-[calc(60vh-130px)] admin-scroll">
+                                <div ref={threadBoxRef} className="flex-1 overflow-y-auto p-5 space-y-3 bg-gray-50/60 dark:bg-brand-navy-dark h-[40vh] md:h-[calc(60vh-130px)] admin-scroll">
                                     {loadingThread ? (
-                                        <div className="flex justify-center pt-8"><Loader className="animate-spin text-brand-gold-light" size={24} /></div>
+                                        <div className="flex justify-center pt-8"><Loader className="animate-spin text-brand-gold-dark dark:text-brand-gold-light" size={24} /></div>
                                     ) : thread.length === 0 ? (
-                                        <p className="text-center text-gray-400 text-sm pt-8">{t('inbox.select_conversation')}</p>
+                                        <p className="text-center text-gray-500 dark:text-gray-400 text-sm pt-8">{t('inbox.select_conversation')}</p>
                                     ) : (
                                         thread.map((m) => {
                                             const mine = m.senderId === user?.userId;
@@ -258,10 +258,10 @@ export default function InboxPage() {
                                                     <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
                                                         mine
                                                             ? 'bg-gradient-to-br from-brand-gold to-brand-gold-dark text-black rounded-br-md'
-                                                            : 'bg-brand-navy-dark border border-white/5 text-white rounded-bl-md'
+                                                            : 'bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 text-brand-navy dark:text-white rounded-bl-md'
                                                     }`}>
                                                         <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
-                                                        <span className={`block text-[10px] mt-1 ${mine ? 'text-black/50' : 'text-gray-400'}`}>
+                                                        <span className={`block text-[10px] mt-1 ${mine ? 'text-black/50' : 'text-gray-400 dark:text-gray-500'}`}>
                                                             {fmtTime(m.createdAt)}
                                                         </span>
                                                     </div>
@@ -271,13 +271,13 @@ export default function InboxPage() {
                                     )}
                                 </div>
 
-                                <div className="p-4 border-t border-white/5 flex items-center gap-2">
+                                <div className="p-4 border-t border-gray-200 dark:border-white/5 flex items-center gap-2">
                                     <input
                                         value={text}
                                         onChange={(e) => setText(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
                                         placeholder={t('inbox.type_message')}
-                                        className="flex-1 px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-white placeholder:text-gray-500"
+                                        className="flex-1 px-4 py-3 bg-white dark:bg-brand-navy-dark border border-gray-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                     />
                                     <button onClick={send} disabled={sending || !text.trim()} className="bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black p-3 rounded-xl hover:from-brand-gold-light hover:to-brand-gold disabled:opacity-40 transition cursor-pointer">
                                         {sending ? <Loader size={18} className="animate-spin" /> : <Send size={18} />}

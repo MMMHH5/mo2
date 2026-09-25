@@ -116,8 +116,8 @@ export default function AdminOverviewPage() {
                                         <Icon size={22} />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <div className="font-black text-white">{q.label}</div>
-                                        <div className="text-xs text-gray-400 font-semibold mt-0.5">{q.desc}</div>
+                                        <div className="font-black text-brand-navy dark:text-white">{q.label}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">{q.desc}</div>
                                     </div>
                                     <ArrowRight size={18} className="text-gray-500 transition-transform group-hover:translate-x-1 rtl:rotate-180" />
                                 </div>
@@ -134,17 +134,17 @@ export default function AdminOverviewPage() {
                             <Search size={22} />
                         </div>
                         <div>
-                            <div className="font-black text-white">{t('admin.audit_logs_title')}</div>
-                            <div className="text-xs text-gray-400 font-semibold mt-0.5">{t('admin.audit_logs_desc')}</div>
+                            <div className="font-black text-brand-navy dark:text-white">{t('admin.audit_logs_title')}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-0.5">{t('admin.audit_logs_desc')}</div>
                         </div>
                     </div>
-                    <span className="inline-flex items-center gap-2 text-white font-bold text-sm">
+                    <span className="inline-flex items-center gap-2 text-brand-navy dark:text-white font-bold text-sm">
                         {t('admin.view_audit')} <ArrowRight size={16} className="rtl:rotate-180" />
                     </span>
                 </div>
             </Link>
 
-            <div className="flex items-center gap-2 text-xs text-gray-400 font-bold">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-bold">
                 <PlusCircle size={14} />
                 LaxaLab Administration Console
             </div>
