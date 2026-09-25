@@ -52,7 +52,7 @@ export default function MobileSidebar() {
             {open && createPortal(
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
-                    <div className={`fixed top-0 bottom-0 end-0 w-[85%] max-w-xs overflow-y-auto shadow-2xl ${dark ? 'bg-brand-navy-dark text-white' : 'bg-white text-brand-navy'}`}>
+                    <div className={`fixed top-0 bottom-0 start-0 w-[85%] max-w-xs overflow-y-auto shadow-2xl ${dark ? 'bg-brand-navy-dark text-white' : 'bg-white text-brand-navy'}`}>
                         <div className={`flex items-center justify-between p-5 border-b ${dark ? 'border-white/10' : 'border-gray-200'}`}>
                             <div className="flex items-center gap-3">
                                 <img

@@ -21,8 +21,8 @@ export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
 
     const tone = isDark ? 'text-white hover:text-brand-gold' : 'text-brand-navy hover:text-brand-charcoal';
     const drawerCls = isDark
-        ? 'fixed top-0 bottom-0 end-0 w-[85%] max-w-xs bg-brand-navy-dark overflow-y-auto shadow-2xl'
-        : 'fixed top-0 bottom-0 end-0 w-[85%] max-w-xs bg-white overflow-y-auto shadow-2xl';
+        ? 'fixed top-0 bottom-0 start-0 w-[85%] max-w-xs bg-brand-navy-dark overflow-y-auto shadow-2xl'
+        : 'fixed top-0 bottom-0 start-0 w-[85%] max-w-xs bg-white overflow-y-auto shadow-2xl';
     const linkCls = isDark
         ? 'block px-3.5 py-3 rounded-xl font-bold text-white hover:bg-white/10 transition'
         : 'block px-3.5 py-3 rounded-xl font-bold text-brand-navy hover:bg-brand-mist transition';
