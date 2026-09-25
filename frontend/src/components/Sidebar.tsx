@@ -49,7 +49,7 @@ export default function Sidebar() {
     const links = roleLinks.length > 0 ? roleLinks : buildNavLinks(t);
 
     return (
-        <aside className={`w-64 shrink-0 h-screen flex flex-col justify-between hidden md:flex sticky top-0 ${dark ? 'bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c]' : 'bg-white border-r border-gray-200 shadow-sm'}`}>
+        <aside className={`w-64 shrink-0 h-screen flex flex-col justify-between hidden lg:flex sticky top-0 ${dark ? 'bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c]' : 'bg-white border-r border-gray-200 shadow-sm'}`}>
             <div>
                 <div className={`p-5 border-b ${dark ? 'border-white/10' : 'border-gray-200'}`}>
                     <div className="flex flex-col gap-2">

@@ -42,14 +42,14 @@ export default function MobileSidebar() {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="md:hidden p-2 text-brand-navy dark:text-brand-mist hover:bg-brand-mist dark:hover:bg-white/10 rounded-xl transition"
+                className={`lg:hidden p-2 text-brand-navy dark:text-brand-mist hover:bg-brand-mist dark:hover:bg-white/10 rounded-xl transition ${dark ? 'text-brand-mist' : 'text-brand-navy'}`}
                 aria-label="Menu"
             >
                 <Menu size={24} />
             </button>
 
             {open && (
-                <div className="fixed inset-0 z-50 md:hidden">
+                <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
                     <div className={`fixed top-0 bottom-0 end-0 w-[85%] max-w-xs overflow-y-auto shadow-2xl ${dark ? 'bg-brand-navy-dark text-white' : 'bg-white text-brand-navy'}`}>
                         <div className={`flex items-center justify-between p-5 border-b ${dark ? 'border-white/10' : 'border-gray-200'}`}>

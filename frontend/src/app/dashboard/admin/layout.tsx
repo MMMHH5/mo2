@@ -86,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <ProtectedRoute allowedRoles={ALL_ROLES}>
             <div className="bg-white dark:bg-brand-navy-dark rounded-3xl shadow-lg shadow-brand-navy/10 dark:shadow-black/30 border border-gray-200 dark:border-white/5 min-h-[85vh] flex overflow-hidden">
                 {/* Dark navy sidebar */}
-                <aside className="hidden md:flex w-64 shrink-0 bg-white dark:bg-gradient-to-b dark:from-brand-navy dark:via-[#0e2a52] dark:to-[#0a1e3c] border-e border-gray-200 dark:border-white/10 flex-col">
+                <aside className="hidden lg:flex w-64 shrink-0 bg-white dark:bg-gradient-to-b dark:from-brand-navy dark:via-[#0e2a52] dark:to-[#0a1e3c] border-e border-gray-200 dark:border-white/10 flex-col">
                     <div className="p-5 border-b border-gray-200 dark:border-white/10">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-brand-navy/10 dark:bg-white/10 flex items-center justify-center">
