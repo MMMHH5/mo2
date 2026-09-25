@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Mail, Clock, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Mail, Clock, MessageSquare, CheckCircle2, Play, Camera, Send, Hash, Globe } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import MarketingShell from '@/components/MarketingShell';
@@ -151,12 +151,42 @@ export default function ContactContent() {
                         <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/10 text-brand-gold-dark'}`}>
                             <MessageSquare size={22} />
                         </div>
-                        <h3 className={`font-bold mb-1 ${dark ? 'text-white' : 'text-brand-navy'}`}>{isAr ? 'التذاكر' : 'Tickets'}</h3>
+                        <h3 className={`font-bold mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>{isAr ? 'التذاكر' : 'Tickets'}</h3>
                         <p className={`text-sm leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                             {isAr
                                 ? 'المستخدمون المسجلون يمكنهم فتح تذكرة دعم من لوحة التحكم مباشرة.'
                                 : 'Registered users can open a support ticket directly from their dashboard.'}
                         </p>
+                    </div>
+                    <div className={`rounded-3xl border shadow-sm p-7 ${dark ? 'bg-brand-navy-dark border-white/10' : 'bg-white border-gray-200'}`}>
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/10 text-brand-gold-dark'}`}>
+                            <Send size={22} />
+                        </div>
+                        <h3 className={`font-bold mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>{isAr ? 'تابعنا على منصات التواصل' : 'Follow us'}</h3>
+                        <ul className="space-y-2.5">
+                            {[
+                                { icon: Play, label: 'YouTube', handle: '@laxalabacademy', href: 'https://www.youtube.com/@laxalabacademy' },
+                                { icon: Camera, label: 'Instagram', handle: '@laxalabacademy', href: 'https://www.instagram.com/laxalabacademy' },
+                                { icon: Send, label: 'Telegram', handle: '@laxalabacademy', href: 'https://t.me/laxalabacademy' },
+                                { icon: Hash, label: 'X (Twitter)', handle: '@laxalabacademy', href: 'https://x.com/laxalabacademy' },
+                                { icon: Globe, label: 'Facebook', handle: 'laxalabacademy', href: 'https://facebook.com/laxalabacademy' },
+                            ].map((s) => (
+                                <li key={s.label}>
+                                    <a
+                                        href={s.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${dark
+                                            ? 'bg-white/5 hover:bg-brand-gold hover:text-brand-navy text-gray-200'
+                                            : 'bg-gray-100 hover:bg-brand-gold hover:text-brand-navy text-gray-700'}`}
+                                    >
+                                        <s.icon size={18} className="shrink-0" />
+                                        <span className="flex-1">{s.label}</span>
+                                        <span className={`text-xs font-normal ${dark ? 'text-gray-500' : 'text-gray-500'}`} dir="ltr">{s.handle}</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 </aside>
             </div>
