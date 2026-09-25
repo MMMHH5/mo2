@@ -92,7 +92,7 @@ export default function JoinAsInstructorPage() {
             subtitle={t('joinInstructor.teach_desc')}
         >
             {/* Application Form */}
-            <div className="max-w-3xl mx-auto -mt-32 relative z-10 pb-20">
+            <div className="max-w-3xl mx-auto mt-0 md:-mt-32 relative z-10 pb-20">
                 <div className={`p-8 md:p-12 rounded-3xl shadow-sm border ${dark ? 'bg-brand-navy-dark border-white/10' : 'bg-white border-gray-200'}`}>
                     <h2 className={`text-2xl font-black mb-8 border-b pb-4 ${dark ? 'text-white border-white/10' : 'text-brand-navy border-gray-200'}`}>{t('joinInstructor.app_heading')}</h2>
 
@@ -154,7 +154,7 @@ export default function JoinAsInstructorPage() {
                             <label className={labelCls}>{t('joinInstructor.cv_label')}</label>
                             <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-8 cursor-pointer transition ${cvFile ? 'border-brand-gold bg-brand-gold/10' : dark ? 'border-white/15 hover:bg-white/5 hover:border-white/25' : 'border-gray-300 hover:bg-gray-50 hover:border-gray-400'}`}>
                                 <UploadCloud className={cvFile ? "text-brand-gold mb-2" : "text-gray-500 mb-2"} size={32} />
-                                <span className={cvFile ? "font-bold text-brand-gold-light" : dark ? "text-gray-400 font-medium" : "text-gray-600 font-medium"}>
+                                <span className={cvFile ? "font-bold text-brand-gold-light break-all" : dark ? "text-gray-400 font-medium break-all" : "text-gray-600 font-medium break-all"}>
                                     {cvFile ? cvFile.name : t('joinInstructor.cv_placeholder')}
                                 </span>
                                 <input

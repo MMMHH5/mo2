@@ -56,7 +56,7 @@ export default function DashboardPage() {
     return (
         <div className="max-w-6xl mx-auto space-y-6">
             {/* Welcome Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy-light to-brand-navy rounded-3xl p-8 lg:p-10 text-white shadow-lg shadow-black/20 animate-fade-in">
+            <div className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-brand-navy-light to-brand-navy rounded-3xl p-4 sm:p-6 lg:p-8 text-white shadow-lg shadow-black/20 animate-fade-in">
                 <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand-gold/10 rounded-full blur-3xl" />
                 <div className="absolute -bottom-20 -left-10 w-72 h-72 bg-brand-gold/5 rounded-full blur-3xl" />
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-gold via-brand-gold/40 to-transparent" />
@@ -140,7 +140,7 @@ export default function DashboardPage() {
                         <LearningPathList mode="browse" />
                     </>
                 ) : (
-                    <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-3xl p-8 min-h-[400px] shadow-sm">
+                    <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-3xl p-4 sm:p-6 lg:p-8 min-h-[400px] shadow-sm">
                         <h3 className="text-xl font-black text-brand-navy dark:text-white mb-6">{t('dashboard.recent_activity')}</h3>
                         <div className="flex items-center justify-center text-gray-500 dark:text-gray-400 h-64 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-2xl bg-gray-100 dark:bg-white/5 font-semibold">
                             {t('dashboard.detailed_metrics')}

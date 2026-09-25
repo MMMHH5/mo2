@@ -261,7 +261,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                 <img
                     src={`${API_BASE_URL}${m.attachmentUrl}`}
                     alt="attachment"
-                    className="max-h-48 rounded-xl border border-brand-mist"
+                    className="max-h-48 max-w-full h-auto object-contain rounded-xl border border-brand-mist"
                 />
             </a>
         ) : (
@@ -295,7 +295,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
 
     const renderThreadPanel = (messages: ChatMsg[], emptyKey: string) => (
         <>
-            <div className="bg-gray-50 border border-brand-mist rounded-2xl p-4 h-[420px] overflow-y-auto flex flex-col gap-3">
+            <div className="bg-gray-50 border border-brand-mist rounded-2xl p-4 h-[60vh] max-h-[420px] min-h-[300px] overflow-y-auto flex flex-col gap-3">
                 {messages.length === 0 && (
                     <div className="m-auto text-center text-gray-400">
                         <Inbox size={36} className="mx-auto mb-2 text-brand-gold/60" />
@@ -334,7 +334,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                         onClick={() => fileRef.current?.click()}
                         disabled={uploading}
                         title={t('courseChat.attach')}
-                        className="bg-white border border-brand-mist hover:border-brand-gold text-brand-navy p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40"
+                        className="bg-white border border-brand-mist hover:border-brand-gold text-brand-navy p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40 shrink-0"
                     >
                         {uploading ? <Loader size={16} className="animate-spin" /> : <Paperclip size={16} />}
                     </button>
@@ -343,14 +343,14 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                         onChange={e => setDraft(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
                         placeholder={t('courseChat.placeholder')}
-                        className="flex-1 bg-white border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
+                        className="flex-1 min-w-0 bg-white border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
                     />
                     <button
                         onClick={handleSend}
                         disabled={sending || (!draft.trim() && !pendingAttachment)}
-                        className="bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition"
+                        className="bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition shrink-0"
                     >
-                        <Send size={16} /> {t('courseChat.send')}
+                        <Send size={16} /> <span className="hidden sm:inline">{t('courseChat.send')}</span>
                     </button>
                 </div>
             </div>
@@ -378,7 +378,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
     const renderInstructorDirectChat = () => {
         if (directLoading && courseDirectChats.length === 0) {
             return (
-                <div className="h-[520px] flex items-center justify-center text-brand-navy">
+                <div className="h-[60vh] max-h-[520px] min-h-[300px] flex items-center justify-center text-brand-navy">
                     <Loader className="animate-spin" size={32} />
                 </div>
             );
@@ -386,7 +386,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
 
         if (courseDirectChats.length === 0) {
             return (
-                <div className="h-[520px] flex flex-col items-center justify-center text-center text-gray-400">
+                <div className="h-[60vh] max-h-[520px] min-h-[300px] flex flex-col items-center justify-center text-center text-gray-400">
                     <MessageCircle size={40} className="mb-3 text-brand-gold/60" />
                     <p className="font-bold">{t('courseChat.no_students')}</p>
                     <p className="text-sm mt-1">{t('courseChat.no_students_hint')}</p>
@@ -395,7 +395,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
         }
 
         return (
-            <div className="flex border border-brand-mist rounded-2xl overflow-hidden h-[520px] bg-white">
+            <div className="flex border border-brand-mist rounded-2xl overflow-hidden h-[60vh] max-h-[520px] min-h-[300px] bg-white">
                 {/* Left sidebar — student list */}
                 <div className={`w-full md:w-80 lg:w-96 border-r border-brand-mist flex flex-col shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
                     <div className="px-4 py-3 border-b border-brand-mist bg-gray-50/80">
@@ -517,7 +517,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                         onClick={() => fileRef.current?.click()}
                                         disabled={uploading}
                                         title={t('courseChat.attach')}
-                                        className="bg-white border border-brand-mist hover:border-brand-gold text-brand-navy p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40"
+                                        className="bg-white border border-brand-mist hover:border-brand-gold text-brand-navy p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40 shrink-0"
                                     >
                                         {uploading ? <Loader size={16} className="animate-spin" /> : <Paperclip size={16} />}
                                     </button>
@@ -526,12 +526,12 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                         onChange={e => setDraft(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
                                         placeholder={t('courseChat.placeholder')}
-                                        className="flex-1 bg-gray-50 border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
+                                        className="flex-1 min-w-0 bg-gray-50 border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
                                     />
                                     <button
                                         onClick={handleSend}
                                         disabled={sending || (!draft.trim() && !pendingAttachment)}
-                                        className="bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition"
+                                        className="bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition shrink-0"
                                     >
                                         <Send size={16} />
                                     </button>

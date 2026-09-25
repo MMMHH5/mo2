@@ -7,12 +7,15 @@ import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
     const { t } = useI18n();
+    const { locale } = useI18n();
     const { user } = useAuth();
     const { dark: ctxDark } = useTheme();
     const isDark = dark ?? ctxDark;
+    const isAr = locale === 'ar';
     const [open, setOpen] = useState(false);
 
     const tone = isDark ? 'text-white hover:text-brand-gold' : 'text-brand-navy hover:text-brand-charcoal';
@@ -54,6 +57,24 @@ export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
                             <Link href="/courses" onClick={() => setOpen(false)} className={linkCls}>
                                 {t('landing.explore_courses')}
                             </Link>
+                            <Link href="/about" onClick={() => setOpen(false)} className={linkCls}>
+                                {isAr ? 'من نحن' : 'About Us'}
+                            </Link>
+                            <Link href="/instructors" onClick={() => setOpen(false)} className={linkCls}>
+                                {isAr ? 'المدرّبون' : 'Instructors'}
+                            </Link>
+                            <Link href="/blog" onClick={() => setOpen(false)} className={linkCls}>
+                                {isAr ? 'المدونة' : 'Blog'}
+                            </Link>
+                            <Link href="/verify-certificate" onClick={() => setOpen(false)} className={linkCls}>
+                                {isAr ? 'التحقق من الشهادة' : 'Verify Certificate'}
+                            </Link>
+                            <Link href="/faq" onClick={() => setOpen(false)} className={linkCls}>
+                                {isAr ? 'الأسئلة الشائعة' : 'FAQ'}
+                            </Link>
+                            <Link href="/contact" onClick={() => setOpen(false)} className={linkCls}>
+                                {isAr ? 'تواصل معنا' : 'Contact'}
+                            </Link>
                             <Link href="/join-as-instructor" onClick={() => setOpen(false)} className={linkCls}>
                                 {t('landing.join_as_instructor')}
                             </Link>
@@ -73,8 +94,9 @@ export default function PublicMobileMenu({ dark }: { dark?: boolean }) {
                             )}
                         </nav>
 
-                        <div className={`p-4 border-t ${dividerCls}`}>
+                        <div className={`p-4 border-t ${dividerCls} space-y-3`}>
                             <LanguageSwitcher dark={dark} />
+                            <ThemeToggle />
                         </div>
                     </div>
                 </div>

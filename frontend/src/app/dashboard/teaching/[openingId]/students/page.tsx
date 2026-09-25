@@ -135,7 +135,7 @@ export default function OpeningStudentsPage() {
                     <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl">{error}</div>
                 )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
                         { icon: Users, label: isAr ? 'إجمالي الطلاب' : 'Total Students', value: (roster?.enrollments || []).length, color: 'text-brand-navy-light', bg: 'bg-brand-navy-light/10' },
                         { icon: UserCheck, label: isAr ? 'مقبولون' : 'Approved', value: approvedCount, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },

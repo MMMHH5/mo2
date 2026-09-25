@@ -165,12 +165,12 @@ export default function VerifyCertificateForm() {
                             {/* Certificate details */}
                             {result.valid && cert && (
                                 <div className="p-6 space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className={`rounded-xl p-4 border ${dark ? 'bg-brand-navy-dark border-white/5' : 'bg-gray-50 border-gray-100'}`}>
                                             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                                                 {isAr ? 'الحاصل على الشهادة' : 'Recipient'}
                                             </p>
-                                            <p className={`font-bold text-sm capitalize ${dark ? 'text-white' : 'text-brand-navy'}`}>
+                                            <p className={`font-bold text-sm capitalize break-words ${dark ? 'text-white' : 'text-brand-navy'}`}>
                                                 {cert.student?.email?.split('@')[0] || '—'}
                                             </p>
                                         </div>

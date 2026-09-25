@@ -102,7 +102,7 @@ export default function AnnouncementBanner({
         {item.mediaType === "video" && item.mediaUrl && (
           <>
             <img key={"v-" + sk} src={API_BASE_URL + item.mediaUrl} alt={text} className="absolute inset-0 w-full h-full object-contain" />
-            <button onClick={() => setVideoModal(getVideoEmbedUrl(item.mediaUrl!))} className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <button onClick={() => setVideoModal(getVideoEmbedUrl(item.mediaUrl!))} className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity duration-300">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/90 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
                 <Play size={36} className="text-[#1a2742] ml-1.5" />
               </div>
@@ -166,8 +166,8 @@ export default function AnnouncementBanner({
 
         {items.length > 1 && (
           <>
-            <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center transition opacity-0 group-hover:opacity-100 z-20"><ChevronLeft size={18} /></button>
-            <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center transition opacity-0 group-hover:opacity-100 z-20"><ChevronRight size={18} /></button>
+            <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center transition opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 z-20"><ChevronLeft size={18} /></button>
+            <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center transition opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 z-20"><ChevronRight size={18} /></button>
           </>
         )}
 

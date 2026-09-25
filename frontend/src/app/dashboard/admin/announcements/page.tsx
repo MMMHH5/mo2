@@ -310,7 +310,7 @@ export default function AdminAnnouncementsPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 mb-1.5">{t('adminAnnouncements.media_type')}</label>
                                     <select value={form.mediaType} onChange={e => setForm(f => ({ ...f, mediaType: e.target.value }))} className="w-full px-4 py-3 bg-brand-navy-dark border border-white/10 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none text-white">

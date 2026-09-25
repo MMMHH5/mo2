@@ -291,7 +291,7 @@ export default function InboxPage() {
                 {/* New message modal */}
                 {newOpen && (
                     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setNewOpen(false)}>
-                        <div className="bg-brand-navy-dark rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up border border-white/10" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-brand-navy-dark rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up border border-white/10 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-xl font-black text-white">{t('inbox.send_to')}</h3>
                                 <button onClick={() => setNewOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>

@@ -66,7 +66,7 @@ export default function NotificationsPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN']}>
-            <div className="bg-white dark:bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 min-h-[80vh]">
+            <div className="bg-white dark:bg-brand-navy-dark p-4 sm:p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 min-h-[80vh]">
                 <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
                     <div>
                         <h2 className="text-3xl font-black text-brand-navy dark:text-white flex items-center gap-3">

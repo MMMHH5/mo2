@@ -187,7 +187,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                     <p className="text-gray-400 font-bold text-sm">{error}</p>
                 </div>
             ) : (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-4 sm:p-5">
+                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-2 sm:p-5">
                     {/* Month nav */}
                     <div className="flex items-center justify-between mb-4">
                         <button
@@ -229,7 +229,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                 <button
                                     key={key}
                                     onClick={() => setSelectedDate(isSelected ? null : key)}
-                                    className={`relative h-16 sm:h-20 rounded-xl border p-1.5 text-start transition-all ${
+                                    className={`relative h-12 sm:h-20 rounded-xl border p-1.5 text-start transition-all ${
                                         isSelected
                                             ? 'border-brand-gold/50 bg-brand-gold/10'
                                             : isToday
@@ -273,7 +273,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                                 <div className="min-w-0">
                                                     <p className="text-white text-sm font-bold">{pick(ev, 'title')}</p>
                                                     {pick(ev, 'description') && (
-                                                        <p className="text-gray-400 text-xs mt-1 leading-relaxed whitespace-pre-wrap">{pick(ev, 'description')}</p>
+                                                        <p className="text-gray-400 text-xs mt-1 leading-relaxed whitespace-pre-wrap break-words">{pick(ev, 'description')}</p>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 shrink-0">

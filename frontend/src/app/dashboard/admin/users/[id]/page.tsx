@@ -180,7 +180,7 @@ export default function AdminUserDetailPage() {
                     {badges.length > 0 && (
                         <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-6 animate-fade-in-up">
                             <h3 className="font-black text-brand-navy dark:text-white mb-4">{t('gamification.badges')}</h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                 {badges.map(b => (
                                     <div
                                         key={b.id}

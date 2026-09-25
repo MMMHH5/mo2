@@ -191,7 +191,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                     <p className="text-gray-300 text-sm line-clamp-2 mb-3">
                                         {isAr ? a.contentAr : a.contentEn}
                                     </p>
-                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                    <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                                         <span className="flex items-center gap-1">
                                             <Calendar size={12} />
                                             {new Date(a.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
@@ -199,9 +199,9 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
                                             })}
                                         </span>
                                         {a.author && (
-                                            <span className="flex items-center gap-1">
+                                            <span className="flex min-w-0 items-center gap-1">
                                                 <User size={12} />
-                                                {a.author.email}
+                                                <span className="min-w-0 truncate">{a.author.email}</span>
                                             </span>
                                         )}
                                     </div>

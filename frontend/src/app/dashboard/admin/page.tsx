@@ -51,7 +51,7 @@ export default function AdminOverviewPage() {
     return (
         <div className="space-y-8 animate-fade-in">
             {/* Hero banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-navy via-[#0e2a52] to-brand-navy-dark p-7 lg:p-9">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-navy via-[#0e2a52] to-brand-navy-dark p-4 sm:p-6 lg:p-8">
                 <div className="absolute -top-20 -right-16 w-72 h-72 bg-brand-gold/15 rounded-full blur-3xl" />
                 <div className="absolute -bottom-24 -left-10 w-64 h-64 bg-brand-gold/10 rounded-full blur-3xl" />
                 <div className="relative flex flex-wrap items-center justify-between gap-6">
@@ -69,7 +69,7 @@ export default function AdminOverviewPage() {
                             <p className="text-gray-400 text-sm mt-1.5 max-w-xl">{t('admin.overview_subtitle')}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <div className="bg-white/10 backdrop-blur px-5 py-3 rounded-xl">
                             <div className="text-2xl font-black text-brand-gold-light">{s?.users.total ?? 0}</div>
                             <div className="text-[10px] font-black uppercase tracking-wider text-gray-400">{t('admin.stat_total_users')}</div>

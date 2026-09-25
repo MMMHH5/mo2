@@ -490,7 +490,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                                 <input type="file" multiple className="hidden" ref={galleryRef} onChange={handleGalleryFiles} accept=".jpg,.jpeg,.png,.webp,.gif" />
                             </div>
                             {gallery.length > 0 && (
-                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                                     {gallery.map((url, idx) => (
                                         <div key={idx} className="relative group">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}

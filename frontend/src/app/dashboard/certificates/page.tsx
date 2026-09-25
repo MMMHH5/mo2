@@ -40,7 +40,7 @@ export default function CertificatesPage() {
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
-            <div className="bg-white dark:bg-brand-navy-dark p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 min-h-[80vh]">
+            <div className="bg-white dark:bg-brand-navy-dark p-4 sm:p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 min-h-[80vh]">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-brand-navy dark:text-white flex items-center gap-3">
                         <Award size={32} className="text-brand-gold-dark dark:text-brand-gold-light" /> {t('certificates.heading')}

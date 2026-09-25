@@ -149,9 +149,9 @@ export default function PaymentsPage() {
                             {announcedCourses.filter(c => !enrolledCourseIds.has(c.id)).map(course => {
                                 const opening = course.openings!.find(o => o.status === 'ANNOUNCEMENT')!;
                                 return (
-                                    <div key={course.id} className="border border-white/5 rounded-2xl p-5 bg-brand-navy flex items-center justify-between gap-4">
-                                        <div>
-                                            <h4 className="font-bold text-white">{pick(course, 'title')}</h4>
+                                    <div key={course.id} className="border border-white/5 rounded-2xl p-5 bg-brand-navy flex flex-wrap items-center justify-between gap-4">
+                                         <div className="min-w-0">
+                                             <h4 className="font-bold text-white line-clamp-2">{pick(course, 'title')}</h4>
                                             <p className="text-sm text-gray-400 mt-1">
                                                 {pick(opening, 'name')} · <strong className="text-green-400">${opening.price}</strong>
                                             </p>

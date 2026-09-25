@@ -10,6 +10,19 @@ import { useTheme } from '@/lib/theme-context';
 import { buildNavLinks } from '@/lib/nav-links';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import { CalendarClock, Users as UsersIcon, Newspaper, CreditCard, Settings, LifeBuoy, CalendarPlus, MessageCircle, Megaphone } from 'lucide-react';
+
+const ADMIN_EXTRA_LINKS = [
+    { href: '/dashboard/admin/openings', icon: CalendarClock },
+    { href: '/dashboard/admin/users', icon: UsersIcon },
+    { href: '/dashboard/admin/blog', icon: Newspaper },
+    { href: '/dashboard/admin/gateways', icon: CreditCard },
+    { href: '/dashboard/admin/system', icon: Settings },
+    { href: '/dashboard/admin/tickets', icon: LifeBuoy },
+    { href: '/dashboard/admin/requests', icon: CalendarPlus },
+    { href: '/dashboard/admin/chats', icon: MessageCircle },
+    { href: '/dashboard/admin/announcements', icon: Megaphone },
+] as const;
 
 export default function MobileSidebar() {
     const { user, logout } = useAuth();
@@ -21,6 +34,9 @@ export default function MobileSidebar() {
     if (!user) return null;
 
     const links = buildNavLinks(t).filter(link => link.roles.includes(user.role));
+    const adminLinks = pathname.startsWith('/dashboard/admin')
+        ? ADMIN_EXTRA_LINKS.map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) }))
+        : [];
 
     return (
         <>
@@ -52,6 +68,21 @@ export default function MobileSidebar() {
                         <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
                             {links.map((link) => {
                                 const isActive = (pathname.startsWith(link.href) && link.href !== '/dashboard') || pathname === link.href;
+                                const Icon = link.icon;
+                                return (
+                                    <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
+                                        <div className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors ${isActive
+                                                ? dark ? 'bg-brand-gold/20 text-brand-gold' : 'bg-brand-gold/10 text-brand-gold-dark'
+                                                : dark ? 'text-brand-mist/70 hover:bg-white/10 hover:text-white' : 'text-brand-charcoal/70 hover:bg-brand-mist/60 hover:text-brand-navy'
+                                            }`}>
+                                            <Icon size={19} />
+                                            <span>{link.name}</span>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                            {adminLinks.map((link) => {
+                                const isActive = pathname.startsWith(link.href);
                                 const Icon = link.icon;
                                 return (
                                     <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>

@@ -44,7 +44,7 @@ export default function Home() {
         <AnnouncementBanner variant="public" />
       </div>
 
-      <div className="flex flex-col items-center justify-center min-h-[70vh] relative animate-fade-in-up">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] relative animate-fade-in-up overflow-hidden">
         {/* Decorative background blobs */}
         <div className={`absolute top-10 left-10 w-72 h-72 rounded-full blur-[80px] -z-10 animate-float ${dark ? 'bg-brand-gold/10' : 'bg-brand-gold/10'}`} style={{ animationDuration: '6s' }}></div>
         <div className={`absolute bottom-10 right-10 w-96 h-96 rounded-full blur-[100px] -z-10 animate-float ${dark ? 'bg-brand-navy-light/15' : 'bg-brand-navy-light/5'}`} style={{ animationDuration: '8s', animationDelay: '2s' }}></div>
@@ -123,13 +123,13 @@ export default function Home() {
         {/* Stats Section */}
         {stats && (
           <section className="relative">
-            <div className="bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] rounded-3xl p-10 md:p-14 shadow-2xl shadow-black/40 overflow-hidden relative border border-white/10">
+            <div className="bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] rounded-3xl p-6 md:p-10 md:p-14 shadow-2xl shadow-black/40 overflow-hidden relative border border-white/10">
               <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/10 rounded-full blur-[80px]"></div>
               <div className="absolute bottom-0 left-0 w-72 h-72 bg-brand-navy-light/20 rounded-full blur-[100px]"></div>
 
               <div className="relative z-10">
                 <h3 className="text-center text-white font-black text-3xl md:text-4xl mb-12">{t('landing.stats_heading')}</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
                   {[
                     { icon: BookOpen, value: stats.courses, labelKey: 'landing.stats_courses' },
                     { icon: GraduationCap, value: stats.instructors, labelKey: 'landing.stats_instructors' },
@@ -140,7 +140,7 @@ export default function Home() {
                       <div className="w-16 h-16 rounded-2xl bg-white/10 text-brand-gold flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-gold group-hover:text-brand-navy transition-all duration-500 shadow-inner block">
                         <stat.icon size={28} />
                       </div>
-                      <p className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight drop-shadow-md">{formatNumber(stat.value, locale)}</p>
+                      <p className="text-3xl md:text-4xl md:text-5xl font-black text-white mb-2 tracking-tight drop-shadow-md">{formatNumber(stat.value, locale)}</p>
                       <p className="text-sm font-bold text-gray-300 tracking-wide uppercase">{t(stat.labelKey)}</p>
                     </div>
                   ))}

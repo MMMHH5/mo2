@@ -421,7 +421,7 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
 
             {modalOpen && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
-                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up max-h-[90vh] overflow-y-auto overscroll-contain" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-white">
                                 {editing ? t('tasks.edit_task') : t('tasks.add_task')}
@@ -484,7 +484,7 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                     <Plus size={15} /> {t('tasks.add_link')}
                                 </button>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-300 mb-1">{t('tasks.task_due_date')}</label>
                                     <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} className={inputCls} />

@@ -286,7 +286,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                                                     </button>
                                                                 )}
                                                             </div>
-                                                            <p className="text-gray-300 text-sm mt-2 whitespace-pre-wrap">{pick(reply, 'body')}</p>
+                                                            <p className="text-gray-300 text-sm mt-2 whitespace-pre-wrap break-words">{pick(reply, 'body')}</p>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -298,7 +298,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                                                     onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))}
                                                     rows={2}
                                                     placeholder={isAr ? 'اكتب رداً...' : 'Write a reply...'}
-                                                    className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
+                                                    className="flex-1 min-w-0 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                                 />
                                                 <button
                                                     onClick={() => sendReply(post.id)}

@@ -605,8 +605,8 @@ export default function CoursePlayer({ courseId }: Props) {
                                     <div className="flex flex-wrap gap-2">
                                         {(selected.files || []).map((f, fi) => (
                                             <a key={fi} href={f.url.startsWith('/') ? API_BASE_URL + f.url : f.url} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200">
-                                                <Download size={14} /> {pick(f, 'name') || f.url.split('/').pop() || f.url}
+                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                                <Download size={14} className="shrink-0" /> <span className="break-all min-w-0">{pick(f, 'name') || f.url.split('/').pop() || f.url}</span>
                                             </a>
                                         ))}
                                     </div>
@@ -620,8 +620,8 @@ export default function CoursePlayer({ courseId }: Props) {
                                     <div className="flex flex-wrap gap-2">
                                         {(selected.links || []).map((lk, li) => (
                                             <a key={li} href={lk.url} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200">
-                                                <Link2 size={14} /> {pick(lk, 'label') || lk.url}
+                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                                <Link2 size={14} className="shrink-0" /> <span className="break-all min-w-0">{pick(lk, 'label') || lk.url}</span>
                                             </a>
                                         ))}
                                     </div>
@@ -707,8 +707,8 @@ export default function CoursePlayer({ courseId }: Props) {
                     <h1 className="text-white font-black text-lg truncate">
                         {pick(course, 'title')}
                     </h1>
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 max-w-[220px] md:max-w-xs h-3 rounded-full overflow-hidden bg-white/10">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex-1 max-w-[120px] sm:max-w-[220px] md:max-w-xs h-3 rounded-full overflow-hidden bg-white/10">
                             <div
                                 className={`h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(245,158,11,0.3)] ${pct === 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-brand-gold-light via-emerald-400 to-emerald-500'}`}
                                 style={{ width: `${pct}%` }}
@@ -754,15 +754,15 @@ export default function CoursePlayer({ courseId }: Props) {
                                                         <h4 className="text-white font-bold text-sm">{pick(a, 'title')}</h4>
                                                     </div>
                                                     <p className="text-gray-300 text-xs leading-relaxed line-clamp-3 mb-2">{pick(a, 'content')}</p>
-                                                    <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                                                    <div className="flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
                                                         <span className="flex items-center gap-1">
                                                             <Calendar size={10} />
                                                             {new Date(a.createdAt).toLocaleDateString()}
                                                         </span>
                                                         {a.author && (
-                                                            <span className="flex items-center gap-1">
-                                                                <User size={10} />
-                                                                {a.author.email}
+                                                            <span className="flex items-center gap-1 min-w-0">
+                                                                <User size={10} className="shrink-0" />
+                                                                <span className="truncate">{a.author.email}</span>
                                                             </span>
                                                         )}
                                                     </div>
@@ -985,7 +985,7 @@ function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete,
                         className="w-full h-1.5 accent-brand-gold-light cursor-pointer"
                     />
                 </div>
-                <div className="flex items-center justify-between gap-2 text-white">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-white">
                     <div className="flex items-center gap-2">
                         <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-all duration-200 cursor-pointer" title={playing ? t('player.pause') : t('player.play')}>
                             {playing ? <Pause size={16} /> : <Play size={16} className="translate-x-[1px]" />}
@@ -1003,14 +1003,14 @@ function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete,
                         <button onClick={toggleMute} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-all duration-200 cursor-pointer">
                             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                         </button>
-                        <span className="text-[11px] font-bold text-white/80" dir="ltr">
+                        <span className="text-[11px] font-bold text-white/80 hidden sm:inline" dir="ltr">
                             {fmtTime(current)} / {fmtTime(duration)}
                         </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <button onClick={onToggleComplete} disabled={progressing} className="flex items-center gap-1.5 text-[11px] font-bold rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer disabled:opacity-40 bg-white/15 hover:bg-white/30">
                             {completed ? <CheckCircle size={13} className="text-emerald-400" /> : <CheckCircle size={13} />}
-                            {completed ? t('player.completed') : t('player.mark_complete')}
+                            <span className="hidden sm:inline">{completed ? t('player.completed') : t('player.mark_complete')}</span>
                         </button>
                         <button onClick={fullscreen} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-all duration-200 cursor-pointer" title={t('player.fullscreen')}>
                             <Maximize size={16} />
@@ -1048,7 +1048,7 @@ function PdfViewer({ url, m }: { url: string; m: CourseModule }) {
                 </a>
                 <span className="text-[11px] font-bold text-gray-500 truncate max-w-[200px]">{pick(m, 'title')}</span>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-white/10 bg-black h-[600px] overflow-auto">
+            <div className="rounded-2xl border border-white/10 bg-black h-[60vh] max-h-[600px] min-h-[300px] overflow-auto">
                 <object data={src} type="application/pdf" className="w-full h-full" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
                     <iframe src={src} className="w-full h-full" title="PDF" />
                 </object>
@@ -1095,17 +1095,17 @@ function TaskStage({ tasks, taskDraft, setTaskDraft, taskFile, setTaskFile, subm
                             </div>
                         </div>
                         <div className="p-5 space-y-4">
-                            {pick(task, 'description') && <p className="text-sm text-gray-300 whitespace-pre-wrap font-medium">{pick(task, 'description')}</p>}
+                            {pick(task, 'description') && <p className="text-sm text-gray-300 whitespace-pre-wrap break-words font-medium">{pick(task, 'description')}</p>}
                             {(task.attachmentUrl || (task.links || []).length > 0) && (
                                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
                                     {task.attachmentUrl && (
-                                        <a href={task.attachmentUrl.startsWith('/') ? API_BASE_URL + task.attachmentUrl : task.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-gray-300 hover:text-brand-gold-light transition-all duration-200">
-                                            <Download size={14} /> {t('tasks.attachment')}
+                                        <a href={task.attachmentUrl.startsWith('/') ? API_BASE_URL + task.attachmentUrl : task.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-gray-300 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                            <Download size={14} className="shrink-0" /> <span className="truncate">{t('tasks.attachment')}</span>
                                         </a>
                                     )}
                                     {(task.links || []).map((lk, i) => (
-                                        <a key={i} href={lk.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-gray-300 hover:text-brand-gold-light transition-all duration-200">
-                                            <Link2 size={14} /> {pick(lk, 'label') || lk.url}
+                                        <a key={i} href={lk.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-gray-300 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                            <Link2 size={14} className="shrink-0" /> <span className="break-all min-w-0">{pick(lk, 'label') || lk.url}</span>
                                         </a>
                                     ))}
                                 </div>

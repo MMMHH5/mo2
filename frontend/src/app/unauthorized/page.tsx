@@ -10,7 +10,7 @@ export default function UnauthorizedPage() {
     const { dark } = useTheme();
 
     return (
-        <div className={`flex h-screen w-full flex-col items-center justify-center ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
+        <div className={`flex min-h-screen w-full flex-col items-center justify-center px-4 py-10 ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
             <ShieldAlert size={80} className="text-brand-gold mb-6" />
             <h1 className={`text-4xl font-bold ${dark ? 'text-white' : 'text-brand-navy'}`}>{t('unauthorized.title')}</h1>
             <p className={`mt-3 max-w-md text-center ${dark ? 'text-gray-400' : 'text-gray-600'}`}>

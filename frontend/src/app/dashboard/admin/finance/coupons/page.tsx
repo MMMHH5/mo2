@@ -173,7 +173,7 @@ export default function AdminCouponsPage() {
             {/* Create coupon modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-brand-navy-dark border border-white/10 rounded-3xl w-full max-w-md shadow-2xl animate-scale-in">
+                    <div className="bg-brand-navy-dark border border-white/10 rounded-3xl w-full max-w-md shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-white/10 flex justify-between items-center">
                             <h3 className="text-xl font-black text-white">Create Coupon</h3>
                             <button onClick={() => setShowModal(false)} className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition cursor-pointer"><X size={20} /></button>

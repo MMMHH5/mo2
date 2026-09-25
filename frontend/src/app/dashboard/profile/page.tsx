@@ -200,7 +200,7 @@ export default function ProfilePage() {
                 ) : (
                     <>
                         {/* Header card */}
-                        <div className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] rounded-3xl p-8 lg:p-10 text-white shadow-lg shadow-brand-navy/20">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] rounded-3xl p-4 sm:p-6 lg:p-8 text-white shadow-lg shadow-brand-navy/20">
                             <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand-gold/20 rounded-full blur-3xl" />
                             <div className="absolute -bottom-20 -left-10 w-72 h-72 bg-brand-gold/10 rounded-full blur-3xl" />
                             <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)', backgroundSize: '22px 22px' }} />
@@ -495,7 +495,7 @@ export default function ProfilePage() {
         {/* Delete account confirmation */}
             {confirmDelete && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in">
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-2xl font-black text-white">{t('gdpr.delete_confirm_title')}</h2>
                             <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center" aria-label="Close">

@@ -389,8 +389,8 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                 <span className="text-sm text-gray-300 font-bold">{isAr ? 'منشور (مرئي للطلاب)' : 'Published (visible to students)'}</span>
                             </label>
                         </div>
-                        <div className="flex items-center justify-between gap-3 p-6 border-t border-white/5">
-                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-600">
+                        <div className="flex flex-wrap items-center justify-between gap-3 p-6 border-t border-white/5">
+                            <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-gray-600">
                                 <GraduationCap size={13} />
                                 {isAr ? 'أضف الدورات من صفحة تفاصيل المسار' : 'Add courses from the path details page'}
                             </span>

@@ -128,7 +128,7 @@ export default function TeachingWorkspacePage() {
 
     return (
         <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-            <div className="min-h-screen bg-gray-50 dark:bg-brand-navy-dark animate-fade-in space-y-6 p-6 lg:p-8">
+            <div className="bg-gray-50 dark:bg-brand-navy-dark animate-fade-in space-y-6 p-4 lg:p-8">
                 <Link
                     href="/dashboard/teaching"
                     className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-white transition mb-2"

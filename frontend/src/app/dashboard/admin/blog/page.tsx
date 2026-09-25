@@ -104,7 +104,7 @@ export default function AdminBlogPage() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-wrap items-center justify-between mb-6">
                 <h1 className="text-2xl font-black text-brand-navy dark:text-white">{t('blog.manageTitle')}</h1>
                 <button onClick={startNew} className="px-4 py-2.5 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-dark hover:to-brand-gold-dark text-black font-black rounded-xl transition text-sm">
                     + {t('blog.newPost')}
@@ -142,7 +142,7 @@ export default function AdminBlogPage() {
                             <label className={labelCls}>{t('blog.contentAr')}</label>
                             <textarea className={inputCls} rows={4} required value={form.contentAr} onChange={(e) => setForm({ ...form, contentAr: e.target.value })} />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label className={labelCls}>{t('blog.slug')}</label>
                                 <input className={`${inputCls} ltr`} dir="ltr" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />

@@ -113,8 +113,61 @@ export default function CertificateBilingual({ studentName, courseName, instruct
             <div className="no-print h-14" />
 
             {/* Certificate */}
-            <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4 sm:p-8 print:bg-white print:p-0">
-                <div ref={certRef} className="w-full relative print:relative">
+            <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4 overflow-hidden print:bg-white print:p-0 print:overflow-visible">
+                {/* Mobile stacked certificate (screen only, below md) */}
+                <div className="md:hidden print:hidden w-full max-w-md mx-auto relative z-10">
+                    <div className="bg-white rounded-3xl overflow-hidden shadow-2xl" style={{ border: '8px solid #12305A' }}>
+                        <div className="absolute inset-x-0 top-0 h-1.5 bg-[#C6A15B]" />
+                        <div className="p-6 pt-8 text-center space-y-5">
+                            <div className="flex items-center justify-center gap-2">
+                                <div className="w-9 h-9 bg-[#12305A] rounded-lg flex items-center justify-center">
+                                    <span className="text-[#C6A15B] font-black text-lg">L</span>
+                                </div>
+                                <span className="text-xl font-black text-[#12305A] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    laxa<span className="text-[#C6A15B]">lab</span>
+                                </span>
+                            </div>
+                            <div className="h-px mx-8 bg-gradient-to-r from-transparent via-[#C6A15B]/60 to-transparent" />
+                            <div>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-4" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    {isAr ? 'شهادة إتمام الدورة' : 'CERTIFICATE OF COMPLETION'}
+                                </p>
+                                <p className="text-sm text-gray-500 italic">{isAr ? 'تُمنح هذه الشهادة إلى' : 'This is to certify that'}</p>
+                                <p className="text-2xl font-bold text-[#12305A] mt-1 break-words" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{studentName}</p>
+                                <p className="text-sm text-gray-500 italic mt-4">{isAr ? 'وقد أتم بنجاح دورة:' : 'has successfully completed the course:'}</p>
+                                <p className="text-lg font-bold text-[#12305A] mt-1 break-words" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{courseName}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-start">
+                                <div className="bg-[#f8f9fb] border border-[#12305A]/10 rounded-xl p-3">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                        {isAr ? 'المدرّس المعتمد' : 'Instructor'}
+                                    </p>
+                                    <p className="text-xs font-bold text-[#12305A] mt-1 break-words" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{instructorName}</p>
+                                </div>
+                                <div className="bg-[#f8f9fb] border border-[#12305A]/10 rounded-xl p-3">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                        {isAr ? 'تاريخ الإصدار' : 'Date'}
+                                    </p>
+                                    <p className="text-xs font-bold text-[#12305A] mt-1" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{formatDate(issueDate, lang)}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-center gap-4 border-t border-dashed border-[#12305A]/15 pt-5">
+                                <div className="p-1.5 bg-white border border-[#12305A]/10 rounded shadow-sm shrink-0">
+                                    <QRCodeSVG url={verificationUrl} />
+                                </div>
+                                <div className="text-start min-w-0">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                        {isAr ? 'رقم الشهادة' : 'Certificate ID'}
+                                    </p>
+                                    <p className="text-sm font-mono font-black tracking-wider text-[#12305A] break-all" dir="ltr">{verificationCode.toUpperCase()}</p>
+                                    <p className="text-[9px] text-gray-400 mt-1 break-all" dir="ltr">{verificationUrl.replace(/^https?:\/\//, '')}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div ref={certRef} className="w-full relative print:relative hidden md:block print:block">
                     <div className="print:hidden" style={{ height: `${748 * scale}px` }} />
                     <div
                         className="certificate-wrap bg-white shadow-2xl print:shadow-none print:w-full"

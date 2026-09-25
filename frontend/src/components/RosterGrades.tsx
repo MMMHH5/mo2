@@ -279,8 +279,8 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
                     <span className="text-sm font-black text-gray-400">{t('roster.assessments_title')}:</span>
                     {assessments.length === 0 && <span className="text-sm text-gray-400">{t('roster.no_assessments')}</span>}
                     {assessments.map((a) => (
-                        <span key={a.id} className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
-                            <span className="text-sm font-bold text-white">{pick(a, 'name')} <span className="text-gray-400 font-normal">({a.maxScore})</span></span>
+                        <span key={a.id} className="inline-flex max-w-[70%] items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
+                            <span className="text-sm font-bold text-white truncate">{pick(a, 'name')} <span className="text-gray-400 font-normal">({a.maxScore})</span></span>
                             <button onClick={() => openEdit(a)} className="text-gray-400 hover:text-brand-gold-light transition" title={t('common.edit')}><Pencil size={13} /></button>
                             <button onClick={() => handleDeleteAssessment(a)} className="text-gray-400 hover:text-red-500 transition" title={t('common.delete')}><Trash2 size={13} /></button>
                         </span>
@@ -395,7 +395,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
 
             {modalOpen && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModalOpen(false)}>
-                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up" onClick={(ev) => ev.stopPropagation()}>
+                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={(ev) => ev.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-white">{editing ? t('roster.edit_assessment') : t('roster.add_assessment')}</h3>
                             <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -427,7 +427,7 @@ export default function RosterGrades({ openingId }: { openingId: string }) {
 
             {enrollOpen && (
                 <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setEnrollOpen(false)}>
-                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up" onClick={(ev) => ev.stopPropagation()}>
+                    <div className="bg-brand-navy rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-md animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={(ev) => ev.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-white">{t('roster.add_student_title')}</h3>
                             <button onClick={() => setEnrollOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>

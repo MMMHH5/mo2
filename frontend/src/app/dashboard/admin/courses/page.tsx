@@ -94,7 +94,7 @@ export default function AdminCoursesPage() {
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 placeholder={t('admin.search_courses')}
-                                className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-56 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
+                                className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-full sm:w-56 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
                         <BtnPrimary href="/dashboard/courses/create" icon={BookOpen}>{t('manageCourses.create_course')}</BtnPrimary>

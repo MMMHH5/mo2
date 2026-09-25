@@ -169,7 +169,7 @@ export default function TeachingHubPage() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
                         { icon: BookOpen, label: isAr ? 'إجمالي الدورات' : 'Total Openings', value: openings?.length ?? 0, color: 'text-brand-navy-light', bg: 'bg-brand-navy-light/10' },
                         { icon: Users, label: isAr ? 'إجمالي الطلاب' : 'Total Students', value: totalStudents, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
@@ -285,7 +285,7 @@ export default function TeachingHubPage() {
                 {/* Open Request Modal */}
                 {modal?.type === 'open' && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModal(null)}>
-                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-white">{isAr ? 'طلب فتح دورة' : 'Request to Open'}</h3>
@@ -321,7 +321,7 @@ export default function TeachingHubPage() {
                 {/* Close Modal */}
                 {closeTarget && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeModalOnClose}>
-                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-white">{isAr ? 'طلب إغلاق الدورة' : 'Request to Close'}</h3>

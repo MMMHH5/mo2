@@ -1,7 +1,6 @@
 "use client";
 
 import ProtectedRoute from '@/components/ProtectedRoute';
-import MobileSidebar from '@/components/MobileSidebar';
 import { useI18n } from '@/lib/i18n-context';
 import { useAuth, type Role } from '@/lib/auth-context';
 import Link from 'next/link';
@@ -86,19 +85,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <ProtectedRoute allowedRoles={ALL_ROLES}>
             <div className="bg-white dark:bg-brand-navy-dark rounded-3xl shadow-lg shadow-brand-navy/10 dark:shadow-black/30 border border-gray-200 dark:border-white/5 min-h-[85vh] flex overflow-hidden">
-                {/* Mobile top bar */}
-                <div className="md:hidden sticky top-0 z-40 bg-white/95 dark:bg-brand-navy/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/5 px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-brand-gold/10 rounded-lg flex items-center justify-center">
-                            <span className="text-brand-gold-dark dark:text-brand-gold font-black text-sm">L</span>
-                        </div>
-                        <span className="font-black text-brand-navy dark:text-white tracking-tight">
-                            laxa<span className="text-brand-gold-dark dark:text-brand-gold">lab</span>
-                        </span>
-                    </div>
-                    <MobileSidebar />
-                </div>
-
                 {/* Dark navy sidebar */}
                 <aside className="hidden md:flex w-64 shrink-0 bg-white dark:bg-gradient-to-b dark:from-brand-navy dark:via-[#0e2a52] dark:to-[#0a1e3c] border-e border-gray-200 dark:border-white/10 flex-col">
                     <div className="p-5 border-b border-gray-200 dark:border-white/10">
@@ -145,7 +131,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="flex-1 overflow-y-auto">
                     {/* Top gradient strip */}
                     <div className="h-1 bg-gradient-to-r from-brand-gold via-brand-gold/40 to-transparent" />
-                    <div className="p-7 lg:p-8 admin-scroll">{children}</div>
+                    <div className="p-4 sm:p-6 lg:p-8 admin-scroll">{children}</div>
                 </div>
             </div>
         </ProtectedRoute>

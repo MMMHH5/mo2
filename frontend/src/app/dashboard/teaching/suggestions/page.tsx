@@ -118,7 +118,7 @@ export default function SuggestionsPage() {
                 {error && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl">{error}</div>}
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
                         { icon: ClipboardList, label: isAr ? 'إجمالي الاقتراحات' : 'Total Suggestions', value: totalSuggestions, color: 'text-brand-navy-light', bg: 'bg-brand-navy-light/10' },
                         { icon: Clock, label: isAr ? 'اقتراحات معلقة' : 'Pending Suggestions', value: pendingSuggestions, color: 'text-brand-gold-light', bg: 'bg-brand-gold/10' },
@@ -177,7 +177,7 @@ export default function SuggestionsPage() {
                 {/* Suggest Course Modal */}
                 {showModal && (
                     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up" onClick={e => e.stopPropagation()}>
+                        <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-lg animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center justify-between mb-6">
                                 <div>
                                     <h3 className="text-xl font-black text-white">{isAr ? 'اقتراح دورة جديدة' : 'Suggest New Course'}</h3>

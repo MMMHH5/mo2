@@ -87,7 +87,7 @@ export default function MarketingShell({ children, title, subtitle }: { children
             {title && (
                 <div className={dark ? 'bg-brand-navy' : 'bg-brand-navy'}>
                     <div className="max-w-5xl mx-auto px-6 py-16 text-center">
-                        <h1 className="text-4xl md:text-5xl font-black text-white mb-4">{title}</h1>
+                        <h1 className="text-4xl md:text-5xl font-black text-white mb-4 [overflow-wrap:anywhere]">{title}</h1>
                         {subtitle && <p className="text-brand-mist text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">{subtitle}</p>}
                     </div>
                 </div>

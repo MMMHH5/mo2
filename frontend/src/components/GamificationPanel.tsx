@@ -170,7 +170,7 @@ export default function GamificationPanel({ userId }: Props) {
                             {[...earnedTypes].length}/{badgeList.length}
                         </span>
                     </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                         {badgeList.map(({ type, icon: Icon, ar, en }) => {
                             const earned = earnedTypes.has(type);
                             return (

@@ -189,7 +189,7 @@ export default function AdminGatewaysPage() {
 
             {showForm && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => { setShowForm(false); setEditingId(null); }}>
-                    <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl max-w-lg w-full p-7 animate-scale-in" onClick={e => e.stopPropagation()}>
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl max-w-lg w-full p-7 animate-scale-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <h4 className="text-xl font-black text-white mb-5">{editingId ? t('admin.edit_gateway') : t('admin.new_gateway')}</h4>
                         <div className="space-y-4">
                             <input

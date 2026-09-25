@@ -48,7 +48,7 @@ export default function CertificateDetailPage() {
                 ) : (
                     <div className="bg-brand-navy-dark rounded-3xl border border-white/5 shadow-sm overflow-hidden">
                         {/* Certificate preview */}
-                        <div className="relative p-10 sm:p-14 text-center">
+                        <div className="relative p-4 sm:p-6 lg:p-8 text-center">
                             <div className="absolute inset-3 border-2 border-white/5 rounded-2xl pointer-events-none" />
                             <div className="absolute inset-5 border border-white/[0.03] rounded-xl pointer-events-none" />
 

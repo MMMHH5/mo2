@@ -174,7 +174,7 @@ export default function LearningAnalytics({ courseId }: Props) {
                     <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex items-center justify-center">
                         <ProgressRing pct={Number(c?.completionPercent ?? 0)} label={isAr ? 'مكتمل' : 'complete'} />
                     </div>
-                    <div className="sm:col-span-2 grid grid-cols-2 gap-4">
+                    <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
                             <Clock size={20} className="text-brand-navy-light mb-2" />
                             <p className="text-2xl font-black text-white tabular-nums">{fmtDuration(Number(c?.totalSeconds ?? 0), isAr)}</p>
@@ -265,7 +265,7 @@ export default function LearningAnalytics({ courseId }: Props) {
 
     return (
         <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {stats.map(({ icon: Icon, bg, color, value, label }) => (
                     <div key={label} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
                         <span className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-3 ${bg}`}>

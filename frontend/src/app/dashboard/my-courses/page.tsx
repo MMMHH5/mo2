@@ -98,12 +98,12 @@ export default function MyCoursesPage() {
                             <div key={enrollment.id} className="relative bg-brand-navy border border-white/5 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300">
                                 <div className="absolute -top-4 -right-4 w-24 h-24 bg-brand-gold/10 rounded-full blur-xl -z-10"></div>
 
-                                <div className="flex justify-between items-start mb-4">
+                                <div className="flex flex-wrap justify-between items-start mb-4">
                                     <div className="flex items-center gap-3">
                                         <div className="w-12 h-12 bg-brand-navy-dark rounded-2xl flex items-center justify-center text-brand-gold-light shadow-sm">
                                             <BookOpen size={24} />
                                         </div>
-                                        <div className="text-xs text-gray-400 font-semibold max-w-[180px] truncate">
+                                        <div className="text-xs text-gray-400 font-semibold max-w-full min-w-0 truncate">
                                             {pick(enrollment.opening, 'name') && <span className="block text-white font-bold">{pick(enrollment.opening, 'name')}</span>}
                                             {enrollment.opening?.price != null && <span className="text-green-400 font-bold">${enrollment.opening.price}</span>}
                                         </div>
@@ -158,12 +158,12 @@ export default function MyCoursesPage() {
                                             <span className="text-sm font-black text-brand-gold-light">{courseAvg(enrollment.course.id)}%</span>
                                         </div>
                                     )}
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="text-xs text-gray-500 font-semibold">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div className="text-xs text-gray-500 font-semibold min-w-0 truncate">
                                             {t('myCourses.enrolled_on')} {new Date(enrollment.createdAt).toLocaleDateString()}
                                         </div>
                                         {isCompleted(enrollment) ? (
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 <Link href="/dashboard/my-grades" className="text-sm font-bold px-4 py-2 rounded-xl border border-white/10 text-white hover:border-purple-500 hover:text-purple-400 transition whitespace-nowrap">
                                                     {t('myCourses.view_grades')}
                                                 </Link>
@@ -172,7 +172,7 @@ export default function MyCoursesPage() {
                                                 </Link>
                                             </div>
                                         ) : enrollment.status === 'APPROVED' ? (
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 <Link href="/dashboard/my-grades" className="text-sm font-bold px-4 py-2 rounded-xl border border-white/10 text-white hover:border-brand-gold hover:text-brand-gold-light transition whitespace-nowrap">
                                                     {t('myCourses.view_grades')}
                                                 </Link>
