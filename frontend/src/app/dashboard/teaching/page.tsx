@@ -4,12 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import CertificateApprovalModal from '@/components/CertificateApprovalModal';
 import { useFetchData } from '@/lib/useFetchData';
 import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import toast from 'react-hot-toast';
 import {
-    BookOpen, CalendarPlus, Lightbulb, Flag, Users, ClipboardList, X, ArrowUpRight, Loader, Clock,
+    BookOpen, CalendarPlus, Lightbulb, Flag, Users, ClipboardList, X, ArrowUpRight, Loader, Clock, Award,
 } from 'lucide-react';
 
 interface MyOpening {
@@ -90,6 +91,7 @@ export default function TeachingHubPage() {
     const { data: closeRequests, refetch: refetchClose } = useFetchData<RequestRow[]>('/instructor-requests/closures/my');
 
     const [modal, setModal] = useState<ModalState>(null);
+    const [certOpening, setCertOpening] = useState<MyOpening | null>(null);
     const [dismissCloseId, setDismissCloseId] = useState<string | null>(null);
     const [selectedCourseId, setSelectedCourseId] = useState('');
     const [reason, setReason] = useState('');
@@ -258,6 +260,15 @@ export default function TeachingHubPage() {
                                                     className="flex-1 inline-flex items-center justify-center gap-1.5 bg-brand-gold/10 text-brand-gold-light border border-brand-gold/20 text-sm font-bold py-2.5 rounded-xl hover:bg-brand-gold hover:text-black transition-all">
                                                     {isAr ? 'إدارة' : 'Manage'} <ArrowUpRight size={14} />
                                                 </Link>
+                                                {isEnded && (
+                                                    <button
+                                                        onClick={() => setCertOpening(o)}
+                                                        title={isAr ? 'إصدار الشهادات' : 'Issue certificates'}
+                                                        className="inline-flex items-center justify-center gap-1.5 text-sm font-bold px-3 py-2.5 rounded-xl transition border text-brand-gold-light border-brand-gold/20 hover:bg-brand-gold hover:text-black"
+                                                    >
+                                                        <Award size={14} /> {isAr ? 'شهادات' : 'Certs'}
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => { setReason(''); setModal({ type: 'close', opening: o }); }}
                                                     disabled={isEnded || closePending}
@@ -281,6 +292,15 @@ export default function TeachingHubPage() {
 
 
                 {/* === MODALS === */}
+
+                {certOpening && (
+                    <CertificateApprovalModal
+                        openingId={certOpening.id}
+                        openingTitle={pick(certOpening, 'name') || (isAr ? 'دورة بدون عنوان' : 'Untitled Batch')}
+                        canRevoke={false}
+                        onClose={() => setCertOpening(null)}
+                    />
+                )}
 
                 {/* Open Request Modal */}
                 {modal?.type === 'open' && (
@@ -330,7 +350,7 @@ export default function TeachingHubPage() {
                                 <button onClick={closeModalOnClose} className="text-gray-400 hover:text-white"><X size={20} /></button>
                             </div>
                             <div className="flex items-center gap-2 text-sm font-bold text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4">
-                                <Flag size={16} /> {isAr ? 'الموافقة ستنهي الدورة وتُصدر الشهادات للطلاب' : 'Approval will end the course and issue certificates'}
+                                <Flag size={16} /> {isAr ? 'الموافقة ستنهي الدورة. تُصدر الشهادات يدوياً بعد المراجعة' : 'Approval will end the course. Certificates are issued manually after review'}
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-300 mb-1">{isAr ? 'السبب (اختياري)' : 'Reason (optional)'}</label>

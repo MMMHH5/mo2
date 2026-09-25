@@ -211,6 +211,10 @@ model CourseOpening {
   priceOld      Decimal? @db.Decimal(10, 2)
   currency      String   @default("SAR")
   maxStudents   Int?
+  // Number of seats currently held by enrollments that are not REJECTED/REVOKED.
+  // Incremented atomically when a seat is claimed (registration/reservation/
+  // payment confirmation) and decremented when an enrollment is rejected/revoked.
+  seatsTaken    Int      @default(0)
   isPublished   Boolean  @default(false)
   status        CourseOpeningStatus @default(DRAFT)
   // The announcement/banner window that shows the course before it is open for enrollment.
@@ -830,6 +834,15 @@ model Payment {
   @@index([studentId])
   @@index([openingId])
   @@index([status])
+}
+
+model WebhookEvent {
+  id          String   @id
+  type        String
+  paymentId   String?
+  processedAt DateTime @default(now())
+
+  @@index([paymentId])
 }
 
 model Coupon {

@@ -11,6 +11,7 @@ import { existsSync, mkdirSync, unlink } from 'fs';
 import { basename } from 'path';
 import { Response } from 'express';
 import { hasValidSignature } from '../common/file-signatures';
+import { ReviewEnrollmentDto, ReserveCourseDto, AdminEnrollDto } from './dto/enrollment.dto';
 
 // Receipts are private: stored OUTSIDE the publicly-served uploads tree
 // (uploads/private/...) and only downloadable via GET :id/receipt, which
@@ -32,16 +33,11 @@ export class EnrollmentsController {
     @Roles(Role.COURSE_MANAGER, Role.ADMIN)
     @Post('admin')
     enrollStudent(
-        @Body('courseId') courseId: string,
-        @Body('studentId') studentId: string,
-        @Body('openingId') openingId: string | undefined,
+        @Body() dto: AdminEnrollDto,
         @Request() req: any,
         @Ip() ip: string
     ) {
-        if (!courseId || !studentId) {
-            throw new BadRequestException('courseId and studentId are required.');
-        }
-        return this.enrollmentsService.enrollByAdmin(courseId, studentId, req.user.userId, openingId, ip);
+        return this.enrollmentsService.enrollByAdmin(dto.courseId, dto.studentId, req.user.userId, dto.openingId, ip);
     }
 
     @ApiOperation({ summary: 'Enroll a student into a published course opening and upload payment receipt' })
@@ -102,11 +98,11 @@ export class EnrollmentsController {
     @Roles(Role.STUDENT)
     @Post('reserve')
     reserveSeat(
-        @Body('courseId') courseId: string,
+        @Body() dto: ReserveCourseDto,
         @Request() req: any,
         @Ip() ip: string
     ) {
-        return this.enrollmentsService.reserveSeat(courseId, req.user.id || req.user.userId, ip);
+        return this.enrollmentsService.reserveSeat(dto.courseId, req.user.id || req.user.userId, ip);
     }
 
     @ApiOperation({ summary: 'Get pending enrollments for finance review' })
@@ -143,12 +139,11 @@ export class EnrollmentsController {
     @Patch(':id/review')
     review(
         @Param('id') enrollmentId: string,
-        @Body('status') status: EnrollmentStatus,
+        @Body() dto: ReviewEnrollmentDto,
         @Request() req: any,
         @Ip() ip: string,
-        @Body('notes') notes?: string,
     ) {
-        return this.enrollmentsService.review(enrollmentId, status, req.user.userId, ip, notes);
+        return this.enrollmentsService.review(enrollmentId, dto.status, req.user.userId, ip, dto.notes);
     }
 
     @ApiOperation({ summary: 'Download the payment receipt of an enrollment (owner student, FINANCE, or ADMIN)' })

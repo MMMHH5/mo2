@@ -795,6 +795,7 @@
         "course_open": "Open",
         "course_planned": "Planned",
         "course_ended": "Ended",
+        "cert_issue": "Issue certificates",
         "courses_heading": "Course Directory",
         "courses_subtitle": "Manage all platform courses from one place.",
         "database_label": "Database",

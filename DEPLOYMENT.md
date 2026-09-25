@@ -44,6 +44,49 @@ NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_CURRENCY, NEXT_PUBLIC_GA4_ID, NEXT_PUBLIC_GTM_
 
 The migrations run automatically at backend container start (`prisma migrate deploy`).
 
+### First-deploy assumption (no legacy data)
+
+The `seatsTaken` column on `CourseOpening` (introduced with the
+`20260925181018_webhook_events_and_seat_counter` migration) backfills itself
+from existing non-rejected enrollments. The assumption is that this project has
+**no legacy production data on first deploy**: a brand-new Railway Postgres is
+created and `prisma migrate deploy` runs every migration including the backfill
+against empty tables. If you ever import old data, re-run the backfill by
+counting enrollments with `status NOT IN ('REJECTED','REVOKED')` per opening.
+
+### Refund policy
+
+- A refund is **only** possible from a `PAID` payment (admin/finance only;
+  students cancel `PENDING` payments themselves).
+- `refund()` marks the payment `REFUNDED`, sets `refundedAt`, **revokes** the
+  linked enrollment (`REVOKED`), **releases the claimed seat**, and writes an
+  audit log row — all in one transaction. A refunded enrollment never holds a
+  seat and never appears as an active course member.
+- Stripe webhook over-capacity settlement **auto-refunds**: if a paid
+  PaymentIntent can't claim a seat because the opening filled up between
+  checkout and settlement, the payment is refunded automatically, the student is
+  emailed, and the opening seat counter is never touched.
+- Financial records are **never deleted**; a refund keeps the original `Payment`
+  row (status `REFUNDED`) for ledger integrity.
+
+### Certificate issuance policy
+
+- Ending a course **does not issue certificates automatically**. Instructors
+  and admins manually select which approved students receive a certificate once
+  the opening is `ENDED` (requires `course.certificateIssued = true`).
+- Staff gate: ADMIN / COURSE_MANAGER anywhere; INSTRUCTORS only for openings
+  they teach. `revoke()`/`reissue()` are admin/course-manager only.
+- Everything is audit-logged; students get an in-app + email notification.
+
+### Stripe webhook integrity
+
+- The webhook is **idempotent**: each Stripe event id is recorded in a
+  `WebhookEvent` table and duplicates short-circuit.
+- The PaymentIntent is verified (`providerRef`, exact amount, currency) before
+  any settlement; mismatches are logged and ignored (no enrollment granted).
+- Settlement (payment `PAID` + enrollment `APPROVED` + seat claim + coupon
+  usage + `WebhookEvent`) happens in a **single atomic transaction**.
+
 ---
 
 ## Target 2: Self-hosted Docker Compose

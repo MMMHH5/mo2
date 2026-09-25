@@ -6,8 +6,9 @@ import { useI18n } from '@/lib/i18n-context';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag } from 'lucide-react';
+import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag, Award } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, type Tone } from '../components';
+import CertificateApprovalModal from '@/components/CertificateApprovalModal';
 
 interface Opening {
     id: string;
@@ -43,6 +44,7 @@ export default function AdminOpeningsPage() {
     const [statusFilter, setStatusFilter] = useState<FilterKey>('ALL');
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [modal, setModal] = useState<{ opening: Opening; startAt: string; endAt: string } | null>(null);
+    const [certOpening, setCertOpening] = useState<Opening | null>(null);
 
     const allOpenings: (Opening & { course?: Course })[] = (courses || []).flatMap(c =>
         (c.openings || []).map(o => ({ ...o, course: c }))
@@ -257,6 +259,13 @@ export default function AdminOpeningsPage() {
                                             </Badge>
                                         </td>
                                         <td className="p-4 text-right whitespace-nowrap">
+                                            {o.status === 'ENDED' && (
+                                                <button onClick={() => setCertOpening(o)}
+                                                    className="admin-action-btn text-brand-gold hover:bg-brand-gold/10 tooltip"
+                                                    title={t('admin.cert_issue')}>
+                                                    <Award size={18} />
+                                                </button>
+                                            )}
                                             {lifecycleBtn(o)}
                                             <Link href={`/dashboard/courses/open/${o.courseId}?edit=${o.id}`}>
                                                 <button className="admin-action-btn text-brand-navy dark:text-brand-navy-light hover:bg-brand-navy/10 dark:hover:bg-brand-navy-light/10 tooltip" title={t('manageCourses.edit_opening_tooltip')}>
@@ -281,6 +290,15 @@ export default function AdminOpeningsPage() {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {certOpening && (
+                <CertificateApprovalModal
+                    openingId={certOpening.id}
+                    openingTitle={pick(certOpening, 'name') || certOpening.id}
+                    canRevoke
+                    onClose={() => setCertOpening(null)}
+                />
             )}
 
             {modal && (

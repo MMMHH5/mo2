@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { CheckoutDto, RefundPaymentDto, CreateCouponDto, UpdateCouponDto } from './dto/commerce.dto';
 
 const ALL_ROLES = ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'];
 
@@ -26,8 +27,8 @@ export class CommerceController {
   @ApiOperation({ summary: 'Create a checkout session for an opening' })
   @Roles('STUDENT', 'FINANCE', 'ADMIN')
   @Post('payments/checkout')
-  async checkout(@Request() req: any, @Body('openingId') openingId: string, @Body('provider') provider?: string, @Body('couponCode') couponCode?: string) {
-    return this.payments.checkout(req.user.userId, openingId, { provider, couponCode });
+  async checkout(@Request() req: any, @Body() dto: CheckoutDto) {
+    return this.payments.checkout(req.user.userId, dto.openingId, { provider: dto.provider, couponCode: dto.couponCode });
   }
 
   @ApiOperation({ summary: 'My payments (student)' })
@@ -47,8 +48,8 @@ export class CommerceController {
   @ApiOperation({ summary: 'Refund a payment (admin/finance)' })
   @Roles(Role.ADMIN, Role.FINANCE)
   @Post('payments/:id/refund')
-  refund(@Param('id') id: string, @Body('reason') reason: string | undefined, @Request() req: any) {
-    return this.payments.refund(id, req.user.userId, req.user.role, reason);
+  refund(@Param('id') id: string, @Body() dto: RefundPaymentDto, @Request() req: any) {
+    return this.payments.refund(id, req.user.userId, req.user.role, dto.reason);
   }
 
   @ApiOperation({ summary: 'Cancel a pending payment (owner student, admin, or finance)' })
@@ -111,14 +112,14 @@ export class CommerceController {
   @ApiOperation({ summary: 'Create a coupon (admin)' })
   @Roles(Role.ADMIN)
   @Post('coupons')
-  createCoupon(@Body() dto: any) {
+  createCoupon(@Body() dto: CreateCouponDto) {
     return this.coupons.create(dto);
   }
 
   @ApiOperation({ summary: 'Update a coupon (admin)' })
   @Roles(Role.ADMIN)
   @Patch('coupons/:id')
-  updateCoupon(@Param('id') id: string, @Body() dto: any) {
+  updateCoupon(@Param('id') id: string, @Body() dto: UpdateCouponDto) {
     return this.coupons.update(id, dto);
   }
 

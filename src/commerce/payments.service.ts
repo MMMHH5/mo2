@@ -6,6 +6,8 @@ import { AuditService } from '../audit/audit.service';
 import { ChatService } from '../chat/chat.service';
 import { CouponsService } from './coupons.service';
 import { Role, PaymentStatus, EnrollmentStatus } from '@prisma/client';
+import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
+import { Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { getFrontendUrl } from '../common/frontend-url';
 
@@ -40,22 +42,41 @@ export class PaymentsService {
     return opening;
   }
 
-  private async ensureEnrollment(studentId: string, openingId: string) {
-    const opening = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
-    if (!opening) throw new NotFoundException('Opening not found');
-    const existing = await this.prisma.enrollment.findUnique({
-      where: { studentId_courseId: { studentId, courseId: opening.courseId } },
+  /**
+   * Approve the enrollment for a successfully paid opening — creating it when
+   * needed — and atomically claim a seat for it. Leaves already-held seats
+   * untouched (PENDING/RESERVED/APPROVED already occupy their seat).
+   */
+  private async approveEnrollmentTx(tx: Prisma.TransactionClient, studentId: string, openingId: string, courseId: string) {
+    const existing = await tx.enrollment.findUnique({
+      where: { studentId_courseId: { studentId, courseId } },
     });
-    if (existing) {
-      return this.prisma.enrollment.update({ where: { id: existing.id }, data: { openingId, status: 'APPROVED' } });
+    // RESERVED / PENDING / APPROVED already hold a seat; REJECTED / REVOKED
+    // gave theirs back, so (re)claim before flipping to APPROVED.
+    const holdsSeat = existing
+      && (existing.status === EnrollmentStatus.PENDING
+        || existing.status === EnrollmentStatus.RESERVED
+        || existing.status === EnrollmentStatus.APPROVED);
+    if (!holdsSeat) {
+      await claimSeat(tx, openingId);
     }
-    return this.prisma.enrollment.create({
-      data: { studentId, courseId: opening.courseId, openingId, status: 'APPROVED' },
+    if (existing) {
+      return tx.enrollment.update({
+        where: { id: existing.id },
+        data: { openingId, status: EnrollmentStatus.APPROVED },
+      });
+    }
+    return tx.enrollment.create({
+      data: { studentId, courseId, openingId, status: EnrollmentStatus.APPROVED },
     });
   }
 
   async checkout(studentId: string, openingId: string, opts: { provider?: string; couponCode?: string }) {
     const opening = await this.resolveOpening(openingId);
+    // Reject closed / unpublished / expired / full openings BEFORE taking money.
+    // The authoritative atomic seat reservation happens on payment settlement.
+    assertOpeningEligible(opening, { requirePublished: true, enforceDeadline: true });
+
     const price = Number(opening.price);
 
     let amount = price;
@@ -112,15 +133,85 @@ export class PaymentsService {
       const intent = event.data.object as Stripe.PaymentIntent;
       const paymentId = intent.metadata?.paymentId;
       if (paymentId) {
-        const payment = await this.prisma.payment.findUnique({ where: { id: paymentId }, include: { student: { select: { id: true, email: true } } } });
-        if (payment && payment.status !== PaymentStatus.PAID) {
-          await this.prisma.$transaction([
-            this.prisma.payment.update({ where: { id: paymentId }, data: { status: PaymentStatus.PAID, paidAt: new Date() } }),
-            this.prisma.enrollment.deleteMany({ where: { id: payment.enrollmentId ?? '' } }),
-          ]);
-          const enrollment = await this.ensureEnrollment(payment.studentId, payment.openingId);
-          await this.prisma.payment.update({ where: { id: paymentId }, data: { enrollmentId: enrollment.id } });
-          if (payment.couponCode) await this.coupons.incrementUsage(payment.couponCode);
+        const payment = await this.prisma.payment.findUnique({ where: { id: paymentId }, include: { student: { select: { id: true, email: true } }, opening: true } });
+        if (payment) {
+          // Idempotency: a duplicate delivery of the same Stripe event must not
+          // re-run the settlement (the DB unique PK is the backstop; this fast
+          // path short-circuits the retries Stripe sends for 5xx responses).
+          const alreadyProcessed = await this.prisma.webhookEvent.findUnique({ where: { id: event.id } });
+          if (alreadyProcessed) {
+            return { received: true, idempotent: true };
+          }
+          // Identity check: the settled PaymentIntent must be the one WE created
+          // for this payment (providerRef), with a matching charge amount and
+          // currency. A mismatch means we should NOT honour the enrollment.
+          if (payment.provider && payment.providerRef && payment.providerRef !== intent.id) {
+            console.error(`[Stripe Webhook] PaymentIntent mismatch: payment ${paymentId} has providerRef ${payment.providerRef} but event carries ${intent.id}. Refusing to process.`);
+            return { received: true, ignored: 'providerRef_mismatch' };
+          }
+          const expectedCents = Math.round(Number(payment.amount) * 100);
+          if (intent.amount !== expectedCents || intent.currency.toLowerCase() !== payment.currency.toLowerCase()) {
+            console.error(`[Stripe Webhook] Amount/currency mismatch: payment ${paymentId} expects ${expectedCents}/${payment.currency} but event carries ${intent.amount}/${intent.currency}. Refusing to process.`);
+            return { received: true, ignored: 'amount_currency_mismatch' };
+          }
+
+          try {
+            // One atomic transaction: idempotency record + seat claim + payment
+            // PAID + enrollment APPROVED + coupon usage. If ANY step fails the
+            // whole thing rolls back, so a retried event replays cleanly and a
+            // payment can never end up "paid" without an enrollment.
+            await this.prisma.$transaction(async (tx) => {
+              await tx.webhookEvent.create({
+                data: { id: event.id, type: event.type, paymentId },
+              });
+              // Enrollment re-approval may (re)claim a seat; this can throw
+              // CapacityConflictException when the opening is full.
+              const enrollment = await this.approveEnrollmentTx(tx, payment.studentId, payment.openingId, payment.opening.courseId);
+              await tx.payment.update({
+                where: { id: paymentId },
+                data: { status: PaymentStatus.PAID, paidAt: new Date(), enrollmentId: enrollment.id },
+              });
+              if (payment.couponCode) {
+                await tx.coupon.update({
+                  where: { code: payment.couponCode },
+                  data: { usedCount: { increment: 1 } },
+                });
+              }
+            });
+          } catch (err) {
+            // The seat claim inside the transaction rolled everything back;
+            // the student paid but there is no seat. Auto-refund + notify so we
+            // never hold money without an enrollment.
+            if (err instanceof CapacityConflictException) {
+              console.error(`[Stripe Webhook] Auto-refunding ${paymentId}: opening ${payment.openingId} is at capacity.`);
+              if (payment.providerRef) {
+                try {
+                  await this.stripe.refunds.create({ payment_intent: payment.providerRef });
+                } catch (refundErr) {
+                  console.error('[Stripe Webhook] Auto-refund failed:', (refundErr as Error).message);
+                }
+              }
+              await this.prisma.$transaction(async (tx) => {
+                await tx.webhookEvent.create({ data: { id: event.id, type: event.type, paymentId } }).catch(() => {});
+                await tx.payment.update({
+                  where: { id: paymentId },
+                  data: { status: PaymentStatus.REFUNDED, refundedAt: new Date() },
+                });
+              });
+              await this.notifications.notify({
+                userId: payment.studentId,
+                type: 'payment.refunded',
+                titleAr: 'تم استرداد المبلغ تلقائياً',
+                titleEn: 'Payment automatically refunded',
+                bodyAr: 'وصلت دفعتك بعد امتلاء مقاعد هذه الدورة، لذا تم استرداد المبلغ تلقائياً.',
+                bodyEn: 'Your payment arrived after this course filled up, so it was automatically refunded.',
+                data: { paymentId, openingId: payment.openingId },
+                email: { to: payment.student.email },
+              }).catch(() => {});
+              return { received: true, action: 'auto_refunded_capacity' };
+            }
+            throw err;
+          }
           await this.notifications.notify({
             userId: payment.studentId,
             type: 'payment.confirmed',
@@ -133,6 +224,10 @@ export class PaymentsService {
               to: payment.student.email,
             },
           }).catch(() => {});
+        } else {
+          // Payment record unknown to us (deleted / test data): record the event
+          // as processed so Stripe doesn't keep retrying it.
+          await this.prisma.webhookEvent.create({ data: { id: event.id, type: event.type, paymentId } }).catch(() => {});
         }
       }
     }
@@ -181,6 +276,9 @@ export class PaymentsService {
           where: { id: payment.enrollmentId },
           data: { status: EnrollmentStatus.REVOKED },
         });
+        // The student gives up their seat when the money is returned, so the
+        // opening can be re-filled (atomic counter keeps parity with capacity).
+        await releaseSeat(tx, payment.openingId);
       }
       return p;
     });

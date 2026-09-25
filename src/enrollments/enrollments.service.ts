@@ -5,6 +5,7 @@ import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ChatService } from '../chat/chat.service';
 import { resolvePrivateUpload } from '../common/private-uploads';
+import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
 
 @Injectable()
 export class EnrollmentsService {
@@ -40,35 +41,51 @@ export class EnrollmentsService {
         if (!student) throw new NotFoundException('Student not found');
 
         const opening = await this.resolveOpening(courseId, openingId);
+        if (!opening) throw new BadRequestException('No open opening available for this course');
 
-        const existing = await this.prisma.enrollment.findUnique({
-            where: { studentId_courseId: { studentId, courseId } }
-        });
+        // Admin path shares the same eligibility rules: published opening, OPEN
+        // status, enrollment deadline and — critically — the atomic seat claim
+        // so staff can't oversubscribe the last seat either.
+        assertOpeningEligible(opening, { requirePublished: true, enforceDeadline: true });
 
-        let enrollment;
-        if (existing) {
-            if (existing.status === EnrollmentStatus.APPROVED) {
-                throw new ConflictException('Student is already enrolled in this course');
-            }
-            enrollment = await this.prisma.enrollment.update({
-                where: { id: existing.id },
-                data: {
-                    status: EnrollmentStatus.APPROVED,
-                    openingId: opening?.id ?? existing.openingId,
-                    financeOfficerNotes: 'Assigned by staff',
-                },
+        const enrollment = await this.prisma.$transaction(async (tx) => {
+            const existing = await tx.enrollment.findUnique({
+                where: { studentId_courseId: { studentId, courseId } }
             });
-        } else {
-            enrollment = await this.prisma.enrollment.create({
+
+            // A student who already holds a seat (PENDING/RESERVED/APPROVED)
+            // keeps it — the upgrade must NOT claim a second seat.
+            const holdsSeat = existing
+                && (existing.status === EnrollmentStatus.PENDING
+                    || existing.status === EnrollmentStatus.RESERVED
+                    || existing.status === EnrollmentStatus.APPROVED);
+            if (!holdsSeat) {
+                await claimSeat(tx, opening.id);
+            }
+
+            if (existing) {
+                if (existing.status === EnrollmentStatus.APPROVED) {
+                    throw new ConflictException('Student is already enrolled in this course');
+                }
+                return tx.enrollment.update({
+                    where: { id: existing.id },
+                    data: {
+                        status: EnrollmentStatus.APPROVED,
+                        openingId: opening.id,
+                        financeOfficerNotes: 'Assigned by staff',
+                    },
+                });
+            }
+            return tx.enrollment.create({
                 data: {
                     courseId,
                     studentId,
-                    openingId: opening?.id,
+                    openingId: opening.id,
                     status: EnrollmentStatus.APPROVED,
                     financeOfficerNotes: 'Assigned by staff',
                 },
             });
-        }
+        });
 
         await this.audit.logAction(`ADMIN/CM ${adminId} enrolled student ${studentId} in Course ${courseId} (APPROVED)`, ipAddress, adminId);
         const courseTitle = course.titleAr || course.titleEn;
@@ -227,9 +244,7 @@ export class EnrollmentsService {
             include: { course: { select: { id: true, titleEn: true, titleAr: true } } },
         });
         if (!opening) throw new NotFoundException('Opening not found');
-        if (opening.status !== CourseOpeningStatus.OPEN) {
-            throw new BadRequestException('This course opening is not open for registration yet');
-        }
+        assertOpeningEligible(opening, { requirePublished: true, enforceDeadline: true });
 
         const courseId = opening.courseId;
 
@@ -248,6 +263,9 @@ export class EnrollmentsService {
                     throw new ConflictException('Already enrolled in this course');
                 }
             } else {
+                // New registration always claims an atomic seat. Existing
+                // RESERVED/PENDING records already hold theirs.
+                await claimSeat(tx, openingId);
                 existing = await tx.enrollment.create({
                     data: {
                         courseId,
@@ -313,14 +331,18 @@ export class EnrollmentsService {
         if (!opening) {
             throw new BadRequestException('This course is not open for reservation yet');
         }
+        assertOpeningEligible(opening, { requiredStatus: CourseOpeningStatus.ANNOUNCEMENT, requirePublished: true, enforceDeadline: false });
 
-        const enrollment = await this.prisma.enrollment.create({
-            data: {
-                courseId,
-                studentId,
-                openingId: opening.id,
-                status: 'RESERVED',
-            }
+        const enrollment = await this.prisma.$transaction(async (tx) => {
+            await claimSeat(tx, opening.id);
+            return tx.enrollment.create({
+                data: {
+                    courseId,
+                    studentId,
+                    openingId: opening.id,
+                    status: 'RESERVED',
+                }
+            });
         });
 
         await this.audit.logAction(`Reserved seat in Course ${courseId}`, ipAddress, studentId);
@@ -368,6 +390,11 @@ export class EnrollmentsService {
                         ? { status: PaymentStatus.PAID, paidAt: new Date(), reviewedAt: new Date() }
                         : { status: PaymentStatus.REJECTED, reviewedAt: new Date() },
                 });
+            }
+            // A rejected enrollment must give its seat back so the opening can
+            // fill it with the next applicant (atomic counter).
+            if (status === EnrollmentStatus.REJECTED && enrollment.openingId) {
+                await releaseSeat(tx, enrollment.openingId);
             }
             return u;
         });

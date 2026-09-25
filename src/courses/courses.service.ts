@@ -442,11 +442,10 @@ export class CoursesService {
             type: 'opening.ended',
             titleAr: 'انتهت الدورة',
             titleEn: 'Course ended',
-            bodyAr: `انتهت دورة: ${titleAr ?? ''}. سيتم إصدار الشهادات قريباً.`,
-            bodyEn: `The course "${titleEn ?? ''}" has ended. Certificates are being issued.`,
+            bodyAr: `انتهت دورة: ${titleAr ?? ''}. إنهاء الدورة لا يصدر الشهادات تلقائياً؛ سيتم إصدارها بعد مراجعة أداء الطلبة.`,
+            bodyEn: `The course "${titleEn ?? ''}" has ended. Certificates are not issued automatically; they are granted after the students' performance is reviewed.`,
             data: { courseId: opening.courseId, openingId },
         }).catch(() => {})));
-        await this.certificates.issueForOpening(openingId);
         return result;
     }
 
