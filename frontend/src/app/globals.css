@@ -293,3 +293,42 @@ html.dark body {
 html:not(.dark) body {
   background-color: #fafaf7;
 }
+
+html.dark body {
+  color: var(--color-brand-mist);
+}
+
+/* Dark overrides for legacy fixed-white surfaces (loaded last to win over page utilities) */
+html.dark .admin-card {
+  background-color: var(--color-brand-navy);
+  border-color: rgba(214, 182, 122, 0.16);
+}
+
+html.dark .admin-card:hover {
+  border-color: var(--color-brand-gold-light);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.45), 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .admin-table-wrap {
+  background-color: var(--color-brand-navy);
+  border-color: rgba(214, 182, 122, 0.16);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .admin-table thead th {
+  background: linear-gradient(180deg, var(--color-brand-navy-light), #0f2c55);
+  color: var(--color-brand-gold-light);
+  border-bottom-color: rgba(214, 182, 122, 0.2);
+}
+
+html.dark .admin-table tbody td {
+  border-bottom-color: rgba(214, 182, 122, 0.1);
+}
+
+html.dark .admin-table tbody tr:hover {
+  background-color: var(--color-brand-navy-light);
+}
+
+html.dark .admin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(214, 182, 122, 0.35);
+}
