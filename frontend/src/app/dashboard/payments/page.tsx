@@ -3,7 +3,7 @@
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
-import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage, downloadProtectedFile } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useRef, useState } from 'react';
 import { Wallet, CheckCircle, Clock, XCircle, UploadCloud, FileImage, X, CalendarCheck, Eye } from 'lucide-react';
@@ -57,6 +57,7 @@ export default function PaymentsPage() {
     const [openingId, setOpeningId] = useState('');
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const statusLabel = (status: string) => t('statuses.' + (status || '').toLowerCase()) || status;
@@ -81,6 +82,18 @@ export default function PaymentsPage() {
             refetch();
         } catch (err) {
             toast.error(getErrorMessage(err) || t('payments.reserve_failed'));
+        }
+    };
+
+    const handleDownloadReceipt = async (enrollmentId: string) => {
+        setDownloadingId(enrollmentId);
+        try {
+            await downloadProtectedFile(`/enrollments/${enrollmentId}/receipt`);
+            toast.success(t('payments.receipt_downloaded'));
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('payments.receipt_download_failed'));
+        } finally {
+            setDownloadingId(null);
         }
     };
 
@@ -206,14 +219,13 @@ export default function PaymentsPage() {
 
                                     <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap items-center gap-3">
                                         {enrollment.receiptFileUrl && (
-                                            <a
-                                                href={`${API_BASE_URL}${enrollment.receiptFileUrl}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 text-white hover:border-brand-gold hover:text-brand-gold-light transition flex items-center gap-2"
+                                            <button
+                                                onClick={() => handleDownloadReceipt(enrollment.id)}
+                                                disabled={downloadingId === enrollment.id}
+                                                className="text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 text-white hover:border-brand-gold hover:text-brand-gold-light transition flex items-center gap-2 disabled:opacity-60"
                                             >
                                                 <Eye size={16} /> {t('payments.view_receipt')}
-                                            </a>
+                                            </button>
                                         )}
                                         {enrollment.status !== 'APPROVED' && (
                                             <button

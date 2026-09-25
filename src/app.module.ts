@@ -21,6 +21,7 @@ import { CertificatesModule } from './certificates/certificates.module';
 import { EmailModule } from './email/email.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CommerceModule } from './commerce/commerce.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { LmsModule } from './lms/lms.module';
 import { BlogModule } from './blog/blog.module';
 import { ConsentModule } from './consent/consent.module';
@@ -62,6 +63,7 @@ import { AnnouncementBoardModule } from './announcement-board/announcement-board
         EmailModule,
         NotificationsModule,
         CommerceModule,
+        WebhooksModule,
         LmsModule,
         BlogModule,
         ConsentModule,

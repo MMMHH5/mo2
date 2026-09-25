@@ -56,7 +56,7 @@ RUN cp -r dist/src/. dist/
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs && \
-    mkdir -p uploads/receipts uploads/cvs uploads/chat uploads/courses && \
+    mkdir -p uploads/receipts uploads/cvs uploads/chat uploads/courses uploads/private/receipts uploads/private/cvs && \
     # Give the runtime user write access so Prisma can regenerate its engines
     # (migrations run at container start and may need to write to node_modules)
     chown -R nestjs:nodejs /usr/src/app && \

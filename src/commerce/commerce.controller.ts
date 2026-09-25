@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Req, Request, Headers, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Request, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CurrenciesService } from './currencies.service';
@@ -28,12 +28,6 @@ export class CommerceController {
   @Post('payments/checkout')
   async checkout(@Request() req: any, @Body('openingId') openingId: string, @Body('provider') provider?: string, @Body('couponCode') couponCode?: string) {
     return this.payments.checkout(req.user.userId, openingId, { provider, couponCode });
-  }
-
-  @ApiOperation({ summary: 'Stripe webhook (provider callback)' })
-  @Post('webhooks/stripe')
-  async stripeWebhook(@Req() req: any, @Headers('stripe-signature') signature: string) {
-    return this.payments.webhookStripe(req.rawBody ?? Buffer.alloc(0), signature);
   }
 
   @ApiOperation({ summary: 'My payments (student)' })

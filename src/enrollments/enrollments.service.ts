@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EnrollmentStatus, CourseOpeningStatus } from '@prisma/client';
+import { EnrollmentStatus, CourseOpeningStatus, Role } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ChatService } from '../chat/chat.service';
+import { resolvePrivateUpload } from '../common/private-uploads';
 
 @Injectable()
 export class EnrollmentsService {
@@ -334,5 +335,21 @@ export class EnrollmentsService {
         }
 
         return updated;
+    }
+
+    /**
+     * Resolve the absolute path of an enrollment's receipt file AFTER verifying
+     * the caller may see it: the owning student, FINANCE, ADMIN (any role is
+     * rejected with 403 — the file itself is private, never publicly exposed).
+     */
+    async getReceiptPath(enrollmentId: string, requesterId: string, role: Role) {
+        const enrollment = await this.prisma.enrollment.findUnique({ where: { id: enrollmentId } });
+        if (!enrollment) throw new NotFoundException('Enrollment not found');
+
+        const allowed = role === Role.FINANCE || role === Role.ADMIN || enrollment.studentId === requesterId;
+        if (!allowed) throw new ForbiddenException('Access denied to this receipt');
+
+        if (!enrollment.receiptFileUrl) throw new NotFoundException('No receipt on file');
+        return resolvePrivateUpload(enrollment.receiptFileUrl, ['receipts']);
     }
 }

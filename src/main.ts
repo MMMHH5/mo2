@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
+import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { getFrontendUrl } from './common/frontend-url';
 
@@ -53,9 +54,25 @@ async function bootstrap() {
         crossOriginEmbedderPolicy: false, // Allow embedding resources
     }));
 
-    // Serve static files from the uploads directory
-    // Note: This is kept for backward compatibility with existing upload references.
-    // For new files, prefer the authenticated proxy at GET /uploads/* (see health.controller.ts).
+    // Block PUBLIC access to private upload areas. Receipts, CVs and anything
+    // under uploads/private/* must only be reachable through the authenticated
+    // download endpoints (enrollments/:id/receipt, instructor-applications/:id/cv).
+    app.use('/uploads', (req: Request, res: Response, next: NextFunction) => {
+        const p = req.path || '';
+        if (
+            p === '/receipts' || p.startsWith('/receipts/') ||
+            p === '/cvs' || p.startsWith('/cvs/') ||
+            p === '/private' || p.startsWith('/private/')
+        ) {
+            res.status(404).send({ statusCode: 404, message: 'Not Found' });
+            return;
+        }
+        next();
+    });
+
+    // Serve static files from the uploads directory.
+    // NOTE: receipts & CVs are blocked above and stored under uploads/private/*;
+    // course media and chat attachments remain publicly embeddable.
     app.useStaticAssets(join(process.cwd(), 'uploads'), {
         prefix: '/uploads',
         setHeaders: (res, filePath) => {

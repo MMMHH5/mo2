@@ -120,3 +120,39 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// --- Authenticated downloads / previews ------------------------------------
+// The backend serves receipts/CVs through role-gated endpoints (e.g.
+// GET /enrollments/:id/receipt, GET /instructor-applications/:id/cv) that
+// require a JWT and set Content-Disposition. These helpers fetch the file AS A
+// BLOB (so the Authorization header follows the request) instead of pointing a
+// plain <a href> at the previously public /uploads/... path.
+
+function blobFilename(res: { headers: Record<string, unknown> }, fallback: string): string {
+    const cd = res.headers?.['content-disposition'];
+    if (typeof cd === 'string') {
+        const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+        if (m && m[1]) return m[1];
+    }
+    return fallback || 'file';
+}
+
+// Fetch a protected file as a blob and return a temporary object URL + name.
+// Caller is responsible for revoking the URL with URL.revokeObjectURL(url).
+export async function fetchProtectedFile(path: string): Promise<{ url: string; name: string }> {
+    const res = await api.get(path, { responseType: 'blob' });
+    const name = blobFilename(res, (path.split('/').pop() || 'file'));
+    return { url: URL.createObjectURL(res.data as Blob), name };
+}
+
+// Download a protected file to disk (triggers the browser save dialog).
+export async function downloadProtectedFile(path: string) {
+    const { url, name } = await fetchProtectedFile(path);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}

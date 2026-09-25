@@ -5,6 +5,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseLevel } from '@prisma/client';
+import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateLearningOutcomeDto {
     @ApiProperty({ description: 'Arabic learning outcome description' })
@@ -389,3 +390,7 @@ export class CreateCourseDto {
     @Type(() => CreateGalleryImageDto)
     gallery?: CreateGalleryImageDto[];
 }
+
+/// PATCH input: every field optional — sending a single field must update
+/// ONLY that field (no nested collection is wiped unless explicitly provided).
+export class UpdateCourseDto extends PartialType(CreateCourseDto) {}

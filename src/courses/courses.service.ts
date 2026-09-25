@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
 
 type ModuleDraft = {
@@ -42,42 +42,39 @@ export class CoursesService {
         });
     }
 
-    async update(id: string, data: CreateCourseDto) {
+    async update(id: string, data: UpdateCourseDto) {
         const existing = await this.prisma.course.findUnique({ where: { id } });
         if (!existing) throw new NotFoundException('Course not found');
 
         const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, ...rest } = data;
 
-        const course = await this.prisma.$transaction(async (tx) => {
-            await tx.course.update({
-                where: { id },
-                data: {
-                    modules: { deleteMany: {} },
-                    chapters: { deleteMany: {} },
-                    objectives: { deleteMany: {} },
-                    prerequisites: { deleteMany: {} },
-                    audiences: { deleteMany: {} },
-                    faqs: { deleteMany: {} },
-                    gallery: { deleteMany: {} },
-                },
-            });
+        // PATCH / PATCH semantics: only replace a nested collection when that
+        // field was EXPLICITLY submitted. Editing only { titleAr } or { price }
+        // must never wipe modules, chapters, objectives, etc. (or, transitively,
+        // students' lesson progress / notes / quiz attempts attached to them).
+        // An explicitly submitted empty array clears the collection; an omitted
+        // field leaves the existing rows untouched.
+        const patch: Prisma.CourseUpdateInput = { ...rest };
+        if (modules !== undefined) patch.modules = this.replaceCollection(this.buildModules(modules));
+        if (chapters !== undefined) patch.chapters = this.replaceCollection(this.buildChapters(chapters));
+        if (objectives !== undefined) patch.objectives = this.replaceCollection(this.buildObjectives(objectives));
+        if (prerequisites !== undefined) patch.prerequisites = this.replaceCollection(this.buildPrerequisites(prerequisites));
+        if (audiences !== undefined) patch.audiences = this.replaceCollection(this.buildAudiences(audiences));
+        if (faqs !== undefined) patch.faqs = this.replaceCollection(this.buildFaqs(faqs));
+        if (gallery !== undefined) patch.gallery = this.replaceCollection(this.buildGallery(gallery));
 
-            return tx.course.update({
-                where: { id },
-                data: {
-                    ...rest,
-                    modules: this.buildModules(modules),
-                    chapters: this.buildChapters(chapters),
-                    objectives: this.buildObjectives(objectives),
-                    prerequisites: this.buildPrerequisites(prerequisites),
-                    audiences: this.buildAudiences(audiences),
-                    faqs: this.buildFaqs(faqs),
-                    gallery: this.buildGallery(gallery),
-                },
-            });
-        });
+        await this.prisma.course.update({ where: { id }, data: patch });
 
         return this.findOne(id);
+    }
+
+    // An explicitly submitted non-empty collection REPLACES the existing rows
+    // (delete old ones, then create the new set). An explicitly submitted empty
+    // collection clears it. Prisma only allows deleteMany inside an update, so
+    // create() keeps using the plain "create" builders.
+    private replaceCollection<T>(built: T | undefined): T | { deleteMany: {} } {
+        if (!built) return { deleteMany: {} };
+        return { deleteMany: {}, ...built };
     }
 
     private moduleCreatePayload(m: ModuleDraft) {

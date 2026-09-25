@@ -1,7 +1,7 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { api, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage, downloadProtectedFile } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -33,13 +33,12 @@ const appTone: Record<string, Tone> = {
     PENDING: 'amber',
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 export default function AdminInstructorsPage() {
     const { data: applications, loading: appsLoading, error: appsError, refetch: refetchApps } = useFetchData<Application[]>('/instructor-applications');
     const { data: users, loading: usersLoading, error: usersError, refetch: refetchUsers } = useFetchData<User[]>('/users');
     const { t } = useI18n();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
+    const [downloadingCv, setDownloadingCv] = useState<string | null>(null);
     const [query, setQuery] = useState('');
 
     const instructors = (users || []).filter(u => u.role === 'INSTRUCTOR');
@@ -86,6 +85,18 @@ export default function AdminInstructorsPage() {
             toast.error(getErrorMessage(err) || t('admin.delete_user_fail'));
         }
         setIsProcessing(null);
+    };
+
+    const handleDownloadCv = async (appId: string) => {
+        setDownloadingCv(appId);
+        try {
+            await downloadProtectedFile(`/instructor-applications/${appId}/cv`);
+            toast.success(t('instructorsHr.cv_downloaded'));
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('instructorsHr.cv_download_failed'));
+        } finally {
+            setDownloadingCv(null);
+        }
     };
 
     return (
@@ -136,9 +147,9 @@ export default function AdminInstructorsPage() {
                                 </div>
                                 <p className="text-gray-500 dark:text-gray-400 text-sm whitespace-pre-wrap mb-4 flex-1 leading-relaxed">{app.bio}</p>
                                 <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-200 dark:border-white/5">
-                                    <a href={`${API_URL}${app.cvFileUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-brand-navy dark:text-white font-bold hover:underline bg-gray-100 dark:bg-white/5 px-4 py-2 rounded-lg text-sm transition hover:bg-gray-200 dark:hover:bg-white/10">
+                                    <button onClick={() => handleDownloadCv(app.id)} disabled={downloadingCv === app.id} className="flex items-center gap-2 text-brand-navy dark:text-white font-bold hover:underline bg-gray-100 dark:bg-white/5 px-4 py-2 rounded-lg text-sm transition hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-60">
                                         <FileText size={16} /> {t('instructorsHr.view_cv')}
-                                    </a>
+                                    </button>
                                     {app.videoIntroUrl && (
                                         <a href={app.videoIntroUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-brand-navy dark:text-white font-bold hover:underline bg-gray-100 dark:bg-white/5 px-4 py-2 rounded-lg text-sm transition hover:bg-gray-200 dark:hover:bg-white/10">
                                             <LinkIcon size={16} /> {t('instructorsHr.intro_video')}

@@ -1,12 +1,12 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage, fetchProtectedFile, downloadProtectedFile } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useState } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { Check, X, FileImage, ExternalLink, RefreshCw, ShieldCheck, Wallet, CreditCard } from 'lucide-react';
+import { Check, X, FileImage, ExternalLink, RefreshCw, ShieldCheck, Wallet, CreditCard, Save } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnSoft, type Tone } from '../components';
 import { formatPrice } from '@/lib/format';
 
@@ -47,6 +47,9 @@ export default function AdminFinancePage() {
     const { t, pick, locale } = useI18n();
     const [statusFilter, setStatusFilter] = useState<Filter>('ALL');
     const [selected, setSelected] = useState<Enrollment | null>(null);
+    const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+    const [receiptLoading, setReceiptLoading] = useState(false);
+    const [receiptError, setReceiptError] = useState<string | null>(null);
     const [isRejecting, setIsRejecting] = useState(false);
     const [reason, setReason] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -80,10 +83,32 @@ export default function AdminFinancePage() {
         setProcessing(false);
     };
 
-    const openReceipt = (e: Enrollment, reject = false) => {
+    const openReceipt = async (e: Enrollment, reject = false) => {
         setSelected(e);
         setIsRejecting(reject);
         setReason('');
+        setReceiptUrl(null);
+        setReceiptError(null);
+        if (e.receiptFileUrl) {
+            setReceiptLoading(true);
+            try {
+                const { url } = await fetchProtectedFile(`/enrollments/${e.id}/receipt`);
+                setReceiptUrl(url);
+            } catch (err) {
+                setReceiptError(getErrorMessage(err) || t('finance.receipt_load_failed'));
+            } finally {
+                setReceiptLoading(false);
+            }
+        }
+    };
+
+    const closeModal = () => {
+        setSelected(null);
+        setIsRejecting(false);
+        setReason('');
+        if (receiptUrl) URL.revokeObjectURL(receiptUrl);
+        setReceiptUrl(null);
+        setReceiptError(null);
     };
 
     const statBtn = (s: Filter) => (
@@ -211,26 +236,44 @@ export default function AdminFinancePage() {
                                     {t('finance.student_label')} <span className="font-bold text-white break-all">{selected.student?.email}</span> | {t('finance.course_label')} <span className="font-bold text-white break-all">{pick(selected.course, 'title')}</span>
                                 </p>
                             </div>
-                            <button onClick={() => { setSelected(null); setIsRejecting(false); setReason(''); }} className="admin-action-btn bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition"><X size={22} /></button>
+                            <button onClick={closeModal} className="admin-action-btn bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition"><X size={22} /></button>
                         </div>
 
                         <div className="p-6 overflow-y-auto flex-1 bg-brand-navy-dark flex flex-col items-center justify-center relative">
-                            {selected.receiptFileUrl ? (
-                                selected.receiptFileUrl.toLowerCase().endsWith('.pdf') ? (
-                                    <iframe src={`${API_BASE_URL}${selected.receiptFileUrl}`} className="w-full h-[500px] rounded-xl shadow-md border border-white/10" title="PDF Receipt" />
-                                ) : (
-                                    <Image src={`${API_BASE_URL}${selected.receiptFileUrl}`} alt="Receipt" width={800} height={600} unoptimized className="max-w-full rounded-xl shadow-md border border-white/10" />
-                                )
+                            {receiptLoading ? (
+                                <div className="text-center space-y-4">
+                                    <div className="admin-tile w-20 h-20 bg-white/10 text-gray-400 mx-auto animate-pulse">
+                                        <FileImage size={36} />
+                                    </div>
+                                    <p className="text-gray-500 font-semibold">{t('finance.receipt_loading')}</p>
+                                </div>
+                            ) : receiptUrl ? (
+                                <>
+                                    {selected.receiptFileUrl?.toLowerCase().endsWith('.pdf') ? (
+                                        <iframe src={receiptUrl} className="w-full h-[500px] rounded-xl shadow-md border border-white/10" title="PDF Receipt" />
+                                    ) : (
+                                        <Image src={receiptUrl} alt="Receipt" width={800} height={600} unoptimized className="max-w-full rounded-xl shadow-md border border-white/10" />
+                                    )}
+                                    <button
+                                        onClick={() => downloadProtectedFile(`/enrollments/${selected.id}/receipt`)}
+                                        className="absolute top-8 left-8 bg-brand-navy-dark border border-white/10 p-2.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition text-gray-300 hover:text-white"
+                                        title={t('finance.download_receipt')}
+                                    >
+                                        <Save size={20} />
+                                    </button>
+                                </>
                             ) : (
                                 <div className="text-center space-y-4">
                                     <div className="admin-tile w-20 h-20 bg-white/10 text-gray-400 mx-auto">
                                         <FileImage size={36} />
                                     </div>
-                                    <p className="text-gray-500 font-semibold">{t('finance.no_receipt')}</p>
+                                    <p className="text-gray-500 font-semibold">
+                                        {receiptError ? t('finance.receipt_load_failed') : t('finance.no_receipt')}
+                                    </p>
                                 </div>
                             )}
-                            {selected.receiptFileUrl && (
-                                <a href={`${API_BASE_URL}${selected.receiptFileUrl}`} target="_blank" rel="noreferrer" className="absolute top-8 right-8 bg-brand-navy-dark border border-white/10 p-2.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition text-gray-300 hover:text-white">
+                            {receiptUrl && (
+                                <a href={receiptUrl} target="_blank" rel="noreferrer" className="absolute top-8 right-8 bg-brand-navy-dark border border-white/10 p-2.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition text-gray-300 hover:text-white">
                                     <ExternalLink size={20} />
                                 </a>
                             )}

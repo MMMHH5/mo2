@@ -9,7 +9,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
 
 const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -141,7 +141,7 @@ export class CoursesController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateCourseDto: CreateCourseDto) {
+    update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
         return this.coursesService.update(id, updateCourseDto);
     }
 

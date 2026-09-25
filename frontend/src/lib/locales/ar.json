@@ -81,7 +81,9 @@
         "upload_receipt_required": "يرجى رفع إيصال للمتابعة.",
         "submit_receipt": "إرسال الإيصال",
         "receipt_uploaded": "تم رفع الإيصال بنجاح وبات قيد المراجعة.",
-        "upload_failed": "فشل رفع الإيصال."
+        "upload_failed": "فشل رفع الإيصال.",
+        "receipt_downloaded": "تم تنزيل الإيصال.",
+        "receipt_download_failed": "فشل تنزيل الإيصال."
     },
     "profile": {
         "loading": "جارٍ تحميل ملفك الشخصي...",
@@ -647,6 +649,9 @@
         "student_label": "الطالب:",
         "course_label": "الدورة:",
         "no_receipt": "لا يوجد ملف إيصال مرفق أو أن الرابط معطل.",
+        "receipt_loading": "جارٍ تحميل الإيصال...",
+        "receipt_load_failed": "فشل تحميل الإيصال. حاول مرة أخرى.",
+        "download_receipt": "تنزيل الإيصال",
         "reason_label": "سبب الرفض (مطلوب)",
         "reason_placeholder": "مثال: الإيصال غير واضح، مبلغ غير صحيح، تاريخ خاطئ...",
         "confirm_rejection": "تأكيد الرفض",
@@ -667,7 +672,9 @@
         "confirm_reject": "هل أنت متأكد من رفض هذا الطلب؟",
         "approved_msg": "تمت الموافقة على الطلب",
         "rejected_msg": "تم رفض الطلب",
-        "update_failed": "فشل تحديث الطلب"
+        "update_failed": "فشل تحديث الطلب",
+        "cv_downloaded": "تم تنزيل السيرة الذاتية.",
+        "cv_download_failed": "فشل تنزيل السيرة الذاتية."
     },
     "admin": {
         "hub_title": "مركز الإدارة الشامل",

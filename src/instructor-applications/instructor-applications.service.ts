@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { resolvePrivateUpload } from '../common/private-uploads';
 
 @Injectable()
 export class InstructorApplicationsService {
@@ -56,5 +57,16 @@ export class InstructorApplicationsService {
         }
 
         return app;
+    }
+
+    /**
+     * Resolve the absolute path of an application's CV file. Caller identity is
+     * enforced by the controller's ADMIN/COURSE_MANAGER role guard.
+     */
+    async getCvPath(applicationId: string) {
+        const app = await this.prisma.instructorApplication.findUnique({ where: { id: applicationId } });
+        if (!app) throw new NotFoundException('Application not found');
+        if (!app.cvFileUrl) throw new NotFoundException('No CV on file');
+        return resolvePrivateUpload(app.cvFileUrl, ['cvs']);
     }
 }

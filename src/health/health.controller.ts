@@ -29,13 +29,24 @@ export class HealthController {
         ]);
     }
 
-    // Upload proxy. Served publicly (the frontend embeds these URLs in <img>/<video> tags,
-    // which cannot send Authorization headers). Filenames are random/obfuscated.
+    // Upload proxy. Course media & chat attachments are served publicly
+    // (the frontend embeds these URLs in <img>/<video> tags, which cannot
+    // send Authorization headers). Receipts and CVs are BLOCKED here and in
+    // main.ts' static handler — they are private files, reachable only via
+    // the authenticated download endpoints. Filenames are random/obfuscated.
     @Get('uploads/*')
     async serveUpload(
         @Param() params: { 0: string },
         @Res() res: Response,
     ) {
+        const key = params[0] || '';
+        if (
+            key === 'receipts' || key.startsWith('receipts/') ||
+            key === 'cvs' || key.startsWith('cvs/') ||
+            key === 'private' || key.startsWith('private/')
+        ) {
+            throw new NotFoundException('File not found');
+        }
         const filePath = join(process.cwd(), 'uploads', params[0]);
         if (!existsSync(filePath)) {
             throw new NotFoundException('File not found');

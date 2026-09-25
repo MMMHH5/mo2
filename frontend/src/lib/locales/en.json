@@ -81,7 +81,9 @@
         "upload_receipt_required": "Please upload a receipt to continue.",
         "submit_receipt": "Submit Receipt",
         "receipt_uploaded": "Receipt uploaded successfully and is now under review.",
-        "upload_failed": "Failed to upload receipt."
+        "upload_failed": "Failed to upload receipt.",
+        "receipt_downloaded": "Receipt downloaded.",
+        "receipt_download_failed": "Failed to download receipt."
     },
     "profile": {
         "loading": "Loading your profile...",
@@ -647,6 +649,9 @@
         "student_label": "Student:",
         "course_label": "Course:",
         "no_receipt": "No receipt file attached or link broken.",
+        "receipt_loading": "Loading receipt...",
+        "receipt_load_failed": "Failed to load receipt. Please try again.",
+        "download_receipt": "Download receipt",
         "reason_label": "Rejection Reason (Required)",
         "reason_placeholder": "e.g. Receipt is blurry, invalid amount, wrong date...",
         "confirm_rejection": "Confirm Rejection",
@@ -667,7 +672,9 @@
         "confirm_reject": "Are you sure you want to reject this application?",
         "approved_msg": "Application approved",
         "rejected_msg": "Application rejected",
-        "update_failed": "Failed to update application"
+        "update_failed": "Failed to update application",
+        "cv_downloaded": "CV downloaded.",
+        "cv_download_failed": "Failed to download CV."
     },
     "admin": {
         "hub_title": "Global Administration Hub",
