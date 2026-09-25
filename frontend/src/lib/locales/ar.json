@@ -53,7 +53,17 @@
         "preview_course": "تقدمك في الدورة",
         "preview_certs": "شهادة معتمدة",
         "preview_interactive": "تعلم تفاعلي",
-        "preview_progress_note": "واصل بإتقان رائع!"
+        "preview_progress_note": "واصل بإتقان رائع!",
+        "home_courses_heading": "دورات مميزة",
+        "home_courses_desc": "دورات عملية مختارة بعناية يقدّمها مدربون خبراء. ابدأ بتعلم مهارة جديدة اليوم.",
+        "home_courses_view_all": "عرض كل الدورات",
+        "home_about_heading": "عن Laxalab",
+        "home_about_paragraph_1": "Laxalab منصة تعليمية رقمية حديثة تمزج الأصالة العربية مع المعايير العالمية. نقدّم دورات عملية عالية الجودة في التكنولوجيا والأعمال والمهارات الشخصية — باللغة العربية والإنجليزية.",
+        "home_about_paragraph_2": "تتضمن كل دورة تتبّع التقدم والواجبات والاختبارات والشهادات المعتمدة ومجتمعًا داعمًا من المدربين والطلاب.",
+        "home_about_cta": "اعرف المزيد عنا",
+        "home_contact_heading": "تواصل معنا",
+        "home_contact_desc": "لديك سؤال عن دورة أو تسجيل؟ تواصل معنا في أي وقت.",
+        "home_contact_follow": "تابع Laxalab"
     },
     "payment": {
         "attach_receipt": "إرفاق إشعار الدفع",

@@ -53,7 +53,17 @@
         "preview_course": "Your course progress",
         "preview_certs": "Certified",
         "preview_interactive": "Interactive",
-        "preview_progress_note": "Keep up the great work!"
+        "preview_progress_note": "Keep up the great work!",
+        "home_courses_heading": "Featured Courses",
+        "home_courses_desc": "Curated hands-on courses taught by expert instructors. Start learning a new skill today.",
+        "home_courses_view_all": "View All Courses",
+        "home_about_heading": "About Laxalab",
+        "home_about_paragraph_1": "Laxalab is a modern digital learning platform that blends Arabic authenticity with global standards. We build practical, high-quality courses across technology, business, and personal skills — in both Arabic and English.",
+        "home_about_paragraph_2": "Every course includes progress tracking, assignments, quizzes, accredited certificates, and a supportive community of instructors and students.",
+        "home_about_cta": "Learn More About Us",
+        "home_contact_heading": "Get in Touch",
+        "home_contact_desc": "Questions about a course or enrollment? Reach out to us anytime.",
+        "home_contact_follow": "Follow Laxalab"
     },
     "payment": {
         "attach_receipt": "Attach Payment Receipt",

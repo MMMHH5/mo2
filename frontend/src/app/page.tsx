@@ -1,17 +1,57 @@
 'use client';
 import Link from 'next/link';
-import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle } from 'lucide-react';
+import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, ArrowUpRight, MapPin } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { useFetchData } from '@/lib/useFetchData';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatPrice } from '@/lib/format';
+import { API_BASE_URL } from '@/lib/api';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import MarketingShell from '@/components/MarketingShell';
 
+interface CourseCard {
+    id: string;
+    level?: string | null;
+    coverImageUrl?: string | null;
+    excerptAr?: string | null;
+    excerptEn?: string | null;
+    titleAr?: string | null;
+    titleEn?: string | null;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+    durationAr?: string | null;
+    durationEn?: string | null;
+    openings?: { id: string; status?: string | null; price: string }[];
+    _count?: { enrollments?: number; modules?: number };
+}
+
 export default function Home() {
-  const { t, locale } = useI18n();
+  const { t, pick, locale } = useI18n();
   const { dark } = useTheme();
+  const isAr = locale === 'ar';
   const { data: stats } = useFetchData<{ courses: number; instructors: number; enrollments: number; certificates: number } | null>('/public/stats');
+  const { data: homeCourses, loading: homeCoursesLoading } = useFetchData<CourseCard[]>('/public/courses');
+
+  const featuredCourses = (homeCourses ?? []).slice(0, 3);
+  const coursePrice = (course: CourseCard) => {
+    const opening = course.openings?.find(o => o.status === 'OPEN') ?? course.openings?.find(o => o.status === 'ANNOUNCEMENT');
+    return opening ? (Number(opening.price) === 0 ? t('course.free') : formatPrice(opening.price, { locale })) : t('courseDetail.not_open_yet');
+  };
+
+  const aboutValues = [
+    { icon: Target, titleAr: 'التعلم العملي', titleEn: 'Hands-on Learning', descAr: 'دورات مبنية على مشاريع واقعية وتطبيق مباشر.', descEn: 'Courses built on real-world projects and direct application.' },
+    { icon: Globe, titleAr: 'ثنائية اللغة', titleEn: 'Bilingual', descAr: 'محتوى عربي وإنجليزي أصيل لمتعلمين من كل العالم.', descEn: 'Genuinely Arabic and English content for learners worldwide.' },
+    { icon: Award, titleAr: 'شهادات معتمدة', titleEn: 'Certificates', descAr: 'شهادات برموز تحقق رسمية يمكن لأي جهة التحقق منها.', descEn: 'Certificates with official verification codes anyone can validate.' },
+    { icon: Users, titleAr: 'مجتمع داعم', titleEn: 'Community', descAr: 'منتدى تفاعلي مباشر مع المدربين والطلاب.', descEn: 'A live forum with instructors and peers.' },
+  ];
+
+  const socials = [
+    { icon: Play, label: 'YouTube', handle: '@laxalabacademy', href: 'https://www.youtube.com/@laxalabacademy' },
+    { icon: Camera, label: 'Instagram', handle: '@laxalabacademy', href: 'https://www.instagram.com/laxalabacademy' },
+    { icon: Send, label: 'Telegram', handle: '@laxalabacademy', href: 'https://t.me/laxalabacademy' },
+    { icon: Hash, label: 'X (Twitter)', handle: '@laxalabacademy', href: 'https://x.com/laxalabacademy' },
+    { icon: Globe, label: 'Facebook', handle: 'laxalabacademy', href: 'https://facebook.com/laxalabacademy' },
+  ];
 
   const badgeCls = dark
     ? 'border border-white/10 bg-white/5 text-brand-mist'
@@ -149,6 +189,166 @@ export default function Home() {
             </div>
           </section>
         )}
+
+        {/* Featured Courses Section */}
+        <section className="relative">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-14 text-center sm:text-left">
+            <div className="space-y-2">
+              <h3 className={`text-3xl md:text-4xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>{t('landing.home_courses_heading')}</h3>
+              <p className={`max-w-xl text-lg leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('landing.home_courses_desc')}</p>
+            </div>
+            <Link href="/courses" className={`inline-flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-xl border transition-all duration-300 whitespace-nowrap ${dark ? 'border-white/10 text-gray-300 hover:border-brand-gold hover:text-brand-gold-light' : 'border-gray-200 text-brand-navy hover:border-brand-gold hover:text-brand-gold-dark'}`}>
+              {t('landing.home_courses_view_all')}
+              <ChevronRight className="rtl:rotate-180" size={16} />
+            </Link>
+          </div>
+
+          {homeCoursesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[0, 1, 2].map(i => (
+                <div key={i} className={`animate-pulse rounded-3xl overflow-hidden ${dark ? 'bg-brand-navy border border-white/10' : 'bg-white border border-gray-100'}`}>
+                  <div className="h-56 bg-gray-200 dark:bg-gray-800" />
+                  <div className="p-7 space-y-4">
+                    <div className="h-5 w-3/4 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                    <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded-full" />
+                    <div className="h-4 w-2/3 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : featuredCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredCourses.map(course => (
+                <div key={course.id} className={`group border rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 ${cardCls}`}>
+                  <Link href={`/courses/${course.id}`} className="block relative h-56 overflow-hidden">
+                    {course.coverImageUrl ? (
+                      <img src={`${API_BASE_URL}${course.coverImageUrl}`} alt={pick(course, 'title') || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] flex items-center justify-center">
+                        <BookOpen size={44} className="text-brand-gold" />
+                      </div>
+                    )}
+                    <span className={`absolute top-4 right-4 text-xs font-black uppercase tracking-wide px-4 py-2 rounded-full shadow-lg ${dark ? 'bg-brand-gold text-brand-navy-dark' : 'bg-brand-navy text-white'}`}>
+                      {coursePrice(course)}
+                    </span>
+                  </Link>
+                  <div className="p-7">
+                    <div className={`flex items-center gap-2 text-xs font-bold mb-3 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${featIconCls}`}>
+                        <Clock size={13} />
+                        {pick(course, 'duration') || '—'}
+                      </span>
+                      {course.level && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-current opacity-70">
+                          {t(`course.level_${String(course.level || 'BEGINNER').toLowerCase()}`)}
+                        </span>
+                      )}
+                    </div>
+                    <Link href={`/courses/${course.id}`}>
+                      <h4 className={`text-xl font-black mb-2 hover:text-brand-gold-dark dark:hover:text-brand-gold-light transition-colors ${cardTitleCls}`}>{pick(course, 'title')}</h4>
+                    </Link>
+                    <p className={`text-sm leading-relaxed mb-6 line-clamp-2 ${cardDescCls}`}>{pick(course, 'excerpt') || pick(course, 'description')}</p>
+                    <Link href={`/courses/${course.id}`} className="inline-flex items-center gap-2 font-bold text-sm text-brand-gold-dark dark:text-brand-gold-light">
+                      {t('explore.view_details')}
+                      <ArrowUpRight size={16} />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {!homeCoursesLoading && featuredCourses.length === 0 && (
+            <p className={`text-center py-10 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('explore.no_courses')}</p>
+          )}
+        </section>
+
+        {/* About Section */}
+        <section className={`relative rounded-3xl border p-8 md:p-14 overflow-hidden ${dark ? 'bg-brand-navy border-white/10' : 'bg-white border-gray-100'}`}>
+          <div className={`absolute top-0 right-0 w-72 h-72 rounded-full blur-[100px] ${dark ? 'bg-brand-gold/5' : 'bg-brand-gold/5'}`}></div>
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+            <div className="space-y-6">
+              <span className={`inline-flex items-center gap-2 font-black text-sm uppercase tracking-wider ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}>
+                <Sparkles size={16} />
+                {t('landing.home_about_heading')}
+              </span>
+              <p className={`text-lg leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t('landing.home_about_paragraph_1')}</p>
+              <p className={`text-lg leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{t('landing.home_about_paragraph_2')}</p>
+              <Link href="/about" className={`inline-flex items-center gap-2 font-black text-sm px-6 py-3 rounded-xl border transition-all duration-300 ${dark ? 'border-brand-gold/40 text-brand-gold-light hover:bg-brand-gold/10' : 'border-brand-gold/40 text-brand-gold-dark hover:bg-brand-gold/10'}`}>
+                {t('landing.home_about_cta')}
+                <ChevronRight className="rtl:rotate-180" size={16} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {aboutValues.map((value, i) => (
+                <div key={i} className={`p-7 rounded-3xl border shadow-sm transition-all duration-300 ${cardCls}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${featIconCls}`}>
+                    <value.icon size={24} />
+                  </div>
+                  <h4 className={`text-lg font-black mb-2 ${cardTitleCls}`}>{isAr ? value.titleAr : value.titleEn}</h4>
+                  <p className={`text-sm leading-relaxed ${cardDescCls}`}>{isAr ? value.descAr : value.descEn}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Contact Section */}
+        <section className="relative">
+          <div className="text-center mb-14">
+            <h3 className={`text-3xl md:text-4xl font-black mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>{t('landing.home_contact_heading')}</h3>
+            <p className={`max-w-xl mx-auto text-lg leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('landing.home_contact_desc')}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className={`border rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${cardCls}`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${featIconCls}`}>
+                <Mail size={22} />
+              </div>
+              <h4 className={`text-lg font-black mb-2 ${cardTitleCls}`}>{isAr ? 'البريد الإلكتروني' : 'Email'}</h4>
+              <a href="mailto:hello@laxalab.com" className={`text-sm font-bold break-all hover:text-brand-gold-dark dark:hover:text-brand-gold-light ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                hello@laxalab.com
+              </a>
+            </div>
+
+            <div className={`border rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${cardCls}`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${featIconCls}`}>
+                <Clock size={22} />
+              </div>
+              <h4 className={`text-lg font-black mb-2 ${cardTitleCls}`}>{isAr ? 'ساعات العمل' : 'Working Hours'}</h4>
+              <p className={`text-sm font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {isAr ? 'السبت - الخميس: 9 ص - 6 م' : 'Saturday - Thursday: 9 AM - 6 PM'}
+              </p>
+              <p className={`text-sm font-bold mt-1 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                {isAr ? 'الجمعة: مغلق' : 'Friday: Closed'}
+              </p>
+            </div>
+
+            <div className={`border rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${cardCls}`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${featIconCls}`}>
+                <MapPin size={22} />
+              </div>
+              <h4 className={`text-lg font-black mb-2 ${cardTitleCls}`}>{isAr ? 'تابعنا' : 'Follow Us'}</h4>
+              <div className="space-y-2.5">
+                {socials.map((social, i) => (
+                  <a
+                    key={i}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-3 text-sm font-bold group/link py-1 ${dark ? 'text-gray-400 hover:text-brand-gold-light' : 'text-gray-500 hover:text-brand-gold-dark'}`}
+                  >
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${featIconCls}`}>
+                      <social.icon size={16} />
+                    </span>
+                    <span className="truncate">{social.label}</span>
+                    <span className={`ml-auto hidden sm:block text-xs font-semibold ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{social.handle}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* CTA Section */}
         <section className={`relative bg-gradient-to-br from-[#10264a] via-brand-navy to-[#0a1e3c] border border-white/10 rounded-3xl py-16 px-6 text-center shadow-2xl shadow-black/40 overflow-hidden`}>
