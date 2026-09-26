@@ -253,7 +253,11 @@ export class UsersService {
             mustChangePassword?: boolean;
         } = {};
         if (dto.email) data.email = dto.email;
-        if (dto.password) data.passwordHash = await bcrypt.hash(dto.password, 10);
+        if (dto.password) {
+            data.passwordHash = await bcrypt.hash(dto.password, 10);
+            // When the admin sets a password, force the user to replace it on next login.
+            data.mustChangePassword = true;
+        }
         if (dto.role) data.role = dto.role;
         if (typeof dto.isActive === 'boolean') data.isActive = dto.isActive;
         if (typeof dto.mustChangePassword === 'boolean') data.mustChangePassword = dto.mustChangePassword;
@@ -261,8 +265,14 @@ export class UsersService {
         const user = await this.prisma.user.update({
             where: { id },
             data,
-            select: { id: true, email: true, role: true, isActive: true, createdAt: true },
+            select: { id: true, email: true, role: true, isActive: true, mustChangePassword: true, createdAt: true },
         });
+
+        // A forced password change must invalidate existing sessions so the next
+        // login actually re-enters the change flow.
+        if (dto.password) {
+            await this.prisma.refreshToken.updateMany({ where: { userId: id }, data: { revokedAt: new Date() } });
+        }
 
         await this.audit.logAction(`ADMIN ${adminId} updated user ${id} (${user.email})`, ip, adminId);
         return user;

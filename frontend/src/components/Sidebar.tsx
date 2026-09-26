@@ -49,7 +49,7 @@ export default function Sidebar() {
     const roleLinks = allNav.filter(link => link.roles.some(r => r.toUpperCase() === roleKey));
     const links = roleLinks.length > 0
         ? roleLinks
-        : allNav.filter(link => ['/dashboard', '/dashboard/profile', '/dashboard/support'].includes(link.href));
+        : allNav.filter(link => ['/dashboard', '/dashboard/profile', '/dashboard/details', '/dashboard/support'].includes(link.href));
 
     return (
         <aside className={`w-64 shrink-0 h-screen flex flex-col justify-between hidden lg:flex sticky top-0 ${dark ? 'bg-gradient-to-b from-brand-navy via-[#0e2a52] to-[#0a1e3c]' : 'bg-white border-r border-gray-200 shadow-sm'}`}>

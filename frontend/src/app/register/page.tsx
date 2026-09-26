@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Mail, Lock, User, Phone, LogIn } from 'lucide-react';
+import { Mail, Lock, User, Phone, LogIn, Award, GraduationCap, UserCog, Layers } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
@@ -21,7 +21,11 @@ export default function RegisterPage() {
         phone: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        title: '',
+        specialty: '',
+        studyStatus: '',
+        studyLevel: ''
     });
     const [isLoading, setIsLoading] = useState(false);
 
@@ -41,6 +45,12 @@ export default function RegisterPage() {
             await api.post('/auth/register', {
                 email: formData.email,
                 password: formData.password,
+                fullName: formData.fullName,
+                phone: formData.phone,
+                title: formData.title,
+                specialty: formData.specialty,
+                studyStatus: formData.studyStatus,
+                studyLevel: formData.studyLevel,
             });
             toast.success(t('auth.registration_success'));
             router.push('/login');
@@ -112,6 +122,75 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
+                            <label className={labelCls}>{t('auth.title')}</label>
+                            <div className="relative flex items-center">
+                                <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
+                                    <Award size={18} className="text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    className={inputCls}
+                                    placeholder={t('auth.title_ph')}
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className={labelCls}>{t('auth.specialty')}</label>
+                            <div className="relative flex items-center">
+                                <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
+                                    <GraduationCap size={18} className="text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    className={inputCls}
+                                    placeholder={t('auth.specialty_ph')}
+                                    value={formData.specialty}
+                                    onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className={labelCls}>{t('auth.study_status')}</label>
+                            <div className="relative flex items-center">
+                                <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
+                                    <UserCog size={18} className="text-gray-400" />
+                                </div>
+                                <select
+                                    className={inputCls}
+                                    value={formData.studyStatus}
+                                    onChange={(e) => setFormData({ ...formData, studyStatus: e.target.value })}
+                                >
+                                    <option value="">{t('auth.study_status_select')}</option>
+                                    <option value="STUDENT">{t('auth.study_status_student')}</option>
+                                    <option value="GRADUATE">{t('auth.study_status_graduate')}</option>
+                                    <option value="OTHER">{t('auth.study_status_other')}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {formData.studyStatus === 'STUDENT' && (
+                            <div>
+                                <label className={labelCls}>{t('auth.study_level')}</label>
+                                <div className="relative flex items-center">
+                                    <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
+                                        <Layers size={18} className="text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        className={inputCls}
+                                        placeholder={t('auth.study_level_ph')}
+                                        value={formData.studyLevel}
+                                        onChange={(e) => setFormData({ ...formData, studyLevel: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
                             <label className={labelCls}>{t('auth.email')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
@@ -138,7 +217,7 @@ export default function RegisterPage() {
                                 <input
                                     type="password"
                                     required
-                                    minLength={6}
+                                    minLength={8}
                                     className={`${inputCls} text-left`}
                                     placeholder="••••••••"
                                     dir="ltr"
@@ -157,7 +236,7 @@ export default function RegisterPage() {
                                 <input
                                     type="password"
                                     required
-                                    minLength={6}
+                                    minLength={8}
                                     className={`${inputCls} text-left`}
                                     placeholder="••••••••"
                                     dir="ltr"

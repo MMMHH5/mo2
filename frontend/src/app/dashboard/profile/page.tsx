@@ -29,7 +29,7 @@ export default function ProfilePage() {
     const { data: profile, loading, error, refetch } = useFetchData<MyProfile>('/users/me');
 
     const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '' });
+    const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', title: '', studyStatus: '', studyLevel: '' });
     const [saving, setSaving] = useState(false);
 
     const [emailForm, setEmailForm] = useState({ email: '', currentPassword: '' });
@@ -51,6 +51,9 @@ export default function ProfilePage() {
             city: (m.city as string) || '',
             bio: (m.bio as string) || '',
             specialty: (m.specialty as string) || '',
+            title: (m.title as string) || '',
+            studyStatus: (m.studyStatus as string) || '',
+            studyLevel: (m.studyLevel as string) || '',
         });
         setEditing(true);
     };
@@ -460,6 +463,43 @@ export default function ProfilePage() {
                                     className={inputCls}
                                     dir="auto"
                                 />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className={labelCls}>{t('auth.title')}</label>
+                                    <input
+                                        type="text"
+                                        value={form.title}
+                                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                        className={inputCls}
+                                        dir="auto"
+                                        placeholder={t('auth.title_ph')}
+                                    />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>{t('auth.study_status')}</label>
+                                    <select
+                                        value={form.studyStatus}
+                                        onChange={(e) => setForm({ ...form, studyStatus: e.target.value })}
+                                        className={inputCls}
+                                    >
+                                        <option value="">{t('auth.study_status_select')}</option>
+                                        <option value="STUDENT">{t('auth.study_status_student')}</option>
+                                        <option value="GRADUATE">{t('auth.study_status_graduate')}</option>
+                                        <option value="OTHER">{t('auth.study_status_other')}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelCls}>{t('auth.study_level')}</label>
+                                    <input
+                                        type="text"
+                                        value={form.studyLevel}
+                                        onChange={(e) => setForm({ ...form, studyLevel: e.target.value })}
+                                        className={inputCls}
+                                        dir="auto"
+                                        placeholder={t('auth.study_level_ph')}
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className={labelCls}>{t('profile.field_bio')}</label>

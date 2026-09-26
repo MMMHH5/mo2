@@ -16,6 +16,7 @@ import { generateSecret, verify as verifyOtp } from 'otplib';
 import * as qrcode from 'qrcode';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 
 export interface PublicUser {
     id: string;
@@ -61,8 +62,21 @@ export class AuthService {
 
         const hashedPassword = await bcrypt.hash(dto.password, 12);
 
+        const metadata: Record<string, unknown> = {};
+        if (dto.fullName) metadata.fullName = dto.fullName;
+        if (dto.phone) metadata.phone = dto.phone;
+        if (dto.title) metadata.title = dto.title;
+        if (dto.specialty) metadata.specialty = dto.specialty;
+        if (dto.studyStatus) metadata.studyStatus = dto.studyStatus;
+        if (dto.studyLevel) metadata.studyLevel = dto.studyLevel;
+
         const user = await this.prisma.user.create({
-            data: { email: dto.email, passwordHash: hashedPassword, role: 'STUDENT' },
+            data: {
+                email: dto.email,
+                passwordHash: hashedPassword,
+                role: 'STUDENT',
+                metadata: Object.keys(metadata).length > 0 ? (metadata as Prisma.InputJsonObject) : undefined,
+            },
         });
 
         await this.issueVerificationEmail(user.id, user.email);

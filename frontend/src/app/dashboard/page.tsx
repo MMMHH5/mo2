@@ -16,6 +16,13 @@ interface HealthResponse {
     status?: string;
 }
 
+interface MeProfile {
+    id: string;
+    email: string;
+    role: string;
+    metadata?: Record<string, unknown>;
+}
+
 export default function DashboardPage() {
     const { user } = useAuth();
     const { t } = useI18n();
@@ -24,10 +31,15 @@ export default function DashboardPage() {
     const { data: coursesData, loading: coursesLoading, error: coursesError } = useFetchData<unknown[]>('/courses');
     const { data: pending, loading: pendingLoading } = useFetchData<unknown[]>(canSeePending ? '/enrollments/pending' : null);
     const { data: health } = useFetchData<HealthResponse>('/health');
+    const { data: me } = useFetchData<MeProfile>('/users/me');
 
     if (!user) return null;
 
     const roleLabel = t('roles.' + (user.role || '').toLowerCase()) || user.role;
+
+    const title = (me?.metadata?.title as string) || '';
+    const fullName = (me?.metadata?.fullName as string) || '';
+    const displayName = `${title ? title + ' ' : ''}${fullName}`.trim() || user.email;
 
     const metrics: { label: string; value: string | number; icon: typeof Activity; color: string }[] = [
         {
@@ -62,7 +74,7 @@ export default function DashboardPage() {
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-gold via-brand-gold/40 to-transparent" />
                 <div className="relative">
                     <h1 className="text-3xl lg:text-4xl font-black tracking-tight">
-                        {t('dashboard.welcome_back')}, {user.email}
+                        {t('dashboard.welcome_back')}, {displayName}
                     </h1>
                     <p className="text-gray-400 mt-2 font-semibold">
                         {t('dashboard.secure_login')}{' '}

@@ -39,7 +39,7 @@ export default function MobileSidebar() {
     const roleLinks = allNav.filter(link => link.roles.some(r => r.toUpperCase() === roleKey));
     const links = roleLinks.length > 0
         ? roleLinks
-        : allNav.filter(link => ['/dashboard', '/dashboard/profile', '/dashboard/support'].includes(link.href));
+        : allNav.filter(link => ['/dashboard', '/dashboard/profile', '/dashboard/details', '/dashboard/support'].includes(link.href));
     const adminLinks = pathname?.startsWith('/dashboard/admin')
         ? ADMIN_EXTRA_LINKS.filter(l => l.roles.includes(roleKey)).map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) }))
         : [];
