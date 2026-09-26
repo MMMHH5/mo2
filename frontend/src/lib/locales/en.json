@@ -1012,7 +1012,8 @@
         "quick_desc_apps": "Review instructor requests",
         "quick_desc_gateways": "Configure payment methods",
         "health_check_title": "Service Health",
-        "health_check_subtitle": "Real-time status of core platform services."
+        "health_check_subtitle": "Real-time status of core platform services.",
+        "nav_ended": "Ended Courses"
     },
     "certStatus": {
         "valid": "Valid",
@@ -1774,5 +1775,21 @@
         "rating_updated": "Your rating was updated",
         "rating_submitted": "Thanks for your rating!",
         "student": "Student"
+    },
+    "endedCourses": {
+        "title": "Ended Courses",
+        "subtitle": "Archive of completed batches: students, certificates and every detail per batch.",
+        "stat_batches": "Ended batches",
+        "stat_courses": "Courses",
+        "stat_students": "Total students",
+        "search_placeholder": "Search by course, batch or instructor...",
+        "empty": "No ended courses yet.",
+        "view_report": "View report",
+        "col_course": "Course",
+        "col_opening": "Batch",
+        "col_period": "Period",
+        "col_students": "Students",
+        "untitled": "Untitled course",
+        "not_set": "Not set"
     }
 }

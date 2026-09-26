@@ -1012,7 +1012,8 @@
         "quick_desc_apps": "راجع طلبات المدرّسين",
         "quick_desc_gateways": "اضبط طرق الدفع",
         "health_check_title": "صحة الخدمات",
-        "health_check_subtitle": "الحالة الفورية لخدمات المنصة الأساسية."
+        "health_check_subtitle": "الحالة الفورية لخدمات المنصة الأساسية.",
+        "nav_ended": "الدورات المنتهية"
     },
     "certStatus": {
         "valid": "سارية",
@@ -1774,5 +1775,21 @@
         "rating_updated": "تم تحديث تقييمك",
         "rating_submitted": "شكراً لتقييمك!",
         "student": "طالب"
+    },
+    "endedCourses": {
+        "title": "الدورات المنتهية",
+        "subtitle": "أرشيف الدفعات المكتملة: الطلاب والشهادات وكل تفاصيل كل دفعة.",
+        "stat_batches": "دفعة منتهية",
+        "stat_courses": "دورة",
+        "stat_students": "إجمالي الطلاب",
+        "search_placeholder": "ابحث باسم الدورة أو الدفعة أو المدرب...",
+        "empty": "لا توجد دورات منتهية بعد.",
+        "view_report": "عرض التقرير",
+        "col_course": "الدورة",
+        "col_opening": "الدفعة",
+        "col_period": "الفترة",
+        "col_students": "الطلاب",
+        "untitled": "دورة بلا عنوان",
+        "not_set": "غير محدد"
     }
 }
