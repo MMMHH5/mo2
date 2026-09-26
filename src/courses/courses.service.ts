@@ -501,6 +501,9 @@ export class CoursesService {
                     'Opening cannot be deleted because it has enrollments. End the opening instead, or remove its enrollments first.'
                 );
             }
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+                throw new NotFoundException('Opening not found');
+            }
             throw e;
         }
         await this.audit.logAction(`User ${deleterId} deleted Opening ${openingId}`, ip, deleterId);
