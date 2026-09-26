@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { Prisma, CourseOpeningStatus, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -27,12 +28,19 @@ export class CoursesService {
     async create(data: CreateCourseDto, instructorId: string) {
         const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, ...rest } = data;
 
+        // The course id is generated up front because lessons nested under a
+        // chapter are two levels deep: Prisma links the chapter automatically but
+        // leaves Module.course unsatisfied, which fails the whole create with a
+        // 500. Creating the id here lets buildChapters connect it explicitly.
+        const id = randomUUID();
+
         return this.prisma.course.create({
             data: {
                 ...rest,
+                id,
                 instructorId,
                 modules: this.buildModules(modules),
-                chapters: this.buildChapters(chapters),
+                chapters: this.buildChapters(chapters, id),
                 objectives: this.buildObjectives(objectives),
                 prerequisites: this.buildPrerequisites(prerequisites),
                 audiences: this.buildAudiences(audiences),
@@ -56,7 +64,7 @@ export class CoursesService {
         // field leaves the existing rows untouched.
         const patch: Prisma.CourseUpdateInput = { ...rest };
         if (modules !== undefined) patch.modules = this.replaceCollection(this.buildModules(modules));
-        if (chapters !== undefined) patch.chapters = this.replaceCollection(this.buildChapters(chapters));
+        if (chapters !== undefined) patch.chapters = this.replaceCollection(this.buildChapters(chapters, id));
         if (objectives !== undefined) patch.objectives = this.replaceCollection(this.buildObjectives(objectives));
         if (prerequisites !== undefined) patch.prerequisites = this.replaceCollection(this.buildPrerequisites(prerequisites));
         if (audiences !== undefined) patch.audiences = this.replaceCollection(this.buildAudiences(audiences));
@@ -105,7 +113,8 @@ export class CoursesService {
     }
 
     private buildChapters(
-        chapters?: { titleAr: string; titleEn: string; orderIndex?: number; modules?: ModuleDraft[] }[]
+        chapters?: { titleAr: string; titleEn: string; orderIndex?: number; modules?: ModuleDraft[] }[],
+        courseId?: string,
     ): Prisma.ChapterCreateNestedManyWithoutCourseInput | undefined {
         if (!chapters?.length) return undefined;
         return {
@@ -114,7 +123,15 @@ export class CoursesService {
                 titleEn: ch.titleEn,
                 orderIndex: ch.orderIndex ?? i,
                 modules: ch.modules?.length
-                    ? { create: ch.modules.map((m) => this.moduleCreatePayload(m) as Prisma.ModuleCreateWithoutChapterInput) }
+                    ? {
+                        create: ch.modules.map(
+                            (m) =>
+                                ({
+                                    ...this.moduleCreatePayload(m),
+                                    ...(courseId ? { course: { connect: { id: courseId } } } : {}),
+                                }) as Prisma.ModuleCreateWithoutChapterInput,
+                        ),
+                    }
                     : undefined,
             })),
         };
