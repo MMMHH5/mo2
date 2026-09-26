@@ -11,7 +11,9 @@ import { useRouter } from 'next/navigation';
 import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, FileText,
     Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, Trash2, ShieldAlert,
+    Users, UserCog,
 } from 'lucide-react';
+import SelectField from '@/components/SelectField';
 
 interface MyProfile {
     id: string;
@@ -468,17 +470,21 @@ export default function ProfilePage() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label className={labelCls}>{t('auth.gender')}</label>
-                                    <select
+                                    <label className={labelCls} htmlFor="pf-gender">{t('auth.gender')}</label>
+                                    <SelectField
+                                        id="pf-gender"
+                                        icon={Users}
+                                        inputCls={inputCls}
                                         value={form.gender}
-                                        onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                                        className={`${inputCls} cursor-pointer [&>option]:bg-brand-navy-dark [&>option]:text-white`}
-                                    >
-                                        <option value="">{t('auth.gender_select')}</option>
-                                        <option value="MALE">{t('auth.gender_male')}</option>
-                                        <option value="FEMALE">{t('auth.gender_female')}</option>
-                                        <option value="OTHER">{t('auth.gender_other')}</option>
-                                    </select>
+                                        onChange={(v) => setForm({ ...form, gender: v })}
+                                        placeholder={t('auth.gender_select')}
+                                        ariaLabel={t('auth.gender')}
+                                        options={[
+                                            { value: 'MALE', label: t('auth.gender_male') },
+                                            { value: 'FEMALE', label: t('auth.gender_female') },
+                                            { value: 'OTHER', label: t('auth.gender_other') },
+                                        ]}
+                                    />
                                 </div>
                                 <div>
                                     <label className={labelCls}>{t('auth.age')}</label>
@@ -505,17 +511,21 @@ export default function ProfilePage() {
                                 </div>
                             </div>
                                 <div>
-                                    <label className={labelCls}>{t('auth.study_status')}</label>
-                                    <select
+                                    <label className={labelCls} htmlFor="pf-study-status">{t('auth.study_status')}</label>
+                                    <SelectField
+                                        id="pf-study-status"
+                                        icon={UserCog}
+                                        inputCls={inputCls}
                                         value={form.studyStatus}
-                                        onChange={(e) => setForm({ ...form, studyStatus: e.target.value })}
-                                        className={`${inputCls} cursor-pointer [&>option]:bg-brand-navy-dark [&>option]:text-white`}
-                                    >
-                                        <option value="">{t('auth.study_status_select')}</option>
-                                        <option value="STUDENT">{t('auth.study_status_student')}</option>
-                                        <option value="GRADUATE">{t('auth.study_status_graduate')}</option>
-                                        <option value="OTHER">{t('auth.study_status_other')}</option>
-                                    </select>
+                                        onChange={(v) => setForm({ ...form, studyStatus: v })}
+                                        placeholder={t('auth.study_status_select')}
+                                        ariaLabel={t('auth.study_status')}
+                                        options={[
+                                            { value: 'STUDENT', label: t('auth.study_status_student') },
+                                            { value: 'GRADUATE', label: t('auth.study_status_graduate') },
+                                            { value: 'OTHER', label: t('auth.study_status_other') },
+                                        ]}
+                                    />
                                 </div>
                                 <div>
                                     <label className={labelCls}>{t('auth.study_level')}</label>

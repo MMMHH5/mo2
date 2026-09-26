@@ -10,6 +10,7 @@ import { Mail, Lock, User, Phone, LogIn, GraduationCap, UserCog, Layers, Users, 
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import SelectField from '@/components/SelectField';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -31,10 +32,7 @@ export default function RegisterPage() {
     });
     const [isLoading, setIsLoading] = useState(false);
 
-    const inputCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10 [color-scheme:dark]' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
-    // Native <select> options render on the OS background, so text-white on a
-    // dark select makes them invisible in dark mode — style the options too.
-    const selectCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl cursor-pointer focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 [&>option]:text-brand-charcoal [&>option]:bg-white ${dark ? 'bg-brand-navy text-white border-white/10 hover:bg-white/10 [color-scheme:dark] [&>option]:text-white [&>option]:bg-brand-navy' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
+    const inputCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
     const labelCls = `block text-sm font-black mb-1.5 ${dark ? 'text-gray-300' : 'text-gray-700'}`;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -129,21 +127,22 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className={labelCls}>{t('auth.gender')}</label>
+                            <label className={labelCls} htmlFor="reg-gender">{t('auth.gender')}</label>
                             <div className="relative flex items-center">
-                                <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
-                                    <Users size={18} className="text-gray-400" />
-                                </div>
-                                <select
-                                    className={selectCls}
+                                <SelectField
+                                    id="reg-gender"
+                                    icon={Users}
+                                    inputCls={inputCls}
                                     value={formData.gender}
-                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                >
-                                    <option value="">{t('auth.gender_select')}</option>
-                                    <option value="MALE">{t('auth.gender_male')}</option>
-                                    <option value="FEMALE">{t('auth.gender_female')}</option>
-                                    <option value="OTHER">{t('auth.gender_other')}</option>
-                                </select>
+                                    onChange={(v) => setFormData({ ...formData, gender: v })}
+                                    placeholder={t('auth.gender_select')}
+                                    ariaLabel={t('auth.gender')}
+                                    options={[
+                                        { value: 'MALE', label: t('auth.gender_male') },
+                                        { value: 'FEMALE', label: t('auth.gender_female') },
+                                        { value: 'OTHER', label: t('auth.gender_other') },
+                                    ]}
+                                />
                             </div>
                         </div>
 
@@ -199,21 +198,22 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className={labelCls}>{t('auth.study_status')}</label>
+                            <label className={labelCls} htmlFor="reg-study-status">{t('auth.study_status')}</label>
                             <div className="relative flex items-center">
-                                <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
-                                    <UserCog size={18} className="text-gray-400" />
-                                </div>
-                                <select
-                                    className={selectCls}
+                                <SelectField
+                                    id="reg-study-status"
+                                    icon={UserCog}
+                                    inputCls={inputCls}
                                     value={formData.studyStatus}
-                                    onChange={(e) => setFormData({ ...formData, studyStatus: e.target.value })}
-                                >
-                                    <option value="">{t('auth.study_status_select')}</option>
-                                    <option value="STUDENT">{t('auth.study_status_student')}</option>
-                                    <option value="GRADUATE">{t('auth.study_status_graduate')}</option>
-                                    <option value="OTHER">{t('auth.study_status_other')}</option>
-                                </select>
+                                    onChange={(v) => setFormData({ ...formData, studyStatus: v })}
+                                    placeholder={t('auth.study_status_select')}
+                                    ariaLabel={t('auth.study_status')}
+                                    options={[
+                                        { value: 'STUDENT', label: t('auth.study_status_student') },
+                                        { value: 'GRADUATE', label: t('auth.study_status_graduate') },
+                                        { value: 'OTHER', label: t('auth.study_status_other') },
+                                    ]}
+                                />
                             </div>
                         </div>
 
