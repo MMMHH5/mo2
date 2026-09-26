@@ -29,6 +29,32 @@ export class UsersService {
         return user;
     }
 
+    async getDetails(id: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id },
+            select: { id: true, email: true, role: true, isActive: true, metadata: true, createdAt: true },
+        });
+        if (!user) throw new NotFoundException('User not found');
+
+        const [enrollments, certificates] = await Promise.all([
+            this.prisma.enrollment.findMany({
+                where: { studentId: id },
+                include: {
+                    course: { select: { id: true, titleAr: true, titleEn: true } },
+                    opening: { select: { id: true, nameAr: true, nameEn: true, startDate: true, endDate: true } },
+                },
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.certificate.findMany({
+                where: { studentId: id },
+                select: { id: true, verificationCode: true, issuingDate: true, verificationStatus: true, courseId: true },
+                orderBy: { issuingDate: 'desc' },
+            }),
+        ]);
+
+        return { user, enrollments, certificates };
+    }
+
     async getMe(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },

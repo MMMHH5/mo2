@@ -5,7 +5,7 @@ import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, ArrowRightLeft, Pause, Play, Search, UserPlus, Users, Download } from 'lucide-react';
+import { Pencil, Trash2, ArrowRightLeft, Pause, Play, Search, UserPlus, Users, Download, Info, BookOpen, Award, Mail, Phone, MapPin, GraduationCap, Calendar, ShieldCheck, BadgeCheck, FileText, ClipboardList, X } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, BtnSoft, type Tone } from '../components';
 
 interface User {
@@ -21,6 +21,24 @@ interface Course {
     titleAr?: string | null;
     titleEn?: string | null;
     openings?: { id: string; nameAr?: string | null; nameEn?: string | null; price: string; isPublished: boolean }[];
+}
+
+interface UserDetailsResponse {
+    user: User & { metadata?: Record<string, unknown> | null };
+    enrollments: {
+        id: string;
+        status: string;
+        createdAt: string;
+        course: { id: string; titleAr?: string | null; titleEn?: string | null };
+        opening?: { id: string; nameAr?: string | null; nameEn?: string | null; startDate?: string | null; endDate?: string | null } | null;
+    }[];
+    certificates: {
+        id: string;
+        verificationCode: string;
+        issuingDate: string;
+        verificationStatus: string;
+        courseId: string;
+    }[];
 }
 
 const ROLES = ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'];
@@ -57,6 +75,10 @@ export default function AdminUsersPage() {
     const [transferCourseId, setTransferCourseId] = useState('');
     const [transferOpeningId, setTransferOpeningId] = useState('');
     const [transferring, setTransferring] = useState(false);
+
+    // Details modal
+    const [details, setDetails] = useState<UserDetailsResponse | null>(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
 
     const roleLabel = (role: string) => t('roles.' + (role || '').toLowerCase()) || role;
 
@@ -169,6 +191,19 @@ export default function AdminUsersPage() {
         setTransferId(userId);
         setTransferCourseId('');
         setTransferOpeningId('');
+    };
+
+    const openDetails = async (u: User) => {
+        setDetailsLoading(true);
+        setDetails(null);
+        try {
+            const res = await api.get(`/users/${u.id}/details`);
+            setDetails(res.data);
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('common.error'));
+        } finally {
+            setDetailsLoading(false);
+        }
     };
 
     const handleTransfer = async () => {
@@ -296,7 +331,10 @@ export default function AdminUsersPage() {
                                     </td>
                                     <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
                                     <td className="p-4 text-right whitespace-nowrap">
-                                        <button onClick={() => openEdit(u)} disabled={processingId === u.id} className="admin-action-btn bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 tooltip disabled:opacity-40" title={t('admin.edit_user')}>
+                                        <button onClick={() => openDetails(u)} disabled={processingId === u.id} className="admin-action-btn bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light hover:bg-brand-gold hover:text-white tooltip disabled:opacity-40" title={t('admin.user_details')}>
+                                            <Info size={18} />
+                                        </button>
+                                        <button onClick={() => openEdit(u)} disabled={processingId === u.id} className="admin-action-btn bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 tooltip disabled:opacity-40 ms-1" title={t('admin.edit_user')}>
                                             <Pencil size={18} />
                                         </button>
                                         <button onClick={() => openTransfer(u.id)} disabled={processingId === u.id} className="admin-action-btn bg-brand-navy/10 text-brand-navy dark:bg-brand-navy-light/10 dark:text-brand-navy-light hover:bg-brand-navy dark:hover:bg-brand-navy-light hover:text-white tooltip disabled:opacity-40 ms-1" title={t('admin.transfer_title')}>
@@ -316,6 +354,141 @@ export default function AdminUsersPage() {
                             )}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Details modal */}
+            {(details || detailsLoading) && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => { setDetails(null); setDetailsLoading(false); }}>
+                    <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl max-w-2xl w-full p-7 animate-scale-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-start justify-between mb-6">
+                            <div>
+                                <h4 className="text-xl font-black text-white flex items-center gap-2">
+                                    <Info size={20} className="text-brand-gold-light" /> {t('admin.user_details_title')}
+                                </h4>
+                                <p className="text-gray-400 text-sm mt-1">{t('admin.user_details_subtitle')}</p>
+                            </div>
+                            <button onClick={() => { setDetails(null); setDetailsLoading(false); }} className="w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center" aria-label="Close">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {detailsLoading && (
+                            <div className="py-16 text-center font-bold text-gray-400">{t('common.loading')}</div>
+                        )}
+
+                        {details && !detailsLoading && (() => {
+                            const meta = (details.user.metadata ?? {}) as Record<string, unknown>;
+                            const fullName = (meta.fullName as string) || details.user.email.split('@')[0];
+                            const initials = fullName.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
+                            const statusLabel = (s: string) => t('statuses.' + (s || '').toLowerCase()) || s;
+                            const infoRows: { icon: typeof Mail; label: string; value: string }[] = [
+                                { icon: Mail, label: t('profile.email'), value: details.user.email },
+                                { icon: ShieldCheck, label: t('profile.role'), value: roleLabel(details.user.role) },
+                                { icon: BadgeCheck, label: t('profile.account_status'), value: details.user.isActive === false ? t('profile.suspended') : t('profile.active') },
+                                { icon: Calendar, label: t('profile.member_since'), value: new Date(details.user.createdAt).toLocaleDateString() },
+                                { icon: Phone, label: t('profile.phone'), value: (meta.phone as string) || '—' },
+                                { icon: MapPin, label: t('profile.city'), value: (meta.city as string) || '—' },
+                                { icon: GraduationCap, label: t('details.specialty'), value: (meta.specialty as string) || '—' },
+                                { icon: ShieldCheck, label: t('details.title'), value: (meta.title as string) || '—' },
+                                { icon: FileText, label: t('details.study_status'), value: (meta.studyStatus as string) ? t('details.status_' + (meta.studyStatus as string).toLowerCase()) : '—' },
+                                { icon: ClipboardList, label: t('details.study_level'), value: (meta.studyLevel as string) || '—' },
+                            ];
+                            return (
+                                <div className="space-y-6">
+                                    {/* Header */}
+                                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-gold to-brand-gold/50 flex items-center justify-center shrink-0">
+                                            <span className="text-2xl font-black text-brand-navy">{initials}</span>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="font-black text-white text-lg truncate" dir="auto">{fullName}</div>
+                                            <div className="text-gray-400 text-sm truncate" dir="ltr">{details.user.email}</div>
+                                            <div className="flex gap-2 mt-2">
+                                                <span className="px-2.5 py-0.5 rounded-full bg-brand-gold text-brand-navy text-[11px] font-black">{roleLabel(details.user.role)}</span>
+                                                <span className={"px-2.5 py-0.5 rounded-full text-[11px] font-black " + (details.user.isActive === false ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400')}>
+                                                    {details.user.isActive === false ? t('profile.suspended') : t('profile.active')}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Info grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+                                        {infoRows.map(row => (
+                                            <div key={row.label} className="flex items-center gap-3 py-2">
+                                                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-brand-gold-light shrink-0">
+                                                    <row.icon size={16} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-[11px] font-bold text-gray-400">{row.label}</div>
+                                                    <div className="font-bold text-white text-sm truncate" dir="auto">{row.value}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {!!(meta.bio as string) && (
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                            <div className="text-[11px] font-bold text-gray-400 mb-1.5 flex items-center gap-1.5"><FileText size={13} /> {t('profile.bio')}</div>
+                                            <p className="text-sm text-gray-200 leading-relaxed" dir="auto">{meta.bio as string}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Enrollments */}
+                                    <div>
+                                        <h5 className="font-black text-white flex items-center gap-2 mb-3">
+                                            <BookOpen size={17} className="text-brand-gold-light" /> {t('details.my_courses')}
+                                            <span className="text-xs text-gray-400 font-bold">({details.enrollments.length})</span>
+                                        </h5>
+                                        {details.enrollments.length === 0 ? (
+                                            <div className="text-sm text-gray-400 py-4 text-center rounded-xl bg-white/5 border border-white/10">{t('details.no_courses')}</div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {details.enrollments.map(en => (
+                                                    <div key={en.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                                                        <BookOpen size={16} className="text-brand-gold-light shrink-0" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-bold text-white text-sm truncate" dir="auto">{en.course.titleAr || en.course.titleEn || '—'}</div>
+                                                            <div className="text-[11px] text-gray-400">
+                                                                {statusLabel(en.status)}{en.opening?.nameAr || en.opening?.nameEn ? ' • ' + (en.opening.nameAr || en.opening.nameEn) : ''}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Certificates */}
+                                    <div>
+                                        <h5 className="font-black text-white flex items-center gap-2 mb-3">
+                                            <Award size={17} className="text-brand-gold-light" /> {t('details.certificates')}
+                                            <span className="text-xs text-gray-400 font-bold">({details.certificates.length})</span>
+                                        </h5>
+                                        {details.certificates.length === 0 ? (
+                                            <div className="text-sm text-gray-400 py-4 text-center rounded-xl bg-white/5 border border-white/10">{t('details.no_certificates')}</div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {details.certificates.map(c => (
+                                                    <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                                                        <Award size={16} className="text-brand-gold-light shrink-0" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-bold text-white text-sm font-mono truncate" dir="ltr">{c.verificationCode.slice(0, 12)}...</div>
+                                                            <div className="text-[11px] text-gray-400">{new Date(c.issuingDate).toLocaleDateString()}</div>
+                                                        </div>
+                                                        <span className={"px-2 py-0.5 rounded-full text-[10px] font-black " + (c.verificationStatus === 'VALID' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-gray-500/15 text-gray-400')}>
+                                                            {c.verificationStatus}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
                 </div>
             )}
 

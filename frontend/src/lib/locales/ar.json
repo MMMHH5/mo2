@@ -226,6 +226,7 @@
     "common": {
         "or": "أو",
         "loading": "جارٍ التحميل...",
+        "error": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
         "cancel": "إلغاء",
         "save": "حفظ",
         "submit": "إرسال",
@@ -774,6 +775,9 @@
         "gateway_instructions_placeholder": "تعليمات التحويل (مثال: حوّل إلى الحساب 12345...)",
         "active_gateway": "بوابة نشطة",
         "save_gateway": "حفظ البوابة",
+        "user_details": "بيانات المستخدم",
+        "user_details_title": "معلومات المستخدم",
+        "user_details_subtitle": "كل بيانات هذا المستخدم",
         "active_tag": "نشطة",
         "inactive_tag": "غير نشطة",
         "gateway_created": "تم إنشاء بوابة الدفع بنجاح",

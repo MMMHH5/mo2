@@ -58,6 +58,14 @@ export class UsersController {
         return this.usersService.create(dto, req.user.userId, ip);
     }
 
+    @ApiOperation({ summary: 'Get full user details (profile, courses, certificates) (Admin / Course Manager)' })
+    @ApiResponse({ status: 200, description: 'Returns user profile, enrollments and certificates.' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @Get(':id/details')
+    getDetails(@Param('id') id: string) {
+        return this.usersService.getDetails(id);
+    }
+
     @ApiOperation({ summary: 'Get specific user profile' })
     @ApiResponse({ status: 200, description: 'Returns user profile and metadata.' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)

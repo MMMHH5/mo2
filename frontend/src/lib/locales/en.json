@@ -226,6 +226,7 @@
     "common": {
         "or": "OR",
         "loading": "Loading...",
+        "error": "Something went wrong. Please try again.",
         "cancel": "Cancel",
         "save": "Save",
         "submit": "Submit",
@@ -774,6 +775,9 @@
         "gateway_instructions_placeholder": "Transfer Instructions (e.g., Transfer to Account 12345...)",
         "active_gateway": "Active Gateway",
         "save_gateway": "Save Gateway",
+        "user_details": "User Details",
+        "user_details_title": "User Information",
+        "user_details_subtitle": "All data for this user",
         "active_tag": "ACTIVE",
         "inactive_tag": "INACTIVE",
         "gateway_created": "Payment Gateway created successfully",
