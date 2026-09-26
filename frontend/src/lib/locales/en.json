@@ -289,18 +289,7 @@
         "export_btn": "Export My Data",
         "exporting": "Preparing export...",
         "export_success": "Your data export has been downloaded.",
-        "export_failed": "Failed to export your data. Please try again.",
-        "delete_title": "Delete My Account",
-        "delete_desc": "Permanently delete your account and your personal data. If deleting is blocked by course records, your account will be anonymized instead.",
-        "delete_btn": "Delete Account",
-        "delete_confirm_title": "Are you absolutely sure?",
-        "delete_confirm_desc": "This action is permanent and cannot be undone. Enter your current password to confirm.",
-        "field_password": "Current password",
-        "delete_submit": "Permanently Delete",
-        "deleting": "Deleting...",
-        "deleted_ok": "Your account has been deleted.",
-        "anonymized_ok": "Your account has been anonymized for record keeping.",
-        "delete_failed": "Failed to delete your account. Check your password and try again."
+        "export_failed": "Failed to export your data. Please try again."
     },
     "explore": {
         "heading": "Explore Knowledge",

@@ -7,10 +7,9 @@ import { useAuth } from '@/lib/auth-context';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, FileText,
-    Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, Trash2, ShieldAlert,
+    Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, ShieldAlert,
     Users, UserCog,
 } from 'lucide-react';
 import SelectField from '@/components/SelectField';
@@ -27,7 +26,6 @@ interface MyProfile {
 export default function ProfilePage() {
     const { user } = useAuth();
     const { t } = useI18n();
-    const router = useRouter();
     const { data: profile, loading, error, refetch } = useFetchData<MyProfile>('/users/me');
 
     const [editing, setEditing] = useState(false);
@@ -41,9 +39,6 @@ export default function ProfilePage() {
     const [savingPw, setSavingPw] = useState(false);
 
     const [exportLoading, setExportLoading] = useState(false);
-    const [confirmDelete, setConfirmDelete] = useState(false);
-    const [deletePw, setDeletePw] = useState('');
-    const [deleting, setDeleting] = useState(false);
 
     const startEdit = () => {
         const m = profile?.metadata ?? {};
@@ -148,30 +143,6 @@ export default function ProfilePage() {
             toast.error(getErrorMessage(err) || t('gdpr.export_failed'));
         } finally {
             setExportLoading(false);
-        }
-    };
-
-    const deleteAccount = async () => {
-        if (!deletePw) {
-            toast.error(t('gdpr.field_password'));
-            return;
-        }
-        setDeleting(true);
-        try {
-            const res = await api.delete('/users/me', { data: { currentPassword: deletePw } });
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem('laxalab_token');
-                localStorage.removeItem('laxalab_refresh');
-                localStorage.removeItem('laxalab_user');
-                localStorage.removeItem('laxalab_consent');
-            }
-            toast.success(res.data?.anonymized ? t('gdpr.anonymized_ok') : t('gdpr.deleted_ok'));
-            setTimeout(() => {
-                router.push('/login');
-            }, 1500);
-        } catch (err) {
-            setDeleting(false);
-            toast.error(getErrorMessage(err) || t('gdpr.delete_failed'));
         }
     };
 
@@ -386,7 +357,7 @@ export default function ProfilePage() {
                                 </div>
                                 <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('gdpr.heading')}</h3>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6">
                                 <div className="bg-brand-gold/5 border border-brand-gold/10 rounded-2xl p-6">
                                     <h4 className="font-black text-brand-gold-dark dark:text-brand-gold-light mb-1.5">{t('gdpr.export_title')}</h4>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{t('gdpr.export_desc')}</p>
@@ -396,16 +367,6 @@ export default function ProfilePage() {
                                         className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-6 py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
                                     >
                                         <Download size={16} /> {exportLoading ? t('gdpr.exporting') : t('gdpr.export_btn')}
-                                    </button>
-                                </div>
-                                <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-6">
-                                    <h4 className="font-black text-red-600 dark:text-red-400 mb-1.5">{t('gdpr.delete_title')}</h4>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{t('gdpr.delete_desc')}</p>
-                                    <button
-                                        onClick={() => setConfirmDelete(true)}
-                                        className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 font-bold rounded-xl hover:bg-red-700 transition"
-                                    >
-                                        <Trash2 size={16} /> {t('gdpr.delete_btn')}
                                     </button>
                                 </div>
                             </div>
@@ -560,46 +521,6 @@ export default function ProfilePage() {
                             <button
                                 onClick={() => setEditing(false)}
                                 disabled={saving}
-                                className="flex-1 bg-white/5 text-gray-300 hover:bg-white/10 py-3 font-bold rounded-xl transition"
-                            >
-                                {t('common.cancel')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        {/* Delete account confirmation */}
-            {confirmDelete && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-md p-8 shadow-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-black text-white">{t('gdpr.delete_confirm_title')}</h2>
-                            <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center" aria-label="Close">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <p className="text-gray-400 text-sm leading-relaxed mb-6">{t('gdpr.delete_confirm_desc')}</p>
-                        <div className="mb-6">
-                            <label className={labelCls}>{t('gdpr.field_password')}</label>
-                            <input
-                                type="password"
-                                value={deletePw}
-                                onChange={(e) => setDeletePw(e.target.value)}
-                                className={inputCls}
-                                autoFocus
-                            />
-                        </div>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={deleteAccount}
-                                disabled={deleting}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 font-bold rounded-xl transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
-                            >
-                                <Trash2 size={16} /> {deleting ? t('gdpr.deleting') : t('gdpr.delete_submit')}
-                            </button>
-                            <button
-                                onClick={() => setConfirmDelete(false)}
-                                disabled={deleting}
                                 className="flex-1 bg-white/5 text-gray-300 hover:bg-white/10 py-3 font-bold rounded-xl transition"
                             >
                                 {t('common.cancel')}

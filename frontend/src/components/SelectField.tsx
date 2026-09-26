@@ -43,11 +43,8 @@ export default function SelectField({
     const [open, setOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(-1);
     const [pos, setPos] = useState<MenuPos | null>(null);
-    const [mounted, setMounted] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => setMounted(true), []);
 
     const selected = options.find((o) => o.value === value);
     const display = selected ? selected.label : placeholder;
@@ -155,7 +152,7 @@ export default function SelectField({
     );
 
     const menu: ReactNode =
-        mounted && pos ? (
+        pos ? (
             <div
                 ref={menuRef}
                 role="listbox"
@@ -209,21 +206,19 @@ export default function SelectField({
         <>
             <div className="relative">{trigger}</div>
             {open &&
-                (mounted
-                    ? createPortal(
-                          <>
-                              <div
-                                  className="fixed inset-0 z-[99]"
-                                  onClick={() => {
-                                      setOpen(false);
-                                      triggerRef.current?.focus();
-                                  }}
-                              />
-                              {menu}
-                          </>,
-                          document.body,
-                      )
-                    : null)}
+                createPortal(
+                    <>
+                        <div
+                            className="fixed inset-0 z-[99]"
+                            onClick={() => {
+                                setOpen(false);
+                                triggerRef.current?.focus();
+                            }}
+                        />
+                        {menu}
+                    </>,
+                    document.body,
+                )}
         </>
     );
 }
