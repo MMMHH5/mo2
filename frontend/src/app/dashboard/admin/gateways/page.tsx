@@ -1,35 +1,26 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PlusCircle, Pencil, Trash2, ImageIcon, ExternalLink, CreditCard, Wallet } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, ExternalLink, CreditCard, Wallet, Upload, PlayCircle, X } from 'lucide-react';
 import { PageHeader, Badge, EmptyPanel, BtnSoft, type Tone } from '../components';
+import { mediaUrl, type PaymentGateway } from '@/components/payment/PaymentMethods';
 
-interface Gateway {
-    id: string;
-    name: string;
-    instructions: string;
-    walletGuideImageUrl?: string | null;
-    isActive: boolean;
-    createdAt: string;
-}
+type Gateway = PaymentGateway & { isActive: boolean; createdAt: string };
 
 interface GatewayForm {
     name: string;
     instructions: string;
-    walletGuideImageUrl: string;
+    guideImages: string[];
+    guideVideoUrl: string;
     isActive: boolean;
 }
 
-const EMPTY_FORM: GatewayForm = { name: '', instructions: '', walletGuideImageUrl: '', isActive: true };
-
-const fileUrl = (url?: string | null) => {
-    if (!url) return null;
-    return url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
-};
+const EMPTY_FORM: GatewayForm = { name: '', instructions: '', guideImages: [], guideVideoUrl: '', isActive: true };
+const MAX_IMAGES = 8;
 
 export default function AdminGatewaysPage() {
     const { data: gateways, loading, error, refetch } = useFetchData<Gateway[]>('/payment-gateways/all');
@@ -38,7 +29,10 @@ export default function AdminGatewaysPage() {
     const [form, setForm] = useState<GatewayForm>(EMPTY_FORM);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState<'image' | 'video' | null>(null);
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
 
     const openCreate = () => {
         setEditingId(null);
@@ -51,10 +45,56 @@ export default function AdminGatewaysPage() {
         setForm({
             name: g.name,
             instructions: g.instructions,
-            walletGuideImageUrl: g.walletGuideImageUrl || '',
+            guideImages: Array.isArray(g.guideImages) ? g.guideImages.filter(Boolean) : [],
+            guideVideoUrl: g.guideVideoUrl || '',
             isActive: g.isActive,
         });
         setShowForm(true);
+    };
+
+    const uploadMedia = async (file: File) => {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await api.post('/payment-gateways/media', fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return res.data.url as string;
+    };
+
+    const handleImageFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        setUploading('image');
+        try {
+            const uploaded: string[] = [];
+            for (const file of files) {
+                const url = await uploadMedia(file);
+                if (!form.guideImages.includes(url)) uploaded.push(url);
+            }
+            // Cap client-side too, so the admin never gets a server-side 400 for
+            // the 9th image.
+            setForm(prev => ({ ...prev, guideImages: [...prev.guideImages, ...uploaded].slice(0, MAX_IMAGES) }));
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('admin.gateway_upload_failed'));
+        } finally {
+            setUploading(null);
+            if (imageInputRef.current) imageInputRef.current.value = '';
+        }
+    };
+
+    const handleVideoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading('video');
+        try {
+            const url = await uploadMedia(file);
+            setForm(prev => ({ ...prev, guideVideoUrl: url }));
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('admin.gateway_upload_failed'));
+        } finally {
+            setUploading(null);
+            if (videoInputRef.current) videoInputRef.current.value = '';
+        }
     };
 
     const handleSave = async () => {
@@ -64,16 +104,18 @@ export default function AdminGatewaysPage() {
         }
         setSaving(true);
         try {
+            const payload = {
+                name: form.name,
+                instructions: form.instructions,
+                guideImages: form.guideImages,
+                guideVideoUrl: form.guideVideoUrl || null,
+                isActive: form.isActive,
+            };
             if (editingId) {
-                await api.patch(`/payment-gateways/${editingId}`, {
-                    ...(form.name !== gateways?.find(g => g.id === editingId)?.name ? { name: form.name } : {}),
-                    instructions: form.instructions,
-                    ...(form.walletGuideImageUrl ? { walletGuideImageUrl: form.walletGuideImageUrl } : {}),
-                    isActive: form.isActive,
-                });
+                await api.patch(`/payment-gateways/${editingId}`, payload);
                 toast.success(t('admin.gateway_updated'));
             } else {
-                await api.post('/payment-gateways', form);
+                await api.post('/payment-gateways', payload);
                 toast.success(t('admin.gateway_created'));
             }
             setShowForm(false);
@@ -159,11 +201,35 @@ export default function AdminGatewaysPage() {
                                 </Badge>
                             </div>
                             <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap mb-4 flex-1 leading-relaxed">{g.instructions}</p>
-                            {fileUrl(g.walletGuideImageUrl) && (
-                                <a href={fileUrl(g.walletGuideImageUrl)!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-brand-gold-dark dark:text-brand-gold-light font-bold text-sm hover:underline mb-4 w-fit">
-                                    <ImageIcon size={16} /> {t('admin.view_image')} <ExternalLink size={14} />
-                                </a>
-                            )}
+                            {(() => {
+                                const images = (Array.isArray(g.guideImages) ? g.guideImages : []).filter(Boolean);
+                                const video = mediaUrl(g.guideVideoUrl);
+                                if (images.length === 0 && !video) return null;
+                                return (
+                                    <div className="mb-4 space-y-2">
+                                        {images.length > 0 && (
+                                            <div className="flex gap-2 flex-wrap">
+                                                {images.map((img) => (
+                                                    <a
+                                                        key={img}
+                                                        href={mediaUrl(img) || '#'}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 hover:border-brand-gold transition"
+                                                    >
+                                                        <img src={mediaUrl(img) || ''} alt={t('payment.guide_media')} className="w-full h-full object-cover" />
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {video && (
+                                            <a href={video} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-brand-gold-dark dark:text-brand-gold-light font-bold text-sm hover:underline w-fit">
+                                                <PlayCircle size={16} /> {t('admin.view_video')} <ExternalLink size={14} />
+                                            </a>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                             <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-white/5">
                                 <button onClick={() => handleToggleActive(g)} disabled={processingId === g.id} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition disabled:opacity-40 cursor-pointer ${g.isActive ? 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 ring-1 ring-emerald-200 dark:ring-emerald-500/30'}`}>
                                     {g.isActive ? t('admin.deactivate') : t('admin.activate')}
@@ -206,21 +272,91 @@ export default function AdminGatewaysPage() {
                                 value={form.instructions}
                                 onChange={e => setForm({ ...form, instructions: e.target.value })}
                             />
-                            <input
-                                type="text"
-                                placeholder={t('admin.gateway_image_url_ph')}
-                                className="w-full p-3 border border-white/10 bg-brand-navy-dark rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition text-white placeholder:text-gray-500"
-                                value={form.walletGuideImageUrl}
-                                onChange={e => setForm({ ...form, walletGuideImageUrl: e.target.value })}
-                            />
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-gray-300">{t('admin.gateway_guide_images')}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => imageInputRef.current?.click()}
+                                        disabled={uploading !== null || form.guideImages.length >= MAX_IMAGES}
+                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-gold-light hover:underline disabled:opacity-40 transition cursor-pointer"
+                                    >
+                                        <Upload size={14} /> {form.guideImages.length >= MAX_IMAGES ? `${form.guideImages.length}/${MAX_IMAGES}` : t('admin.gateway_add_image')}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 leading-relaxed">{t('admin.gateway_guide_images_hint')}</p>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    className="hidden"
+                                    ref={imageInputRef}
+                                    onChange={handleImageFiles}
+                                />
+                                {uploading === 'image' && <p className="text-xs text-brand-gold-light">{t('admin.gateway_uploading')}</p>}
+                                {form.guideImages.length > 0 && (
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {form.guideImages.map((img) => (
+                                            <div key={img} className="relative group">
+                                                <img src={mediaUrl(img) || ''} alt={t('payment.guide_media')} className="w-full h-16 object-cover rounded-lg border border-white/10" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setForm(prev => ({ ...prev, guideImages: prev.guideImages.filter(u => u !== img) }))}
+                                                    className="absolute -top-2 -end-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition cursor-pointer"
+                                                    aria-label={t('admin.gateway_remove')}
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-gray-300">{t('admin.gateway_guide_video')}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => videoInputRef.current?.click()}
+                                        disabled={uploading !== null}
+                                        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-gold-light hover:underline disabled:opacity-40 transition cursor-pointer"
+                                    >
+                                        <Upload size={14} /> {t('admin.gateway_replace_video')}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 leading-relaxed">{t('admin.gateway_guide_video_hint')}</p>
+                                <input
+                                    type="file"
+                                    accept="video/mp4,video/webm,video/quicktime"
+                                    className="hidden"
+                                    ref={videoInputRef}
+                                    onChange={handleVideoFile}
+                                />
+                                {uploading === 'video' && <p className="text-xs text-brand-gold-light">{t('admin.gateway_uploading')}</p>}
+                                {form.guideVideoUrl && (
+                                    <div className="flex items-center gap-2">
+                                        <video src={mediaUrl(form.guideVideoUrl) || ''} controls preload="metadata" className="w-full max-h-40 rounded-lg bg-black" />
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm(prev => ({ ...prev, guideVideoUrl: '' }))}
+                                            className="flex-shrink-0 w-7 h-7 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center hover:bg-red-500/25 transition cursor-pointer"
+                                            aria-label={t('admin.gateway_remove')}
+                                        >
+                                            <X size={15} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <label className="flex items-center gap-2 font-bold cursor-pointer text-sm text-gray-300">
                                 <input type="checkbox" checked={form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })} className="w-4 h-4 accent-brand-gold" />
                                 {t('admin.active_gateway')}
                             </label>
                         </div>
                         <div className="flex justify-end gap-3 mt-6">
-                            <BtnSoft onClick={() => { setShowForm(false); setEditingId(null); }}>{t('common.cancel')}</BtnSoft>
-                            <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-5 py-2.5 rounded-xl font-bold hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50 cursor-pointer">
+                            <BtnSoft onClick={() => { setShowForm(false); setEditingId(null); }} disabled={saving || uploading !== null}>{t('common.cancel')}</BtnSoft>
+                            <button onClick={handleSave} disabled={saving || uploading !== null} className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-5 py-2.5 rounded-xl font-bold hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50 cursor-pointer">
                                 {saving ? t('common.saving') : t('admin.save_gateway')}
                             </button>
                         </div>

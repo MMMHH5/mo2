@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
     BookOpen, Clock, User, CheckCircle, Loader, Award, Film, Users,
     CalendarDays, Globe, ChevronDown, GraduationCap, PlayCircle, MessagesSquare, ListChecks, Target,
-    UploadCloud, FileImage, XCircle, ClipboardList, Settings2
+    AlertTriangle, ClipboardList, Settings2
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
+import { useFetchData } from '@/lib/useFetchData';
 import { formatPrice, formatDate } from '@/lib/format';
 import PublicMobileMenu from '@/components/PublicMobileMenu';
 import CourseChat from '@/components/CourseChat';
@@ -21,6 +22,9 @@ import RosterGrades from '@/components/RosterGrades';
 import TasksPanel from '@/components/TasksPanel';
 import LessonExplorer from '@/components/LessonExplorer';
 import InstructorRating from '@/components/InstructorRating';
+import PaymentMethods, { type PaymentGateway } from '@/components/payment/PaymentMethods';
+import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
+import EnrollSteps from '@/components/payment/EnrollSteps';
 
 export interface Module {
     id: string;
@@ -140,8 +144,9 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
         mode = 'guest';
     }
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [gatewayId, setGatewayId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
     const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'grades' | 'chat' | 'roster'>('overview');
 
     const instructorOpeningId = course?.openings?.find(o => o.instructor?.id === user?.userId)?.id ?? null;
@@ -191,14 +196,12 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
         fetchCourse();
     }, [id, t, initialCourse]);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            setReceiptFile(e.target.files[0]);
-        }
-    };
-
     const handleEnrollSubmit = async () => {
         if (!selectedOpening) return;
+        if (!gatewayId) {
+            toast.error(t('payment.select_method_first'));
+            return;
+        }
         if (!receiptFile) {
             toast.error(t('explore.upload_receipt_required'));
             return;
@@ -207,6 +210,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
         try {
             const formData = new FormData();
             formData.append('openingId', selectedOpening.id);
+            formData.append('gatewayId', gatewayId);
             formData.append('receipt', receiptFile);
             await api.post('/enrollments', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -214,6 +218,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             toast.success(t('explore.review_success'));
             setSelectedOpening(null);
             setReceiptFile(null);
+            setGatewayId(null);
         } catch (e) {
             toast.error(getErrorMessage(e) || t('courseDetail.enroll_failed'));
         } finally {
@@ -743,32 +748,37 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             {t('explore.transfer_part1')} <strong className={dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}>{formatPrice(selectedOpening.price, { locale })}</strong> {t('explore.transfer_part2')}
                         </p>
 
-                        {!receiptFile ? (
-                            <div
-                                onClick={() => fileInputRef.current?.click()}
-                                className={`border-2 border-dashed p-8 flex flex-col items-center justify-center font-semibold cursor-pointer transition group ${dark ? 'border-brand-gold/30 bg-brand-gold/5 text-white hover:bg-brand-gold/10' : 'border-brand-gold/40 bg-brand-gold/5 text-brand-navy hover:bg-brand-gold/10'}`}
-                            >
-                                <UploadCloud size={40} className="mb-3 text-brand-gold group-hover:scale-110 transition-transform" />
-                                <span>{t('payment.attach_receipt')}</span>
-                                <span className={`text-xs font-normal mt-2 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('explore.supports_formats')}</span>
-                                <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileChange} accept=".jpg,.jpeg,.png,.pdf" />
-                            </div>
-                        ) : (
-                            <div className={`rounded-xl p-4 flex items-center justify-between ${dark ? 'bg-white/5 border border-white/10' : 'bg-gray-50 border border-gray-200'}`}>
-                                <div className="flex items-center space-x-3 rtl:space-x-reverse overflow-hidden">
-                                    <FileImage size={24} className={`flex-shrink-0 ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`} />
-                                    <span className={`font-semibold truncate ${dark ? 'text-gray-200' : 'text-gray-700'}`} dir="ltr">{receiptFile.name}</span>
-                                </div>
-                                <button onClick={() => setReceiptFile(null)} className="text-red-500 hover:text-red-700 transition flex-shrink-0">
-                                    <XCircle size={20} />
-                                </button>
-                            </div>
-                        )}
+                        <EnrollSteps step={gatewayId ? 2 : 1} dark={dark} />
+
+                        <div className="mb-6 space-y-3">
+                            <h3 className={`font-bold text-sm uppercase tracking-wider ${dark ? 'text-gray-300' : 'text-brand-charcoal'}`}>{t('payment.payment_method')}:</h3>
+                            <p className={`text-xs -mt-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('payment.choose_method_hint')}</p>
+                            <PaymentMethods
+                                gateways={gateways}
+                                loading={gatewaysLoading}
+                                selectedId={gatewayId}
+                                onSelect={(gid) => setGatewayId(prev => (prev === gid ? null : gid))}
+                                dark={dark}
+                                emptyLabel={t('explore.no_payment_methods')}
+                            />
+                        </div>
+
+                        <div className="space-y-3">
+                            <h3 className={`font-bold text-sm uppercase tracking-wider ${dark ? 'text-gray-300' : 'text-brand-charcoal'}`}>{t('payment.step_receipt')}:</h3>
+                            {!gatewayId ? (
+                                <p className={`text-sm p-3 rounded-xl border flex items-center gap-2 ${dark ? 'text-gray-400 bg-white/5 border-white/10' : 'text-gray-600 bg-brand-mist/40 border-brand-mist'}`}>
+                                    <AlertTriangle size={16} className="flex-shrink-0 text-brand-gold" />
+                                    {t('payment.receipt_section_locked')}
+                                </p>
+                            ) : (
+                                <ReceiptDropzone file={receiptFile} onChange={setReceiptFile} dark={dark} disabled={isSubmitting} />
+                            )}
+                        </div>
 
                         <div className="flex gap-4 mt-8">
                             <button
                                 onClick={handleEnrollSubmit}
-                                disabled={isSubmitting || !receiptFile}
+                                disabled={isSubmitting || !receiptFile || !gatewayId}
                                 className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-light hover:to-brand-gold text-black py-3 font-bold rounded-xl shadow-sm transition disabled:opacity-50"
                             >
                                 {isSubmitting ? t('common.submitting') : t('explore.submit_proof')}

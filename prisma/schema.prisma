@@ -451,13 +451,22 @@ model InstructorApplication {
 }
 
 model PaymentGateway {
-  id                  String   @id @default(uuid())
-  name                String   @unique
-  instructions        String   @db.Text
+  id           String @id @default(uuid())
+  name         String @unique
+  instructions String @db.Text
+
   walletGuideImageUrl String?
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+
+  /// Step-by-step screenshots of the transfer, shown to the student before
+  /// they upload their receipt. Array of public media URLs.
+  guideImages Json?
+  /// Optional walkthrough video of the transfer (public media URL).
+  guideVideoUrl String?
+
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
 }
 
 model SupportTicket {
@@ -831,9 +840,15 @@ model Payment {
   enrollmentId String?
   enrollment   Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
 
+  // Which manual payment method the student said they used, so finance can
+  // reconcile the transfer. Set from the method they picked in the UI.
+  gatewayId String?
+  gateway   PaymentGateway? @relation(fields: [gatewayId], references: [id], onDelete: SetNull)
+
   @@index([studentId])
   @@index([openingId])
   @@index([status])
+  @@index([gatewayId])
 }
 
 model WebhookEvent {

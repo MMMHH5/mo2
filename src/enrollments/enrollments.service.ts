@@ -238,7 +238,7 @@ export class EnrollmentsService {
         });
     }
 
-    async enrollWithReceipt(openingId: string, receiptUrl: string, studentId: string, ipAddress?: string) {
+    async enrollWithReceipt(openingId: string, receiptUrl: string, studentId: string, ipAddress?: string, gatewayId?: string) {
         const opening = await this.prisma.courseOpening.findUnique({
             where: { id: openingId },
             include: { course: { select: { id: true, titleEn: true, titleAr: true } } },
@@ -288,7 +288,7 @@ export class EnrollmentsService {
                 if (payment && payment.status === PaymentStatus.PENDING && payment.provider === 'MANUAL') {
                     await tx.payment.update({
                         where: { id: payment.id },
-                        data: { receiptFileUrl: receiptUrl, enrollmentId: existing.id },
+                        data: { receiptFileUrl: receiptUrl, enrollmentId: existing.id, ...(gatewayId ? { gatewayId } : {}) },
                     });
                 } else {
                     await tx.payment.create({
@@ -300,6 +300,7 @@ export class EnrollmentsService {
                             currency: opening.currency,
                             provider: 'MANUAL',
                             method: 'RECEIPT',
+                            ...(gatewayId ? { gatewayId } : {}),
                             description: `Receipt enrollment in ${opening.course.titleEn}`,
                             receiptFileUrl: receiptUrl,
                         },

@@ -1,8 +1,8 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { BookOpen, UploadCloud, FileImage, XCircle, LogIn, UserPlus, Search, SlidersHorizontal, X, Sparkles } from 'lucide-react';
-import { useState, useRef, useMemo } from 'react';
+import { BookOpen, LogIn, UserPlus, Search, SlidersHorizontal, X, Sparkles, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -11,6 +11,9 @@ import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
 import { formatNumber, formatPrice } from '@/lib/format';
 import CourseCard, { type PublicCourse } from '@/components/CourseCard';
+import PaymentMethods, { type PaymentGateway } from '@/components/payment/PaymentMethods';
+import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
+import EnrollSteps from '@/components/payment/EnrollSteps';
 
 interface Opening {
     id: string;
@@ -20,12 +23,6 @@ interface Opening {
 
 type Course = PublicCourse;
 
-interface PaymentGateway {
-    id: string;
-    name: string;
-    instructions: string;
-}
-
 export default function ExploreCourses({ hideHeader = false, dark }: { hideHeader?: boolean; dark?: boolean }) {
     const { t, pick, locale } = useI18n();
     const { dark: ctxDark } = useTheme();
@@ -34,12 +31,12 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const { user } = useAuth();
     const router = useRouter();
     const { data: courses, loading, error } = useFetchData<Course[]>('/public/courses');
-    const { data: gateways } = useFetchData<PaymentGateway[]>('/payment-gateways');
+    const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [gatewayId, setGatewayId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [query, setQuery] = useState('');
     const [category, setCategory] = useState('');
@@ -85,12 +82,6 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
 
     const clearFilters = () => { setQuery(''); setCategory(''); setLevel(''); };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            setReceiptFile(e.target.files[0]);
-        }
-    };
-
     const handleEnrollClick = (course: Course) => {
         const opening = currentOpening(course);
         if (!opening) return;
@@ -100,6 +91,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
         }
         setSelectedCourse(course);
         setReceiptFile(null);
+        setGatewayId(null);
     };
 
     const handleReserveClick = async (course: Course) => {
@@ -120,6 +112,10 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
         if (!selectedCourse) return;
         const opening = currentOpening(selectedCourse);
         if (!opening) return;
+        if (!gatewayId) {
+            toast.error(t('payment.select_method_first'));
+            return;
+        }
         if (!receiptFile) {
             toast.error(t('explore.upload_receipt_required'));
             return;
@@ -129,6 +125,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
         try {
             const formData = new FormData();
             formData.append('openingId', opening.id);
+            formData.append('gatewayId', gatewayId);
             formData.append('receipt', receiptFile);
 
             await api.post('/enrollments', formData, {
@@ -138,6 +135,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             toast.success(t('explore.review_success'));
             setSelectedCourse(null);
             setReceiptFile(null);
+            setGatewayId(null);
         } catch (err) {
             toast.error(getErrorMessage(err) || t('explore.submit_failed'));
         } finally {
@@ -303,57 +301,37 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                         <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-brand-navy'}`}>{t('explore.enroll_in')} {pick(selectedCourse, 'title')}</h2>
                         <p className={`mb-6 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>{t('explore.transfer_part1')} <strong className={isDark ? 'text-brand-gold-light' : 'text-brand-navy'}>{formatPrice(currentOpening(selectedCourse)?.price, { locale })}</strong> {t('explore.transfer_part2')}</p>
 
+                        <EnrollSteps step={gatewayId ? 2 : 1} dark={isDark} />
+
                         <div className="mb-6 space-y-3">
                             <h3 className={`font-bold text-sm uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-brand-charcoal'}`}>{t('payment.payment_method')}:</h3>
-                            {gateways && gateways.length > 0 ? (
-                                gateways.map((gateway) => (
-                                    <div key={gateway.id} className={`p-4 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-brand-mist/20 border-brand-mist'}`}>
-                                        <h4 className={`font-bold ${isDark ? 'text-white' : 'text-brand-navy'}`}>{gateway.name}</h4>
-                                        <p className={`text-sm whitespace-pre-wrap mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{gateway.instructions}</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className={`text-sm p-3 rounded-xl border ${isDark ? 'text-yellow-300 bg-yellow-500/10 border-yellow-500/20' : 'text-yellow-700 bg-yellow-50 border-yellow-100'}`}>
-                                    {t('explore.no_payment_methods')}
-                                </div>
-                            )}
+                            <p className={`text-xs -mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('payment.choose_method_hint')}</p>
+                            <PaymentMethods
+                                gateways={gateways}
+                                loading={gatewaysLoading}
+                                selectedId={gatewayId}
+                                onSelect={(id) => setGatewayId(prev => (prev === id ? null : id))}
+                                dark={isDark}
+                                emptyLabel={t('explore.no_payment_methods')}
+                            />
                         </div>
 
-                        {!receiptFile ? (
-                            <div
-                                onClick={() => fileInputRef.current?.click()}
-                                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center font-semibold cursor-pointer transition group ${isDark
-                                    ? 'bg-white/5 border-brand-gold/40 text-white hover:bg-white/10 hover:border-brand-gold'
-                                    : 'bg-brand-white border-brand-gold/50 text-brand-navy hover:bg-brand-mist/50 hover:border-brand-gold'
-                                    }`}
-                            >
-                                <UploadCloud size={40} className="mb-3 text-brand-gold group-hover:scale-110 transition-transform" />
-                                <span>{t('payment.attach_receipt')}</span>
-                                <span className={`text-xs font-normal mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('explore.supports_formats')}</span>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    ref={fileInputRef}
-                                    onChange={handleFileChange}
-                                    accept=".jpg,.jpeg,.png,.pdf"
-                                />
-                            </div>
-                        ) : (
-                            <div className={`rounded-xl p-4 flex items-center justify-between ${isDark ? 'bg-white/5 border border-white/10' : 'bg-brand-mist border border-brand-mist/80'}`}>
-                                <div className="flex items-center space-x-3 rtl:space-x-reverse overflow-hidden">
-                                    <FileImage size={24} className={`flex-shrink-0 ${isDark ? 'text-brand-gold-light' : 'text-brand-navy'}`} />
-                                    <span className={`font-semibold truncate ${isDark ? 'text-gray-200' : 'text-brand-charcoal'}`} dir="ltr">{receiptFile.name}</span>
-                                </div>
-                                <button onClick={() => setReceiptFile(null)} className="text-red-500 hover:text-red-700 transition flex-shrink-0 cursor-pointer">
-                                    <XCircle size={20} />
-                                </button>
-                            </div>
-                        )}
+                        <div className="space-y-3">
+                            <h3 className={`font-bold text-sm uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-brand-charcoal'}`}>{t('payment.step_receipt')}:</h3>
+                            {!gatewayId ? (
+                                <p className={`text-sm p-3 rounded-xl border flex items-center gap-2 ${isDark ? 'text-gray-400 bg-white/5 border-white/10' : 'text-gray-600 bg-brand-mist/40 border-brand-mist'}`}>
+                                    <AlertTriangle size={16} className="flex-shrink-0 text-brand-gold" />
+                                    {t('payment.receipt_section_locked')}
+                                </p>
+                            ) : (
+                                <ReceiptDropzone file={receiptFile} onChange={setReceiptFile} dark={isDark} disabled={isSubmitting} />
+                            )}
+                        </div>
 
                         <div className="flex gap-3 mt-8">
                             <button
                                 onClick={handleEnrollmentSubmit}
-                                disabled={isSubmitting || !receiptFile}
+                                disabled={isSubmitting || !receiptFile || !gatewayId}
                                 className="flex-1 bg-brand-gold hover:bg-brand-gold/90 text-brand-navy py-3.5 font-bold rounded-2xl shadow-sm transition disabled:opacity-50 cursor-pointer"
                             >
                                 {isSubmitting ? t('common.submitting') : t('explore.submit_proof')}

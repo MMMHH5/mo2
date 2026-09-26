@@ -75,6 +75,7 @@ export class EnrollmentsController {
     }))
     enrollWithReceipt(
         @Body('openingId') openingId: string,
+        @Body('gatewayId') gatewayId: string | undefined,
         @UploadedFile() file: any,
         @Request() req: any,
         @Ip() ip: string
@@ -90,7 +91,15 @@ export class EnrollmentsController {
             throw new BadRequestException('openingId is required.');
         }
         const receiptUrl = `/uploads/private/receipts/${file.filename}`;
-        return this.enrollmentsService.enrollWithReceipt(openingId, receiptUrl, req.user.id || req.user.userId, ip);
+        return this.enrollmentsService.enrollWithReceipt(
+            openingId,
+            receiptUrl,
+            req.user.id || req.user.userId,
+            ip,
+            // Which payment method the student says they used, so finance can
+            // reconcile the transfer. Optional: older clients omit it.
+            gatewayId || undefined,
+        );
     }
 
     @ApiOperation({ summary: 'Reserve a seat without payment' })
