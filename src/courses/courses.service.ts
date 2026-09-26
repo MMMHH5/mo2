@@ -8,6 +8,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
 
+type CourseViewer = { userId?: string; role?: Role };
+
 type ModuleDraft = {
     titleAr: string; titleEn: string; descriptionAr?: string; descriptionEn?: string; videoUrl?: string;
     orderIndex?: number; isFree?: boolean; durationMinutes?: number;
@@ -50,7 +52,7 @@ export class CoursesService {
         });
     }
 
-    async update(id: string, data: UpdateCourseDto) {
+    async update(id: string, data: UpdateCourseDto, viewer?: CourseViewer) {
         const existing = await this.prisma.course.findUnique({ where: { id } });
         if (!existing) throw new NotFoundException('Course not found');
 
@@ -73,7 +75,7 @@ export class CoursesService {
 
         await this.prisma.course.update({ where: { id }, data: patch });
 
-        return this.findOne(id);
+        return this.findOne(id, true, viewer);
     }
 
     // An explicitly submitted non-empty collection REPLACES the existing rows
@@ -225,7 +227,7 @@ export class CoursesService {
         });
     }
 
-    async findOne(id: string, includeUnpublished = false) {
+    async findOne(id: string, includeUnpublished = false, viewer?: CourseViewer) {
         const course = await this.prisma.course.findUnique({
             where: { id },
             include: {
@@ -257,7 +259,52 @@ export class CoursesService {
             },
         });
         if (!course) throw new NotFoundException('Course not found');
-        return course;
+        if (await this.canViewPaidContent(course, viewer)) return course;
+        return this.redactPaidContent(course);
+    }
+
+    // GET /courses/:id is public, so paid lesson media must not travel with it.
+    // Entitlement mirrors the LMS rule in lessons.service.courseProgress (any
+    // enrollment row grants access) so an enrolled student never loses the video
+    // they legitimately paid for, while an anonymous visitor sees the syllabus
+    // with the assets stripped.
+    private async canViewPaidContent(
+        course: { id: string; instructorId: string },
+        viewer?: CourseViewer,
+    ): Promise<boolean> {
+        if (!viewer?.userId) return false;
+        if (viewer.role === Role.ADMIN || viewer.role === Role.COURSE_MANAGER) return true;
+        if (course.instructorId === viewer.userId) return true;
+        const [opening, enrollment] = await Promise.all([
+            this.prisma.courseOpening.findFirst({
+                where: { courseId: course.id, instructorId: viewer.userId },
+                select: { id: true },
+            }),
+            this.prisma.enrollment.findFirst({
+                where: { courseId: course.id, studentId: viewer.userId },
+                select: { id: true },
+            }),
+        ]);
+        return !!opening || !!enrollment;
+    }
+
+    // Titles, descriptions and outcomes stay visible: that is the public
+    // syllabus. Only the actual assets (video, attachments, external links) are
+    // withheld, and only for modules that are not flagged free.
+    private redactModule<T extends { isFree?: boolean | null; videoUrl?: string | null; files?: unknown; links?: unknown }>(m: T): T {
+        if (m.isFree) return m;
+        return { ...m, videoUrl: null, files: [], links: [] };
+    }
+
+    private redactPaidContent<T extends { modules?: any[]; chapters?: any[] }>(course: T): T {
+        return {
+            ...course,
+            modules: course.modules?.map((m) => this.redactModule(m)),
+            chapters: course.chapters?.map((c) => ({
+                ...c,
+                modules: c.modules?.map((m: any) => this.redactModule(m)),
+            })),
+        };
     }
 
     async createOpening(courseId: string, dto: CreateOpeningDto & { nameAr?: string; nameEn?: string }) {

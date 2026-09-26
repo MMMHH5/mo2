@@ -136,7 +136,7 @@ export class CoursesController {
     @Get(':id')
     findOne(@Param('id') id: string, @Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
         const allowUnpublished = includeUnpublished === 'true' && req?.user?.role && ['ADMIN', 'COURSE_MANAGER'].includes(req.user.role);
-        return this.coursesService.findOne(id, allowUnpublished);
+        return this.coursesService.findOne(id, allowUnpublished, req?.user);
     }
 
     @ApiBearerAuth('JWT-auth')
@@ -145,8 +145,8 @@ export class CoursesController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
-        return this.coursesService.update(id, updateCourseDto);
+    update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto, @Request() req?: any) {
+        return this.coursesService.update(id, updateCourseDto, req?.user);
     }
 
     @ApiBearerAuth('JWT-auth')
