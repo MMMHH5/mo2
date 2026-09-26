@@ -1,16 +1,16 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { BookOpen, UploadCloud, FileImage, XCircle, LogIn, UserPlus, Eye, Search, Users, Clock, SlidersHorizontal, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { BookOpen, UploadCloud, FileImage, XCircle, LogIn, UserPlus, Search, SlidersHorizontal, X, Sparkles } from 'lucide-react';
 import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { useAuth } from '@/lib/auth-context';
-import { formatPrice, formatNumber } from '@/lib/format';
+import { formatNumber, formatPrice } from '@/lib/format';
+import CourseCard, { type PublicCourse } from '@/components/CourseCard';
 
 interface Opening {
     id: string;
@@ -18,24 +18,7 @@ interface Opening {
     price: string;
 }
 
-interface Course {
-    id: string;
-    level?: string | null;
-    language?: string | null;
-    coverImageUrl?: string | null;
-    excerptAr?: string | null;
-    excerptEn?: string | null;
-    categoryAr?: string | null;
-    categoryEn?: string | null;
-    titleAr?: string | null;
-    titleEn?: string | null;
-    descriptionAr?: string | null;
-    descriptionEn?: string | null;
-    durationAr?: string | null;
-    durationEn?: string | null;
-    openings?: Opening[];
-    _count?: { enrollments?: number; modules?: number };
-}
+type Course = PublicCourse;
 
 interface PaymentGateway {
     id: string;
@@ -43,10 +26,11 @@ interface PaymentGateway {
     instructions: string;
 }
 
-export default function ExploreCourses({ hideHeader = false, dark: darkProp = false }: { hideHeader?: boolean; dark?: boolean }) {
+export default function ExploreCourses({ hideHeader = false, dark }: { hideHeader?: boolean; dark?: boolean }) {
     const { t, pick, locale } = useI18n();
     const { dark: ctxDark } = useTheme();
-    const isDark = darkProp ?? ctxDark;
+    // `dark` is an explicit override; without it the surrounding theme wins.
+    const isDark = dark ?? ctxDark;
     const { user } = useAuth();
     const router = useRouter();
     const { data: courses, loading, error } = useFetchData<Course[]>('/public/courses');
@@ -251,121 +235,16 @@ export default function ExploreCourses({ hideHeader = false, dark: darkProp = fa
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                    {filteredCourses?.map((course) => {
-                        const opening = currentOpening(course);
-                        const isOpen = !!openOpening(course);
-                        const announced = !!announcedOpening(course);
-                        const price = opening ? (Number(opening.price) === 0 ? t('course.free') : formatPrice(opening.price, { locale })) : t('courseDetail.not_open_yet');
-                        return (
-                            <div
-                                key={course.id}
-                                className={`group rounded-3xl overflow-hidden transition-all duration-300 flex flex-col animate-fade-in-up ${isDark
-                                    ? 'bg-brand-navy border border-white/5 hover:border-brand-gold/30 hover:shadow-2xl hover:shadow-black/30'
-                                    : 'bg-white shadow-sm hover:shadow-2xl hover:shadow-brand-navy/10 border border-brand-mist/70 hover:border-brand-gold/40'
-                                    }`}
-                            >
-                                {/* Cover */}
-                                <Link href={`/courses/${course.id}`} className="relative h-52 block overflow-hidden">
-                                    {course.coverImageUrl ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img
-                                            src={`${API_BASE_URL}${course.coverImageUrl}`}
-                                            alt={pick(course, 'title') || ''}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-brand-navy via-brand-navy/90 to-brand-mist flex flex-col items-center justify-center">
-                                            <BookOpen size={52} className="text-brand-gold mb-2 opacity-60 group-hover:scale-110 transition-transform duration-500" />
-                                        </div>
-                                    )}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-brand-navy/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" aria-hidden />
-                                    <div className="absolute top-4 end-4 bg-brand-navy/90 backdrop-blur-sm px-3.5 py-1.5 rounded-full font-black text-brand-gold text-sm shadow-lg border border-white/10">
-                                        {price}
-                                    </div>
-                                    <div className="absolute bottom-3 start-3 flex items-center gap-2">
-                                        <span className={`backdrop-blur-sm px-3 py-1 rounded-full text-xs font-black shadow-sm ${isDark ? 'bg-black/40 text-white border border-white/10' : 'bg-white/95 text-brand-navy'}`}>
-                                            {levelLabel(course.level)}
-                                        </span>
-                                        {isOpen && (
-                                            <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-black shadow-sm flex items-center gap-1">
-                                                <CheckCircle2 size={12} /> {t('statuses.open')}
-                                            </span>
-                                        )}
-                                    </div>
-                                </Link>
-
-                                {/* Body */}
-                                <div className="p-6 flex-1 flex flex-col">
-                                    {(pick(course, 'category') || course.language) && (
-                                        <div className="flex flex-wrap gap-2 mb-2.5">
-                                            {pick(course, 'category') && (
-                                                <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${isDark ? 'text-brand-gold-light bg-brand-gold/15' : 'text-brand-gold-dark bg-brand-gold/10'}`}>{pick(course, 'category')}</span>
-                                            )}
-                                            {course.language && (
-                                                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${isDark ? 'text-gray-300 bg-white/5' : 'text-gray-500 bg-gray-100'}`}>{course.language}</span>
-                                            )}
-                                        </div>
-                                    )}
-                                    <Link href={`/courses/${course.id}`}>
-                                        <h3 className={`text-xl font-black mb-2 line-clamp-2 transition-colors leading-snug ${isDark ? 'text-white group-hover:text-brand-gold-light' : 'text-brand-charcoal group-hover:text-brand-navy'}`}>{pick(course, 'title')}</h3>
-                                    </Link>
-                                    <p className={`text-sm mb-4 line-clamp-3 leading-relaxed flex-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                        {pick(course, 'excerpt') || pick(course, 'description')}
-                                    </p>
-
-                                    <div className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-bold mb-5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                        {course._count && course._count.modules ? (
-                                            <span className="inline-flex items-center gap-1.5"><BookOpen size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} /> {course._count.modules} {t('course.modules')}</span>
-                                        ) : null}
-                                        {pick(course, 'duration') ? (
-                                            <span className="inline-flex items-center gap-1.5"><Clock size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} /> {pick(course, 'duration')}</span>
-                                        ) : null}
-                                        {course._count && course._count.enrollments ? (
-                                            <span className="inline-flex items-center gap-1.5"><Users size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} /> {formatNumber(course._count.enrollments, locale)} {t('explore.students')}</span>
-                                        ) : null}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 mt-auto">
-                                        <Link
-                                            href={`/courses/${course.id}`}
-                                            className={`py-3.5 rounded-xl transition-all font-bold text-sm flex items-center justify-center gap-2 ${isDark
-                                                ? 'border border-white/10 text-gray-300 hover:text-white hover:border-brand-gold/40 hover:bg-white/5'
-                                                : 'border-2 border-brand-mist text-brand-charcoal hover:border-brand-navy hover:text-brand-navy hover:bg-brand-navy/5'
-                                                }`}
-                                        >
-                                            <Eye size={16} /> {t('explore.view_details')}
-                                        </Link>
-                                        {isOpen ? (
-                                            <button
-                                                onClick={() => handleEnrollClick(course)}
-                                                className={`py-3.5 font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer ${isDark
-                                                    ? 'bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light shadow-brand-gold/25'
-                                                    : 'bg-brand-navy hover:bg-brand-charcoal text-white shadow-brand-navy/20'
-                                                    }`}
-                                            >
-                                                {t('explore.enroll_now')}
-                                            </button>
-                                        ) : announced ? (
-                                            <button
-                                                onClick={() => handleReserveClick(course)}
-                                                className={`py-3.5 font-bold rounded-xl transition-all text-sm cursor-pointer ${isDark
-                                                    ? 'border border-brand-gold/40 text-brand-gold-light hover:bg-brand-gold hover:text-brand-navy-dark'
-                                                    : 'border-2 border-brand-gold/50 text-brand-navy hover:bg-brand-gold hover:text-brand-navy'
-                                                    }`}
-                                            >
-                                                {t('courseDetail.reserve_seat')}
-                                            </button>
-                                        ) : (
-                                            <span className={`py-3.5 font-bold rounded-xl text-center text-sm ${isDark ? 'bg-white/5 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
-                                                {t('courseDetail.not_open_yet')}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+                    {filteredCourses?.map((course) => (
+                        <CourseCard
+                            key={course.id}
+                            course={course}
+                            isDark={isDark}
+                            onEnroll={handleEnrollClick}
+                            onReserve={handleReserveClick}
+                        />
+                    ))}
 
                     {filteredCourses?.length === 0 && (
                         <div className={`col-span-full py-20 text-center rounded-3xl border border-dashed ${isDark ? 'bg-brand-navy border-white/10 text-gray-400' : 'bg-white border-brand-mist text-gray-500 border-2 border-dashed border-brand-mist/70'}`}>

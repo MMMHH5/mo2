@@ -318,7 +318,16 @@
         "submit_failed": "فشل تقديم طلب التسجيل.",
         "login_prompt_title": "سجّل دخولك أو أنشئ حسابًا",
         "login_prompt_desc": "للتسجيل في الدورة يجب أن تكون مسجّل دخول. سجّل دخولك أو أنشئ حسابًا جديدًا لتتمكن من المتابعة.",
-        "count_label": "دورة"
+        "count_label": "دورة",
+        "outline_heading": "محاور الدورة",
+        "outline_show": "عرض المحاور",
+        "outline_hide": "إخفاء المحاور",
+        "outline_chapters_count": "{n} محاور",
+        "outline_lessons_count": "{n} دروس",
+        "outline_more_lessons": "+{n} دروس أخرى",
+        "outline_free": "معاينة",
+        "outline_locked": "درس مقفل — يفتح بعد التسجيل",
+        "announced_pill": "إعلان قريب"
     },
     "course": {
         "level_beginner": "مبتدئ",

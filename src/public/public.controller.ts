@@ -6,6 +6,19 @@ import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
 import { Role } from '@prisma/client';
 
+/**
+ * Fields of a lesson that are safe to expose in the public catalogue: enough to
+ * render a syllabus preview, nothing that reveals the locked content itself.
+ */
+const OUTLINE_LESSON_SELECT = {
+    id: true,
+    titleAr: true,
+    titleEn: true,
+    orderIndex: true,
+    durationMinutes: true,
+    isFree: true,
+} as const;
+
 @ApiTags('Public')
 @Controller('public')
 export class PublicController {
@@ -120,11 +133,42 @@ export class PublicController {
                     },
                 },
                 _count: { select: { enrollments: true, modules: true } },
+                chapters: {
+                    orderBy: { orderIndex: 'asc' },
+                    select: {
+                        id: true,
+                        titleAr: true,
+                        titleEn: true,
+                        orderIndex: true,
+                        modules: {
+                            orderBy: { orderIndex: 'asc' },
+                            select: OUTLINE_LESSON_SELECT,
+                        },
+                    },
+                },
+                modules: {
+                    orderBy: { orderIndex: 'asc' },
+                    select: OUTLINE_LESSON_SELECT,
+                },
             },
         });
 
         return courses.map((course) => ({
             ...course,
+            // Normalised syllabus preview for the public catalogue: one entry per
+            // chapter, or a single untitled chapter for courses that keep their
+            // lessons flat. Only titles/timing are exposed — never the lesson
+            // body, files, links or the locked video URLs.
+            outline: course.chapters.length > 0
+                ? course.chapters.map((chapter) => ({
+                    id: chapter.id,
+                    titleAr: chapter.titleAr,
+                    titleEn: chapter.titleEn,
+                    lessons: chapter.modules,
+                }))
+                : course.modules.length > 0
+                    ? [{ id: null, titleAr: null, titleEn: null, lessons: course.modules }]
+                    : [],
             openings: course.openings.map((opening) => ({
                 ...opening,
                 // Public footprint: never expose instructor email (prevents scraping/enumeration).
@@ -133,7 +177,7 @@ export class PublicController {
         }))
             .map((course) => {
                 // Course ownership fields are internal; keep only what the public needs.
-                const { instructorId, ...rest } = course;
+                const { instructorId, chapters, modules, ...rest } = course;
                 return rest;
             });
     }

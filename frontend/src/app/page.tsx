@@ -1,42 +1,22 @@
 'use client';
 import Link from 'next/link';
-import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, ArrowUpRight, MapPin } from 'lucide-react';
+import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, MapPin } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { useFetchData } from '@/lib/useFetchData';
-import { formatNumber, formatPrice } from '@/lib/format';
-import { API_BASE_URL } from '@/lib/api';
+import { formatNumber } from '@/lib/format';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import MarketingShell from '@/components/MarketingShell';
-
-interface CourseCard {
-    id: string;
-    level?: string | null;
-    coverImageUrl?: string | null;
-    excerptAr?: string | null;
-    excerptEn?: string | null;
-    titleAr?: string | null;
-    titleEn?: string | null;
-    descriptionAr?: string | null;
-    descriptionEn?: string | null;
-    durationAr?: string | null;
-    durationEn?: string | null;
-    openings?: { id: string; status?: string | null; price: string }[];
-    _count?: { enrollments?: number; modules?: number };
-}
+import CourseCard, { type PublicCourse } from '@/components/CourseCard';
 
 export default function Home() {
   const { t, pick, locale } = useI18n();
   const { dark } = useTheme();
   const isAr = locale === 'ar';
   const { data: stats } = useFetchData<{ courses: number; instructors: number; enrollments: number; certificates: number } | null>('/public/stats');
-  const { data: homeCourses, loading: homeCoursesLoading } = useFetchData<CourseCard[]>('/public/courses');
+  const { data: homeCourses, loading: homeCoursesLoading } = useFetchData<PublicCourse[]>('/public/courses');
 
   const featuredCourses = (homeCourses ?? []).slice(0, 3);
-  const coursePrice = (course: CourseCard) => {
-    const opening = course.openings?.find(o => o.status === 'OPEN') ?? course.openings?.find(o => o.status === 'ANNOUNCEMENT');
-    return opening ? (Number(opening.price) === 0 ? t('course.free') : formatPrice(opening.price, { locale })) : t('courseDetail.not_open_yet');
-  };
 
   const aboutValues = [
     { icon: Target, titleAr: 'التعلم العملي', titleEn: 'Hands-on Learning', descAr: 'دورات مبنية على مشاريع واقعية وتطبيق مباشر.', descEn: 'Courses built on real-world projects and direct application.' },
@@ -217,43 +197,9 @@ export default function Home() {
               ))}
             </div>
           ) : featuredCourses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               {featuredCourses.map(course => (
-                <div key={course.id} className={`group border rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 ${cardCls}`}>
-                  <Link href={`/courses/${course.id}`} className="block relative h-56 overflow-hidden">
-                    {course.coverImageUrl ? (
-                      <img src={`${API_BASE_URL}${course.coverImageUrl}`} alt={pick(course, 'title') || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] flex items-center justify-center">
-                        <BookOpen size={44} className="text-brand-gold" />
-                      </div>
-                    )}
-                    <span className={`absolute top-4 right-4 text-xs font-black uppercase tracking-wide px-4 py-2 rounded-full shadow-lg ${dark ? 'bg-brand-gold text-brand-navy-dark' : 'bg-brand-navy text-white'}`}>
-                      {coursePrice(course)}
-                    </span>
-                  </Link>
-                  <div className="p-7">
-                    <div className={`flex items-center gap-2 text-xs font-bold mb-3 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${featIconCls}`}>
-                        <Clock size={13} />
-                        {pick(course, 'duration') || '—'}
-                      </span>
-                      {course.level && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-current opacity-70">
-                          {t(`course.level_${String(course.level || 'BEGINNER').toLowerCase()}`)}
-                        </span>
-                      )}
-                    </div>
-                    <Link href={`/courses/${course.id}`}>
-                      <h4 className={`text-xl font-black mb-2 hover:text-brand-gold-dark dark:hover:text-brand-gold-light transition-colors ${cardTitleCls}`}>{pick(course, 'title')}</h4>
-                    </Link>
-                    <p className={`text-sm leading-relaxed mb-6 line-clamp-2 ${cardDescCls}`}>{pick(course, 'excerpt') || pick(course, 'description')}</p>
-                    <Link href={`/courses/${course.id}`} className="inline-flex items-center gap-2 font-bold text-sm text-brand-gold-dark dark:text-brand-gold-light">
-                      {t('explore.view_details')}
-                      <ArrowUpRight size={16} />
-                    </Link>
-                  </div>
-                </div>
+                <CourseCard key={course.id} course={course} isDark={dark} variant="featured" />
               ))}
             </div>
           ) : null}

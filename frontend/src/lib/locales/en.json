@@ -318,7 +318,16 @@
         "submit_failed": "Failed to submit enrollment request.",
         "login_prompt_title": "Log in or Create an Account",
         "login_prompt_desc": "To enroll in this course, you need to be signed in. Log in or create a new account to continue.",
-        "count_label": "courses"
+        "count_label": "courses",
+        "outline_heading": "Course outline",
+        "outline_show": "Show outline",
+        "outline_hide": "Hide outline",
+        "outline_chapters_count": "{n} sections",
+        "outline_lessons_count": "{n} lessons",
+        "outline_more_lessons": "+{n} more",
+        "outline_free": "Free",
+        "outline_locked": "Locked lesson — unlocks after enrolling",
+        "announced_pill": "Announcement"
     },
     "course": {
         "level_beginner": "Beginner",
