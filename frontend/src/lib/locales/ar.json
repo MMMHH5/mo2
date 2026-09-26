@@ -254,6 +254,7 @@
     },
     "dashboard": {
         "welcome_back": "مرحباً بعودتك",
+        "engineer_label": "المهندس",
         "secure_login": "تم تسجيل دخولك بشكل آمن بصلاحيات",
         "permissions": "",
         "system_status": "حالة النظام",
