@@ -142,6 +142,24 @@ export class EnrollmentsController {
         return this.enrollmentsService.getAllEnrollments();
     }
 
+    @ApiOperation({ summary: 'Get every enrollment for one course, grouped by status (course managers)' })
+    @ApiResponse({ status: 200, description: 'Roster for the course with per-status counts and latest payment.' })
+    @ApiResponse({ status: 404, description: 'Course not found.' })
+    @Roles(Role.COURSE_MANAGER, Role.ADMIN)
+    @Get('course/:courseId')
+    getCourseEnrollments(@Param('courseId') courseId: string) {
+        return this.enrollmentsService.getForCourse(courseId);
+    }
+
+    @ApiOperation({ summary: 'Roster for a single opening (reserved / pending / approved)' })
+    @ApiResponse({ status: 200, description: 'Opening roster with per-status counts and latest payment.' })
+    @ApiResponse({ status: 404, description: 'Opening not found.' })
+    @Roles(Role.COURSE_MANAGER, Role.ADMIN)
+    @Get('opening/:openingId')
+    getOpeningEnrollments(@Param('openingId') openingId: string) {
+        return this.enrollmentsService.getForOpening(openingId);
+    }
+
     @ApiOperation({ summary: 'Finance/Admin review enrollment receipt' })
     @ApiResponse({ status: 200, description: 'Enrollment status updated (APPROVED/REJECTED).' })
     @Roles(Role.FINANCE, Role.ADMIN)

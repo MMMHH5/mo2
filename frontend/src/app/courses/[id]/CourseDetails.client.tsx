@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
-    BookOpen, Clock, User, CheckCircle, Loader, Award, Film, Users,
+    BookOpen, Clock, User, CheckCircle, Loader, Award, Star, Users,
     CalendarDays, Globe, ChevronDown, GraduationCap, PlayCircle, MessagesSquare, ListChecks, Target,
     AlertTriangle, ClipboardList, Settings2
 } from 'lucide-react';
@@ -13,7 +14,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { useFetchData } from '@/lib/useFetchData';
-import { formatPrice, formatDate } from '@/lib/format';
+import { formatPrice, formatDate, formatNumber } from '@/lib/format';
 import PublicMobileMenu from '@/components/PublicMobileMenu';
 import CourseChat from '@/components/CourseChat';
 import StudentTasksPanel from '@/components/StudentTasksPanel';
@@ -61,6 +62,26 @@ export interface Opening {
     instructor?: { id: string; email: string } | null;
     _count?: { enrollments?: number };
 }
+
+export interface CourseReview {
+    id: string;
+    rating: number;
+    commentAr?: string | null;
+    commentEn?: string | null;
+    createdAt: string;
+    user?: { id: string; email?: string } | null;
+}
+
+// Mirrors GET /reviews/course/:courseId (published reviews only).
+export interface CourseReviews {
+    total: number;
+    average: number;
+    distribution: { stars: number; count: number }[];
+    reviews: CourseReview[];
+}
+
+// How many written reviews to list before asking people to read the rest.
+const REVIEWS_PREVIEW = 5;
 
 export interface Course {
     id: string;
@@ -146,7 +167,11 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [gatewayId, setGatewayId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // The hero doubles as the trailer player, so the 1-2 minute intro is above
+    // the fold instead of a section the visitor may never scroll to.
+    const [showTrailer, setShowTrailer] = useState(false);
     const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
+    const { data: reviews, loading: reviewsLoading } = useFetchData<CourseReviews>(`/reviews/course/${id}`);
     const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'grades' | 'chat' | 'roster'>('overview');
 
     const instructorOpeningId = course?.openings?.find(o => o.instructor?.id === user?.userId)?.id ?? null;
@@ -464,20 +489,52 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                         </div>
                     </div>
 
-                    {/* Right: cover card */}
+                    {/* Right: cover card, doubling as the trailer player */}
                     <div className="hidden lg:block animate-fade-in-up">
                         <div className="relative">
                             <div className="absolute -inset-3 bg-gradient-to-tr from-brand-gold/30 to-transparent rounded-[2rem] blur-2xl opacity-50" aria-hidden />
                             <div className="relative rounded-[1.75rem] overflow-hidden border border-white/15 shadow-2xl shadow-black/40 hover:scale-[1.02] transition-transform duration-500">
-                                {course.coverImageUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={`${API_BASE_URL}${course.coverImageUrl}`} alt={pick(course, 'title') || ''} className="w-full aspect-[4/3] object-cover" />
-                                ) : (
-                                    <div className="w-full aspect-[4/3] bg-gradient-to-br from-brand-navy-light to-brand-navy-dark flex items-center justify-center">
-                                        <BookOpen size={72} className="text-brand-gold-light/30" />
+                                {showTrailer && introVideo ? (
+                                    <div className="w-full aspect-[4/3] bg-black">
+                                        {introVideo.type === 'embed' ? (
+                                            <iframe
+                                                src={`${introVideo.src}${introVideo.src.includes('?') ? '&' : '?'}autoplay=1`}
+                                                title={t('courseDetail.intro_video')}
+                                                className="w-full h-full"
+                                                allow="autoplay; fullscreen; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            />
+                                        ) : (
+                                            <video src={`${API_BASE_URL}${introVideo.src}`} controls autoPlay className="w-full h-full" />
+                                        )}
                                     </div>
+                                ) : (
+                                    <>
+                                        {course.coverImageUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={`${API_BASE_URL}${course.coverImageUrl}`} alt={pick(course, 'title') || ''} className="w-full aspect-[4/3] object-cover" />
+                                        ) : (
+                                            <div className="w-full aspect-[4/3] bg-gradient-to-br from-brand-navy-light to-brand-navy-dark flex items-center justify-center">
+                                                <BookOpen size={72} className="text-brand-gold-light/30" />
+                                            </div>
+                                        )}
+                                        {introVideo && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowTrailer(true)}
+                                                className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brand-navy-dark/35 backdrop-blur-[2px] transition hover:bg-brand-navy-dark/50 cursor-pointer group"
+                                                aria-label={t('courseDetail.watch_intro')}
+                                            >
+                                                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-gold text-brand-navy-dark shadow-2xl transition-transform duration-300 group-hover:scale-110">
+                                                    <PlayCircle size={42} />
+                                                </span>
+                                                <span className="rounded-full bg-brand-navy/85 px-4 py-1.5 text-xs font-black text-white backdrop-blur-sm">
+                                                    {t('courseDetail.watch_intro')}
+                                                </span>
+                                            </button>
+                                        )}
+                                    </>
                                 )}
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-navy-dark/95 to-transparent p-6 pt-16">
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-navy-dark/95 to-transparent p-6 pt-16 pointer-events-none">
                                     <div className="flex items-center justify-between gap-4">
                                         <div>
                                             <div className="text-[10px] font-bold text-brand-gold-light uppercase tracking-[0.2em] mb-1">
@@ -514,16 +571,18 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     ) : (
                         <>
 
-                    {/* Intro Video */}
-                    {introVideo && (
-                        <div className="mb-10">
-                            <SectionTitle icon={<Film size={18} />}>{t('courseDetail.intro_video')}</SectionTitle>
-                            <div className={`rounded-2xl overflow-hidden shadow-lg aspect-video bg-black ${dark ? 'border border-white/10' : 'border border-gray-200'}`}>
-                                {introVideo.type === 'embed' ? (
-                                    <iframe src={introVideo.src} title="Intro" className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
-                                ) : (
-                                    <video src={`${API_BASE_URL}${introVideo.src}`} controls className="w-full h-full" />
-                                )}
+                    {/* What you'll learn — before the syllabus, so the visitor
+                        sees the payoff before committing to the syllabus. */}
+                    {course.objectives && course.objectives.length > 0 && (
+                        <div className="mb-12 bg-brand-gold/5 border border-brand-gold/10 rounded-3xl p-6">
+                            <SectionTitle icon={<GraduationCap size={18} />}>{t('courseDetail.learn_heading')}</SectionTitle>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                {course.objectives.map((o, idx) => (
+                                    <div key={idx} className={`flex items-start gap-3 rounded-xl p-4 hover:border-brand-gold/20 transition ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                        <CheckCircle size={18} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                                        <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(o, 'objective')}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -557,21 +616,6 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </div>
                             )}
 
-                            {/* What you'll learn */}
-                            {course.objectives && course.objectives.length > 0 && (
-                                <div className="bg-brand-gold/5 border border-brand-gold/10 rounded-3xl p-6">
-                                    <SectionTitle icon={<GraduationCap size={18} />}>{t('courseDetail.learn_heading')}</SectionTitle>
-                                    <div className="grid sm:grid-cols-2 gap-3">
-                                        {course.objectives.map((o, idx) => (
-                                            <div key={idx} className={`flex items-start gap-3 rounded-xl p-4 hover:border-brand-gold/20 transition ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
-                                                <CheckCircle size={18} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                                                <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(o, 'objective')}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Prerequisites */}
                             {course.prerequisites && course.prerequisites.length > 0 && (
                                 <div>
@@ -601,6 +645,99 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     </ul>
                                 </div>
                             )}
+
+                            {/* Instructor. There is no display-name or bio field on
+                                User yet, so this falls back to the account email. */}
+                            {courseInstructor?.email && (
+                                <div>
+                                    <SectionTitle icon={<User size={18} />}>{t('courseDetail.instructor_heading')}</SectionTitle>
+                                    <div className={`flex flex-wrap items-center gap-5 rounded-2xl p-5 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                        <span className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-gold to-brand-gold-dark text-2xl font-black text-brand-navy-dark">
+                                            {courseInstructor.email.charAt(0).toUpperCase()}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <div className={`truncate font-black ${dark ? 'text-white' : 'text-brand-navy'}`} dir="ltr">
+                                                {courseInstructor.email}
+                                            </div>
+                                            <div className={`mt-0.5 text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                {t('courseDetail.instructor_role')}
+                                            </div>
+                                            <Link
+                                                href={`/instructors/${courseInstructor.id}`}
+                                                className={`mt-2 inline-flex items-center gap-1.5 text-sm font-bold hover:underline ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}
+                                            >
+                                                {t('courseDetail.instructor_view_profile')}
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Student reviews */}
+                            <div>
+                                <SectionTitle icon={<Star size={18} />}>{t('courseDetail.reviews_heading')}</SectionTitle>
+                                {reviewsLoading ? (
+                                    <div className={`h-20 animate-pulse rounded-2xl ${dark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                                ) : !reviews || reviews.total === 0 ? (
+                                    <p className={`rounded-2xl border border-dashed p-5 text-sm ${dark ? 'border-white/10 text-gray-400' : 'border-gray-200 text-gray-500'}`}>
+                                        {t('courseDetail.reviews_empty')}
+                                    </p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className={`flex flex-wrap items-center gap-5 rounded-2xl p-5 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                            <div className="text-center">
+                                                <div className="text-4xl font-black text-brand-gold-dark dark:text-brand-gold-light">
+                                                    {reviews.average.toFixed(1)}
+                                                </div>
+                                                <div className="mt-1 flex items-center justify-center gap-0.5" aria-hidden>
+                                                    {[1, 2, 3, 4, 5].map(s => (
+                                                        <Star key={s} size={13} className={s <= Math.round(reviews.average) ? 'fill-brand-gold text-brand-gold' : dark ? 'text-gray-600' : 'text-gray-300'} />
+                                                    ))}
+                                                </div>
+                                                <div className={`mt-1 text-xs font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                    {t('courseDetail.reviews_count').replace('{n}', formatNumber(reviews.total, locale))}
+                                                </div>
+                                            </div>
+                                            <ul className="flex-1 space-y-1">
+                                                {reviews.distribution.map(d => (
+                                                    <li key={d.stars} className="flex items-center gap-2 text-xs">
+                                                        <span className={`w-8 shrink-0 font-black ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{d.stars}★</span>
+                                                        <span className={`h-2 flex-1 overflow-hidden rounded-full ${dark ? 'bg-white/10' : 'bg-gray-200'}`}>
+                                                            <span
+                                                                className="block h-full rounded-full bg-brand-gold"
+                                                                style={{ width: `${reviews.total ? (d.count / reviews.total) * 100 : 0}%` }}
+                                                            />
+                                                        </span>
+                                                        <span className={`w-6 shrink-0 text-end font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{d.count}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <ul className="space-y-3">
+                                            {reviews.reviews.slice(0, REVIEWS_PREVIEW).map(r => (
+                                                <li key={r.id} className={`rounded-2xl p-4 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-white border border-gray-200'}`}>
+                                                    <div className="mb-2 flex items-center gap-2">
+                                                        <span className="flex items-center gap-0.5" aria-label={`${r.rating}/5`}>
+                                                            {[1, 2, 3, 4, 5].map(s => (
+                                                                <Star key={s} size={12} className={s <= r.rating ? 'fill-brand-gold text-brand-gold' : dark ? 'text-gray-600' : 'text-gray-300'} />
+                                                            ))}
+                                                        </span>
+                                                        <span className={`truncate text-xs font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="ltr">
+                                                            {r.user?.email}
+                                                        </span>
+                                                        <span className={`ms-auto shrink-0 text-xs ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                            {fmtDate(r.createdAt)}
+                                                        </span>
+                                                    </div>
+                                                    {(pick(r, 'comment')) && (
+                                                        <p className={`text-sm leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(r, 'comment')}</p>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* FAQ */}
                             {course.faqs && course.faqs.length > 0 && (

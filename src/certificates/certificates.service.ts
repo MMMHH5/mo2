@@ -125,6 +125,48 @@ export class CertificatesService {
         return { issued, count: issued.length };
     }
 
+    /**
+     * Every certificate issued for a course, with its holder. Certificates are
+     * course-level by design (one per student per course, no opening link), so
+     * this is the authoritative "who holds a certificate for this course" list
+     * for staff. Student-side routes intentionally never expose other people's
+     * emails, so this stays behind ADMIN / COURSE_MANAGER.
+     */
+    async listForCourse(courseId: string) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            select: { id: true, titleAr: true, titleEn: true, certificateIssued: true },
+        });
+        if (!course) throw new NotFoundException('Course not found');
+
+        const certificates = await this.prisma.certificate.findMany({
+            where: { courseId },
+            select: {
+                id: true,
+                verificationCode: true,
+                issuingDate: true,
+                verificationStatus: true,
+                createdAt: true,
+                student: { select: { id: true, email: true } },
+            },
+            orderBy: { issuingDate: 'desc' },
+        });
+
+        const counts = {
+            VALID: 0,
+            REVOKED: 0,
+            EXPIRED: 0,
+        } as Record<CertificateStatus, number>;
+        for (const c of certificates) counts[c.verificationStatus] += 1;
+
+        return {
+            course,
+            counts,
+            total: certificates.length,
+            certificates,
+        };
+    }
+
     async revoke(id: string, actorId: string, actorRole: Role) {
         const cert = await this.prisma.certificate.findUnique({ where: { id } });
         if (!cert) throw new NotFoundException('Certificate not found');

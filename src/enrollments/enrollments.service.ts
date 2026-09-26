@@ -1,11 +1,50 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EnrollmentStatus, CourseOpeningStatus, Role, PaymentStatus } from '@prisma/client';
+import { EnrollmentStatus, CourseOpeningStatus, Role, PaymentStatus, Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ChatService } from '../chat/chat.service';
 import { resolvePrivateUpload } from '../common/private-uploads';
 import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
+
+/**
+ * One roster row shape, shared by the per-course and per-opening views. Both
+ * need the same thing to answer "who is actually in this seat": who the student
+ * is, which batch, every status, and whether money has landed.
+ */
+const ROSTER_SELECT = {
+    id: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    financeOfficerNotes: true,
+    student: { select: { id: true, email: true } },
+    opening: {
+        select: {
+            id: true,
+            status: true,
+            isPublished: true,
+            nameAr: true,
+            nameEn: true,
+            price: true,
+        },
+    },
+    // A student may have several payment attempts over time; only
+    // the newest decides whether the seat is actually covered.
+    payments: {
+        orderBy: { createdAt: 'desc' as const },
+        take: 1,
+        select: {
+            id: true,
+            status: true,
+            amount: true,
+            method: true,
+            gatewayId: true,
+            paidAt: true,
+            createdAt: true,
+        },
+    },
+} as const;
 
 @Injectable()
 export class EnrollmentsService {
@@ -236,6 +275,89 @@ export class EnrollmentsService {
             },
             orderBy: { createdAt: 'desc' },
         });
+    }
+
+    /**
+     * Course-level roster for course managers. The per-opening roster
+     * (GET /openings/:id/roster) only answers "who is in this batch", so a
+     * course with several batches would need one drill-down per batch and
+     * there is no way to see the statuses that need action (RESERVED =
+     * reserved but never paid, PENDING = receipt awaiting finance).
+     *
+     * Returns every status — including REJECTED/REVOKED — because the point
+     * of the view is to reconcile the whole picture, plus the latest payment
+     * per enrollment so an unpaid seat is obvious.
+     */
+    async getForCourse(courseId: string) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            select: { id: true, titleAr: true, titleEn: true },
+        });
+        if (!course) throw new NotFoundException('Course not found');
+
+        const enrollments = await this.prisma.enrollment.findMany({
+            where: { courseId },
+            select: ROSTER_SELECT,
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return { course, ...this.shapeRoster(enrollments) };
+    }
+
+    /**
+     * Roster for a single batch. This is the view that answers "who is in this
+     * opening right now": seats still only reserved (money not yet collected),
+     * registrations awaiting finance review, and the ones who actually bought.
+     * Once an opening ends the approved rows are the definitive attendees, and
+     * the reserved ones are simply seats that were never taken up.
+     */
+    async getForOpening(openingId: string) {
+        const opening = await this.prisma.courseOpening.findUnique({
+            where: { id: openingId },
+            select: {
+                id: true,
+                status: true,
+                isPublished: true,
+                nameAr: true,
+                nameEn: true,
+                price: true,
+                startDate: true,
+                endDate: true,
+                course: { select: { id: true, titleAr: true, titleEn: true } },
+            },
+        });
+        if (!opening) throw new NotFoundException('Opening not found');
+
+        const enrollments = await this.prisma.enrollment.findMany({
+            where: { openingId },
+            select: ROSTER_SELECT,
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return { opening, ...this.shapeRoster(enrollments) };
+    }
+
+    /** Collapses payment attempts and tallies the status breakdown. */
+    private shapeRoster(enrollments: Prisma.EnrollmentGetPayload<{ select: typeof ROSTER_SELECT }>[]) {
+        const counts = Object.fromEntries(
+            Object.values(EnrollmentStatus).map((s) => [s, 0]),
+        ) as Record<EnrollmentStatus, number>;
+        for (const e of enrollments) counts[e.status as EnrollmentStatus] += 1;
+
+        return {
+            counts,
+            total: enrollments.length,
+            enrollments: enrollments.map((e) => ({
+                id: e.id,
+                status: e.status,
+                createdAt: e.createdAt,
+                updatedAt: e.updatedAt,
+                financeOfficerNotes: e.financeOfficerNotes,
+                student: e.student,
+                opening: e.opening,
+                payment: e.payments?.[0] ?? null,
+            })),
+        };
     }
 
     async enrollWithReceipt(openingId: string, receiptUrl: string, studentId: string, ipAddress?: string, gatewayId?: string) {

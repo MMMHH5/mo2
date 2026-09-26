@@ -3,7 +3,7 @@
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
-import { BookOpen, Clock, CheckCircle, XCircle, GraduationCap, Award } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, XCircle, GraduationCap, Award, CreditCard, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 interface Enrollment {
@@ -59,6 +59,19 @@ export default function MyCoursesPage() {
     const isCompleted = (enrollment: Enrollment) =>
         enrollment.status === 'APPROVED' && enrollment.opening?.status === 'ENDED';
 
+    /**
+     * A reservation only becomes money owed once the opening is OPEN. This
+     * mirrors the backend trigger in CoursesService.notifyReservedPaymentDue,
+     * which fires on the transition into OPEN, and it is deliberately not
+     * gated on `isPublished`: the payment page offers any OPEN/ANNOUNCEMENT
+     * opening regardless of publication, so gating here would hide a payable
+     * seat and leave the student with a notification but no way to act on it.
+     */
+    const paymentDue = (enrollment: Enrollment) =>
+        enrollment.status === 'RESERVED' && enrollment.opening?.status === 'OPEN';
+
+    const dueEnrollments = (enrollments ?? []).filter(paymentDue);
+
     const gradeByCourse = new Map<string, GradeRow[]>();
     const assessmentsByCourse = new Map<string, Assessment[]>();
     (gradesData || []).forEach(g => {
@@ -89,6 +102,27 @@ export default function MyCoursesPage() {
                 </div>
 
                 {error && <div className="p-4 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 rounded-xl mb-6">{error}</div>}
+
+                {!loading && dueEnrollments.length > 0 && (
+                    <div className="mb-6 p-5 rounded-2xl border border-brand-gold/30 bg-brand-gold/10 flex flex-wrap items-center gap-4 animate-fade-in">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-gold text-brand-navy-dark">
+                            <CreditCard size={22} />
+                        </span>
+                        <div className="flex-1 min-w-[200px]">
+                            <div className="font-black text-brand-navy dark:text-brand-gold-light">
+                                {t('myCourses.payment_due_title').replace('{n}', String(dueEnrollments.length))}
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{t('myCourses.payment_due_desc')}</p>
+                        </div>
+                        <Link
+                            href="/dashboard/payments"
+                            className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-navy-dark text-sm font-black px-5 py-3 rounded-xl hover:shadow-lg hover:shadow-brand-gold/25 transition whitespace-nowrap"
+                        >
+                            {t('myCourses.payment_due_cta')}
+                            <ChevronRight size={16} className="rtl:rotate-180" />
+                        </Link>
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="h-40 flex items-center justify-center font-bold text-gray-500 dark:text-gray-400">{t('myCourses.loading')}</div>
@@ -180,6 +214,14 @@ export default function MyCoursesPage() {
                                                     {t('myCourses.continue')}
                                                 </Link>
                                             </div>
+                                        ) : paymentDue(enrollment) ? (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Link href="/dashboard/payments" className="bg-gradient-to-r from-brand-gold to-brand-gold-light text-black text-sm font-black px-4 py-2 rounded-xl hover:from-brand-gold-light hover:to-brand-gold transition whitespace-nowrap flex items-center gap-1.5">
+                                                    <CreditCard size={14} /> {t('myCourses.pay_now')}
+                                                </Link>
+                                            </div>
+                                        ) : enrollment.status === 'RESERVED' ? (
+                                            <span className="text-xs font-semibold text-gray-400">{t('myCourses.reserved_waiting')}</span>
                                         ) : (
                                             <span className="text-xs font-semibold text-gray-500">{t('myCourses.locked')}</span>
                                         )}

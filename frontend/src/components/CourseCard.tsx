@@ -11,6 +11,7 @@ import {
     Layers,
     Lock,
     Sparkles,
+    Star,
     Unlock,
     Users,
 } from 'lucide-react';
@@ -22,6 +23,8 @@ export interface PublicOpening {
     id: string;
     status?: string | null;
     price: string;
+    /** Struck through on the card when the opening is discounted. */
+    priceOld?: string | null;
 }
 
 export interface OutlineLesson {
@@ -58,6 +61,9 @@ export interface PublicCourse {
     openings?: PublicOpening[];
     outline?: OutlineChapter[];
     _count?: { enrollments?: number; modules?: number };
+    /** Mean of published CourseReview rows, 0 when nobody has reviewed yet. */
+    averageRating?: number;
+    reviewCount?: number;
 }
 
 interface CourseCardProps {
@@ -83,6 +89,9 @@ export default function CourseCard({
     className = '',
 }: CourseCardProps) {
     const { t, pick, locale } = useI18n();
+    // The outline is depth, not hook: the card has to answer what/for/how-much
+    // in a glance, so the syllabus stays one tap away.
+    const [outlineOpen, setOutlineOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
 
     const openOpening = course.openings?.find(o => o.status === 'OPEN');
@@ -95,6 +104,12 @@ export default function CourseCard({
     const price = current
         ? (Number(current.price) === 0 ? t('course.free') : formatPrice(current.price, { locale }))
         : t('courseDetail.not_open_yet');
+    const discounted = !!current && !!current.priceOld && Number(current.priceOld) > Number(current.price);
+    const oldPrice = discounted ? formatPrice(current!.priceOld!, { locale }) : null;
+
+    const reviewCount = course.reviewCount ?? 0;
+    const averageRating = course.averageRating ?? 0;
+    const studentCount = course._count?.enrollments ?? 0;
 
     const outline = course.outline ?? [];
     const chapters = outline.filter(c => c.lessons.length > 0);
@@ -131,7 +146,10 @@ export default function CourseCard({
                     </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-navy/55 via-transparent to-transparent opacity-70 transition-opacity group-hover:opacity-90" aria-hidden />
-                <span className="absolute end-4 top-4 rounded-full border border-white/10 bg-brand-navy/90 px-3.5 py-1.5 text-sm font-black text-brand-gold shadow-lg backdrop-blur-sm">
+                <span className="absolute end-4 top-4 rounded-full border border-white/10 bg-brand-navy/90 px-3.5 py-1.5 text-sm font-black text-brand-gold shadow-lg backdrop-blur-sm flex items-center gap-1.5">
+                    {oldPrice && (
+                        <s className="text-[11px] font-bold text-gray-400">{oldPrice}</s>
+                    )}
                     {price}
                 </span>
                 <div className="absolute bottom-3 start-3 flex flex-wrap items-center gap-2">
@@ -177,7 +195,25 @@ export default function CourseCard({
                     {pick(course, 'excerpt') || pick(course, 'description')}
                 </p>
 
+                {/* ★ rating · N reviews · N students */}
                 <div className={`mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {reviewCount > 0 && (
+                        <span className="inline-flex items-center gap-1" title={t('explore.rating_title')}>
+                            <span className="inline-flex items-center gap-0.5" aria-hidden>
+                                {[1, 2, 3, 4, 5].map(star => (
+                                    <Star
+                                        key={star}
+                                        size={13}
+                                        className={star <= Math.round(averageRating)
+                                            ? 'fill-brand-gold text-brand-gold'
+                                            : isDark ? 'text-gray-600' : 'text-gray-300'}
+                                    />
+                                ))}
+                            </span>
+                            <span className={isDark ? 'text-gray-200' : 'text-brand-charcoal'}>{averageRating.toFixed(1)}</span>
+                            <span>({formatNumber(reviewCount, locale)})</span>
+                        </span>
+                    )}
                     {totalLessons > 0 && (
                         <span className="inline-flex items-center gap-1.5">
                             <BookOpen size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} />
@@ -190,18 +226,23 @@ export default function CourseCard({
                             {pick(course, 'duration')}
                         </span>
                     )}
-                    {course._count?.enrollments ? (
+                    {studentCount > 0 && (
                         <span className="inline-flex items-center gap-1.5">
                             <Users size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} />
-                            {formatNumber(course._count.enrollments, locale)} {t('explore.students')}
+                            {formatNumber(studentCount, locale)} {t('explore.students')}
                         </span>
-                    ) : null}
+                    )}
                 </div>
 
-                {/* Course outline (محاور الدورة) */}
+                {/* Course outline (محاور الدورة) — hidden until asked for */}
                 {chapters.length > 0 && (
                     <div className={`mb-5 overflow-hidden rounded-2xl border ${isDark ? 'border-white/5 bg-white/[0.03]' : 'border-brand-mist/80 bg-brand-white'}`}>
-                        <div className={`flex items-center gap-2 border-b px-4 py-2.5 ${isDark ? 'border-white/5' : 'border-brand-mist/80'}`}>
+                        <button
+                            type="button"
+                            onClick={() => setOutlineOpen(v => !v)}
+                            aria-expanded={outlineOpen}
+                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-start transition-colors cursor-pointer ${isDark ? 'hover:bg-white/5' : 'hover:bg-brand-mist/40'}`}
+                        >
                             <Layers size={15} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} />
                             <span className={`text-xs font-black uppercase tracking-wide ${isDark ? 'text-white' : 'text-brand-navy'}`}>
                                 {t('explore.outline_heading')}
@@ -209,9 +250,12 @@ export default function CourseCard({
                             <span className={`ms-auto rounded-full px-2 py-0.5 text-[10px] font-black ${isDark ? 'bg-white/5 text-gray-400' : 'bg-brand-mist/70 text-gray-500'}`}>
                                 {count('explore.outline_chapters_count', chapters.length)}
                             </span>
-                        </div>
+                            <ChevronDown size={15} className={`shrink-0 transition-transform duration-300 ${outlineOpen ? 'rotate-180' : ''} ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                        </button>
 
-                        <ul className="divide-y px-4 py-1">
+                        {outlineOpen && (
+                            <>
+                        <ul className="divide-y border-t px-4 py-1">
                             {visibleChapters.map((chapter, ci) => {
                                 const lessons = expanded ? chapter.lessons : chapter.lessons.slice(0, LESSONS_PREVIEW);
                                 const restCount = chapter.lessons.length - lessons.length;
@@ -264,6 +308,8 @@ export default function CourseCard({
                                     : `${t('explore.outline_show')} (+${formatNumber(hiddenLessons, locale)})`}
                                 <ChevronDown size={14} className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
                             </button>
+                        )}
+                            </>
                         )}
                     </div>
                 )}

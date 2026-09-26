@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, MapPin } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
@@ -15,8 +16,25 @@ export default function Home() {
   const isAr = locale === 'ar';
   const { data: stats } = useFetchData<{ courses: number; instructors: number; enrollments: number; certificates: number } | null>('/public/stats');
   const { data: homeCourses, loading: homeCoursesLoading } = useFetchData<PublicCourse[]>('/public/courses');
+  const [activeCategory, setActiveCategory] = useState('');
 
-  const featuredCourses = (homeCourses ?? []).slice(0, 3);
+  // Categories are free-text on Course, so derive the bar from what is actually
+  // published rather than hardcoding a list that can drift out of sync.
+  const homeCategories = useMemo(() => {
+    const seen = new Set<string>();
+    (homeCourses ?? []).forEach(c => {
+      const label = pick(c, 'category')?.trim();
+      if (label) seen.add(label);
+    });
+    return Array.from(seen).sort((a, b) => a.localeCompare(b, locale));
+  }, [homeCourses, pick, locale]);
+
+  const featuredCourses = useMemo(() => {
+    const pool = activeCategory
+      ? (homeCourses ?? []).filter(c => pick(c, 'category')?.trim() === activeCategory)
+      : (homeCourses ?? []);
+    return pool.slice(0, 3);
+  }, [homeCourses, activeCategory, pick]);
 
   const aboutValues = [
     { icon: Target, titleAr: 'التعلم العملي', titleEn: 'Hands-on Learning', descAr: 'دورات مبنية على مشاريع واقعية وتطبيق مباشر.', descEn: 'Courses built on real-world projects and direct application.' },
@@ -183,6 +201,34 @@ export default function Home() {
             </Link>
           </div>
 
+          {homeCategories.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2.5 mb-12">
+              <button
+                type="button"
+                onClick={() => setActiveCategory('')}
+                aria-pressed={activeCategory === ''}
+                className={`px-5 py-2.5 rounded-full text-sm font-black transition-all duration-300 cursor-pointer ${activeCategory === ''
+                  ? 'bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-navy-dark shadow-lg shadow-brand-gold/20'
+                  : dark ? 'bg-white/5 border border-white/10 text-gray-300 hover:border-brand-gold/50 hover:text-white' : 'bg-white border border-gray-200 text-brand-navy hover:border-brand-gold'}`}
+              >
+                {t('explore.all_categories')}
+              </button>
+              {homeCategories.map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat === activeCategory ? '' : cat)}
+                  aria-pressed={activeCategory === cat}
+                  className={`px-5 py-2.5 rounded-full text-sm font-black transition-all duration-300 cursor-pointer ${activeCategory === cat
+                    ? 'bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-navy-dark shadow-lg shadow-brand-gold/20'
+                    : dark ? 'bg-white/5 border border-white/10 text-gray-300 hover:border-brand-gold/50 hover:text-white' : 'bg-white border border-gray-200 text-brand-navy hover:border-brand-gold'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+
           {homeCoursesLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[0, 1, 2].map(i => (
@@ -205,7 +251,9 @@ export default function Home() {
           ) : null}
 
           {!homeCoursesLoading && featuredCourses.length === 0 && (
-            <p className={`text-center py-10 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('explore.no_courses')}</p>
+            <p className={`text-center py-10 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {activeCategory ? t('explore.no_results') : t('explore.no_courses')}
+            </p>
           )}
         </section>
 

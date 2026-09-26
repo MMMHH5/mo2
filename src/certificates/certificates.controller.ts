@@ -29,6 +29,13 @@ export class CertificatesController {
         return this.certificatesService.getByCourse(courseId, req.user.userId);
     }
 
+    @ApiOperation({ summary: 'All certificates issued for a course, with their holders (admin / course manager)' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @Get('course/:courseId')
+    listForCourse(@Param('courseId') courseId: string) {
+        return this.certificatesService.listForCourse(courseId);
+    }
+
     @ApiOperation({ summary: 'Candidates (approved students) for manual certificate issuance on an opening' })
     @Roles(...CERT_STAFF_ROLES)
     @Get('openings/:openingId/candidates')

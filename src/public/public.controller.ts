@@ -153,8 +153,31 @@ export class PublicController {
             },
         });
 
+        // Rating aggregate for the card ("★ 4.8 · 120 student"). Grouped in a
+        // second query rather than `include`d, so the payload does not carry one
+        // row per review for every listed course.
+        const ids = courses.map((c) => c.id);
+        const ratingRows = ids.length
+            ? await this.prisma.courseReview.groupBy({
+                by: ['courseId'],
+                where: { courseId: { in: ids }, isPublished: true },
+                _avg: { rating: true },
+                _count: { _all: true },
+            })
+            : [];
+        const ratingByCourse = new Map(
+            ratingRows.map((r) => [
+                r.courseId,
+                {
+                    averageRating: Number((r._avg.rating ?? 0).toFixed(2)),
+                    reviewCount: r._count._all,
+                },
+            ]),
+        );
+
         return courses.map((course) => ({
             ...course,
+            ...(ratingByCourse.get(course.id) ?? { averageRating: 0, reviewCount: 0 }),
             // Normalised syllabus preview for the public catalogue: one entry per
             // chapter, or a single untitled chapter for courses that keep their
             // lessons flat. Only titles/timing are exposed — never the lesson

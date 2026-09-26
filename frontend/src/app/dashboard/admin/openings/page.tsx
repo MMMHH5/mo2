@@ -3,12 +3,15 @@
 import { useFetchData } from '@/lib/useFetchData';
 import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag, Award } from 'lucide-react';
+import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag, Award, X, BookOpen, FileText } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, type Tone } from '../components';
 import CertificateApprovalModal from '@/components/CertificateApprovalModal';
+import OpeningRosterModal from '@/components/admin/OpeningRosterModal';
+import EndedOpeningReportModal from '@/components/admin/EndedOpeningReportModal';
 
 interface Opening {
     id: string;
@@ -40,21 +43,67 @@ const isActiveStatus = (s?: string | null) => s === 'ANNOUNCEMENT' || s === 'OPE
 export default function AdminOpeningsPage() {
     const { data: courses, loading, error, refetch } = useFetchData<Course[]>('/courses?includeUnpublished=true');
     const { t, pick } = useI18n();
+    const router = useRouter();
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<FilterKey>('ALL');
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [modal, setModal] = useState<{ opening: Opening; startAt: string; endAt: string } | null>(null);
     const [certOpening, setCertOpening] = useState<Opening | null>(null);
+    // Which batch's roster is open, so the admin can see who actually holds a
+    // seat in each opening without leaving this table.
+    const [rosterOpeningId, setRosterOpeningId] = useState<string | null>(null);
+    // Finished batches get a read-only wrap-up: course facts, who attended, and
+    // which certificates went out. Keyed by opening since that is the unit.
+    const [reportOpening, setReportOpening] = useState<{ id: string; courseId: string } | null>(null);
+    // An opening always belongs to a course, so "new opening" has to resolve a
+    // course first. Picking it here keeps the button on this page instead of
+    // bouncing the admin out to the course list.
+    const [pickingCourse, setPickingCourse] = useState(false);
+    const [courseQuery, setCourseQuery] = useState('');
+
+    // Lifecycle buttons on the admin course panel link here with ?focus=<id>.
+    // This table is filtered and paginated by nothing, but a target row only
+    // exists in the DOM once the fetch resolves, and it can be hidden behind the
+    // active filters, so drop the filters and highlight the row once it lands.
+    const searchParams = useSearchParams();
+    const focusId = searchParams.get('focus');
+    const [highlightId, setHighlightId] = useState<string | null>(null);
+
+    // A ?focus= target must always be reachable, so while one is present the
+    // filters are bypassed rather than cleared: resetting them in an effect
+    // would fight whatever the admin had set and force an extra render.
+    const effectiveStatusFilter = focusId ? 'ALL' : statusFilter;
+    const effectiveQuery = focusId ? '' : query;
+
+    useEffect(() => {
+        if (!focusId || !courses) return;
+        // Deferred: the row renders in the same commit as `courses`, so touching
+        // state directly here would cascade an extra render.
+        const timer = setTimeout(() => {
+            setHighlightId(focusId);
+            document.getElementById(`opening-row-${focusId}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [focusId, courses]);
+
+    const courseOptions = useMemo(() => {
+        const q = courseQuery.trim().toLowerCase();
+        return (courses || [])
+            .filter(c => !q || [c.titleAr, c.titleEn].filter(Boolean).join(' ').toLowerCase().includes(q))
+            .map(c => ({ course: c, label: pick(c, 'title') || c.id.slice(0, 8) }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [courses, courseQuery, pick]);
 
     const allOpenings: (Opening & { course?: Course })[] = (courses || []).flatMap(c =>
         (c.openings || []).map(o => ({ ...o, course: c }))
     );
 
     const filtered = allOpenings.filter(o => {
-        if (statusFilter === 'OPEN' && !isActiveStatus(o.status)) return false;
-        if (statusFilter === 'PLANNED' && isActiveStatus(o.status)) return false;
-        if (!query.trim()) return true;
-        const q = query.toLowerCase();
+        if (effectiveStatusFilter === 'OPEN' && !isActiveStatus(o.status)) return false;
+        if (effectiveStatusFilter === 'PLANNED' && isActiveStatus(o.status)) return false;
+        if (!effectiveQuery.trim()) return true;
+        const q = effectiveQuery.toLowerCase();
         return (o.nameAr || '').toLowerCase().includes(q) || (o.nameEn || '').toLowerCase().includes(q)
             || (o.course?.titleAr || '').toLowerCase().includes(q) || (o.course?.titleEn || '').toLowerCase().includes(q)
             || (o.instructor?.email || '').toLowerCase().includes(q);
@@ -205,7 +254,12 @@ export default function AdminOpeningsPage() {
                                 className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-52 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
-                        <BtnPrimary href="/dashboard/admin/courses" icon={PlusCircle}>{t('admin.new_opening')}</BtnPrimary>
+                        <BtnPrimary
+                            icon={PlusCircle}
+                            onClick={() => { setCourseQuery(''); setPickingCourse(true); }}
+                        >
+                            {t('admin.new_opening')}
+                        </BtnPrimary>
                     </>
                 }
             />
@@ -236,7 +290,15 @@ export default function AdminOpeningsPage() {
                                 const meta = statusMeta(o.status);
                                 const hasEnrollments = seatsFilled(o) > 0;
                                 return (
-                                    <tr key={o.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
+                                    <tr
+                                        key={o.id}
+                                        id={`opening-row-${o.id}`}
+                                        className={`animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5 transition-colors ${
+                                            highlightId === o.id
+                                                ? 'bg-brand-gold/10 ring-2 ring-inset ring-brand-gold'
+                                                : ''
+                                        }`}
+                                    >
                                         <td className="p-4 font-bold text-brand-navy dark:text-gray-200 min-w-[150px]">
                                             {pick(o, 'name') || t('manageCourses.opening_default')}
                                             {o.priceOld && <span className="block text-xs text-gray-500 dark:text-gray-400 line-through font-normal mt-0.5">${o.priceOld}</span>}
@@ -264,12 +326,30 @@ export default function AdminOpeningsPage() {
                                             </Badge>
                                         </td>
                                         <td className="p-4 text-right whitespace-nowrap">
+                                            <button
+                                                onClick={() => setRosterOpeningId(o.id)}
+                                                className="admin-action-btn text-brand-navy dark:text-brand-navy-light hover:bg-brand-navy/10 dark:hover:bg-brand-navy-light/10 tooltip"
+                                                title={t('admin.roster_view_tooltip')}
+                                                aria-label={t('admin.roster_view_tooltip')}
+                                            >
+                                                <Users size={18} />
+                                            </button>
                                             {o.status === 'ENDED' && (
-                                                <button onClick={() => setCertOpening(o)}
-                                                    className="admin-action-btn text-brand-gold hover:bg-brand-gold/10 tooltip"
-                                                    title={t('admin.cert_issue')}>
-                                                    <Award size={18} />
-                                                </button>
+                                                <>
+                                                    <button
+                                                        onClick={() => setReportOpening({ id: o.id, courseId: o.courseId })}
+                                                        className="admin-action-btn text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 tooltip"
+                                                        title={t('admin.report_view_tooltip')}
+                                                        aria-label={t('admin.report_view_tooltip')}
+                                                    >
+                                                        <FileText size={18} />
+                                                    </button>
+                                                    <button onClick={() => setCertOpening(o)}
+                                                        className="admin-action-btn text-brand-gold hover:bg-brand-gold/10 tooltip"
+                                                        title={t('admin.cert_issue')}>
+                                                        <Award size={18} />
+                                                    </button>
+                                                </>
                                             )}
                                             {lifecycleBtn(o)}
                                             <Link href={`/dashboard/courses/open/${o.courseId}?edit=${o.id}`}>
@@ -297,6 +377,23 @@ export default function AdminOpeningsPage() {
                 </div>
             )}
 
+            {rosterOpeningId && (
+                <OpeningRosterModal
+                    key={rosterOpeningId}
+                    openingId={rosterOpeningId}
+                    onClose={() => setRosterOpeningId(null)}
+                />
+            )}
+
+            {reportOpening && (
+                <EndedOpeningReportModal
+                    key={reportOpening.id}
+                    openingId={reportOpening.id}
+                    courseId={reportOpening.courseId}
+                    onClose={() => setReportOpening(null)}
+                />
+            )}
+
             {certOpening && (
                 <CertificateApprovalModal
                     openingId={certOpening.id}
@@ -304,6 +401,65 @@ export default function AdminOpeningsPage() {
                     canRevoke
                     onClose={() => setCertOpening(null)}
                 />
+            )}
+
+            {pickingCourse && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    onClick={() => setPickingCourse(false)}
+                >
+                    <div
+                        className="bg-brand-navy border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-xl animate-fade-in-up max-h-[85vh] flex flex-col"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex items-start gap-3 mb-1">
+                            <h3 className="text-xl font-black text-white flex-1">{t('admin.new_opening_pick_title')}</h3>
+                            <button
+                                onClick={() => setPickingCourse(false)}
+                                className="text-gray-400 hover:text-white transition cursor-pointer"
+                                aria-label={t('common.cancel')}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-4">{t('admin.new_opening_pick_hint')}</p>
+
+                        <div className="relative mb-4">
+                            <Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <input
+                                autoFocus
+                                value={courseQuery}
+                                onChange={e => setCourseQuery(e.target.value)}
+                                placeholder={t('admin.new_opening_pick_search')}
+                                className="w-full ps-9 pe-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
+                            />
+                        </div>
+
+                        <div className="overflow-y-auto -mx-1 px-1">
+                            {courseOptions.length === 0 ? (
+                                <p className="text-center text-sm text-gray-400 py-8 px-4">{t('admin.new_opening_pick_empty')}</p>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {courseOptions.map(({ course, label }) => (
+                                        <li key={course.id}>
+                                            <button
+                                                type="button"
+                                                onClick={() => router.push(`/dashboard/courses/open/${course.id}`)}
+                                                className="w-full flex items-center gap-3 text-start px-4 py-3 rounded-xl bg-white/5 hover:bg-brand-gold/10 border border-white/5 hover:border-brand-gold/30 transition cursor-pointer group"
+                                            >
+                                                <BookOpen size={18} className="shrink-0 text-brand-gold group-hover:text-brand-gold-light transition" />
+                                                <span className="flex-1 min-w-0 truncate font-bold text-white">{label}</span>
+                                                <span className="shrink-0 text-xs font-bold text-gray-400">
+                                                    {(course.openings || []).length}
+                                                </span>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {modal && (

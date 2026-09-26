@@ -3,12 +3,13 @@
 import { useFetchData } from '@/lib/useFetchData';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Pencil, Trash2, CalendarPlus, Users, ArrowUpRight, Search, BookOpen, Package } from 'lucide-react';
+import { Pencil, Trash2, CalendarPlus, Users, ArrowUpRight, Search, BookOpen, Package, ChevronDown } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, type Tone } from '../components';
+import CourseAdminPanel from '@/components/admin/CourseAdminPanel';
 
 interface Opening {
     id: string;
@@ -55,6 +56,10 @@ export default function AdminCoursesPage() {
     const { t, pick } = useI18n();
     const [query, setQuery] = useState('');
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    // Course managers need to reconcile a course from one place: details, every
+    // opening state, and the full student roster. Expanding the row keeps that
+    // context on the list instead of sending them off to separate pages.
+    const [expandedId, setExpandedId] = useState<string | null>(null);
 
     const handleDelete = async (c: Course) => {
         if (!window.confirm(`${t('manageCourses.delete_prefix')} ${pick(c, 'title') || c.id}?`)) return;
@@ -127,10 +132,21 @@ export default function AdminCoursesPage() {
                                 const endedCount = (c.openings || []).filter(o => o.status === 'ENDED').length;
                                 const status = statusTone(pub.length, (c.openings || []).length, endedCount);
                                 const hasEnrollments = (c._count?.enrollments ?? 0) > 0 || totalEnrollments(c) > 0;
+                                const isExpanded = expandedId === c.id;
                                 return (
-                                    <tr key={c.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
+                                    <Fragment key={c.id}>
+                                    <tr className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
                                         <td className="p-4">
                                             <div className="flex items-center gap-3 min-w-[240px]">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                                                    aria-expanded={isExpanded}
+                                                    aria-label={t('admin.panel_toggle')}
+                                                    className="shrink-0 rounded-lg p-1 text-gray-400 hover:text-brand-gold hover:bg-gray-100 dark:hover:bg-white/10 transition cursor-pointer"
+                                                >
+                                                    <ChevronDown size={18} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                                </button>
                                                 {c.coverImageUrl ? (
                                                     <Image src={`${API_BASE_URL}${c.coverImageUrl}`} alt="" width={48} height={36} unoptimized className="w-12 h-9 object-cover rounded-lg border border-gray-300 dark:border-white/10 shadow-sm" />
                                                 ) : (
@@ -181,6 +197,18 @@ export default function AdminCoursesPage() {
                                             </button>
                                         </td>
                                     </tr>
+                                    {isExpanded && (
+                                        <tr>
+                                            <td colSpan={8} className="p-0">
+                                                <div className="bg-gray-50 dark:bg-brand-navy-dark/40 border-y border-gray-200 dark:border-white/5 animate-fade-in-up">
+                                                    <div className="p-5">
+                                                        <CourseAdminPanel courseId={c.id} />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    </Fragment>
                                 );
                             })}
                             {filtered.length === 0 && (

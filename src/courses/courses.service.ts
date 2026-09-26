@@ -403,6 +403,35 @@ export class CoursesService {
         return result;
     }
 
+    /**
+     * A student can hold a RESERVED seat from an ANNOUNCEMENT opening. That
+     * reservation means nothing until the opening actually opens for payment,
+     * so the moment registration goes live we tell them their seat is waiting
+     * and is only truly held once they pay. Without this the reservation looks
+     * like a finished enrolment from the student's side.
+     */
+    private async notifyReservedPaymentDue(opening: {
+        id: string; courseId: string; nameAr?: string | null; nameEn?: string | null;
+        course?: { titleAr?: string | null; titleEn?: string | null } | null;
+    }) {
+        const reserved = await this.prisma.enrollment.findMany({
+            where: { openingId: opening.id, status: 'RESERVED' },
+            select: { studentId: true },
+        });
+        if (reserved.length === 0) return;
+        const titleAr = opening.nameAr ?? opening.course?.titleAr;
+        const titleEn = opening.nameEn ?? opening.course?.titleEn;
+        await Promise.all(reserved.map((e) => this.notifications.notify({
+            userId: e.studentId,
+            type: 'opening.payment_due',
+            titleAr: 'مقعدك بانتظار الدفع',
+            titleEn: 'Your seat is waiting for payment',
+            bodyAr: `فُتح التسجيل في: ${titleAr ?? ''}. مقعدك محجوز،أكمل الدفع لتثبيت مقعدك في هذه الدفعة.`,
+            bodyEn: `Registration is now open for "${titleEn ?? ''}". Your seat is reserved — complete payment to secure your place in this batch.`,
+            data: { courseId: opening.courseId, openingId: opening.id },
+        }).catch(() => {})));
+    }
+
     async openOpening(openingId: string, actorId: string, actorRole: Role) {
         const opening = await this.requireOpening(openingId);
         this.assertCanManage(opening, actorId, actorRole);
@@ -411,6 +440,7 @@ export class CoursesService {
         }
         const result = await this.setStatus(openingId, CourseOpeningStatus.OPEN);
         await this.audit.logAction(`Opening ${openingId} opened for registration`, undefined, actorId);
+        await this.notifyReservedPaymentDue({ ...opening, id: openingId });
         return result;
     }
 
@@ -487,6 +517,13 @@ export class CoursesService {
                 bodyEn: `Registration is now open for "${existing.course.titleEn}".`,
                 data: { courseId: existing.courseId, openingId },
             }).catch(() => {})));
+        }
+        if (isPublished && existing.status !== CourseOpeningStatus.OPEN) {
+            // Publishing also flips the status to OPEN, so anyone sitting on a
+            // reservation from the announcement window now owes money. Only on a
+            // real transition into OPEN: re-publishing an already-open opening
+            // is an idempotent save and must not re-send these.
+            await this.notifyReservedPaymentDue({ ...existing, id: openingId });
         }
         return result;
     }
