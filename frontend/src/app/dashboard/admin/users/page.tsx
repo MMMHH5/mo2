@@ -3,6 +3,7 @@
 import { useFetchData } from '@/lib/useFetchData';
 import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
+import { formatDate } from '@/lib/format';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Pencil, Trash2, ArrowRightLeft, Pause, Play, Search, UserPlus, Users, Download, Info, BookOpen, Award, Mail, Phone, MapPin, GraduationCap, Calendar, ShieldCheck, BadgeCheck, FileText, ClipboardList, X, Cake, School } from 'lucide-react';
@@ -392,7 +393,7 @@ export default function AdminUsersPage() {
                                 { icon: MapPin, label: t('profile.city'), value: (meta.city as string) || '—' },
                                 { icon: GraduationCap, label: t('details.specialty'), value: (meta.specialty as string) || '—' },
                                 { icon: Users, label: t('details.gender'), value: gender ? t('auth.gender_' + gender.toLowerCase()) : '—' },
-                                { icon: Cake, label: t('details.age'), value: (meta.age as string) || '—' },
+                                { icon: Cake, label: t('details.birth_date'), value: formatDate(meta.birthDate as string, { locale }) || '—' },
                                 { icon: School, label: t('details.university'), value: (meta.university as string) || '—' },
                                 { icon: FileText, label: t('details.study_status'), value: (meta.studyStatus as string) ? t('details.status_' + (meta.studyStatus as string).toLowerCase()) : '—' },
                                 { icon: ClipboardList, label: t('details.study_level'), value: (meta.studyLevel as string) || '—' },

@@ -3,6 +3,7 @@
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
+import { formatDate } from '@/lib/format';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 import {
@@ -60,7 +61,7 @@ interface GradedEnrollment {
 
 export default function DetailsPage() {
     const { user } = useAuth();
-    const { t, pick } = useI18n();
+    const { t, pick, locale } = useI18n();
 
     const { data: profile, loading } = useFetchData<MyProfile>('/users/me');
     const { data: enrollments, loading: enrollmentsLoading } = useFetchData<Enrollment[]>('/enrollments/my');
@@ -101,7 +102,7 @@ export default function DetailsPage() {
         { icon: MapPin, label: t('profile.city'), value: (meta.city as string) || '—' },
         { icon: GraduationCap, label: t('details.specialty'), value: (meta.specialty as string) || '—' },
         { icon: Users, label: t('details.gender'), value: genderLabel || '—' },
-        { icon: Cake, label: t('details.age'), value: (meta.age as string) || '—' },
+        { icon: Cake, label: t('details.birth_date'), value: formatDate(meta.birthDate as string, { locale }) || '—' },
         { icon: School, label: t('details.university'), value: (meta.university as string) || '—' },
         { icon: FileText, label: t('details.study_status'), value: studyStatus ? t('details.status_' + studyStatus.toLowerCase()) : '—' },
         { icon: ClipboardList, label: t('details.study_level'), value: (meta.studyLevel as string) || '—' },

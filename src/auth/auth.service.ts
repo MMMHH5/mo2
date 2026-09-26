@@ -66,7 +66,7 @@ export class AuthService {
         if (dto.fullName) metadata.fullName = dto.fullName;
         if (dto.phone) metadata.phone = dto.phone;
         if (dto.gender) metadata.gender = dto.gender;
-        if (dto.age) metadata.age = dto.age;
+        if (dto.birthDate) metadata.birthDate = dto.birthDate;
         if (dto.university) metadata.university = dto.university;
         if (dto.specialty) metadata.specialty = dto.specialty;
         if (dto.studyStatus) metadata.studyStatus = dto.studyStatus;

@@ -31,7 +31,7 @@ export default function ProfilePage() {
     const { data: profile, loading, error, refetch } = useFetchData<MyProfile>('/users/me');
 
     const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', gender: '', age: '', university: '', studyStatus: '', studyLevel: '' });
+    const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', gender: '', birthDate: '', university: '', studyStatus: '', studyLevel: '' });
     const [saving, setSaving] = useState(false);
 
     const [emailForm, setEmailForm] = useState({ email: '', currentPassword: '' });
@@ -54,7 +54,7 @@ export default function ProfilePage() {
             bio: (m.bio as string) || '',
             specialty: (m.specialty as string) || '',
             gender: (m.gender as string) || '',
-            age: (m.age as string) || '',
+            birthDate: (m.birthDate as string) || '',
             university: (m.university as string) || '',
             studyStatus: (m.studyStatus as string) || '',
             studyLevel: (m.studyLevel as string) || '',
@@ -487,15 +487,14 @@ export default function ProfilePage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className={labelCls}>{t('auth.age')}</label>
+                                    <label className={labelCls} htmlFor="pf-birthdate">{t('auth.birth_date')}</label>
                                     <input
-                                        type="number"
-                                        min={5}
-                                        max={100}
-                                        value={form.age}
-                                        onChange={(e) => setForm({ ...form, age: e.target.value })}
+                                        id="pf-birthdate"
+                                        type="date"
+                                        max={new Date().toISOString().slice(0, 10)}
+                                        value={form.birthDate}
+                                        onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
                                         className={inputCls}
-                                        dir="ltr"
                                     />
                                 </div>
                                 <div>

@@ -1,5 +1,30 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, Matches } from 'class-validator';
+import { registerDecorator, ValidationArguments, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, Matches, Validate } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+@ValidatorConstraint({ name: 'isPastDate', async: false })
+class IsPastDateConstraint implements ValidatorConstraintInterface {
+    validate(value: string) {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return false;
+        return parsed.getTime() <= Date.now();
+    }
+
+    defaultMessage(args: ValidationArguments) {
+        return `${args.property} must be a valid date in the past (YYYY-MM-DD)`;
+    }
+}
+
+function IsPastDate(validationOptions?: ValidationOptions) {
+    return function (object: object, propertyName: string) {
+        registerDecorator({
+            target: object.constructor,
+            propertyName,
+            options: validationOptions,
+            validator: IsPastDateConstraint,
+        });
+    };
+}
 
 export class RegisterDto {
     @ApiProperty({ description: 'User email address', example: 'newuser@laxalab.com' })
@@ -33,11 +58,12 @@ export class RegisterDto {
     @IsString()
     gender?: string;
 
-    @ApiPropertyOptional({ description: 'Age', example: '22' })
+    @ApiPropertyOptional({ description: 'Date of birth (YYYY-MM-DD)', example: '2001-05-14' })
     @IsOptional()
     @IsString()
-    @MaxLength(10)
-    age?: string;
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'birthDate must use the YYYY-MM-DD format' })
+    @Validate(IsPastDate())
+    birthDate?: string;
 
     @ApiPropertyOptional({ description: 'University / Institute', example: 'University of Baghdad' })
     @IsOptional()

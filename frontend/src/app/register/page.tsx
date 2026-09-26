@@ -24,7 +24,7 @@ export default function RegisterPage() {
         password: '',
         confirmPassword: '',
         gender: '',
-        age: '',
+        birthDate: '',
         university: '',
         specialty: '',
         studyStatus: '',
@@ -32,7 +32,7 @@ export default function RegisterPage() {
     });
     const [isLoading, setIsLoading] = useState(false);
 
-    const inputCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
+    const inputCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10 [color-scheme:dark]' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
     const labelCls = `block text-sm font-black mb-1.5 ${dark ? 'text-gray-300' : 'text-gray-700'}`;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -51,7 +51,7 @@ export default function RegisterPage() {
                 fullName: formData.fullName,
                 phone: formData.phone,
                 gender: formData.gender,
-                age: formData.age,
+                birthDate: formData.birthDate,
                 university: formData.university,
                 specialty: formData.specialty,
                 studyStatus: formData.studyStatus,
@@ -147,20 +147,18 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className={labelCls}>{t('auth.age')}</label>
+                            <label className={labelCls} htmlFor="reg-birthdate">{t('auth.birth_date')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
                                     <Cake size={18} className="text-gray-400" />
                                 </div>
                                 <input
-                                    type="number"
-                                    min={5}
-                                    max={100}
+                                    id="reg-birthdate"
+                                    type="date"
+                                    max={new Date().toISOString().slice(0, 10)}
                                     className={`${inputCls} text-left`}
-                                    placeholder={t('auth.age_ph')}
-                                    dir="ltr"
-                                    value={formData.age}
-                                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                    value={formData.birthDate}
+                                    onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                                 />
                             </div>
                         </div>
