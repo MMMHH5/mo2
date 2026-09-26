@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request, UseG
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { QuizzesService } from './quizzes.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
@@ -38,6 +39,7 @@ export class QuizzesController {
   }
 
   @ApiOperation({ summary: 'List quizzes for a course (with answers when includeUnpublished=true)' })
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('course/:courseId')
   listByCourse(@Param('courseId') courseId: string, @Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
     // Only allow includeUnpublished for authenticated staff users

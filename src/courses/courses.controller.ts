@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, unlink } from 'fs';
 import { CoursesService } from './courses.service';
 import { hasValidSignature } from '../common/file-signatures';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
@@ -101,6 +102,7 @@ export class CoursesController {
 
     @ApiOperation({ summary: 'List all published courses' })
     @ApiResponse({ status: 200, description: 'List of courses returned.' })
+    @UseGuards(OptionalJwtAuthGuard)
     @Get()
     findAll(@Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
         // Only allow includeUnpublished for authenticated staff users
@@ -120,6 +122,7 @@ export class CoursesController {
 
     @ApiOperation({ summary: 'List openings (batches) of a course' })
     @ApiResponse({ status: 200, description: 'Openings returned.' })
+    @UseGuards(OptionalJwtAuthGuard)
     @Get(':id/openings')
     listOpenings(@Param('id') id: string, @Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
         const allowUnpublished = includeUnpublished === 'true' && req?.user?.role && ['ADMIN', 'COURSE_MANAGER'].includes(req.user.role);
@@ -129,6 +132,7 @@ export class CoursesController {
     @ApiOperation({ summary: 'Get specific course details' })
     @ApiResponse({ status: 200, description: 'Detailed course structure returned.' })
     @ApiResponse({ status: 404, description: 'Course not found.' })
+    @UseGuards(OptionalJwtAuthGuard)
     @Get(':id')
     findOne(@Param('id') id: string, @Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
         const allowUnpublished = includeUnpublished === 'true' && req?.user?.role && ['ADMIN', 'COURSE_MANAGER'].includes(req.user.role);
