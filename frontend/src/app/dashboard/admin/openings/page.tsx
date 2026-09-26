@@ -139,7 +139,6 @@ export default function AdminOpeningsPage() {
                     </button>
                 );
             case 'DRAFT':
-            default:
                 return (
                     <button onClick={() => openAnnounceModal(o)} disabled={disabled}
                         className={`${base} text-brand-navy dark:text-brand-navy-light hover:bg-brand-navy/10 dark:hover:bg-brand-navy-light/10`}
@@ -147,6 +146,11 @@ export default function AdminOpeningsPage() {
                         <Megaphone size={18} />
                     </button>
                 );
+            default:
+                // ENDED (and any unknown status) has no forward transition: the
+                // backend rejects every lifecycle call on a finished opening, so
+                // rendering a button here would only ever produce a 400.
+                return null;
         }
     };
 
@@ -157,8 +161,8 @@ export default function AdminOpeningsPage() {
             await api.delete(`/openings/${o.id}`);
             toast.success(t('manageCourses.opening_deleted'));
             refetch();
-        } catch {
-            toast.error(t('manageCourses.opening_delete_fail'));
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('manageCourses.opening_delete_fail'));
         }
         setProcessingId(null);
     };
@@ -230,6 +234,7 @@ export default function AdminOpeningsPage() {
                             {filtered.map((o) => {
                                 const pct = seatsPct(o);
                                 const meta = statusMeta(o.status);
+                                const hasEnrollments = seatsFilled(o) > 0;
                                 return (
                                     <tr key={o.id} className="animate-fade-in hover:bg-gray-100 dark:hover:bg-white/5">
                                         <td className="p-4 font-bold text-brand-navy dark:text-gray-200 min-w-[150px]">
@@ -274,9 +279,9 @@ export default function AdminOpeningsPage() {
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(o)}
-                                                disabled={processingId === o.id}
-                                                className="admin-action-btn tooltip disabled:opacity-40 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-                                                title={t('manageCourses.delete_tooltip')}
+                                                disabled={processingId === o.id || hasEnrollments}
+                                                className={`admin-action-btn tooltip disabled:opacity-40 ${hasEnrollments ? 'text-gray-600 dark:text-gray-400 cursor-not-allowed' : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10'}`}
+                                                title={hasEnrollments ? t('admin.cannot_delete_enrollments') : t('manageCourses.delete_tooltip')}
                                             >
                                                 <Trash2 size={18} />
                                             </button>

@@ -492,8 +492,19 @@ export class CoursesService {
     }
 
     async removeOpening(openingId: string, deleterId: string, ip?: string) {
+        let deleted;
+        try {
+            deleted = await this.prisma.courseOpening.delete({ where: { id: openingId } });
+        } catch (e) {
+            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2003') {
+                throw new ConflictException(
+                    'Opening cannot be deleted because it has enrollments. End the opening instead, or remove its enrollments first.'
+                );
+            }
+            throw e;
+        }
         await this.audit.logAction(`User ${deleterId} deleted Opening ${openingId}`, ip, deleterId);
-        return this.prisma.courseOpening.delete({ where: { id: openingId } });
+        return deleted;
     }
 
     async remove(id: string, deleterId: string, ip?: string) {
