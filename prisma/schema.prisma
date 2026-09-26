@@ -103,6 +103,10 @@ model User {
   openingsTaught CourseOpening[] @relation("OpeningInstructors")
   enrollments   Enrollment[]
   certificates  Certificate[]
+
+  // Certificates this staff member released on paper. Named separately from
+  // `certificates`, which is the student side of the same table.
+  printedCertificates Certificate[] @relation("CertificatePrintedBy")
   auditLogs     AuditLog[]
   applications  InstructorApplication[]
   tickets       SupportTicket[]
@@ -418,6 +422,13 @@ model Certificate {
 
   studentId String
   student   User   @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  // A paper certificate leaves the system once it is printed, so the handover
+  // has to be auditable: when it happened and which staff member released it.
+  // Both stay null while the certificate only exists on screen.
+  printedAt   DateTime?
+  printedById String?
+  printedBy   User?     @relation("CertificatePrintedBy", fields: [printedById], references: [id], onDelete: SetNull)
 
   // A certificate can optionally be tied to a specific course
   courseId  String?
@@ -832,9 +843,9 @@ model Payment {
   updatedAt   DateTime      @updatedAt
   paidAt      DateTime?
   refundedAt  DateTime?
-
   studentId String
-  student   User           @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
   openingId String
   opening   CourseOpening  @relation(fields: [openingId], references: [id], onDelete: Restrict)
   enrollmentId String?

@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Request, UseGuards, Post, Body, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { CertificatesService } from './certificates.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -67,6 +67,15 @@ export class CertificatesController {
     @Post(':id/reissue')
     reissue(@Param('id') id: string, @Request() req: any) {
         return this.certificatesService.reissue(id, req.user.userId, req.user.role);
+    }
+
+    @ApiOperation({ summary: 'Record that a certificate was printed, and by whom (staff or its owner)' })
+    @ApiResponse({ status: 201, description: 'Print recorded on the certificate.' })
+    // No @Roles: the service authorises staff and the certificate owner, so a
+    // student can log their own print without widening the route to everyone.
+    @Post(':id/print')
+    markPrinted(@Param('id') id: string, @Request() req: any) {
+        return this.certificatesService.markPrinted(id, { userId: req.user.userId, role: req.user.role });
     }
 
     @ApiOperation({ summary: 'Get a certificate by id (owner or admin)' })

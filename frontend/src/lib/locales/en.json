@@ -1044,7 +1044,12 @@
         "cert_code": "Verification code",
         "no_certificates": "No certificates have been issued for this course yet.",
         "cert_course_level_note": "Certificates are issued per course, not per batch, so certificates from other batches of the same course may appear here.",
-        "print_notice": "Printing happens in the student's browser and is not recorded by the system. What you see here are the certificates actually issued."
+        "print_notice": "Printing happens in the student's browser and is not recorded by the system. What you see here are the certificates actually issued.",
+        "cert_printed_col": "Print",
+        "cert_printed_yes": "Printed",
+        "cert_printed_count": "Printed · {n}",
+        "cert_mark_printed": "Mark printed",
+        "cert_printed_recorded": "Print recorded"
     },
     "roster": {
         "tab_label": "Students & Grades",

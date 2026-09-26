@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import {
     X, BookOpen, Users, Award, Search, CreditCard,
     AlertTriangle, Printer, Info, Clock,
 } from 'lucide-react';
 import { useFetchData } from '@/lib/useFetchData';
+import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { Badge, type Tone } from '@/app/dashboard/admin/components';
 
@@ -68,12 +70,15 @@ interface CertRecord {
     issuingDate: string;
     verificationStatus: CertStatus;
     student: { id: string; email: string };
+    printedAt?: string | null;
+    printedBy?: { id: string; email: string } | null;
 }
 
 interface CertResponse {
     course: { id: string; titleAr?: string | null; titleEn?: string | null; certificateIssued: boolean };
     counts: Record<CertStatus, number>;
     total: number;
+    printed?: number;
     certificates: CertRecord[];
 }
 
@@ -109,10 +114,11 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 /**
- * Read-only wrap-up for a finished batch: what the course was, who actually
- * turned up, and which certificates went out. Read-only on purpose — issuing or
- * revoking stays in the certificate approval modal so there is one place that
- * can hand out credentials.
+ * Wrap-up for a finished batch: what the course was, who actually turned up,
+ * and which certificates went out — including the ones already released on
+ * paper. Issuing and revoking stay in the certificate approval modal so there
+ * is one place that can hand out credentials; the only write here is logging
+ * that a printed copy changed hands.
  */
 export default function EndedOpeningReportModal({
     openingId,
@@ -127,6 +133,7 @@ export default function EndedOpeningReportModal({
     const [tab, setTab] = useState<Tab>('course');
     const [query, setQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'ALL' | EnrollmentStatus>('ALL');
+    const [markingId, setMarkingId] = useState<string | null>(null);
 
     const course = useFetchData<CourseDetail>(`/courses/${courseId}`);
     const roster = useFetchData<RosterResponse>(`/enrollments/opening/${openingId}`);
@@ -140,6 +147,21 @@ export default function EndedOpeningReportModal({
         .filter(e => match(e.student.email));
 
     const certificates = (certs.data?.certificates ?? []).filter(c => match(c.student.email));
+
+    // Recording a print writes through the API and then refetches, so the row
+    // shows the server's timestamp and printer rather than a local guess.
+    const markPrinted = async (certificateId: string) => {
+        setMarkingId(certificateId);
+        try {
+            await api.post(`/certificates/${certificateId}/print`);
+            toast.success(t('report.cert_printed_recorded'));
+            certs.refetch();
+        } catch (e) {
+            toast.error(getErrorMessage(e) || t('common.error'));
+        } finally {
+            setMarkingId(null);
+        }
+    };
 
     const approved = roster.data?.counts?.APPROVED ?? 0;
     const certTotal = certs.data?.total ?? 0;
@@ -421,6 +443,9 @@ export default function EndedOpeningReportModal({
                                             {t(`certStatus.${s.toLowerCase()}`)} · {fmtNum(certs.data?.counts?.[s] ?? 0)}
                                         </Badge>
                                     ))}
+                                    <Badge tone="gold" dot>
+                                        {t('report.cert_printed_count').replace('{n}', fmtNum(certs.data?.printed ?? 0))}
+                                    </Badge>
                                 </div>
 
                                 <div className="relative mb-4">
@@ -445,6 +470,7 @@ export default function EndedOpeningReportModal({
                                                     <th>{t('report.cert_holder')}</th>
                                                     <th>{t('report.certificate_col')}</th>
                                                     <th>{t('report.cert_issued_on')}</th>
+                                                    <th>{t('report.cert_printed_col')}</th>
                                                     <th>{t('report.cert_code')}</th>
                                                 </tr>
                                             </thead>
@@ -460,6 +486,28 @@ export default function EndedOpeningReportModal({
                                                             </Badge>
                                                         </td>
                                                         <td className="p-3.5 text-gray-400">{fmtDate(c.issuingDate)}</td>
+                                                        <td className="p-3.5">
+                                                            {c.printedAt ? (
+                                                                <div className="flex flex-col gap-1">
+                                                                    <Badge tone="green" dot>
+                                                                        {t('report.cert_printed_yes')}
+                                                                    </Badge>
+                                                                    <span className="text-xs text-gray-400">{fmtDate(c.printedAt)}</span>
+                                                                    {c.printedBy?.email && (
+                                                                        <span className="text-xs text-gray-500" dir="ltr">{c.printedBy.email}</span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => markPrinted(c.id)}
+                                                                    disabled={markingId === c.id || c.verificationStatus === 'REVOKED'}
+                                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-brand-gold/10 hover:bg-brand-gold/20 text-brand-gold-light text-xs font-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                >
+                                                                    <Printer size={13} />
+                                                                    {markingId === c.id ? t('common.loading') : t('report.cert_mark_printed')}
+                                                                </button>
+                                                            )}
+                                                        </td>
                                                         <td className="p-3.5 text-gray-500 font-mono text-xs" dir="ltr">
                                                             {c.verificationCode.slice(0, 8)}…
                                                         </td>

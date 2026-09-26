@@ -148,6 +148,8 @@ export class CertificatesService {
                 verificationStatus: true,
                 createdAt: true,
                 student: { select: { id: true, email: true } },
+                printedAt: true,
+                printedBy: { select: { id: true, email: true } },
             },
             orderBy: { issuingDate: 'desc' },
         });
@@ -163,8 +165,52 @@ export class CertificatesService {
             course,
             counts,
             total: certificates.length,
+            // Split from `total` on purpose: an issued certificate and a
+            // certificate that actually reached the student on paper are
+            // different facts, and a wrap-up report needs both.
+            printed: certificates.filter((c) => c.printedAt !== null).length,
             certificates,
         };
+    }
+
+    /**
+     * Record that a certificate was released on paper, and by whom.
+     *
+     * Re-printing moves the timestamp forward instead of keeping the first
+     * one: the useful question in a wrap-up report is "when did we last hand
+     * this over", and a replacement copy supersedes the original. A revoked
+     * certificate is refused so the ledger cannot claim a handover of a
+     * credential that is no longer valid.
+     */
+    async markPrinted(id: string, actor: { userId: string; role: Role }) {
+        const certificate = await this.prisma.certificate.findUnique({
+            where: { id },
+            select: { id: true, studentId: true, verificationStatus: true },
+        });
+        if (!certificate) throw new NotFoundException('Certificate not found');
+        if (certificate.verificationStatus === CertificateStatus.REVOKED) {
+            throw new BadRequestException('A revoked certificate cannot be printed');
+        }
+
+        // Staff release certificates at the office; a student may also print
+        // their own from the dashboard, so ownership is honoured here rather
+        // than by a blanket role restriction on the route.
+        const isOwner = certificate.studentId === actor.userId;
+        const staffRoles: Role[] = [Role.ADMIN, Role.COURSE_MANAGER, Role.INSTRUCTOR];
+        const isStaff = staffRoles.includes(actor.role);
+        if (!isOwner && !isStaff) {
+            throw new ForbiddenException('You cannot print this certificate');
+        }
+
+        return this.prisma.certificate.update({
+            where: { id },
+            data: { printedAt: new Date(), printedById: actor.userId },
+            select: {
+                id: true,
+                printedAt: true,
+                printedBy: { select: { id: true, email: true } },
+            },
+        });
     }
 
     async revoke(id: string, actorId: string, actorRole: Role) {
