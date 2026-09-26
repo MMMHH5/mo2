@@ -37,8 +37,10 @@ export default function DashboardPage() {
 
     const roleLabel = t('roles.' + (user.role || '').toLowerCase()) || user.role;
 
+    const gender = (me?.metadata?.gender as string) || '';
     const fullName = (me?.metadata?.fullName as string) || '';
-    const displayName = `${t('dashboard.engineer_label')} ${fullName}`.trim() || user.email;
+    const honorific = gender === 'FEMALE' ? t('dashboard.engineer_label_female') : t('dashboard.engineer_label');
+    const displayName = `${honorific} ${fullName}`.trim() || user.email;
 
     const metrics: { label: string; value: string | number; icon: typeof Activity; color: string }[] = [
         {

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, GraduationCap, Award,
     BookOpen, FileText, BadgeCheck, Info, ClipboardList, ExternalLink, CheckCircle2,
+    Users, Cake, School,
 } from 'lucide-react';
 
 interface MyProfile {
@@ -74,6 +75,8 @@ export default function DetailsPage() {
     const initials = fullName.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
     const roleLabel = t('roles.' + (profile?.role || '').toLowerCase()) || profile?.role || '';
     const studyStatus = (meta.studyStatus as string) || '';
+    const gender = (meta.gender as string) || '';
+    const genderLabel = gender ? t('auth.gender_' + gender.toLowerCase()) : '';
 
     const statusLabel = (status: string) => t('statuses.' + (status || '').toLowerCase()) || status;
 
@@ -97,7 +100,9 @@ export default function DetailsPage() {
         { icon: Phone, label: t('profile.phone'), value: (meta.phone as string) || '—' },
         { icon: MapPin, label: t('profile.city'), value: (meta.city as string) || '—' },
         { icon: GraduationCap, label: t('details.specialty'), value: (meta.specialty as string) || '—' },
-        { icon: BookOpen, label: t('details.title'), value: (meta.title as string) || '—' },
+        { icon: Users, label: t('details.gender'), value: genderLabel || '—' },
+        { icon: Cake, label: t('details.age'), value: (meta.age as string) || '—' },
+        { icon: School, label: t('details.university'), value: (meta.university as string) || '—' },
         { icon: FileText, label: t('details.study_status'), value: studyStatus ? t('details.status_' + studyStatus.toLowerCase()) : '—' },
         { icon: ClipboardList, label: t('details.study_level'), value: (meta.studyLevel as string) || '—' },
     ];

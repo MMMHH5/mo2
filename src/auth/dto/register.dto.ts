@@ -28,11 +28,22 @@ export class RegisterDto {
     @MaxLength(40)
     phone?: string;
 
-    @ApiPropertyOptional({ description: 'Professional title (e.g. Engineer, Dr.)', example: 'Engineer' })
+    @ApiPropertyOptional({ description: 'Gender (MALE | FEMALE | OTHER)', enum: ['MALE', 'FEMALE', 'OTHER'] })
     @IsOptional()
     @IsString()
-    @MaxLength(60)
-    title?: string;
+    gender?: string;
+
+    @ApiPropertyOptional({ description: 'Age', example: '22' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(10)
+    age?: string;
+
+    @ApiPropertyOptional({ description: 'University / Institute', example: 'University of Baghdad' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(120)
+    university?: string;
 
     @ApiPropertyOptional({ description: 'Field of study / specialty', example: 'Computer Science' })
     @IsOptional()

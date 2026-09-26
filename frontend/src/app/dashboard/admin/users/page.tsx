@@ -5,7 +5,7 @@ import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, ArrowRightLeft, Pause, Play, Search, UserPlus, Users, Download, Info, BookOpen, Award, Mail, Phone, MapPin, GraduationCap, Calendar, ShieldCheck, BadgeCheck, FileText, ClipboardList, X } from 'lucide-react';
+import { Pencil, Trash2, ArrowRightLeft, Pause, Play, Search, UserPlus, Users, Download, Info, BookOpen, Award, Mail, Phone, MapPin, GraduationCap, Calendar, ShieldCheck, BadgeCheck, FileText, ClipboardList, X, Cake, School } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, BtnSoft, type Tone } from '../components';
 
 interface User {
@@ -382,6 +382,7 @@ export default function AdminUsersPage() {
                             const fullName = (meta.fullName as string) || details.user.email.split('@')[0];
                             const initials = fullName.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
                             const statusLabel = (s: string) => t('statuses.' + (s || '').toLowerCase()) || s;
+                            const gender = (meta.gender as string) || '';
                             const infoRows: { icon: typeof Mail; label: string; value: string }[] = [
                                 { icon: Mail, label: t('profile.email'), value: details.user.email },
                                 { icon: ShieldCheck, label: t('profile.role'), value: roleLabel(details.user.role) },
@@ -390,7 +391,9 @@ export default function AdminUsersPage() {
                                 { icon: Phone, label: t('profile.phone'), value: (meta.phone as string) || '—' },
                                 { icon: MapPin, label: t('profile.city'), value: (meta.city as string) || '—' },
                                 { icon: GraduationCap, label: t('details.specialty'), value: (meta.specialty as string) || '—' },
-                                { icon: ShieldCheck, label: t('details.title'), value: (meta.title as string) || '—' },
+                                { icon: Users, label: t('details.gender'), value: gender ? t('auth.gender_' + gender.toLowerCase()) : '—' },
+                                { icon: Cake, label: t('details.age'), value: (meta.age as string) || '—' },
+                                { icon: School, label: t('details.university'), value: (meta.university as string) || '—' },
                                 { icon: FileText, label: t('details.study_status'), value: (meta.studyStatus as string) ? t('details.status_' + (meta.studyStatus as string).toLowerCase()) : '—' },
                                 { icon: ClipboardList, label: t('details.study_level'), value: (meta.studyLevel as string) || '—' },
                             ];

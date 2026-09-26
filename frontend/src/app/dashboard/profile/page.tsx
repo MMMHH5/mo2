@@ -29,7 +29,7 @@ export default function ProfilePage() {
     const { data: profile, loading, error, refetch } = useFetchData<MyProfile>('/users/me');
 
     const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', title: '', studyStatus: '', studyLevel: '' });
+    const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', gender: '', age: '', university: '', studyStatus: '', studyLevel: '' });
     const [saving, setSaving] = useState(false);
 
     const [emailForm, setEmailForm] = useState({ email: '', currentPassword: '' });
@@ -51,7 +51,9 @@ export default function ProfilePage() {
             city: (m.city as string) || '',
             bio: (m.bio as string) || '',
             specialty: (m.specialty as string) || '',
-            title: (m.title as string) || '',
+            gender: (m.gender as string) || '',
+            age: (m.age as string) || '',
+            university: (m.university as string) || '',
             studyStatus: (m.studyStatus as string) || '',
             studyLevel: (m.studyLevel as string) || '',
         });
@@ -466,22 +468,48 @@ export default function ProfilePage() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label className={labelCls}>{t('auth.title')}</label>
+                                    <label className={labelCls}>{t('auth.gender')}</label>
+                                    <select
+                                        value={form.gender}
+                                        onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                                        className={`${inputCls} cursor-pointer [&>option]:bg-brand-navy-dark [&>option]:text-white`}
+                                    >
+                                        <option value="">{t('auth.gender_select')}</option>
+                                        <option value="MALE">{t('auth.gender_male')}</option>
+                                        <option value="FEMALE">{t('auth.gender_female')}</option>
+                                        <option value="OTHER">{t('auth.gender_other')}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelCls}>{t('auth.age')}</label>
                                     <input
-                                        type="text"
-                                        value={form.title}
-                                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                        type="number"
+                                        min={5}
+                                        max={100}
+                                        value={form.age}
+                                        onChange={(e) => setForm({ ...form, age: e.target.value })}
                                         className={inputCls}
-                                        dir="auto"
-                                        placeholder={t('auth.title_ph')}
+                                        dir="ltr"
                                     />
                                 </div>
+                                <div>
+                                    <label className={labelCls}>{t('auth.university')}</label>
+                                    <input
+                                        type="text"
+                                        value={form.university}
+                                        onChange={(e) => setForm({ ...form, university: e.target.value })}
+                                        className={inputCls}
+                                        dir="auto"
+                                        placeholder={t('auth.university_ph')}
+                                    />
+                                </div>
+                            </div>
                                 <div>
                                     <label className={labelCls}>{t('auth.study_status')}</label>
                                     <select
                                         value={form.studyStatus}
                                         onChange={(e) => setForm({ ...form, studyStatus: e.target.value })}
-                                        className={inputCls}
+                                        className={`${inputCls} cursor-pointer [&>option]:bg-brand-navy-dark [&>option]:text-white`}
                                     >
                                         <option value="">{t('auth.study_status_select')}</option>
                                         <option value="STUDENT">{t('auth.study_status_student')}</option>
@@ -500,7 +528,6 @@ export default function ProfilePage() {
                                         placeholder={t('auth.study_level_ph')}
                                     />
                                 </div>
-                            </div>
                             <div>
                                 <label className={labelCls}>{t('profile.field_bio')}</label>
                                 <textarea

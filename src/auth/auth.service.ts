@@ -65,7 +65,9 @@ export class AuthService {
         const metadata: Record<string, unknown> = {};
         if (dto.fullName) metadata.fullName = dto.fullName;
         if (dto.phone) metadata.phone = dto.phone;
-        if (dto.title) metadata.title = dto.title;
+        if (dto.gender) metadata.gender = dto.gender;
+        if (dto.age) metadata.age = dto.age;
+        if (dto.university) metadata.university = dto.university;
         if (dto.specialty) metadata.specialty = dto.specialty;
         if (dto.studyStatus) metadata.studyStatus = dto.studyStatus;
         if (dto.studyLevel) metadata.studyLevel = dto.studyLevel;

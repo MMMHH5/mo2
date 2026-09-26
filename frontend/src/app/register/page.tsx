@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Mail, Lock, User, Phone, LogIn, Award, GraduationCap, UserCog, Layers } from 'lucide-react';
+import { Mail, Lock, User, Phone, LogIn, GraduationCap, UserCog, Layers, Users, Cake, School } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
@@ -22,7 +22,9 @@ export default function RegisterPage() {
         email: '',
         password: '',
         confirmPassword: '',
-        title: '',
+        gender: '',
+        age: '',
+        university: '',
         specialty: '',
         studyStatus: '',
         studyLevel: ''
@@ -30,6 +32,9 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
 
     const inputCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10 [color-scheme:dark]' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
+    // Native <select> options render on the OS background, so text-white on a
+    // dark select makes them invisible in dark mode — style the options too.
+    const selectCls = `block w-full pl-11 pr-4 rtl:pr-11 rtl:pl-4 py-3.5 border rounded-xl cursor-pointer focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 [&>option]:text-brand-charcoal [&>option]:bg-white ${dark ? 'bg-brand-navy text-white border-white/10 hover:bg-white/10 [color-scheme:dark] [&>option]:text-white [&>option]:bg-brand-navy' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
     const labelCls = `block text-sm font-black mb-1.5 ${dark ? 'text-gray-300' : 'text-gray-700'}`;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -47,7 +52,9 @@ export default function RegisterPage() {
                 password: formData.password,
                 fullName: formData.fullName,
                 phone: formData.phone,
-                title: formData.title,
+                gender: formData.gender,
+                age: formData.age,
+                university: formData.university,
                 specialty: formData.specialty,
                 studyStatus: formData.studyStatus,
                 studyLevel: formData.studyLevel,
@@ -122,17 +129,55 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label className={labelCls}>{t('auth.title')}</label>
+                            <label className={labelCls}>{t('auth.gender')}</label>
                             <div className="relative flex items-center">
                                 <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
-                                    <Award size={18} className="text-gray-400" />
+                                    <Users size={18} className="text-gray-400" />
+                                </div>
+                                <select
+                                    className={selectCls}
+                                    value={formData.gender}
+                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                >
+                                    <option value="">{t('auth.gender_select')}</option>
+                                    <option value="MALE">{t('auth.gender_male')}</option>
+                                    <option value="FEMALE">{t('auth.gender_female')}</option>
+                                    <option value="OTHER">{t('auth.gender_other')}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className={labelCls}>{t('auth.age')}</label>
+                            <div className="relative flex items-center">
+                                <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
+                                    <Cake size={18} className="text-gray-400" />
+                                </div>
+                                <input
+                                    type="number"
+                                    min={5}
+                                    max={100}
+                                    className={`${inputCls} text-left`}
+                                    placeholder={t('auth.age_ph')}
+                                    dir="ltr"
+                                    value={formData.age}
+                                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className={labelCls}>{t('auth.university')}</label>
+                            <div className="relative flex items-center">
+                                <div className="absolute left-4 rtl:right-4 rtl:left-auto flex items-center pointer-events-none">
+                                    <School size={18} className="text-gray-400" />
                                 </div>
                                 <input
                                     type="text"
                                     className={inputCls}
-                                    placeholder={t('auth.title_ph')}
-                                    value={formData.title}
-                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    placeholder={t('auth.university_ph')}
+                                    value={formData.university}
+                                    onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -160,7 +205,7 @@ export default function RegisterPage() {
                                     <UserCog size={18} className="text-gray-400" />
                                 </div>
                                 <select
-                                    className={inputCls}
+                                    className={selectCls}
                                     value={formData.studyStatus}
                                     onChange={(e) => setFormData({ ...formData, studyStatus: e.target.value })}
                                 >
