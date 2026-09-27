@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
+import { useTheme } from '@/lib/theme-context';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Activity, Database, MemoryStick, ShieldAlert, Globe, Server, Cpu, Settings } from 'lucide-react';
+import { Activity, Database, MemoryStick, ShieldAlert, Server, Cpu, Settings } from 'lucide-react';
 import { PageHeader, SectionHeader, Badge, BtnPrimary } from '../components';
 
 interface HealthResponse {
@@ -20,6 +21,7 @@ interface HealthResponse {
 export default function AdminSystemPage() {
     const { data: health, loading: healthLoading, error: healthError } = useFetchData<HealthResponse>('/health');
     const { t } = useI18n();
+    const { dark } = useTheme();
 
     const dbUp = health?.info?.database?.status === 'up';
     const memUp = health?.info?.memory_heap?.status === 'up';
@@ -94,7 +96,11 @@ export default function AdminSystemPage() {
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <div className="bg-gray-100/60 dark:bg-white/5 rounded-xl p-4">
                             <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">{t('admin.app_name_label')}</div>
-                            <div className="font-black text-brand-navy dark:text-white flex items-center gap-2"><Globe size={16} className="text-brand-gold-dark dark:text-brand-gold-light" /> LaxaLab</div>
+                            <img
+                                src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
+                                alt="Laxalab Academy"
+                                className="h-6 md:h-7 w-auto max-w-[85%] object-contain"
+                            />
                         </div>
                         <div className="bg-gray-100/60 dark:bg-white/5 rounded-xl p-4">
                             <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">{t('admin.environment')}</div>

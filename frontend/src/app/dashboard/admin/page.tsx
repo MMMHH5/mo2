@@ -2,8 +2,9 @@
 
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
+import { useTheme } from '@/lib/theme-context';
 import {
-    Users, BookOpen, CalendarClock, Clock, GraduationCap, Wallet, Activity, PlusCircle, CreditCard,
+    Users, BookOpen, CalendarClock, Clock, GraduationCap, Wallet, Activity, CreditCard,
     ArrowRight, Search, type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ interface HealthResponse { status?: string; }
 
 export default function AdminOverviewPage() {
     const { t } = useI18n();
+    const { dark } = useTheme();
     const { data: s } = useFetchData<AdminStats>('/admin/stats');
     const { data: health } = useFetchData<HealthResponse>('/health');
 
@@ -144,9 +146,13 @@ export default function AdminOverviewPage() {
                 </div>
             </Link>
 
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-bold">
-                <PlusCircle size={14} />
-                LaxaLab Administration Console
+            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 font-bold">
+                <img
+                    src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
+                    alt="Laxalab Academy"
+                    className="h-5 w-auto max-w-[45vw] object-contain"
+                />
+                <span className="opacity-70">{t('admin.console_label')}</span>
             </div>
         </div>
     );

@@ -869,6 +869,7 @@
         "activate": "Activate",
         "api_url_label": "API URL",
         "app_name_label": "Application",
+        "console_label": "Administration Console",
         "applications_none": "No pending applications",
         "applications_pending": "Pending applications",
         "applications_subtitle": "Review instructor applications and grant platform access.",

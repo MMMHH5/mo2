@@ -869,6 +869,7 @@
         "activate": "تفعيل",
         "api_url_label": "رابط الـ API",
         "app_name_label": "التطبيق",
+        "console_label": "لوحة تحكم الإدارة",
         "applications_none": "لا توجد طلبات معلّقة",
         "applications_pending": "طلبات معلّقة",
         "applications_subtitle": "راجع طلبات الانضمام للمدرّسين وامنحهم صلاحية الوصول للمنصة.",
