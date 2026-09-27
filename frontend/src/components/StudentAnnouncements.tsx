@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useFetchData } from '@/lib/useFetchData';
 import { Megaphone, Calendar, User, BookOpen, Loader, Bell } from 'lucide-react';
@@ -28,9 +29,14 @@ interface Announcement {
 
 export default function StudentAnnouncements() {
     const { t, pick, locale } = useI18n();
+    const { token } = useAuth();
     const isAr = locale === 'ar';
 
-    const { data: enrollments } = useFetchData<Enrollment[]>('/enrollments/my');
+    // `/enrollments/my` is protected, and this panel sits on the dashboard shell,
+    // which renders before the session is known. Firing it unconditionally put a
+    // guaranteed 401 in the console on every visit; `useFetchData` skips a null
+    // url and refetches once the token appears.
+    const { data: enrollments } = useFetchData<Enrollment[]>(token ? '/enrollments/my' : null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
 

@@ -115,6 +115,13 @@ api.interceptors.response.use(
         if (original.url?.includes('/auth/login') || original.url?.includes('/auth/refresh') || original.url?.includes('/auth/2fa/verify-login') || original.url?.includes('/auth/change-password')) {
             return Promise.reject(error);
         }
+        // A 401 on a request that never carried a token is not a stale session.
+        // The viewer is a guest and the endpoint is simply protected: a refresh
+        // cannot conjure a session that was never there, and bouncing a guest to
+        // /login would be wrong. Let the caller handle its own empty state.
+        if (!original.headers?.Authorization) {
+            return Promise.reject(error);
+        }
 
         original._retried = true;
         if (isRefreshing) {
