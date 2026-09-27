@@ -178,6 +178,18 @@ export class PaymentsService {
                 });
               }
             });
+
+            // The batch room is created and populated here rather than waiting
+            // for the student's first GET /chat/rooms, so an approved student
+            // finds their cohort waiting instead of an empty panel. Same
+            // best-effort contract as the manual review path: a chat failure
+            // must not fail a settled payment.
+            try {
+              const room = await this.chatService.getOrCreateRoomForOpening(payment.openingId);
+              await this.chatService.syncRoomMembers(room.id);
+            } catch (chatErr) {
+              console.error('[Stripe Webhook] Batch chat sync failed:', (chatErr as Error).message);
+            }
           } catch (err) {
             // The seat claim inside the transaction rolled everything back;
             // the student paid but there is no seat. Auto-refund + notify so we

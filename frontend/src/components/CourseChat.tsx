@@ -73,7 +73,10 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
     // Mobile: show sidebar or chat
     const [mobileShowChat, setMobileShowChat] = useState(false);
 
-    // Load rooms on mount
+    // Load the rooms. `CourseChat` is mounted only while the chat tab is
+    // selected, so switching away and back re-runs this: a student approved on
+    // another device picks up their cohort room here, because the server
+    // materialises membership on this call.
     useEffect(() => {
         let active = true;
         (async () => {
@@ -83,7 +86,9 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                 const mine = all.filter(r => r.course?.id === courseId);
                 if (!active) return;
                 setRooms(mine);
-                if (mine.length > 0) setActiveRoomId(prev => prev || mine[0].id);
+                // Drop a selected room that is no longer in the list, or the
+                // thread pane would sit empty against a room we may not read.
+                setActiveRoomId(prev => (prev && mine.some(r => r.id === prev) ? prev : mine[0]?.id ?? null));
             } catch {
                 if (active) setRooms([]);
             } finally {

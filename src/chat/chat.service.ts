@@ -29,29 +29,30 @@ export class ChatService {
      * - Admins/CM: all rooms
      */
     async getRooms(userId: string, role: Role) {
-        let where: any = {};
         let candidateOpeningIds: string[] = [];
 
         if (role === Role.STUDENT) {
             const enrollments = await this.prisma.enrollment.findMany({
                 where: { studentId: userId, status: { in: ['APPROVED', 'RESERVED'] } },
-                include: { opening: { select: { id: true } } },
+                select: { openingId: true },
             });
             candidateOpeningIds = enrollments.map(e => e.openingId).filter((id): id is string => !!id);
-            if (candidateOpeningIds.length > 0) {
-                where.openingId = { in: candidateOpeningIds };
-            }
         } else if (role === Role.INSTRUCTOR) {
             const openings = await this.prisma.courseOpening.findMany({
                 where: { instructorId: userId },
                 select: { id: true },
             });
             candidateOpeningIds = openings.map(o => o.id);
-            if (candidateOpeningIds.length > 0) {
-                where.openingId = { in: candidateOpeningIds };
-            }
         }
-        // ADMIN / COURSE_MANAGER: where stays {} → all rooms
+
+        // The opening list is the allow-list for students and instructors, and
+        // it stays the allow-list when it is EMPTY. An empty `in` matches
+        // nothing, which is the correct answer for a student with no approved
+        // enrollment; an empty `where` matched every room on the platform and
+        // shipped each one's name, member count and last-message text.
+        const where = this.isOversight(role)
+            ? {}
+            : { openingId: { in: candidateOpeningIds } };
 
         // Lazily create rooms for the user's openings so a room always exists
         for (const openingId of candidateOpeningIds) {
@@ -195,6 +196,17 @@ export class ChatService {
         return message;
     }
 
+    /**
+     * May this user read/post in this room? Pure check — it writes nothing.
+     *
+     * The gateway calls this on every join and every send, and it used to call
+     * `syncRoomMembers` on the way through, which is a delete-then-recreate of
+     * every member row on a hot read path. Membership is materialised where it
+     * belongs instead: `getOrCreateRoomForOpening` (reached from `getRooms`)
+     * and both approval paths sync the room, so by the time anyone lists their
+     * chats the member rows already exist. A missing row degrades to the
+     * enrollment/instructor checks below, which is the real gate anyway.
+     */
     async userHasRoomAccess(roomId: string, userId: string): Promise<boolean> {
         const room = await this.prisma.chatRoom.findUnique({ where: { id: roomId } });
         if (!room) return false;
@@ -209,13 +221,16 @@ export class ChatService {
         if (user && this.isOversight(user.role)) return true;
 
         if (opening && user?.role === Role.STUDENT) {
+            // Scoped to THIS batch, not to the course. Rooms are one per
+            // opening and both `getRooms` and `syncRoomMembers` key off
+            // `openingId`; matching on `courseId` here handed an approved
+            // student in batch A read and post access to every other batch of
+            // the same course, given only a room id. A student has one
+            // enrollment row per course, so their batch is their `openingId`.
             const enrollment = await this.prisma.enrollment.findFirst({
-                where: { courseId: opening.courseId, studentId: userId, status: { in: ['APPROVED', 'RESERVED'] } },
+                where: { openingId: room.openingId, studentId: userId, status: { in: ['APPROVED', 'RESERVED'] } },
             });
-            if (enrollment) {
-                await this.syncRoomMembers(roomId);
-                return true;
-            }
+            if (enrollment) return true;
         }
 
         return false;
@@ -261,6 +276,27 @@ export class ChatService {
 
     // ============================= Direct (1:1) chat =============================
 
+    /**
+     * Who runs a course, for the case where the student's own enrollment cannot
+     * say: the course's owning instructor, else the earliest batch's instructor.
+     */
+    private async resolveCourseInstructorId(courseId: string): Promise<string> {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            select: { instructorId: true },
+        });
+        if (course?.instructorId) return course.instructorId;
+
+        const opening = await this.prisma.courseOpening.findFirst({
+            where: { courseId },
+            select: { instructorId: true },
+            orderBy: { createdAt: 'asc' },
+        });
+        if (opening?.instructorId) return opening.instructorId;
+
+        throw new ForbiddenException('No instructor is assigned to this course');
+    }
+
     private directChatInclude = {
         course: { select: { id: true, titleAr: true, titleEn: true } },
         student: { select: { id: true, email: true } },
@@ -286,11 +322,17 @@ export class ChatService {
                 include: { opening: { select: { id: true, instructorId: true } } },
                 orderBy: { createdAt: 'asc' },
             });
-            const enrollment = enrollments.find(e => e.opening) || enrollments[0];
-            if (!enrollment || !enrollment.opening) {
+            if (enrollments.length === 0) {
                 throw new ForbiddenException('You are not enrolled in this course');
             }
-            instructorId = enrollment.opening.instructorId;
+            // Prefer the instructor of the batch the student is actually in.
+            // `Enrollment.openingId` is nullable and was added without a
+            // backfill, so a legacy approved enrollment can have none — and
+            // with `@@unique([studentId, courseId])` there is only ever one
+            // row, so requiring the join hard-403'd those students forever.
+            // Fall back to whoever runs the course instead.
+            const enrolledInstructor = enrollments.find((e) => e.opening?.instructorId)?.opening?.instructorId;
+            instructorId = enrolledInstructor ?? (await this.resolveCourseInstructorId(courseId));
         } else {
             if (!studentId) {
                 throw new BadRequestException('studentId is required for instructors');

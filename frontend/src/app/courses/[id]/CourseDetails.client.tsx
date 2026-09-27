@@ -121,6 +121,12 @@ export interface Course {
     gallery?: { url: string }[];
     instructor?: PublicInstructorCard | null;
     openings?: Opening[];
+    /**
+     * What the signed-in viewer may do with this course, from the API. Absent
+     * on the anonymous server render, which is why the page re-fetches with a
+     * token once it knows who is asking.
+     */
+    viewerAccess?: { enrolled: boolean; approved: boolean; teaches: boolean; chatEnabled: boolean };
     modules?: Module[];
     chapters?: Chapter[];
     _count?: { enrollments?: number; modules?: number };
@@ -154,18 +160,26 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     // --- Mode detection ---
+    // Entitlement comes from the API, not from `openings.length`. The old
+    // inference ("a live opening exists, therefore the signed-in student
+    // belongs here") put every logged-in student in student mode on every
+    // course, and dropped a real student back to guest whenever the batch they
+    // were sitting in was filtered out of the anonymous render — which took
+    // the chat, tasks and grades tabs with it.
     const isStudent = user?.role === 'STUDENT';
     const isInstructor = user?.role === 'INSTRUCTOR';
+    const access = course?.viewerAccess;
     let mode: 'guest' | 'student' | 'instructor' = 'guest';
-    if (isStudent) {
-        const enrolled = course?.openings?.some(o => o.status === 'OPEN' || o.status === 'ANNOUNCEMENT' || o.status === 'STARTED') ? true : false;
-        if (enrolled || (course?.openings?.length ?? 0) > 0) mode = 'student';
-        else mode = 'guest';
+    if (access?.teaches) {
+        mode = 'instructor';
+    } else if (access?.enrolled) {
+        mode = 'student';
     } else if (isInstructor) {
-        const teaches = course?.openings?.some(o => o.instructor?.id === user?.userId);
-        mode = teaches ? 'instructor' : 'guest';
-    } else {
-        mode = 'guest';
+        // Older payloads (and any course the flag has not been computed for
+        // yet) fall back to the previous best-effort check.
+        mode = course?.openings?.some((o) => o.instructor?.id === user?.userId) ? 'instructor' : 'guest';
+    } else if (isStudent && !access) {
+        mode = (course?.openings?.length ?? 0) > 0 ? 'student' : 'guest';
     }
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [gatewayId, setGatewayId] = useState<string | null>(null);
@@ -177,6 +191,16 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const { data: reviews, loading: reviewsLoading } = useFetchData<CourseReviews>(`/reviews/course/${id}`);
     const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'grades' | 'chat' | 'roster'>('overview');
 
+    // Prefer the server's verdict; fall back to `mode` for a payload that
+    // predates the flag so a signed-in user is never left without the tab.
+    const chatAvailable = access ? access.chatEnabled : mode !== 'guest';
+
+    // A tab can stop being available while it is open — a signed-in viewer
+    // whose own copy arrives without cohort access, for instance. Deriving the
+    // tab that actually renders keeps that from stranding an empty panel
+    // without writing state back from an effect.
+    const tab = activeTab === 'chat' && !chatAvailable ? 'overview' : activeTab;
+
     const instructorOpeningId = course?.openings?.find(o => o.instructor?.id === user?.userId)?.id ?? null;
 
     // --- Tabs render ---
@@ -185,14 +209,14 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             <button
                 onClick={() => setActiveTab(key)}
                 className={`relative inline-flex shrink-0 items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
-                    activeTab === key
+                    tab === key
                         ? dark ? 'bg-brand-gold/15 text-brand-gold-light border border-brand-gold/25' : 'bg-brand-gold/15 text-brand-gold-dark border border-brand-gold/25'
                         : dark ? 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent' : 'text-gray-500 hover:text-brand-navy hover:bg-brand-mist border border-transparent'
                 }`}
             >
                 {icon}
                 <span className="whitespace-nowrap">{label}</span>
-                {activeTab === key && <span className={`absolute bottom-0 left-3 right-3 h-1 rounded-full ${dark ? 'bg-brand-gold-light' : 'bg-brand-gold-dark'}`} />}
+                {tab === key && <span className={`absolute bottom-0 left-3 right-3 h-1 rounded-full ${dark ? 'bg-brand-gold-light' : 'bg-brand-gold-dark'}`} />}
             </button>
         );
         return (
@@ -207,7 +231,11 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     {item('overview', <BookOpen size={18} />, t('courseDetail.tab_overview'))}
                     {mode === 'student' && item('tasks', <ClipboardList size={18} />, t('courseDetail.tab_tasks'))}
                     {mode === 'student' && item('grades', <GraduationCap size={18} />, t('courseDetail.tab_grades'))}
-                    {mode !== 'guest' && item('chat', <MessagesSquare size={18} />, t('courseDetail.tab_chat'))}
+                    {/* Chat follows the API's own answer rather than `mode`:
+                        a student who is approved but whose batch is closed still
+                        has a cohort room to read, and a pending applicant has
+                        none. `mode` alone hid the tab in the first case. */}
+                    {chatAvailable && item('chat', <MessagesSquare size={18} />, t('courseDetail.tab_chat'))}
                     {mode === 'instructor' && item('tasks', <Settings2 size={18} />, t('courseDetail.tab_tasks'))}
                     {mode === 'instructor' && item('roster', <Settings2 size={18} />, t('courseDetail.tab_roster'))}
                 </div>
@@ -216,19 +244,40 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     };
 
     useEffect(() => {
-        if (!id || initialCourse) return;
+        if (!id) return;
+
+        // The page is server-rendered from an anonymous fetch, so that payload
+        // has no viewer: no `viewerAccess`, and no batches beyond the public
+        // OPEN/ANNOUNCEMENT ones. A guest is fine with it, but a signed-in
+        // student needs their own copy — the effect used to bail out whenever
+        // `initialCourse` existed, pinning the anonymous snapshot for the life
+        // of the page. That is why an approved student sitting in a closed
+        // batch never saw the chat tab at all.
+        const hasAnonymousCopy = !!initialCourse;
+        if (!user && hasAnonymousCopy) {
+            // `loading` already started as `!initialCourse`, so the guest path
+            // needs no state write here. Leaving the server copy on screen also
+            // avoids a spinner flash for a signed-in viewer whose own copy is
+            // still in flight below.
+            return;
+        }
+        // No viewer and no server copy (the render failed): fetch anonymously
+        // so the page is not blank.
+
+        let cancelled = false;
         const fetchCourse = async () => {
             try {
                 const res = await api.get(`/courses/${id}`);
-                setCourse(res.data as Course);
+                if (!cancelled) setCourse(res.data as Course);
             } catch {
-                toast.error(t('courseDetail.failed_load'));
+                if (!cancelled) toast.error(t('courseDetail.failed_load'));
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
         fetchCourse();
-    }, [id, t, initialCourse]);
+        return () => { cancelled = true; };
+    }, [id, t, user, initialCourse]);
 
     const handleEnrollSubmit = async () => {
         if (!selectedOpening) return;
@@ -589,13 +638,16 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                 {mode !== 'guest' && renderTabs()}
                 <div className={`rounded-3xl shadow-2xl p-4 sm:p-6 md:p-12 animate-fade-in-up ${dark ? 'bg-brand-navy shadow-black/20 border border-white/5' : 'bg-white shadow-brand-navy/10 border border-gray-200'}`}>
 
-                    {mode !== 'guest' && activeTab !== 'overview' ? (
+                    {mode !== 'guest' && tab !== 'overview' ? (
                         <>
-                            {activeTab === 'tasks' && mode === 'instructor' && instructorOpeningId && <TasksPanel openingId={instructorOpeningId} />}
-                            {activeTab === 'tasks' && mode === 'student' && <StudentTasksPanel courseId={course.id} />}
-                            {activeTab === 'grades' && mode === 'student' && <StudentGradesPanel courseId={course.id} />}
-                            {activeTab === 'chat' && <CourseChat courseId={course.id} />}
-                            {activeTab === 'roster' && mode === 'instructor' && instructorOpeningId && <RosterGrades openingId={instructorOpeningId} />}
+                            {tab === 'tasks' && mode === 'instructor' && instructorOpeningId && <TasksPanel openingId={instructorOpeningId} />}
+                            {tab === 'tasks' && mode === 'student' && <StudentTasksPanel courseId={course.id} />}
+                            {tab === 'grades' && mode === 'student' && <StudentGradesPanel courseId={course.id} />}
+                            {/* Guarded on the same flag as the tab: this body had
+                                no `mode` check of its own, so it was reachable by
+                                any non-guest even where the tab was hidden. */}
+                            {tab === 'chat' && chatAvailable && <CourseChat courseId={course.id} />}
+                            {tab === 'roster' && mode === 'instructor' && instructorOpeningId && <RosterGrades openingId={instructorOpeningId} />}
                         </>
                     ) : (
                         <>

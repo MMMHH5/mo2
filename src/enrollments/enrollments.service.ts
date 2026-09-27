@@ -565,7 +565,13 @@ export class EnrollmentsService {
             data: { courseId: enrollment.courseId, enrollmentId },
         }).catch(() => {});
 
-        // Auto-sync batch chat room membership on approval or rejection
+        // Auto-sync batch chat room membership on approval or rejection.
+        // Gated on `openingId`, which is NULL for enrollments created before the
+        // column existed. Those students keep 1:1 chat with the instructor
+        // (`ChatService.getOrCreateDirectChat` falls back to the course's
+        // instructor) but get no cohort room, because there is no unambiguous
+        // batch to attach them to — that gap needs a deliberate one-off
+        // backfill, not a batch guess made silently during review.
         if (enrollment.openingId) {
             try {
                 const room = await this.chatService.getOrCreateRoomForOpening(enrollment.openingId);

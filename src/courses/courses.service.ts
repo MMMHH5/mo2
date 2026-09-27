@@ -319,8 +319,54 @@ export class CoursesService {
         if (!course) throw new NotFoundException('Course not found');
         // Public route: swap the instructor row for the derived public card
         // before either the full or the redacted payload is returned.
-        if (await this.canViewPaidContent(course, viewer)) return mapPublicCourse(course);
-        return mapPublicCourse(this.redactPaidContent(course));
+        const shaped = await this.canViewPaidContent(course, viewer)
+            ? mapPublicCourse(course)
+            : mapPublicCourse(this.redactPaidContent(course));
+        return { ...shaped, viewerAccess: await this.viewerAccess(course.id, viewer) };
+    }
+
+    /**
+     * What the caller may do with this course, stated explicitly.
+     *
+     * The frontend used to infer this from `openings.length` — "the course has
+     * a live batch, so the signed-in student belongs here" — which was wrong
+     * for every student with no relationship to the course, and silently
+     * demoted a student in a STARTED batch to guest once the anonymous
+     * render filtered that batch away, taking the chat, tasks and grades tabs
+     * with it. The UI now asks instead of guessing.
+     */
+    private async viewerAccess(courseId: string, viewer?: CourseViewer) {
+        const none = { enrolled: false, approved: false, teaches: false, chatEnabled: false };
+        if (!viewer?.userId) return none;
+
+        const isStaff = viewer.role === Role.ADMIN || viewer.role === Role.COURSE_MANAGER;
+
+        const [teaches, enrollment] = await Promise.all([
+            this.prisma.courseOpening.findFirst({
+                where: { courseId, instructorId: viewer.userId },
+                select: { id: true },
+            }),
+            this.prisma.enrollment.findFirst({
+                where: { courseId, studentId: viewer.userId },
+                select: { status: true, openingId: true },
+            }),
+        ]);
+
+        // An instructor's role is not a claim on every course: it has to be an
+        // opening they are actually assigned to. Trusting the role here would
+        // hand every instructor in the platform the cohort chat of a course
+        // they have never taught.
+        const teachesCourse = !!teaches;
+        // APPROVED and RESERVED both hold a seat and both grant chat access;
+        // PENDING does not, which is what "accepted" means here.
+        const approved = enrollment?.status === 'APPROVED' || enrollment?.status === 'RESERVED';
+
+        return {
+            enrolled: !!enrollment,
+            approved,
+            teaches: teachesCourse,
+            chatEnabled: approved || teachesCourse || isStaff,
+        };
     }
 
     // GET /courses/:id is public, so paid lesson media must not travel with it.
