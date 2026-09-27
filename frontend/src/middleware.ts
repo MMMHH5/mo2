@@ -8,10 +8,14 @@ const SKIP_PATHS = ['/sitemap.xml', '/robots.txt', '/manifest.webmanifest', '/fa
 const EXT_RE = /\.(png|jpe?g|svg|gif|webp|ico|avif|woff2?|ttf|eot|otf|pdf|mp4|webm)$/i;
 
 function getPreferredLocale(req: NextRequest): Locale {
+    // Arabic is the primary language, so the only thing that may select
+    // English is the visitor having explicitly chosen it. This used to fall
+    // back to the browser's Accept-Language header, which sent every visitor
+    // whose OS or Chrome UI is English to /en and made the platform read as
+    // English-first despite `x-default`, the sitemap and the metadata all
+    // pointing at Arabic.
     const cookie = req.cookies.get(LOCALE_COOKIE)?.value;
     if (cookie === 'ar' || cookie === 'en') return cookie;
-    const accept = req.headers.get('accept-language')?.toLowerCase() || '';
-    if (accept.startsWith('en')) return 'en';
     return DEFAULT_LOCALE;
 }
 
