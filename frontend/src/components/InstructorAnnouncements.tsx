@@ -38,7 +38,7 @@ const emptyForm: AnnouncementForm = {
 };
 
 export default function InstructorAnnouncements({ openingId }: { openingId: string }) {
-    const { locale } = useI18n();
+    const { t, locale } = useI18n();
     const isAr = locale === 'ar';
 
     const [announcements, setAnnouncements] = useState<Announcement[] | null>(null);
@@ -55,7 +55,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
             const res = await api.get(`/announcements/opening/${openingId}`);
             setAnnouncements(res.data);
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('adminAnnouncements.save_failed'));
         } finally {
             setLoading(false);
         }
@@ -111,7 +111,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
             setModalOpen(false);
             load(true);
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('adminAnnouncements.save_failed'));
         } finally {
             setSaving(false);
         }
@@ -123,7 +123,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
             toast.success(isAr ? 'تم تحديث حالة النشر' : 'Publish status updated');
             load(true);
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('adminAnnouncements.save_failed'));
         }
     };
 
@@ -134,7 +134,7 @@ export default function InstructorAnnouncements({ openingId }: { openingId: stri
             toast.success(isAr ? 'تم حذف الإعلان' : 'Announcement deleted');
             load(true);
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('adminAnnouncements.save_failed'));
         }
     };
 

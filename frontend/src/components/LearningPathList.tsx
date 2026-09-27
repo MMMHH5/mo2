@@ -60,7 +60,7 @@ const GRADIENTS = [
 ];
 
 export default function LearningPathList({ mode = 'browse' }: Props) {
-    const { locale, pick } = useI18n();
+    const { t, locale, pick } = useI18n();
     const isAr = locale === 'ar';
     const { user } = useAuth();
 
@@ -126,7 +126,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
             setModalOpen(false);
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setSaving(false);
         }
@@ -141,7 +141,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                 ? (isAr ? `تم تسجيلك في المسار وتفعيل ${count} دورة` : `Enrolled! ${count} course${count === 1 ? '' : 's'} activated`)
                 : (isAr ? 'تم تسجيلك في المسار' : 'Enrolled in learning path'));
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setEnrollingId(null);
         }
@@ -155,7 +155,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
             toast.success(isAr ? 'تم حذف المسار' : 'Learning path deleted');
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setDeletingId(null);
         }

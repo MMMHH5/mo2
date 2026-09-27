@@ -89,7 +89,7 @@ function ScoreRing({ pct, passed }: { pct: number; passed: boolean }) {
 }
 
 export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Props) {
-    const { locale, pick } = useI18n();
+    const { t, locale, pick } = useI18n();
     const isAr = locale === 'ar';
 
     const [loaded, setLoaded] = useState<{ id: string; quiz: QuizData } | null>(null);
@@ -125,11 +125,11 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                     /* no previous attempt */
                 }
             } catch (err) {
-                if (active) setFailure({ id: quizId, message: getErrorMessage(err) });
+                if (active) setFailure({ id: quizId, message: getErrorMessage(err) || t('common.error') });
             }
         })();
         return () => { active = false; };
-    }, [quizId]);
+    }, [quizId, t]);
 
     const questions = useMemo(() => quiz?.questions ?? [], [quiz]);
     const answeredCount = questions.filter((q) => (answers[q.id]?.length ?? 0) > 0).length;
@@ -176,7 +176,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                 : (isAr ? 'تم إرسال محاولتك' : 'Attempt submitted'));
             onCompleteRef.current?.(!!data.passed, Number(data.score ?? data.attempt?.score ?? 0));
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
             setPhase('playing');
         } finally {
             submittingRef.current = false;

@@ -52,7 +52,7 @@ const emptyPostForm = {
 };
 
 export default function DiscussionForum({ moduleId }: Props) {
-    const { locale, pick } = useI18n();
+    const { t, locale, pick } = useI18n();
     const isAr = locale === 'ar';
     const { user } = useAuth();
 
@@ -95,7 +95,7 @@ export default function DiscussionForum({ moduleId }: Props) {
             setForm(emptyPostForm);
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setCreating(false);
         }
@@ -111,7 +111,7 @@ export default function DiscussionForum({ moduleId }: Props) {
             setReplyDrafts((prev) => ({ ...prev, [postId]: '' }));
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setReplyingTo(null);
         }
@@ -126,7 +126,7 @@ export default function DiscussionForum({ moduleId }: Props) {
                 : (isAr ? 'تم وضع علامة تم الحل' : 'Marked as resolved'));
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setResolvingId(null);
         }
@@ -141,7 +141,7 @@ export default function DiscussionForum({ moduleId }: Props) {
             if (expandedId === post.id) setExpandedId(null);
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setDeletingId(null);
         }
@@ -155,7 +155,7 @@ export default function DiscussionForum({ moduleId }: Props) {
             toast.success(isAr ? 'تم حذف الرد' : 'Reply deleted');
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setDeletingId(null);
         }

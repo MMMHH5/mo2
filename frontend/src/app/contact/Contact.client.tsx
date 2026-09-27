@@ -8,7 +8,7 @@ import MarketingShell from '@/components/MarketingShell';
 import { api, getErrorMessage } from '@/lib/api';
 
 export default function ContactContent() {
-    const { locale } = useI18n();
+    const { t, locale } = useI18n();
     const { dark } = useTheme();
     const isAr = locale === 'ar';
 
@@ -33,7 +33,7 @@ export default function ContactContent() {
             setSubject('');
             setMessage('');
         } catch (err) {
-            setError(getErrorMessage(err));
+            setError(getErrorMessage(err) || t('common.error'));
         } finally {
             setLoading(false);
         }

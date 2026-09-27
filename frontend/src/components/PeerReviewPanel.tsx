@@ -49,7 +49,7 @@ interface Props {
 }
 
 export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Props) {
-    const { locale, pick } = useI18n();
+    const { t, locale, pick } = useI18n();
     const isAr = locale === 'ar';
     const { user } = useAuth();
 
@@ -132,7 +132,7 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                 : (isAr ? 'تم إرسال مراجعتك، شكراً!' : 'Review submitted, thank you!'));
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setSubmitting(false);
         }

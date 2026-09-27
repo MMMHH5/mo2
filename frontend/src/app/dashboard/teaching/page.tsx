@@ -82,7 +82,7 @@ const openingStatusLabelsEn: Record<string, string> = {
 };
 
 export default function TeachingHubPage() {
-    const { pick, locale } = useI18n();
+    const { t, pick, locale } = useI18n();
     const isAr = locale === 'ar';
     const searchParams = useSearchParams();
     const { data: openings, loading, error, refetch } = useFetchData<MyOpening[]>('/openings/mine');
@@ -120,7 +120,7 @@ export default function TeachingHubPage() {
             await api.post('/instructor-requests/openings', { courseId: selectedCourseId, reason: reason || undefined });
             toast.success(isAr ? 'تم إرسال طلب فتح الدورة' : 'Opening request submitted');
             setModal(null); setSelectedCourseId(''); setReason(''); refetchOpen();
-        } catch (err) { toast.error(getErrorMessage(err)); }
+        } catch (err) { toast.error(getErrorMessage(err) || t('common.error')); }
         setSaving(false);
     };
 
@@ -130,7 +130,7 @@ export default function TeachingHubPage() {
             await api.post('/instructor-requests/closures', { openingId, reason: closeReason || undefined });
             toast.success(isAr ? 'تم إرسال طلب إغلاق الدورة' : 'Close request submitted');
             setModal(null); setReason(''); refetch(); refetchOpen(); refetchClose();
-        } catch (err) { toast.error(getErrorMessage(err)); }
+        } catch (err) { toast.error(getErrorMessage(err) || t('common.error')); }
         setSaving(false);
     };
 

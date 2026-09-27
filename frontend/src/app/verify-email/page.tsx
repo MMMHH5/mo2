@@ -35,7 +35,7 @@ function VerifyEmailForm() {
                 if (!cancelled) setState('verified');
             } catch (err) {
                 if (!cancelled) {
-                    setError(getErrorMessage(err));
+                    setError(getErrorMessage(err) || t('common.error'));
                     setState('failed');
                 }
             }

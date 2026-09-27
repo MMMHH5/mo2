@@ -73,7 +73,7 @@ export default function AdminBlogPage() {
             }
             await refetch();
         } catch (err) {
-            setError(getErrorMessage(err));
+            setError(getErrorMessage(err) || t('common.error'));
         } finally {
             setBusy(false);
         }
@@ -84,7 +84,7 @@ export default function AdminBlogPage() {
             await api.post(`/blog/${post.id}/${makePublished ? 'publish' : 'unpublish'}`);
             await refetch();
         } catch (err) {
-            setError(getErrorMessage(err));
+            setError(getErrorMessage(err) || t('common.error'));
         }
     };
 
@@ -95,7 +95,7 @@ export default function AdminBlogPage() {
             if (editing?.id === post.id) startNew();
             await refetch();
         } catch (err) {
-            setError(getErrorMessage(err));
+            setError(getErrorMessage(err) || t('common.error'));
         }
     };
 

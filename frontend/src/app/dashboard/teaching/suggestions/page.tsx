@@ -50,7 +50,7 @@ const statusLabelsEn: Record<string, string> = {
 };
 
 export default function SuggestionsPage() {
-    const { pick, locale } = useI18n();
+    const { t, pick, locale } = useI18n();
     const isAr = locale === 'ar';
     const { data: suggestions, loading, error, refetch } = useFetchData<RequestRow[]>('/instructor-requests/suggestions/my');
 
@@ -78,7 +78,7 @@ export default function SuggestionsPage() {
             });
             toast.success(isAr ? 'تم إرسال الاقتراح' : 'Suggestion submitted');
             setShowModal(false); refetch();
-        } catch (err) { toast.error(getErrorMessage(err)); }
+        } catch (err) { toast.error(getErrorMessage(err) || t('common.error')); }
         setSaving(false);
     };
 

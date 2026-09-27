@@ -6,15 +6,32 @@ import axios from 'axios';
 export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '');
 
 // Extract a human-readable message from any thrown error (axios, Error, unknown)
+//
+// Auth and server failures are deliberately reported as an EMPTY string: the
+// backend phrases them in English boilerplate ("Unauthorized", "Internal
+// server error"), which is meaningless in an Arabic UI. Returning '' is what
+// makes the `getErrorMessage(e) || t('...')` fallback used across the app
+// actually fire — the function used to return a non-empty English string
+// there, so every localized fallback was dead code.
+//
+// Domain errors (409 "Already enrolled in this course", 400 "Opening not
+// found", …) still surface their server text, because it is specific and
+// more useful than a generic string.
 export function getErrorMessage(err: unknown): string {
     if (axios.isAxiosError(err)) {
-        const data = err.response?.data as { message?: string } | undefined;
-        return data?.message || err.message || 'An error occurred.';
+        const status = err.response?.status;
+        if (status === 401 || status === 403 || (status !== undefined && status >= 500)) {
+            return '';
+        }
+        const data = err.response?.data as { message?: string | string[] } | undefined;
+        // NestJS validation pipes answer with `message` as an array.
+        const serverMessage = Array.isArray(data?.message) ? data?.message[0] : data?.message;
+        return serverMessage || err.message || '';
     }
     if (err instanceof Error) {
-        return err.message || 'An error occurred.';
+        return err.message || '';
     }
-    return 'An error occurred.';
+    return '';
 }
 
 // True when the request was rejected because the caller is not authenticated.

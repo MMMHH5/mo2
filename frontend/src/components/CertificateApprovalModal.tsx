@@ -29,7 +29,7 @@ const statusMeta: Record<string, { label: string; cls: string }> = {
 };
 
 export default function CertificateApprovalModal({ openingId, openingTitle, canRevoke, onClose, onIssued }: Props) {
-    const { locale } = useI18n();
+    const { t, locale } = useI18n();
     const isAr = locale === 'ar';
     const [candidates, setCandidates] = useState<Candidate[] | null>(null);
     const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
             // Pre-select students who don't have a valid certificate yet.
             setSelected(new Set(res.data.filter(c => !c.certificateStatus || c.certificateStatus !== 'VALID').map(c => c.studentId)));
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
             setCandidates([]);
         } finally {
             setLoading(false);
@@ -71,7 +71,7 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
             await load();
             onIssued?.();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setIssuing(false);
         }
@@ -85,7 +85,7 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
             toast.success(isAr ? 'تم إلغاء الشهادة' : 'Certificate revoked');
             await load();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setRevokingId(null);
         }

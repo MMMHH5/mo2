@@ -57,7 +57,7 @@ const emptyEventForm: EventForm = {
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export default function AcademicCalendar({ openingId }: Props) {
-    const { locale, pick } = useI18n();
+    const { t, locale, pick } = useI18n();
     const isAr = locale === 'ar';
     const { user } = useAuth();
 
@@ -138,7 +138,7 @@ export default function AcademicCalendar({ openingId }: Props) {
             setForm(emptyEventForm);
             refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setSaving(false);
         }

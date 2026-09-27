@@ -38,7 +38,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
 }
 
 export default function InstructorRating({ instructorId, courseId, showRateButton = false }: Props) {
-    const { locale, pick } = useI18n();
+    const { t, locale, pick } = useI18n();
     const isAr = locale === 'ar';
     const { user } = useAuth();
 
@@ -99,7 +99,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
             setFormOpen(false);
             ratingsRes.refetch();
         } catch (err) {
-            toast.error(getErrorMessage(err));
+            toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setSaving(false);
         }

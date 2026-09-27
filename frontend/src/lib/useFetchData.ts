@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api, getErrorMessage } from './api';
+import { useI18n } from './i18n-context';
 
 export function useFetchData<T>(url: string | null) {
+    const { t } = useI18n();
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState<boolean>(!!url);
     const [error, setError] = useState<string | null>(null);
@@ -16,11 +18,11 @@ export function useFetchData<T>(url: string | null) {
             const res = await api.get(url);
             setData(res.data);
         } catch (err) {
-            setError(getErrorMessage(err));
+            setError(getErrorMessage(err) || t('common.error'));
         } finally {
             setLoading(false);
         }
-    }, [url]);
+    }, [url, t]);
 
     useEffect(() => {
         let active = true;
@@ -30,7 +32,7 @@ export function useFetchData<T>(url: string | null) {
                 const res = await api.get(url);
                 if (active) setData(res.data);
             } catch (err) {
-                if (active) setError(getErrorMessage(err));
+                if (active) setError(getErrorMessage(err) || t('common.error'));
             } finally {
                 if (active) setLoading(false);
             }
@@ -39,7 +41,7 @@ export function useFetchData<T>(url: string | null) {
         return () => {
             active = false;
         };
-    }, [url]);
+    }, [url, t]);
 
     return { data, loading, error, refetch: fetchData };
 }
