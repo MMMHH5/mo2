@@ -310,10 +310,23 @@ export class CertificatesService {
         }
     }
 
+    /**
+     * The student's own certificates, for the dashboard profile.
+     *
+     * `printedAt` is the only print fact exposed here: the holder learns that
+     * the paper copy reached them and when, which is what they need. Who handed
+     * it over is staff information and stays on the course report
+     * (listForCourse), where the reader is a COURSE_MANAGER / ADMIN.
+     */
     async listMine(studentId: string) {
         return this.prisma.certificate.findMany({
             where: { studentId },
-            include: {
+            select: {
+                id: true,
+                verificationCode: true,
+                issuingDate: true,
+                verificationStatus: true,
+                printedAt: true,
                 course: {
                     select: { id: true, titleAr: true, titleEn: true, certificateIssued: true },
                 },
@@ -339,7 +352,11 @@ export class CertificatesService {
         const cert = await this.prisma.certificate.findUnique({
             where: { id },
             include: {
-                student: { select: { id: true, email: true } },
+                // `metadata` carries the holder's real name (nameEn / fullName),
+                // so the printed certificate shows a person and not an email
+                // prefix. Safe to expose here: this action is owner-or-ADMIN,
+                // unlike getPublicById which never selects it.
+                student: { select: { id: true, email: true, metadata: true } },
                 course: {
                     select: { id: true, titleAr: true, titleEn: true, certificateIssued: true },
                 },
@@ -349,7 +366,13 @@ export class CertificatesService {
         if (role !== Role.ADMIN && cert.studentId !== studentId) {
             throw new ForbiddenException('You are not allowed to view this certificate');
         }
-        return cert;
+        const { student, ...rest } = cert;
+        return {
+            ...rest,
+            // Identity is unchanged from before; only the derived name is new.
+            student: student ? { id: student.id, email: student.email } : null,
+            holderName: this.displayName(student, true),
+        };
     }
 
     async verifyByCode(code: string) {
@@ -381,11 +404,35 @@ export class CertificatesService {
         };
     }
 
+    /**
+     * The printable name for a person on a certificate.
+     *
+     * Certificates used to fall back to the email local-part, which meant the
+     * public sheet printed "Student" and "Instructor" instead of a name. A
+     * certificate that can be verified but shows nobody is useless, so the name
+     * itself is deliberately public — the identifying data (email, phone) is
+     * not. `allowEmailFallback` is therefore off on public responses so an
+     * unauthenticated visitor never receives a fragment of somebody's email.
+     */
+    private displayName(
+        person: { email?: string | null; metadata?: unknown } | null | undefined,
+        allowEmailFallback: boolean,
+    ): string {
+        const md = (person?.metadata ?? null) as Record<string, unknown> | null;
+        const explicit = [md?.nameEn, md?.nameAr, md?.fullName].find(
+            (v): v is string => typeof v === 'string' && v.trim().length > 0,
+        );
+        if (explicit) return explicit.trim();
+        return allowEmailFallback ? (person?.email?.split('@')[0] ?? '') : '';
+    }
+
     async getPublicById(id: string) {
         const cert = await this.prisma.certificate.findUnique({
             where: { id },
             include: {
-                student: { select: { id: true } }, // Never expose email publicly
+                // metadata is selected only to derive the printable name; the
+                // raw blob is never returned.
+                student: { select: { id: true, metadata: true } }, // Never expose email publicly
                 course: {
                     select: {
                         id: true,
@@ -394,7 +441,7 @@ export class CertificatesService {
                         certificateIssued: true,
                         openings: {
                             select: {
-                                instructor: { select: { id: true } }, // Never expose email publicly
+                                instructor: { select: { id: true, metadata: true } }, // Never expose email publicly
                             },
                             take: 1,
                         },
@@ -410,7 +457,9 @@ export class CertificatesService {
             verificationCode: cert.verificationCode,
             issuingDate: cert.issuingDate,
             verificationStatus: cert.verificationStatus,
-            student: cert.student,
+            student: cert.student ? { id: cert.student.id } : null,
+            holderName: this.displayName(cert.student, false),
+            instructorName: this.displayName(cert.course?.openings?.[0]?.instructor, false),
             course: cert.course ? {
                 id: cert.course.id,
                 titleAr: cert.course.titleAr,

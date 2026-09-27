@@ -35,7 +35,7 @@ export function buildNavLinks(t: (key: string) => string): NavLink[] {
         { name: t('sidebar.my_grades'), href: '/dashboard/my-grades', icon: GraduationCap, roles: ['STUDENT'] },
         { name: t('sidebar.tasks'), href: '/dashboard/tasks', icon: ClipboardList, roles: ['STUDENT'] },
         { name: t('sidebar.payments'), href: '/dashboard/payments', icon: Wallet, roles: ['STUDENT'] },
-        { name: t('sidebar.certificates'), href: '/dashboard/certificates', icon: Award, roles: ['STUDENT'] },
+        { name: t('sidebar.certificates'), href: '/dashboard/profile?tab=certificates', icon: Award, roles: ['STUDENT'] },
         { name: t('sidebar.inbox'), href: '/dashboard/inbox', icon: MessageSquare, roles: ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'] },
         { name: t('sidebar.batch_chats'), href: '/dashboard/batch-chats', icon: MessagesSquare, roles: ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'ADMIN'] },
         { name: t('sidebar.notifications'), href: '/dashboard/notifications', icon: ShieldAlert, roles: ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'] },

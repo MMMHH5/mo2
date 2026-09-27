@@ -201,7 +201,7 @@ export default function MyCoursesPage() {
                                                 <Link href="/dashboard/my-grades" className="text-sm font-bold px-4 py-2 rounded-xl border border-white/10 text-white hover:border-purple-500 hover:text-purple-400 transition whitespace-nowrap">
                                                     {t('myCourses.view_grades')}
                                                 </Link>
-                                                <Link href={`/dashboard/certificates?courseId=${enrollment.course.id}`} className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:from-purple-400 hover:to-purple-500 transition whitespace-nowrap flex items-center gap-1.5">
+                                                <Link href={`/dashboard/profile?tab=certificates&courseId=${enrollment.course.id}`} className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:from-purple-400 hover:to-purple-500 transition whitespace-nowrap flex items-center gap-1.5">
                                                     <Award size={14} /> {t('myCourses.view_certificate')}
                                                 </Link>
                                             </div>

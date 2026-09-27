@@ -13,7 +13,9 @@ interface CertificateData {
     verificationCode: string;
     issuingDate: string;
     verificationStatus: string;
+    printedAt?: string | null;
     student?: { id: string; email: string } | null;
+    holderName?: string;
     course?: { id: string; titleAr?: string | null; titleEn?: string | null } | null;
 }
 
@@ -25,14 +27,15 @@ export default function CertificateDetailPage() {
     const isAr = locale === 'ar';
     const { data: cert, loading, error } = useFetchData<CertificateData>(`/certificates/${id}`);
 
-    const studentName = cert?.student?.email?.split('@')[0] || user?.email?.split('@')[0] || '';
+    // Resolved server-side; prefer the stored name over the email local-part.
+    const studentName = cert?.holderName || user?.email?.split('@')[0] || '';
 
     return (
         <ProtectedRoute allowedRoles={['STUDENT']}>
             <div className="space-y-6">
                 <div className="flex items-center gap-3 flex-wrap">
                     <button
-                        onClick={() => router.push('/dashboard/certificates')}
+                        onClick={() => router.push('/dashboard/profile?tab=certificates')}
                         className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl border border-white/10 bg-brand-navy-dark text-white hover:border-white/20 hover:bg-[#1a2d4a] transition"
                     >
                         <ArrowLeft size={16} className="rtl:rotate-180" /> {t('certificates.back')}

@@ -11,9 +11,10 @@ interface CertData {
     verificationCode: string;
     issuingDate: string;
     verificationStatus: string;
-    student: { email: string } | null;
+    student: { id: string } | null;
+    holderName?: string;
+    instructorName?: string;
     course: { id: string; titleAr: string | null; titleEn: string | null } | null;
-    instructorEmail: string | null;
 }
 
 function CertificateViewInner({ id }: { id: string }) {
@@ -72,8 +73,10 @@ function CertificateViewInner({ id }: { id: string }) {
         );
     }
 
-    const studentName = cert.student?.email?.split('@')[0] || 'Student';
-    const instructorName = cert.instructorEmail?.split('@')[0] || 'Instructor';
+    // Names are resolved server-side; the public payload never carries the
+    // email, so there is nothing to derive a name from here.
+    const studentName = cert.holderName || 'Student';
+    const instructorName = cert.instructorName || 'Instructor';
     const courseName = lang === 'ar' ? (cert.course?.titleAr || cert.course?.titleEn || 'Course') : (cert.course?.titleEn || cert.course?.titleAr || 'Course');
     const verificationUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/verify-certificate?code=${cert.verificationCode}`;
 

@@ -103,6 +103,50 @@ export class UsersService {
         };
     }
 
+    /**
+     * Profile `metadata` is free-form JSON, so anything a client sends used to be
+     * stored verbatim. That let a caller park a `javascript:` string in
+     * `avatarUrl` (stored XSS once rendered into an `src`) or an off-site
+     * tracking pixel. Only the known profile keys survive, capped, and
+     * `avatarUrl` is restricted to a path under our own uploads directory.
+     */
+    private sanitizeProfileMetadata(input: Record<string, unknown>): Record<string, unknown> {
+        const LIMITS: Record<string, number> = {
+            fullName: 120,
+            nameAr: 120,
+            nameEn: 120,
+            country: 80,
+            city: 80,
+            phone: 32,
+            bio: 500,
+            specialty: 120,
+        };
+        const out: Record<string, unknown> = {};
+
+        for (const [key, max] of Object.entries(LIMITS)) {
+            const v = input[key];
+            if (typeof v !== 'string') continue;
+            const trimmed = v.trim().slice(0, max);
+            if (trimmed) out[key] = trimmed;
+        }
+
+        const avatar = input.avatarUrl;
+        if (typeof avatar === 'string') {
+            const trimmed = avatar.trim();
+            // Same-origin path only. Rejects absolute URLs, protocol-relative
+            // "//evil.com", and javascript:/data: payloads. The character class
+            // admits "." so ".." needs its own check or /uploads/../x escapes
+            // the uploads directory.
+            if (/^\/uploads\/[A-Za-z0-9._\/-]+$/.test(trimmed) && !trimmed.includes('..')) {
+                out.avatarUrl = trimmed;
+            } else if (trimmed === '') {
+                out.avatarUrl = null;
+            }
+        }
+
+        return out;
+    }
+
     async updateMe(userId: string, dto: UpdateMeDto) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user) throw new NotFoundException('User not found');
@@ -147,7 +191,7 @@ export class UsersService {
         if (dto.metadata) {
             const merged = {
                 ...((user.metadata as Record<string, unknown> | null) ?? {}),
-                ...(dto.metadata ?? {}),
+                ...this.sanitizeProfileMetadata(dto.metadata as Record<string, unknown>),
             };
             data.metadata = merged as unknown as Prisma.InputJsonObject;
         }
