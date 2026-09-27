@@ -114,6 +114,10 @@ export class UsersService {
      * `avatarUrl` is restricted to a path under our own uploads directory.
      */
     private sanitizeProfileMetadata(input: Record<string, unknown>): Record<string, unknown> {
+        // Every key the register form collects, so that saving the profile
+        // cannot silently delete a student's own academic record. Leaving one
+        // of these out means PATCH /users/me erases it, because the merge at
+        // the call site spreads the *sanitised* result over the stored value.
         const LIMITS: Record<string, number> = {
             fullName: 120,
             nameAr: 120,
@@ -123,6 +127,11 @@ export class UsersService {
             phone: 32,
             bio: 500,
             specialty: 120,
+            gender: 16,
+            birthDate: 10,
+            university: 120,
+            studyStatus: 20,
+            studyLevel: 80,
         };
         const out: Record<string, unknown> = {};
 
@@ -131,6 +140,13 @@ export class UsersService {
             if (typeof v !== 'string') continue;
             const trimmed = v.trim().slice(0, max);
             if (trimmed) out[key] = trimmed;
+        }
+
+        // A birth date is a calendar day, so keep only the shape the register
+        // DTO accepts. An arbitrary string here would render as a nonsense
+        // "date of birth" that no longer parses.
+        if (typeof out.birthDate === 'string' && !/^\d{4}-\d{2}-\d{2}$/.test(out.birthDate)) {
+            delete out.birthDate;
         }
 
         const avatar = input.avatarUrl;
@@ -228,8 +244,8 @@ export class UsersService {
             const conflict = await this.prisma.user.findUnique({ where: { email: dto.email } });
             if (conflict) throw new ConflictException('Email already in use');
             data.email = dto.email;
-            // Changing email invalidates verification
-            data.metadata = undefined;
+            // Changing email invalidates verification; that is handled by
+            // clearing emailVerifiedAt below, not by touching metadata.
         }
 
         if (dto.password) {

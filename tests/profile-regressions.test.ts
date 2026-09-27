@@ -153,6 +153,56 @@ describe('profile metadata sanitiser', () => {
     test('an empty avatar clears the picture', () => {
         assert.equal(clean({ avatarUrl: '' }).avatarUrl, null);
     });
+
+    /**
+     * Regression: these five are collected by /auth/register and displayed by
+     * the profile, but they were missing from the allowlist, so PATCH /users/me
+     * deleted them the first time a student saved their own profile. The merge
+     * spreads the sanitised result over the stored value, so an absent key is a
+     * deletion, not a no-op.
+     */
+    test('every field collected at signup survives a profile save', () => {
+        const signupFields = {
+            fullName: 'محمد',
+            phone: '+966500000000',
+            gender: 'MALE',
+            birthDate: '2001-05-04',
+            university: 'King Saud University',
+            specialty: 'Computer Science',
+            studyStatus: 'STUDENT',
+            studyLevel: 'Third year',
+        };
+        const out = clean({ ...signupFields });
+        for (const [key, value] of Object.entries(signupFields)) {
+            assert.equal(out[key], value, `PATCH /users/me must not delete "${key}"`);
+        }
+    });
+
+    test('the two Arabic/English name fields and the country are editable', () => {
+        const out = clean({ nameAr: 'محمد أحمد', nameEn: 'Mohammed A', country: 'Saudi Arabia' });
+        assert.equal(out.nameAr, 'محمد أحمد');
+        assert.equal(out.nameEn, 'Mohammed A');
+        assert.equal(out.country, 'Saudi Arabia');
+    });
+
+    test('a birth date keeps only the calendar-day shape the register DTO accepts', () => {
+        assert.equal(clean({ birthDate: '2001-05-04' }).birthDate, '2001-05-04');
+        for (const bad of ['04/05/2001', 'yesterday', '2001-5-4 ', 'not a date at all']) {
+            assert.equal(clean({ birthDate: bad }).birthDate, undefined, `must reject: ${bad}`);
+        }
+    });
+
+    test('a full ISO timestamp normalises to its calendar day', () => {
+        // JSON.stringify(Date) yields an ISO instant; the length cap trims it to
+        // the day, which is what the rest of the app renders.
+        assert.equal(clean({ birthDate: '2001-05-04T00:00:00.000Z' }).birthDate, '2001-05-04');
+    });
+
+    test('the academic fields are length-capped like the rest', () => {
+        const out = clean({ university: 'u'.repeat(300), studyLevel: 's'.repeat(300) });
+        assert.equal(out.university.length, 120);
+        assert.equal(out.studyLevel.length, 80);
+    });
 });
 
 /**
