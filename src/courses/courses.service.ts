@@ -212,13 +212,66 @@ export class CoursesService {
         _count: { select: { enrollments: true } },
     } satisfies Prisma.CourseOpeningInclude;
 
-    async findAll(includeUnpublished = false) {
+    /**
+     * Course ids the viewer is entitled to see *closed* batches for: they teach
+     * one, or they are enrolled in one. Staff are not handled here — callers
+     * short-circuit on the role before asking.
+     */
+    private async relatedCourseIds(viewer?: CourseViewer): Promise<string[]> {
+        if (!viewer?.userId) return [];
+        const [taught, enrolled] = await Promise.all([
+            this.prisma.courseOpening.findMany({
+                where: { instructorId: viewer.userId },
+                select: { courseId: true },
+                distinct: ['courseId'],
+            }),
+            this.prisma.enrollment.findMany({
+                where: { studentId: viewer.userId },
+                select: { courseId: true },
+                distinct: ['courseId'],
+            }),
+        ]);
+        return [...new Set([...taught, ...enrolled].map((r) => r.courseId))];
+    }
+
+    /**
+     * Batches that are open for business. A closed cohort (STARTED / ENDED) is
+     * internal detail: its name, price and headcount describe a finished
+     * intake, and /courses is reachable without a token, so an anonymous caller
+     * sees exactly what /public/courses shows. Someone with a real relationship
+     * to the course still sees every batch — an enrolled student keeps the
+     * STARTED batch they are sitting in, and an instructor still finds the
+     * opening they teach.
+     */
+    private async visibleOpeningsFilter(
+        includeUnpublished: boolean,
+        viewer?: CourseViewer,
+    ): Promise<Prisma.CourseOpeningWhereInput | undefined> {
+        if (includeUnpublished) return undefined;
+        if (viewer?.role === Role.ADMIN || viewer?.role === Role.COURSE_MANAGER) {
+            return { isPublished: true };
+        }
+        const related = await this.relatedCourseIds(viewer);
+        if (related.length === 0) {
+            return { isPublished: true, status: { in: [CourseOpeningStatus.OPEN, CourseOpeningStatus.ANNOUNCEMENT] } };
+        }
+        return {
+            isPublished: true,
+            OR: [
+                { status: { in: [CourseOpeningStatus.OPEN, CourseOpeningStatus.ANNOUNCEMENT] } },
+                { courseId: { in: related } },
+            ],
+        };
+    }
+
+    async findAll(includeUnpublished = false, viewer?: CourseViewer) {
+        const openingsWhere = await this.visibleOpeningsFilter(includeUnpublished, viewer);
         return this.prisma.course.findMany({
             orderBy: { createdAt: 'desc' },
             include: {
                 instructor: { select: { id: true, email: true, role: true } },
                 openings: {
-                    where: includeUnpublished ? undefined : { isPublished: true },
+                    where: openingsWhere,
                     orderBy: { createdAt: 'desc' },
                     include: this.openingInclude,
                 },
@@ -228,12 +281,13 @@ export class CoursesService {
     }
 
     async findOne(id: string, includeUnpublished = false, viewer?: CourseViewer) {
+        const openingsWhere = await this.visibleOpeningsFilter(includeUnpublished, viewer);
         const course = await this.prisma.course.findUnique({
             where: { id },
             include: {
                 instructor: { select: { id: true, email: true, role: true } },
                 openings: {
-                    where: includeUnpublished ? undefined : { isPublished: true },
+                    where: openingsWhere,
                     orderBy: { createdAt: 'desc' },
                     include: this.openingInclude,
                 },

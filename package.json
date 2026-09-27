@@ -6,7 +6,8 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
-    "dev": "nest start --watch"
+    "dev": "nest start --watch",
+    "test": "TS_NODE_PROJECT=tests/tsconfig.json node --test --require ts-node/register tests/*.test.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

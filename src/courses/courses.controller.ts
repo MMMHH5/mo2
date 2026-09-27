@@ -107,7 +107,7 @@ export class CoursesController {
     findAll(@Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
         // Only allow includeUnpublished for authenticated staff users
         const allowUnpublished = includeUnpublished === 'true' && req?.user?.role && ['ADMIN', 'COURSE_MANAGER'].includes(req.user.role);
-        return this.coursesService.findAll(allowUnpublished);
+        return this.coursesService.findAll(allowUnpublished, req?.user);
     }
 
     @ApiBearerAuth('JWT-auth')

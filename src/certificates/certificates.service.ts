@@ -185,7 +185,13 @@ export class CertificatesService {
     async markPrinted(id: string, actor: { userId: string; role: Role }) {
         const certificate = await this.prisma.certificate.findUnique({
             where: { id },
-            select: { id: true, studentId: true, verificationStatus: true },
+            select: {
+                id: true,
+                studentId: true,
+                verificationStatus: true,
+                courseId: true,
+                course: { select: { titleAr: true, titleEn: true } },
+            },
         });
         if (!certificate) throw new NotFoundException('Certificate not found');
         if (certificate.verificationStatus === CertificateStatus.REVOKED) {
@@ -196,13 +202,24 @@ export class CertificatesService {
         // their own from the dashboard, so ownership is honoured here rather
         // than by a blanket role restriction on the route.
         const isOwner = certificate.studentId === actor.userId;
-        const staffRoles: Role[] = [Role.ADMIN, Role.COURSE_MANAGER, Role.INSTRUCTOR];
-        const isStaff = staffRoles.includes(actor.role);
-        if (!isOwner && !isStaff) {
-            throw new ForbiddenException('You cannot print this certificate');
+        if (!isOwner) {
+            // A certificate with no course cannot be matched to a teaching
+            // assignment, so only platform staff may release it.
+            if (!certificate.courseId) {
+                if (actor.role !== Role.ADMIN && actor.role !== Role.COURSE_MANAGER) {
+                    throw new ForbiddenException('You cannot print this certificate');
+                }
+            } else {
+                await this.assertCanReleaseCertificate(certificate.courseId, actor.userId, actor.role);
+            }
         }
 
-        return this.prisma.certificate.update({
+        const previous = await this.prisma.certificate.findUnique({
+            where: { id },
+            select: { printedAt: true },
+        });
+
+        const updated = await this.prisma.certificate.update({
             where: { id },
             data: { printedAt: new Date(), printedById: actor.userId },
             select: {
@@ -211,6 +228,44 @@ export class CertificatesService {
                 printedBy: { select: { id: true, email: true } },
             },
         });
+
+        // Printing is a custody event, not a cosmetic flag: the whole point of
+        // the ledger is being able to answer "who released this, and when", so
+        // it is written to the audit trail like issue / revoke / reissue are.
+        // A reprint is recorded distinctly from the first handover.
+        await this.audit.logAction(
+            previous?.printedAt
+                ? `Re-printed certificate ${id} for course "${certificate.course?.titleEn ?? certificate.courseId}" (first printed ${previous.printedAt.toISOString()})`
+                : `Printed certificate ${id} for course "${certificate.course?.titleEn ?? certificate.courseId}"`,
+            undefined,
+            actor.userId,
+        );
+
+        return updated;
+    }
+
+    /**
+     * Staff gate for releasing a certificate the caller does not own. Mirrors
+     * assertCanManageOpening: ADMIN / COURSE_MANAGER pass, an INSTRUCTOR must
+     * actually teach the course or one of its batches. Without the instructor
+     * check, any teacher on the platform could stamp their own name as the
+     * releaser of an unrelated student's certificate.
+     */
+    private async assertCanReleaseCertificate(courseId: string, userId: string, role: Role) {
+        if (role === Role.ADMIN || role === Role.COURSE_MANAGER) return;
+        if (role !== Role.INSTRUCTOR) {
+            throw new ForbiddenException('You cannot print this certificate');
+        }
+        const [course, teachesOpening] = await Promise.all([
+            this.prisma.course.findUnique({ where: { id: courseId }, select: { instructorId: true } }),
+            this.prisma.courseOpening.findFirst({
+                where: { courseId, instructorId: userId },
+                select: { id: true },
+            }),
+        ]);
+        if (course?.instructorId !== userId && !teachesOpening) {
+            throw new ForbiddenException('You do not teach this course');
+        }
     }
 
     async revoke(id: string, actorId: string, actorRole: Role) {
