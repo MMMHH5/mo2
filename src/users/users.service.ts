@@ -132,6 +132,12 @@ export class UsersService {
             university: 120,
             studyStatus: 20,
             studyLevel: 80,
+            // Instructor CV. `jobTitle*` is bilingual because the public
+            // profile is served to both locales, and `bioEn` falls back to
+            // `bio` when an instructor has not written an English summary.
+            jobTitleAr: 120,
+            jobTitleEn: 120,
+            bioEn: 500,
         };
         const out: Record<string, unknown> = {};
 
@@ -140,6 +146,17 @@ export class UsersService {
             if (typeof v !== 'string') continue;
             const trimmed = v.trim().slice(0, max);
             if (trimmed) out[key] = trimmed;
+        }
+
+        // Years of experience is a count, not prose. Accept a number or a
+        // numeric string (form inputs hand back strings) and clamp it to a
+        // believable range, so nobody renders "9999 years of experience".
+        const yearsRaw = input.experienceYears;
+        if (yearsRaw !== undefined && yearsRaw !== null && yearsRaw !== '') {
+            const parsed = typeof yearsRaw === 'number' ? yearsRaw : Number(String(yearsRaw).trim());
+            if (Number.isFinite(parsed) && parsed >= 0) {
+                out.experienceYears = Math.min(Math.round(parsed), 80);
+            }
         }
 
         // A birth date is a calendar day, so keep only the shape the register

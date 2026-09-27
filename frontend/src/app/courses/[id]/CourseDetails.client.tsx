@@ -27,6 +27,7 @@ import PaymentMethods, { type PaymentGateway } from '@/components/payment/Paymen
 import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
 import EnrollSteps from '@/components/payment/EnrollSteps';
 import LoginPromptModal from '@/components/LoginPromptModal';
+import type { PublicInstructorCard } from '@/lib/public-instructor';
 
 export interface Module {
     id: string;
@@ -60,7 +61,7 @@ export interface Opening {
     price: string;
     priceOld?: string | null;
     maxStudents?: number | null;
-    instructor?: { id: string; email: string } | null;
+    instructor?: PublicInstructorCard | null;
     _count?: { enrollments?: number };
 }
 
@@ -118,7 +119,7 @@ export interface Course {
     audiences?: { audienceAr?: string | null; audienceEn?: string | null }[];
     faqs?: { questionAr?: string | null; questionEn?: string | null; answerAr?: string | null; answerEn?: string | null }[];
     gallery?: { url: string }[];
-    instructor?: { id: string; email: string } | null;
+    instructor?: PublicInstructorCard | null;
     openings?: Opening[];
     modules?: Module[];
     chapters?: Chapter[];
@@ -279,6 +280,10 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const announced = course.openings?.find(o => o.status === 'ANNOUNCEMENT') || null;
     const metaOpening = opening || announced;
     const courseInstructor = metaOpening?.instructor || course.instructor;
+    // The public instructor payload has no email on purpose, so the display
+    // name falls back through the bilingual pair and then to a generic label.
+    const instructorName = (courseInstructor && pick(courseInstructor, 'name')) || '';
+    const instructorJobTitle = (courseInstructor && pick(courseInstructor, 'jobTitle')) || '';
     const enrolledCount = course._count?.enrollments ?? metaOpening?._count?.enrollments ?? 0;
 
     const getVideoUrl = (url?: string | null) => {
@@ -463,7 +468,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </div>
                                 <div>
                                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('courseDetail.expert_instructor')}</div>
-                                    <div className="text-sm font-black text-white max-w-[160px] truncate">{courseInstructor?.email || t('courseDetail.expert_instructor')}</div>
+                                    <div className="text-sm font-black text-white max-w-[160px] truncate">{instructorName || t('courseDetail.expert_instructor')}</div>
                                     {courseInstructor?.id && (
                                         <InstructorRating
                                             instructorId={courseInstructor.id}
@@ -664,21 +669,31 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </div>
                             )}
 
-                            {/* Instructor. There is no display-name or bio field on
-                                User yet, so this falls back to the account email. */}
-                            {courseInstructor?.email && (
+                            {/* The instructor card links to the public profile.
+                                The gate is the id, not an email: the public
+                                payload deliberately carries no email. */}
+                            {courseInstructor?.id && (
                                 <div>
                                     <SectionTitle icon={<User size={18} />}>{t('courseDetail.instructor_heading')}</SectionTitle>
                                     <div className={`flex flex-wrap items-center gap-5 rounded-2xl p-5 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
-                                        <span className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-gold to-brand-gold-dark text-2xl font-black text-brand-navy-dark">
-                                            {courseInstructor.email.charAt(0).toUpperCase()}
-                                        </span>
+                                        {courseInstructor.avatarUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={`${API_BASE_URL}${courseInstructor.avatarUrl}`}
+                                                alt={instructorName}
+                                                className="h-16 w-16 flex-shrink-0 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-gold to-brand-gold-dark text-2xl font-black text-brand-navy-dark">
+                                                {(instructorName || '?').trim().charAt(0).toUpperCase()}
+                                            </span>
+                                        )}
                                         <div className="min-w-0 flex-1">
-                                            <div className={`truncate font-black ${dark ? 'text-white' : 'text-brand-navy'}`} dir="ltr">
-                                                {courseInstructor.email}
+                                            <div className={`truncate font-black ${dark ? 'text-white' : 'text-brand-navy'}`} dir="auto">
+                                                {instructorName || t('courseDetail.expert_instructor')}
                                             </div>
-                                            <div className={`mt-0.5 text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                {t('courseDetail.instructor_role')}
+                                            <div className={`mt-0.5 text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="auto">
+                                                {instructorJobTitle || t('courseDetail.instructor_role')}
                                             </div>
                                             <Link
                                                 href={`/instructors/${courseInstructor.id}`}
@@ -808,7 +823,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 <div className="p-6 space-y-1">
                                     {[
                                         { icon: <Clock size={16} />, label: pick(course, 'duration') || t('courseDetail.self_paced') },
-                                        { icon: <User size={16} />, label: courseInstructor?.email || t('courseDetail.expert_instructor') },
+                                        { icon: <User size={16} />, label: instructorName || t('courseDetail.expert_instructor') },
                                         course.categoryAr ? { icon: <ListChecks size={16} />, label: `${t('courseDetail.category_label')}: ${pick(course, 'category')}` } : null,
                                         { icon: <GraduationCap size={16} />, label: `${t('courseDetail.level_label')}: ${levelLabel(course.level)}` },
                                         course.language ? { icon: <Globe size={16} />, label: `${t('courseDetail.language_label')}: ${course.language}` } : null,

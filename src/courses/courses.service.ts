@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { mapPublicCourse, publicInstructorSelect } from '../common/public-instructor';
 import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
 
@@ -208,7 +209,7 @@ export class CoursesService {
     }
 
     private openingInclude = {
-        instructor: { select: { id: true, email: true, role: true } },
+        instructor: { select: publicInstructorSelect },
         _count: { select: { enrollments: true } },
     } satisfies Prisma.CourseOpeningInclude;
 
@@ -266,10 +267,10 @@ export class CoursesService {
 
     async findAll(includeUnpublished = false, viewer?: CourseViewer) {
         const openingsWhere = await this.visibleOpeningsFilter(includeUnpublished, viewer);
-        return this.prisma.course.findMany({
+        const courses = await this.prisma.course.findMany({
             orderBy: { createdAt: 'desc' },
             include: {
-                instructor: { select: { id: true, email: true, role: true } },
+                instructor: { select: publicInstructorSelect },
                 openings: {
                     where: openingsWhere,
                     orderBy: { createdAt: 'desc' },
@@ -278,6 +279,9 @@ export class CoursesService {
                 _count: { select: { enrollments: true, modules: true } },
             },
         });
+        // This route is reachable without a token, so the instructor row is
+        // replaced with the derived public card before it leaves the process.
+        return courses.map((course) => mapPublicCourse(course));
     }
 
     async findOne(id: string, includeUnpublished = false, viewer?: CourseViewer) {
@@ -285,7 +289,7 @@ export class CoursesService {
         const course = await this.prisma.course.findUnique({
             where: { id },
             include: {
-                instructor: { select: { id: true, email: true, role: true } },
+                instructor: { select: publicInstructorSelect },
                 openings: {
                     where: openingsWhere,
                     orderBy: { createdAt: 'desc' },
@@ -313,8 +317,10 @@ export class CoursesService {
             },
         });
         if (!course) throw new NotFoundException('Course not found');
-        if (await this.canViewPaidContent(course, viewer)) return course;
-        return this.redactPaidContent(course);
+        // Public route: swap the instructor row for the derived public card
+        // before either the full or the redacted payload is returned.
+        if (await this.canViewPaidContent(course, viewer)) return mapPublicCourse(course);
+        return mapPublicCourse(this.redactPaidContent(course));
     }
 
     // GET /courses/:id is public, so paid lesson media must not travel with it.

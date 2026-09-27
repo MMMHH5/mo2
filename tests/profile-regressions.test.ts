@@ -198,6 +198,42 @@ describe('profile metadata sanitiser', () => {
         assert.equal(clean({ birthDate: '2001-05-04T00:00:00.000Z' }).birthDate, '2001-05-04');
     });
 
+    /**
+     * Regression: the instructor CV fields live in the same metadata blob, and
+     * the merge spreads the sanitised result over the stored value, so leaving
+     * them out of the allowlist made a teacher's job title and years of
+     * experience disappear the first time they saved any other field.
+     */
+    test('every instructor CV field survives a profile save', () => {
+        const cv = {
+            jobTitleAr: 'مهندس برمجيات',
+            jobTitleEn: 'Software Engineer',
+            bio: 'نبذة',
+            bioEn: 'A bio',
+            experienceYears: 8,
+        };
+        const out = clean({ ...cv });
+        for (const [key, value] of Object.entries(cv)) {
+            assert.equal(out[key], value, `PATCH /users/me must not delete "${key}"`);
+        }
+    });
+
+    test('years of experience is clamped to a believable number', () => {
+        assert.equal(clean({ experienceYears: 12 }).experienceYears, 12);
+        assert.equal(clean({ experienceYears: '7' }).experienceYears, 7, 'form inputs hand back strings');
+        assert.equal(clean({ experienceYears: 12.6 }).experienceYears, 13, 'rounded to a whole year');
+        assert.equal(clean({ experienceYears: 9999 }).experienceYears, 80, 'capped');
+        assert.equal(clean({ experienceYears: -5 }).experienceYears, undefined, 'negative is nonsense');
+        assert.equal(clean({ experienceYears: 'many' }).experienceYears, undefined);
+        assert.equal(clean({ experienceYears: '' }).experienceYears, undefined, 'blank clears it');
+    });
+
+    test('caps the length of the CV text fields', () => {
+        const out = clean({ jobTitleEn: 'x'.repeat(400), bioEn: 'y'.repeat(900) });
+        assert.equal(out.jobTitleEn.length, 120);
+        assert.equal(out.bioEn.length, 500);
+    });
+
     test('the academic fields are length-capped like the rest', () => {
         const out = clean({ university: 'u'.repeat(300), studyLevel: 's'.repeat(300) });
         assert.equal(out.university.length, 120);

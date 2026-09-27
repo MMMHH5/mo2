@@ -12,7 +12,7 @@ import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, FileText,
     Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, ShieldAlert,
     Users, UserCog, Trophy, Flame, Globe2, BookOpen, Award, Clock,
-    Play, Eye, Share2, Camera, Cake,
+    Play, Eye, Share2, Camera, Cake, Briefcase,
 } from 'lucide-react';
 import Link from 'next/link';
 import SelectField from '@/components/SelectField';
@@ -92,6 +92,8 @@ const EMPTY_FORM = {
     nameAr: '', nameEn: '', fullName: '', phone: '', country: '', city: '',
     bio: '', specialty: '', gender: '', birthDate: '', university: '',
     studyStatus: '', studyLevel: '',
+    // Instructor CV. Public on the instructor profile, so they are bilingual.
+    jobTitleAr: '', jobTitleEn: '', bioEn: '', experienceYears: '',
 };
 
 /** One titled card of the personal tab. Module level so it is one component. */
@@ -225,6 +227,12 @@ function ProfileContent() {
             university: (m.university as string) || '',
             studyStatus: (m.studyStatus as string) || '',
             studyLevel: (m.studyLevel as string) || '',
+            jobTitleAr: (m.jobTitleAr as string) || '',
+            jobTitleEn: (m.jobTitleEn as string) || '',
+            bioEn: (m.bioEn as string) || '',
+            // Stored as a clamped number server-side; a number here is truthy,
+            // so normalise it to a string for the controlled input.
+            experienceYears: m.experienceYears != null ? String(m.experienceYears) : '',
         });
         setEditing(true);
     };
@@ -320,6 +328,14 @@ function ProfileContent() {
 
     const meta = (profile?.metadata ?? {}) as Record<string, string | undefined>;
     const emailPrefix = user?.email?.split('@')[0] || profile?.email || '';
+    const isInstructor = profile?.role === 'INSTRUCTOR' || profile?.role === 'COURSE_MANAGER';
+    // The one CV field that is not a string: the sanitiser stores years of
+    // experience as a clamped number so it can be sorted and validated.
+    const cvYears = (profile?.metadata as Record<string, unknown> | undefined)?.experienceYears;
+    const cvYearsLabel =
+        typeof cvYears === 'number' && Number.isFinite(cvYears)
+            ? `${cvYears} ${t('instructorProfile.years_suffix')}`
+            : null;
 
     // The Arabic name leads; the English one sits under it because that is the
     // name the certificate prints, and having it visible here is how a student
@@ -701,6 +717,60 @@ function ProfileContent() {
                                     <SectionCard icon={Phone} title={t('profile.section_contact')} rows={contactRows} />
                                     <SectionCard icon={GraduationCap} title={t('profile.section_academic')} rows={academicRows} />
                                     <SectionCard icon={ShieldCheck} title={t('profile.section_account')} rows={accountRows} />
+
+                                    {/* Public CV preview: this is exactly what a
+                                        course visitor sees, so the instructor can
+                                        confirm it before publishing. */}
+                                    {isInstructor && (
+                                        <div className="lg:col-span-2 bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                            <div className="flex items-center gap-2.5 mb-2">
+                                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
+                                                    <Briefcase size={20} />
+                                                </div>
+                                                <h3 className="text-xl font-black text-brand-navy dark:text-white">
+                                                    {t('instructorProfile.heading')}
+                                                </h3>
+                                            </div>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                                                {t('instructorProfile.cv_hint')}
+                                            </p>
+
+                                            {!meta.jobTitleAr && !meta.jobTitleEn ? (
+                                                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
+                                                    {t('instructorProfile.profile_incomplete')}
+                                                </p>
+                                            ) : null}
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
+                                                        {t('instructorProfile.job_title_label')}
+                                                    </div>
+                                                    <p className="text-sm font-bold text-brand-navy dark:text-white" dir="auto">
+                                                        {meta.jobTitleAr || meta.jobTitleEn || t('instructorProfile.not_filled')}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
+                                                        {t('instructorProfile.experience_years_label')}
+                                                    </div>
+                                                    <p className="text-sm font-bold text-brand-navy dark:text-white">
+                                                        {cvYearsLabel ?? t('instructorProfile.not_filled')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {meta.bioEn ? (
+                                                <div className="mt-4">
+                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1" dir="ltr">
+                                                        {t('instructorProfile.bio_en_label')}
+                                                    </div>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line" dir="ltr">
+                                                        {meta.bioEn}
+                                                    </p>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -989,6 +1059,69 @@ function ProfileContent() {
                                     className={inputCls}
                                     dir="auto"
                                 />
+                            </div>
+
+                            {/* Instructor CV. These are the fields a course
+                                visitor sees on the public instructor profile,
+                                so they are collected next to `bio` rather than
+                                behind a role check — a student may hold them
+                                too, and hiding them would strand the data. */}
+                            <div className="pt-2 mt-2 border-t border-gray-200 dark:border-white/5">
+                                <h3 className="text-sm font-black text-brand-navy dark:text-white mb-1 flex items-center gap-2">
+                                    <Briefcase size={15} className="text-brand-gold" />
+                                    {t('instructorProfile.cv_heading')}
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                                    {t('instructorProfile.cv_hint')}
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className={labelCls}>{t('instructorProfile.job_title_label')}</label>
+                                        <input
+                                            type="text"
+                                            value={form.jobTitleAr}
+                                            onChange={(e) => setForm({ ...form, jobTitleAr: e.target.value })}
+                                            className={inputCls}
+                                            dir="auto"
+                                            placeholder={t('instructorProfile.job_title_ar_ph')}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelCls} dir="ltr">{t('instructorProfile.job_title_label')} <span className="opacity-60">(EN)</span></label>
+                                        <input
+                                            type="text"
+                                            value={form.jobTitleEn}
+                                            onChange={(e) => setForm({ ...form, jobTitleEn: e.target.value })}
+                                            className={inputCls}
+                                            dir="ltr"
+                                            placeholder={t('instructorProfile.job_title_en_ph')}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    <label className={labelCls} htmlFor="pf-years">{t('instructorProfile.experience_years_label')}</label>
+                                    <input
+                                        id="pf-years"
+                                        type="number"
+                                        min={0}
+                                        max={80}
+                                        value={form.experienceYears}
+                                        onChange={(e) => setForm({ ...form, experienceYears: e.target.value })}
+                                        className={inputCls}
+                                        placeholder={t('instructorProfile.experience_years_ph')}
+                                    />
+                                </div>
+                                <div className="mt-4">
+                                    <label className={labelCls} dir="ltr">{t('instructorProfile.bio_en_label')}</label>
+                                    <textarea
+                                        value={form.bioEn}
+                                        onChange={(e) => setForm({ ...form, bioEn: e.target.value })}
+                                        rows={3}
+                                        className={inputCls}
+                                        dir="ltr"
+                                        placeholder={t('instructorProfile.bio_en_ph')}
+                                    />
+                                </div>
                             </div>
                         </div>
 

@@ -49,9 +49,35 @@ export class InstructorApplicationsService {
         await this.auditService.logAction(`UPDATE_INSTRUCTOR_APP_${status}`, undefined, adminId);
 
         if (status === 'APPROVED') {
+            // The application already holds a name, a professional bio and a
+            // specialty that the applicant typed. Promoting the role without
+            // copying them left an approved instructor with an empty metadata
+            // blob, so their public profile had no name, no bio and no avatar
+            // fallback — the pages fell back to the account email. Seed the
+            // public fields on approval; the instructor can edit them afterwards
+            // from the profile page.
+            const current = await this.prisma.user.findUnique({
+                where: { id: app.userId },
+                select: { metadata: true },
+            });
+            const md = ((current?.metadata ?? {}) as Record<string, unknown>) ?? {};
+            const seeded: Record<string, unknown> = { ...md };
+            if (typeof md.fullName !== 'string' || !md.fullName.trim()) {
+                seeded.fullName = app.name?.trim() || undefined;
+            }
+            if (typeof md.nameAr !== 'string' || !md.nameAr.trim()) {
+                seeded.nameAr = app.name?.trim() || undefined;
+            }
+            if (typeof md.bio !== 'string' || !md.bio.trim()) {
+                seeded.bio = app.bio?.trim() || undefined;
+            }
+            if (typeof md.specialty !== 'string' || !md.specialty.trim()) {
+                seeded.specialty = app.specialty?.trim() || undefined;
+            }
+
             await this.prisma.user.update({
                 where: { id: app.userId },
-                data: { role: 'INSTRUCTOR' }
+                data: { role: 'INSTRUCTOR', metadata: seeded as any },
             });
             await this.auditService.logAction(`UPDATE_ROLE_INSTRUCTOR`, undefined, adminId);
         }

@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
 import { Role } from '@prisma/client';
+import { publicInstructorSelect, toPublicInstructor } from '../common/public-instructor';
 
 /**
  * Fields of a lesson that are safe to expose in the public catalogue: enough to
@@ -48,15 +49,13 @@ export class PublicController {
         const users = await this.prisma.user.findMany({
             where: { role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] }, isActive: true },
             select: {
-                id: true,
-                createdAt: true,
+                ...publicInstructorSelect,
                 _count: { select: { coursesTaught: true, openingsTaught: true } },
             },
             orderBy: { createdAt: 'asc' },
         });
         return users.map((u) => ({
-            id: u.id,
-            joinedAt: u.createdAt,
+            ...toPublicInstructor(u),
             courseCount: u._count.coursesTaught,
             openingCount: u._count.openingsTaught,
         }));
@@ -68,8 +67,7 @@ export class PublicController {
         const user = await this.prisma.user.findFirst({
             where: { id, role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] }, isActive: true },
             select: {
-                id: true,
-                createdAt: true,
+                ...publicInstructorSelect,
                 coursesTaught: {
                     select: {
                         id: true,
@@ -93,8 +91,12 @@ export class PublicController {
             },
         });
         if (!user) throw new NotFoundException('Instructor not found');
-        const { coursesTaught, ...profile } = user;
-        return { ...profile, courseCount: coursesTaught.length, courses: coursesTaught };
+        const { coursesTaught, ...rest } = user;
+        return {
+            ...toPublicInstructor(user),
+            courseCount: coursesTaught.length,
+            courses: coursesTaught,
+        };
     }
 
     @ApiOperation({ summary: 'Public browseable courses (only OPEN or ANNOUNCEMENT openings)' })
@@ -111,7 +113,7 @@ export class PublicController {
             },
             orderBy: { createdAt: 'desc' },
             include: {
-                instructor: { select: { id: true, email: true, role: true } },
+                instructor: { select: publicInstructorSelect },
                 openings: {
                     where: { isPublished: true },
                     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
@@ -128,7 +130,7 @@ export class PublicController {
                         announcementStartAt: true,
                         announcementEndAt: true,
                         maxStudents: true,
-                        instructor: { select: { id: true, email: true } },
+                        instructor: { select: publicInstructorSelect },
                         _count: { select: { enrollments: true } },
                     },
                 },
@@ -194,14 +196,20 @@ export class PublicController {
                     : [],
             openings: course.openings.map((opening) => ({
                 ...opening,
-                // Public footprint: never expose instructor email (prevents scraping/enumeration).
-                instructor: opening.instructor ? { id: opening.instructor.id } : null,
+                instructor: opening.instructor
+                    ? toPublicInstructor(opening.instructor)
+                    : null,
             })),
         }))
             .map((course) => {
-                // Course ownership fields are internal; keep only what the public needs.
-                const { instructorId, chapters, modules, ...rest } = course;
-                return rest;
+                // Course ownership fields are internal; keep only what the public
+                // needs. `instructor` is rebuilt from metadata so the email that
+                // the select above still pulled in cannot reach the client.
+                const { instructorId, chapters, modules, instructor, ...rest } = course;
+                return {
+                    ...rest,
+                    instructor: instructor ? toPublicInstructor(instructor) : null,
+                };
             });
     }
 
