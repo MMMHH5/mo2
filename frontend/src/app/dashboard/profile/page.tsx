@@ -12,7 +12,7 @@ import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, FileText,
     Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, ShieldAlert,
     Users, UserCog, Trophy, Flame, Globe2, BookOpen, Award, Clock,
-    Play, Eye, Share2, Camera,
+    Play, Eye, Share2, Camera, Cake,
 } from 'lucide-react';
 import Link from 'next/link';
 import SelectField from '@/components/SelectField';
@@ -85,6 +85,53 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
+type InfoRow = { icon: typeof Mail; label: string; value: string; dir?: 'auto' | 'ltr' };
+
+/** Every profile field the edit modal writes, empty. */
+const EMPTY_FORM = {
+    nameAr: '', nameEn: '', fullName: '', phone: '', country: '', city: '',
+    bio: '', specialty: '', gender: '', birthDate: '', university: '',
+    studyStatus: '', studyLevel: '',
+};
+
+/** One titled card of the personal tab. Module level so it is one component. */
+function SectionCard({
+    icon: Icon,
+    title,
+    rows,
+    children,
+}: {
+    icon: typeof Mail;
+    title: string;
+    rows: InfoRow[];
+    children?: React.ReactNode;
+}) {
+    return (
+        <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+            <div className="flex items-center gap-2.5 mb-5 pb-5 border-b border-gray-200 dark:border-white/5">
+                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
+                    <Icon size={20} />
+                </div>
+                <h3 className="text-xl font-black text-brand-navy dark:text-white">{title}</h3>
+            </div>
+            <div className="space-y-1">
+                {rows.map((row) => (
+                    <div key={row.label} className="flex items-center gap-4 py-2.5">
+                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
+                            <row.icon size={18} />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wide">{row.label}</div>
+                            <div className="font-bold text-brand-navy dark:text-white truncate" dir={row.dir || 'auto'}>{row.value}</div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {children}
+        </div>
+    );
+}
+
 function EmptyState({ icon: Icon, text }: { icon: typeof BookOpen; text: string }) {
     return (
         <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm p-12 flex flex-col items-center gap-3 text-center">
@@ -129,7 +176,9 @@ function ProfileContent() {
     const setTab = (id: TabId) => router.replace(`/dashboard/profile?tab=${id}`, { scroll: false });
 
     const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', gender: '', birthDate: '', university: '', studyStatus: '', studyLevel: '' });
+    // Everything /auth/register collects, plus the two names and the country
+    // the platform added, so nothing the profile displays is read-only.
+    const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
 
     const [emailForm, setEmailForm] = useState({ email: '', currentPassword: '' });
@@ -163,8 +212,11 @@ function ProfileContent() {
     const startEdit = () => {
         const m = profile?.metadata ?? {};
         setForm({
+            nameAr: (m.nameAr as string) || '',
+            nameEn: (m.nameEn as string) || '',
             fullName: (m.fullName as string) || '',
             phone: (m.phone as string) || '',
+            country: (m.country as string) || '',
             city: (m.city as string) || '',
             bio: (m.bio as string) || '',
             specialty: (m.specialty as string) || '',
@@ -284,13 +336,38 @@ function ProfileContent() {
 
     const joinedLabel = profile ? new Date(profile.createdAt).toLocaleDateString() : '';
 
-    const infoRows: { icon: typeof Mail; label: string; value: string }[] = [
-        { icon: Mail, label: t('profile.email'), value: profile?.email || '' },
-        { icon: ShieldCheck, label: t('profile.role'), value: roleLabel },
+    // The personal tab is the single place the whole record is listed, so the
+    // fields are grouped by what they are rather than by which form happened to
+    // collect them. The old "بياناتي" page showed six of these and the profile
+    // showed six others; every field now appears exactly once, here.
+    const DASH = '—';
+    const str = (k: string) => (meta[k] as string) || DASH;
+
+    const identityRows: InfoRow[] = [
+        { icon: UserRound, label: t('profile.field_name_ar'), value: nameAr || str('fullName') },
+        { icon: Globe2, label: t('profile.field_name_en'), value: str('nameEn'), dir: 'ltr' },
+        { icon: Users, label: t('profile.field_gender'), value: meta.gender ? t(`auth.gender_${meta.gender.toLowerCase()}`) || str('gender') : DASH },
+        { icon: Cake, label: t('profile.field_birth_date'), value: str('birthDate'), dir: 'ltr' },
+    ];
+
+    const contactRows: InfoRow[] = [
+        { icon: Mail, label: t('profile.email'), value: profile?.email || DASH, dir: 'ltr' },
+        { icon: Phone, label: t('profile.field_phone'), value: str('phone'), dir: 'ltr' },
+        { icon: MapPin, label: t('profile.field_country'), value: str('country') },
+        { icon: MapPin, label: t('profile.field_city'), value: str('city') },
+    ];
+
+    const academicRows: InfoRow[] = [
+        { icon: GraduationCap, label: t('profile.field_university'), value: str('university') },
+        { icon: Award, label: t('profile.field_specialty'), value: str('specialty') },
+        { icon: UserCog, label: t('profile.field_study_status'), value: meta.studyStatus ? t(`auth.study_status_${meta.studyStatus.toLowerCase()}`) || str('studyStatus') : DASH },
+        { icon: BookOpen, label: t('profile.field_study_level'), value: str('studyLevel') },
+    ];
+
+    const accountRows: InfoRow[] = [
+        { icon: ShieldCheck, label: t('profile.role'), value: roleLabel || DASH },
         { icon: BadgeCheck, label: t('profile.account_status'), value: profile?.isActive === false ? t('profile.suspended') : t('profile.active') },
-        { icon: Calendar, label: t('profile.member_since'), value: profile ? new Date(profile.createdAt).toLocaleDateString() : '' },
-        { icon: Phone, label: t('profile.phone'), value: (profile?.metadata?.phone as string) || '—' },
-        { icon: MapPin, label: t('profile.city'), value: (profile?.metadata?.city as string) || '—' },
+        { icon: Calendar, label: t('profile.member_since'), value: joinedLabel || DASH },
     ];
 
     const inputCls = "w-full bg-white dark:bg-brand-navy-dark border border-gray-300 dark:border-white/10 rounded-xl px-4 py-3 font-semibold text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-brand-gold transition";
@@ -588,84 +665,42 @@ function ProfileContent() {
                         )}
 
                         {activeTab === 'personal' && (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {/* Personal info */}
-                                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                                    <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-gray-200 dark:border-white/5">
-                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
-                                            <UserRound size={20} />
-                                        </div>
-                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.personal_info')}</h3>
-                                    </div>
-                                    <div className="space-y-1">
-                                        {infoRows.map((row) => (
-                                            <div key={row.label} className="flex items-center gap-4 py-2.5">
-                                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
-                                                    <row.icon size={18} />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wide">{row.label}</div>
-                                                    <div className="font-bold text-brand-navy dark:text-white truncate" dir="auto">{row.value}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {(meta.bio) && (
-                                        <div className="mt-5 pt-5 border-t border-gray-200 dark:border-white/5">
-                                            <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
-                                                <FileText size={14} /> {t('profile.bio')}
-                                            </div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" dir="auto">
-                                                {meta.bio}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {(meta.specialty) && (
-                                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/5 flex items-center gap-2">
-                                            <GraduationCap size={16} className="text-brand-gold-dark dark:text-brand-gold-light shrink-0" />
-                                            <span dir="auto" className="px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light text-xs font-black">
-                                                {meta.specialty}
-                                            </span>
-                                        </div>
-                                    )}
+                            <div className="space-y-6">
+                                <div className="flex justify-end">
+                                    <button
+                                        onClick={startEdit}
+                                        className="inline-flex items-center gap-2 bg-white dark:bg-brand-navy-dark border border-brand-gold/40 hover:bg-brand-gold/10 text-brand-navy dark:text-white font-bold rounded-xl px-5 py-2.5 transition"
+                                    >
+                                        <Edit3 size={16} /> {t('profile.edit_profile')}
+                                    </button>
                                 </div>
 
-                                {/* The English name is surfaced here because it is
-                                    the name the certificate prints, so a student
-                                    can confirm it before it is issued. */}
-                                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                                    <div className="flex items-center gap-2.5 mb-5">
-                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
-                                            <Award size={20} />
-                                        </div>
-                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.certificate_name')}</h3>
-                                    </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('profile.certificate_name_hint')}</p>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-4 py-2.5">
-                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
-                                                <UserRound size={18} />
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <SectionCard icon={UserRound} title={t('profile.personal_info')} rows={identityRows}>
+                                        {/* Why the English name is asked for at all. */}
+                                        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                            {t('profile.certificate_name_hint')}
+                                        </p>
+                                        {nameEn ? (
+                                            <p className="mt-2 text-xs font-black text-emerald-600 dark:text-emerald-400">
+                                                {t('profile.name_en_set')}
+                                            </p>
+                                        ) : null}
+                                        {meta.bio ? (
+                                            <div className="mt-5 pt-5 border-t border-gray-200 dark:border-white/5">
+                                                <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
+                                                    <FileText size={14} /> {t('profile.bio')}
+                                                </div>
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line" dir="auto">
+                                                    {meta.bio}
+                                                </p>
                                             </div>
-                                            <div className="min-w-0">
-                                                <div className="text-xs font-bold text-gray-500 dark:text-gray-400">{t('profile.field_full_name')}</div>
-                                                <div className="font-bold text-brand-navy dark:text-white truncate" dir="auto">{nameAr || '—'}</div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 py-2.5">
-                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
-                                                <Globe2 size={18} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="text-xs font-bold text-gray-500 dark:text-gray-400">{t('profile.field_name_en')}</div>
-                                                <div className="font-bold text-brand-navy dark:text-white truncate" dir="ltr">{nameEn || '—'}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {nameEn && (
-                                        <p className="mt-4 text-xs font-black text-emerald-600 dark:text-emerald-400">{t('profile.name_en_set')}</p>
-                                    )}
+                                        ) : null}
+                                    </SectionCard>
+
+                                    <SectionCard icon={Phone} title={t('profile.section_contact')} rows={contactRows} />
+                                    <SectionCard icon={GraduationCap} title={t('profile.section_academic')} rows={academicRows} />
+                                    <SectionCard icon={ShieldCheck} title={t('profile.section_account')} rows={accountRows} />
                                 </div>
                             </div>
                         )}
@@ -797,6 +832,29 @@ function ProfileContent() {
                         </div>
 
                         <div className="space-y-4">
+                            {/* The two names lead because the certificate prints
+                                them, and the Arabic one is the platform default. */}
+                            <div>
+                                <label className={labelCls}>{t('profile.field_name_ar')}</label>
+                                <input
+                                    type="text"
+                                    value={form.nameAr}
+                                    onChange={(e) => setForm({ ...form, nameAr: e.target.value })}
+                                    className={inputCls}
+                                    dir="rtl"
+                                />
+                            </div>
+                            <div>
+                                <label className={labelCls}>{t('profile.field_name_en')}</label>
+                                <input
+                                    type="text"
+                                    value={form.nameEn}
+                                    onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
+                                    className={inputCls}
+                                    dir="ltr"
+                                    placeholder="Mohammed A"
+                                />
+                            </div>
                             <div>
                                 <label className={labelCls}>{t('profile.field_full_name')}</label>
                                 <input
@@ -819,6 +877,18 @@ function ProfileContent() {
                                     />
                                 </div>
                                 <div>
+                                    <label className={labelCls}>{t('profile.field_country')}</label>
+                                    <input
+                                        type="text"
+                                        value={form.country}
+                                        onChange={(e) => setForm({ ...form, country: e.target.value })}
+                                        className={inputCls}
+                                        dir="auto"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
                                     <label className={labelCls}>{t('profile.field_city')}</label>
                                     <input
                                         type="text"
@@ -828,20 +898,20 @@ function ProfileContent() {
                                         dir="auto"
                                     />
                                 </div>
-                            </div>
-                            <div>
-                                <label className={labelCls}>{t('profile.field_specialty')}</label>
-                                <input
-                                    type="text"
-                                    value={form.specialty}
-                                    onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-                                    className={inputCls}
-                                    dir="auto"
-                                />
+                                <div>
+                                    <label className={labelCls}>{t('profile.field_specialty')}</label>
+                                    <input
+                                        type="text"
+                                        value={form.specialty}
+                                        onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+                                        className={inputCls}
+                                        dir="auto"
+                                    />
+                                </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label className={labelCls} htmlFor="pf-gender">{t('auth.gender')}</label>
+                                    <label className={labelCls} htmlFor="pf-gender">{t('profile.field_gender')}</label>
                                     <SelectField
                                         id="pf-gender"
                                         icon={Users}
@@ -849,7 +919,7 @@ function ProfileContent() {
                                         value={form.gender}
                                         onChange={(v) => setForm({ ...form, gender: v })}
                                         placeholder={t('auth.gender_select')}
-                                        ariaLabel={t('auth.gender')}
+                                        ariaLabel={t('profile.field_gender')}
                                         options={[
                                             { value: 'MALE', label: t('auth.gender_male') },
                                             { value: 'FEMALE', label: t('auth.gender_female') },
@@ -858,7 +928,7 @@ function ProfileContent() {
                                     />
                                 </div>
                                 <div>
-                                    <label className={labelCls} htmlFor="pf-birthdate">{t('auth.birth_date')}</label>
+                                    <label className={labelCls} htmlFor="pf-birthdate">{t('profile.field_birth_date')}</label>
                                     <input
                                         id="pf-birthdate"
                                         type="date"
@@ -869,7 +939,7 @@ function ProfileContent() {
                                     />
                                 </div>
                                 <div>
-                                    <label className={labelCls}>{t('auth.university')}</label>
+                                    <label className={labelCls}>{t('profile.field_university')}</label>
                                     <input
                                         type="text"
                                         value={form.university}
@@ -880,8 +950,9 @@ function ProfileContent() {
                                     />
                                 </div>
                             </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className={labelCls} htmlFor="pf-study-status">{t('auth.study_status')}</label>
+                                    <label className={labelCls} htmlFor="pf-study-status">{t('profile.field_study_status')}</label>
                                     <SelectField
                                         id="pf-study-status"
                                         icon={UserCog}
@@ -889,7 +960,7 @@ function ProfileContent() {
                                         value={form.studyStatus}
                                         onChange={(v) => setForm({ ...form, studyStatus: v })}
                                         placeholder={t('auth.study_status_select')}
-                                        ariaLabel={t('auth.study_status')}
+                                        ariaLabel={t('profile.field_study_status')}
                                         options={[
                                             { value: 'STUDENT', label: t('auth.study_status_student') },
                                             { value: 'GRADUATE', label: t('auth.study_status_graduate') },
@@ -898,7 +969,7 @@ function ProfileContent() {
                                     />
                                 </div>
                                 <div>
-                                    <label className={labelCls}>{t('auth.study_level')}</label>
+                                    <label className={labelCls}>{t('profile.field_study_level')}</label>
                                     <input
                                         type="text"
                                         value={form.studyLevel}
@@ -908,6 +979,7 @@ function ProfileContent() {
                                         placeholder={t('auth.study_level_ph')}
                                     />
                                 </div>
+                            </div>
                             <div>
                                 <label className={labelCls}>{t('profile.field_bio')}</label>
                                 <textarea

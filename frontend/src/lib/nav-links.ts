@@ -29,7 +29,6 @@ export function buildNavLinks(t: (key: string) => string): NavLink[] {
     return [
         { name: t('sidebar.dashboard'), href: '/dashboard', icon: LayoutDashboard, roles: ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'] },
         { name: t('sidebar.profile'), href: '/dashboard/profile', icon: UserRound, roles: ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'] },
-        { name: t('sidebar.details'), href: '/dashboard/details', icon: Info, roles: ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'] },
         { name: t('landing.explore_courses'), href: '/dashboard/explore', icon: BookOpen, roles: ['STUDENT'] },
         { name: t('sidebar.my_courses'), href: '/dashboard/my-courses', icon: BookOpen, roles: ['STUDENT'] },
         { name: t('sidebar.my_grades'), href: '/dashboard/my-grades', icon: GraduationCap, roles: ['STUDENT'] },

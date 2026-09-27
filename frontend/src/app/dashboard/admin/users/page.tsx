@@ -391,12 +391,12 @@ export default function AdminUsersPage() {
                                 { icon: Calendar, label: t('profile.member_since'), value: new Date(details.user.createdAt).toLocaleDateString() },
                                 { icon: Phone, label: t('profile.phone'), value: (meta.phone as string) || '—' },
                                 { icon: MapPin, label: t('profile.city'), value: (meta.city as string) || '—' },
-                                { icon: GraduationCap, label: t('details.specialty'), value: (meta.specialty as string) || '—' },
-                                { icon: Users, label: t('details.gender'), value: gender ? t('auth.gender_' + gender.toLowerCase()) : '—' },
-                                { icon: Cake, label: t('details.birth_date'), value: formatDate(meta.birthDate as string, { locale }) || '—' },
-                                { icon: School, label: t('details.university'), value: (meta.university as string) || '—' },
-                                { icon: FileText, label: t('details.study_status'), value: (meta.studyStatus as string) ? t('details.status_' + (meta.studyStatus as string).toLowerCase()) : '—' },
-                                { icon: ClipboardList, label: t('details.study_level'), value: (meta.studyLevel as string) || '—' },
+                                { icon: GraduationCap, label: t('profile.field_specialty'), value: (meta.specialty as string) || '—' },
+                                { icon: Users, label: t('profile.field_gender'), value: gender ? t('auth.gender_' + gender.toLowerCase()) : '—' },
+                                { icon: Cake, label: t('profile.field_birth_date'), value: formatDate(meta.birthDate as string, { locale }) || '—' },
+                                { icon: School, label: t('profile.field_university'), value: (meta.university as string) || '—' },
+                                { icon: FileText, label: t('profile.field_study_status'), value: (meta.studyStatus as string) ? t('auth.study_status_' + (meta.studyStatus as string).toLowerCase()) : '—' },
+                                { icon: ClipboardList, label: t('profile.field_study_level'), value: (meta.studyLevel as string) || '—' },
                             ];
                             return (
                                 <div className="space-y-6">
@@ -442,11 +442,11 @@ export default function AdminUsersPage() {
                                     {/* Enrollments */}
                                     <div>
                                         <h5 className="font-black text-white flex items-center gap-2 mb-3">
-                                            <BookOpen size={17} className="text-brand-gold-light" /> {t('details.my_courses')}
+                                            <BookOpen size={17} className="text-brand-gold-light" /> {t('admin.user_courses')}
                                             <span className="text-xs text-gray-400 font-bold">({details.enrollments.length})</span>
                                         </h5>
                                         {details.enrollments.length === 0 ? (
-                                            <div className="text-sm text-gray-400 py-4 text-center rounded-xl bg-white/5 border border-white/10">{t('details.no_courses')}</div>
+                                            <div className="text-sm text-gray-400 py-4 text-center rounded-xl bg-white/5 border border-white/10">{t('admin.no_user_courses')}</div>
                                         ) : (
                                             <div className="space-y-2">
                                                 {details.enrollments.map(en => (
@@ -467,11 +467,11 @@ export default function AdminUsersPage() {
                                     {/* Certificates */}
                                     <div>
                                         <h5 className="font-black text-white flex items-center gap-2 mb-3">
-                                            <Award size={17} className="text-brand-gold-light" /> {t('details.certificates')}
+                                            <Award size={17} className="text-brand-gold-light" /> {t('admin.user_certificates')}
                                             <span className="text-xs text-gray-400 font-bold">({details.certificates.length})</span>
                                         </h5>
                                         {details.certificates.length === 0 ? (
-                                            <div className="text-sm text-gray-400 py-4 text-center rounded-xl bg-white/5 border border-white/10">{t('details.no_certificates')}</div>
+                                            <div className="text-sm text-gray-400 py-4 text-center rounded-xl bg-white/5 border border-white/10">{t('admin.no_user_certificates')}</div>
                                         ) : (
                                             <div className="space-y-2">
                                                 {details.certificates.map(c => (
