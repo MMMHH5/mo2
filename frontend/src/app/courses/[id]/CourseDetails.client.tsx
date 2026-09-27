@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
+import { api, API_BASE_URL, getErrorMessage, isUnauthorized } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
     BookOpen, Clock, User, CheckCircle, Loader, Award, Star, Users,
@@ -26,6 +26,7 @@ import InstructorRating from '@/components/InstructorRating';
 import PaymentMethods, { type PaymentGateway } from '@/components/payment/PaymentMethods';
 import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
 import EnrollSteps from '@/components/payment/EnrollSteps';
+import LoginPromptModal from '@/components/LoginPromptModal';
 
 export interface Module {
     id: string;
@@ -149,6 +150,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const [loading, setLoading] = useState(!initialCourse);
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [selectedOpening, setSelectedOpening] = useState<Opening | null>(null);
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
     // --- Mode detection ---
     const isStudent = user?.role === 'STUDENT';
@@ -245,10 +247,26 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             setReceiptFile(null);
             setGatewayId(null);
         } catch (e) {
+            // A guest that slipped past the CTA still gets a prompt, not "Unauthorized".
+            if (isUnauthorized(e)) {
+                setSelectedOpening(null);
+                setShowLoginPrompt(true);
+                return;
+            }
             toast.error(getErrorMessage(e) || t('courseDetail.enroll_failed'));
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleEnrollClick = (target: Opening) => {
+        if (!user) {
+            setShowLoginPrompt(true);
+            return;
+        }
+        setReceiptFile(null);
+        setGatewayId(null);
+        setSelectedOpening(target);
     };
 
     if (loading) return <div className={`min-h-screen flex items-center justify-center ${dark ? 'bg-brand-navy-dark' : 'bg-brand-white'}`}><Loader className="animate-spin text-brand-gold" size={48} /></div>;
@@ -461,7 +479,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                         <div className="flex flex-wrap items-center gap-3">
                             {opening ? (
                                 <>
-                                    <button onClick={() => setSelectedOpening(opening)} className="bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-light hover:to-brand-gold text-black flex items-center gap-3 font-black py-4 px-8 rounded-2xl shadow-xl shadow-brand-gold/25 hover:shadow-[0_0_30px_rgba(245,158,11,0.45)] transition-all transform hover:-translate-y-0.5 cursor-pointer animate-[pulse_2.5s_ease-in-out_infinite] hover:animate-none">
+                                    <button onClick={() => handleEnrollClick(opening)} className="bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-light hover:to-brand-gold text-black flex items-center gap-3 font-black py-4 px-8 rounded-2xl shadow-xl shadow-brand-gold/25 hover:shadow-[0_0_30px_rgba(245,158,11,0.45)] transition-all transform hover:-translate-y-0.5 cursor-pointer animate-[pulse_2.5s_ease-in-out_infinite] hover:animate-none">
                                         <BookOpen size={20} />
                                         {Number(opening.price) === 0 ? t('course.free') : `${t('courseDetail.enroll_for')} ${formatPrice(opening.price, { locale })}`}
                                     </button>
@@ -873,6 +891,13 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
                 </div>
             </div>
+
+            {/* Login Prompt Modal (guests only) */}
+            <LoginPromptModal
+                open={showLoginPrompt}
+                onClose={() => setShowLoginPrompt(false)}
+                redirectTo={`/courses/${id}`}
+            />
 
             {/* Enrollment Modal with Receipt Upload */}
             {selectedOpening && (

@@ -17,6 +17,13 @@ export function getErrorMessage(err: unknown): string {
     return 'An error occurred.';
 }
 
+// True when the request was rejected because the caller is not authenticated.
+// The backend answers 401 "Unauthorized", which is useless to show a visitor, so
+// guarded actions use this to open a login prompt instead of a raw error toast.
+export function isUnauthorized(err: unknown): boolean {
+    return axios.isAxiosError(err) && err.response?.status === 401;
+}
+
 // Create a centralized Axios instance
 export const api = axios.create({
     baseURL: API_BASE_URL, // Our NestJS Backend

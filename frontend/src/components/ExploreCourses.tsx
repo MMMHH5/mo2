@@ -1,7 +1,7 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { BookOpen, LogIn, UserPlus, Search, SlidersHorizontal, X, Sparkles, AlertTriangle } from 'lucide-react';
+import { BookOpen, Search, SlidersHorizontal, X, Sparkles, AlertTriangle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
@@ -14,6 +14,7 @@ import CourseCard, { type PublicCourse } from '@/components/CourseCard';
 import PaymentMethods, { type PaymentGateway } from '@/components/payment/PaymentMethods';
 import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
 import EnrollSteps from '@/components/payment/EnrollSteps';
+import LoginPromptModal from '@/components/LoginPromptModal';
 
 interface Opening {
     id: string;
@@ -34,6 +35,9 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+    // Guests are turned away before `selectedCourse` is set, so the course they
+    // were trying to enter is kept here to build the post-login return link.
+    const [pendingCourse, setPendingCourse] = useState<Course | null>(null);
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [gatewayId, setGatewayId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,6 +90,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
         const opening = currentOpening(course);
         if (!opening) return;
         if (!user) {
+            setPendingCourse(course);
             setShowLoginPrompt(true);
             return;
         }
@@ -96,6 +101,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
 
     const handleReserveClick = async (course: Course) => {
         if (!user) {
+            setPendingCourse(course);
             setShowLoginPrompt(true);
             return;
         }
@@ -259,37 +265,11 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             )}
 
             {/* Login Prompt Modal (guests only) */}
-            {showLoginPrompt && (
-                <div className="fixed inset-0 bg-brand-charcoal/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className={`rounded-3xl w-full max-w-md p-8 shadow-2xl text-center animate-scale-in ${isDark ? 'bg-brand-navy border border-white/10' : 'bg-white'}`}>
-                        <div className="w-16 h-16 bg-gradient-to-br from-brand-gold/25 to-brand-gold/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand-gold">
-                            <LogIn size={32} />
-                        </div>
-                        <h2 className={`text-2xl font-black mb-3 ${isDark ? 'text-white' : 'text-brand-navy'}`}>{t('explore.login_prompt_title')}</h2>
-                        <p className={`mb-8 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>{t('explore.login_prompt_desc')}</p>
-                        <div className="flex flex-col gap-3">
-                            <button
-                                onClick={() => router.push('/login')}
-                                className={`w-full font-bold py-4 rounded-2xl transition cursor-pointer ${isDark ? 'bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark' : 'bg-brand-navy hover:bg-brand-charcoal text-white'}`}
-                            >
-                                {t('auth.login')}
-                            </button>
-                            <button
-                                onClick={() => router.push('/register')}
-                                className={`w-full font-bold py-4 rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-brand-mist text-brand-charcoal hover:bg-gray-200'}`}
-                            >
-                                <UserPlus size={18} /> {t('auth.register')}
-                            </button>
-                            <button
-                                onClick={() => setShowLoginPrompt(false)}
-                                className={`font-semibold text-sm mt-1 cursor-pointer transition ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
-                            >
-                                {t('common.cancel')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <LoginPromptModal
+                open={showLoginPrompt}
+                onClose={() => setShowLoginPrompt(false)}
+                redirectTo={pendingCourse ? `/courses/${pendingCourse.id}` : undefined}
+            />
 
             {/* Enrollment Modal with Receipt Upload */}
             {selectedCourse && (

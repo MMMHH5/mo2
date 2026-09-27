@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -13,7 +13,18 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import SelectField from '@/components/SelectField';
 
 export default function RegisterPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-brand-navy-dark dark:text-gray-300 text-gray-600 font-bold">Loading...</div>}>
+            <RegisterForm />
+        </Suspense>
+    );
+}
+
+function RegisterForm() {
     const router = useRouter();
+    // Carried from the login prompt so a visitor who registers from a course
+    // page still lands back on that course after they sign in.
+    const redirect = useSearchParams()?.get('redirect') || '/dashboard';
     const { t } = useI18n();
     const { dark } = useTheme();
 
@@ -58,7 +69,7 @@ export default function RegisterPage() {
                 studyLevel: formData.studyLevel,
             });
             toast.success(t('auth.registration_success'));
-            router.push('/login');
+            router.push(redirect === '/dashboard' ? redirect : `/login?redirect=${encodeURIComponent(redirect)}`);
         } catch (err) {
             toast.error(getErrorMessage(err) || t('auth.register_failed'));
         } finally {
