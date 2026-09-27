@@ -62,12 +62,6 @@ export default function Home() {
   const joinBtnCls = dark
     ? 'bg-white/5 border-white/10 text-white hover:border-brand-gold hover:text-brand-gold-light'
     : 'bg-white border-gray-200 text-brand-navy hover:border-brand-gold hover:text-brand-gold-dark';
-  const brandLineCls = dark
-    ? 'bg-gradient-to-r from-brand-gold-light via-brand-gold to-brand-gold-light bg-clip-text text-transparent'
-    : 'text-brand-gold-dark';
-  const whyBannerCls = dark
-    ? 'text-brand-gold-light [text-shadow:0_0_40px_rgba(238,193,102,0.25)]'
-    : 'text-brand-gold-dark';
   const cardCls = dark
     ? 'bg-brand-navy border-white/10 hover:border-brand-gold/50 shadow-black/20 hover:shadow-[0_8px_30px_rgba(238,193,102,0.12)]'
     : 'bg-white border-gray-100 hover:border-brand-gold/50 hover:shadow-[0_8px_30px_rgb(18,48,90,0.08)] shadow-sm';
@@ -98,9 +92,14 @@ export default function Home() {
 
           <h2 className={`text-5xl md:text-7xl font-black tracking-tight leading-tight ${heroTitleCls}`}>
             {t('landing.hero_title')}
-            <span className={`block mt-3 ${brandLineCls}`}>
-              LaxaLab
-            </span>
+            {/* The brand word used to be re-typed here as styled text, which
+                read as a second, unofficial logo next to the real one in the
+                header. Show the actual mark instead. */}
+            <img
+              src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
+              alt="Laxalab Academy"
+              className="block mt-5 mx-auto h-14 md:h-20 lg:h-24 w-auto max-w-[80vw] object-contain"
+            />
           </h2>
 
           <p className={`text-xl md:text-2xl max-w-2xl mx-auto font-medium leading-relaxed ${heroDescCls}`}>
@@ -136,8 +135,12 @@ export default function Home() {
           <div className="text-center mb-16">
             <h3 className={`text-3xl md:text-4xl font-black mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>
               {t('landing.why_heading')}
-              <span className={`block mt-2 ${whyBannerCls}`}>LaxaLab</span>
             </h3>
+            <img
+              src={dark ? '/logos/LaxaLab_Academy_Horizontal_Mono_White_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Mono_Navy_4K.png'}
+              alt="Laxalab Academy"
+              className="mx-auto h-10 md:h-12 w-auto max-w-[70vw] object-contain"
+            />
             <p className={`max-w-xl mx-auto text-lg leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('landing.why_desc')}</p>
           </div>
 
