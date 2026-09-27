@@ -395,14 +395,21 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
             {/* Header */}
             <header className={`px-4 sm:px-6 md:px-8 h-16 sm:h-20 flex items-center justify-between border-b sticky top-0 z-50 ${dark ? 'border-white/5 bg-brand-navy-dark' : 'border-gray-200 bg-white/90 backdrop-blur-md'}`}>
-                <div className="flex items-center gap-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${dark ? 'bg-white/10 border border-white/10' : 'bg-brand-mist border border-brand-mist'}`}>
-                        <span className="text-brand-gold font-black text-xl">L</span>
-                    </div>
-                    <h1 className={`text-2xl font-black tracking-tight ${dark ? 'text-white' : 'text-brand-navy'}`}>
-                        laxa<span className="text-brand-gold">lab</span>
-                    </h1>
-                </div>
+                {/* Brand: this header used to draw a hand-rolled "L" tile plus
+                    a typed `laxa|lab` wordmark, so the course page showed a
+                    different identity from every other page. Use the real mark,
+                    as MarketingShell does, and keep it clickable home. */}
+                <button
+                    onClick={() => router.push('/')}
+                    aria-label="Laxalab Academy"
+                    className="flex items-center cursor-pointer"
+                >
+                    <img
+                        src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
+                        alt="Laxalab Academy"
+                        className="h-8 sm:h-10 md:h-12 w-auto max-w-[45vw] object-contain"
+                    />
+                </button>
                 <nav className="hidden md:flex items-center gap-8">
                     <button onClick={() => router.push('/courses')} className={`font-bold transition cursor-pointer ${dark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-brand-navy'}`}>
                         {t('landing.explore_courses')}
