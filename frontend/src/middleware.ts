@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 type Locale = 'ar' | 'en';
 
-const LOCALE_COOKIE = 'laxalab_locale';
+// Versioned on purpose. The previous name (`laxalab_locale`) is still sitting
+// in every returning visitor's browser, written by the old Accept-Language
+// sniffing, and it carries a `max-age` of a year. Honouring it would keep
+// sending the entire existing audience to /en even though Arabic is now the
+// primary language, so the old key is deliberately ignored and the new default
+// applies once. From here on an explicit choice is what selects the language.
+const LOCALE_COOKIE = 'laxalab_locale_v2';
 const DEFAULT_LOCALE: Locale = 'ar';
 const SKIP_PATHS = ['/sitemap.xml', '/robots.txt', '/manifest.webmanifest', '/favicon.ico'];
 const EXT_RE = /\.(png|jpe?g|svg|gif|webp|ico|avif|woff2?|ttf|eot|otf|pdf|mp4|webm)$/i;

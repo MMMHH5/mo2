@@ -22,8 +22,11 @@ const I18nContext = createContext<I18nContextProps | undefined>(undefined);
 
 const translations: Record<Locale, TranslationDict> = { ar, en };
 
-const LOCALE_COOKIE = "laxalab_locale";
-const LOCALE_KEY = "laxalab_locale";
+// Must match the middleware cookie name. See the note there: the unversioned
+// key is ignored on purpose so stale `en` values written by the old
+// Accept-Language sniffing cannot pin visitors to English.
+const LOCALE_COOKIE = "laxalab_locale_v2";
+const LOCALE_KEY = "laxalab_locale_v2";
 
 function pickValue(obj: unknown, field: string, locale: Locale): string | undefined {
     if (!obj || typeof obj !== "object") return undefined;

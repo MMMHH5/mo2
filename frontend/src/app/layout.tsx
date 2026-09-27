@@ -64,7 +64,7 @@ export const viewport: Viewport = {
 async function getLocale(): Promise<'ar' | 'en'> {
   try {
     const store = await cookies();
-    const value = store.get('laxalab_locale')?.value;
+    const value = store.get('laxalab_locale_v2')?.value;
     if (value === 'en' || value === 'ar') return value;
   } catch {
     // cookies() unavailable during static generation
