@@ -184,20 +184,26 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
         const item = (key: typeof activeTab, icon: React.ReactNode, label: string) => (
             <button
                 onClick={() => setActiveTab(key)}
-                className={`relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
+                className={`relative inline-flex shrink-0 items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
                     activeTab === key
                         ? dark ? 'bg-brand-gold/15 text-brand-gold-light border border-brand-gold/25' : 'bg-brand-gold/15 text-brand-gold-dark border border-brand-gold/25'
                         : dark ? 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent' : 'text-gray-500 hover:text-brand-navy hover:bg-brand-mist border border-transparent'
                 }`}
             >
                 {icon}
-                {label}
+                <span className="whitespace-nowrap">{label}</span>
                 {activeTab === key && <span className={`absolute bottom-0 left-3 right-3 h-1 rounded-full ${dark ? 'bg-brand-gold-light' : 'bg-brand-gold-dark'}`} />}
             </button>
         );
         return (
-            <div className="sticky top-20 z-30 mb-8">
-                <div className={`inline-flex flex-wrap gap-1 rounded-2xl border p-1.5 shadow-xl ${dark ? 'bg-brand-navy-dark backdrop-blur-md border-white/5 shadow-black/20' : 'bg-white backdrop-blur-md border-gray-200 shadow-brand-navy/10'}`}>
+            // The offset has to match the header exactly: it is now h-16 on a
+            // phone and h-20 from `sm` up. A stale `top-20` slid the tab strip
+            // under the header, clipping the top of the first tab.
+            <div className="sticky top-16 sm:top-20 z-30 mb-6 sm:mb-8 -mx-4 sm:mx-0 px-4 sm:px-0">
+                {/* One scrollable row instead of wrapping: with six tabs a phone
+                    wrapped them onto three lines, which turned the sticky strip
+                    into a wall that ate a third of the viewport. */}
+                <div className={`inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border p-1.5 shadow-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${dark ? 'bg-brand-navy-dark backdrop-blur-md border-white/5 shadow-black/20' : 'bg-white backdrop-blur-md border-gray-200 shadow-brand-navy/10'}`}>
                     {item('overview', <BookOpen size={18} />, t('courseDetail.tab_overview'))}
                     {mode === 'student' && item('tasks', <ClipboardList size={18} />, t('courseDetail.tab_tasks'))}
                     {mode === 'student' && item('grades', <GraduationCap size={18} />, t('courseDetail.tab_grades'))}
@@ -339,7 +345,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             `}</style>
 
             {/* Header */}
-            <header className={`px-8 py-6 flex items-center justify-between border-b sticky top-0 z-50 ${dark ? 'border-white/5 bg-brand-navy-dark' : 'border-gray-200 bg-white/90 backdrop-blur-md'}`}>
+            <header className={`px-4 sm:px-6 md:px-8 h-16 sm:h-20 flex items-center justify-between border-b sticky top-0 z-50 ${dark ? 'border-white/5 bg-brand-navy-dark' : 'border-gray-200 bg-white/90 backdrop-blur-md'}`}>
                 <div className="flex items-center gap-2">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${dark ? 'bg-white/10 border border-white/10' : 'bg-brand-mist border border-brand-mist'}`}>
                         <span className="text-brand-gold font-black text-xl">L</span>
@@ -389,7 +395,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                 <div className="absolute bottom-0 start-1/3 w-80 h-80 bg-brand-navy-light/8 rounded-full blur-3xl" aria-hidden />
                 <div className="absolute bottom-0 end-0 w-80 h-80 bg-brand-gold/5 rounded-full blur-3xl" aria-hidden />
 
-                <div className="relative max-w-6xl mx-auto px-6 md:px-10 pt-16 md:pt-20 pb-24 md:pb-28 grid lg:grid-cols-[1.2fr_1fr] gap-12 items-center">
+                <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-10 pt-10 sm:pt-16 md:pt-20 pb-14 sm:pb-24 md:pb-28 grid lg:grid-cols-[1.2fr_1fr] gap-10 md:gap-12 items-center">
                     {/* Left */}
                     <div className="animate-fade-in-up">
                         {/* Breadcrumb */}
@@ -398,7 +404,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             <span className="text-brand-gold-light">/</span>
                             <button onClick={() => router.push('/courses')} className="hover:text-brand-gold-light transition cursor-pointer">{t('landing.explore_courses')}</button>
                             <span className="text-brand-gold-light">/</span>
-                            <span className="text-brand-gold-light truncate max-w-[200px]">{pick(course, 'title')}</span>
+                            <span className="text-brand-gold-light truncate max-w-[60vw] sm:max-w-[200px]">{pick(course, 'title')}</span>
                         </nav>
 
                         <div className="flex flex-wrap items-center gap-2 mb-5">
@@ -422,9 +428,9 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             )}
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-[1.08] tracking-tight" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.5)' }}>{pick(course, 'title')}</h1>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-5 sm:mb-6 leading-[1.15] sm:leading-[1.08] tracking-tight break-words" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.5)' }}>{pick(course, 'title')}</h1>
                         {(pick(course, 'excerpt') || pick(course, 'description')) && (
-                            <p className="text-lg md:text-xl text-gray-300 max-w-2xl mb-8 font-medium leading-relaxed">
+                            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mb-6 sm:mb-8 font-medium leading-relaxed break-words">
                                 {pick(course, 'excerpt') || pick(course, 'description')}
                             </p>
                         )}
@@ -436,7 +442,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <Clock size={17} />
                                 </div>
                                 <div>
-                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('explore.duration')}</div>
+                                    <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('explore.duration')}</div>
                                     <div className="text-sm font-black text-white">{pick(course, 'duration') || t('courseDetail.self_paced')}</div>
                                 </div>
                             </div>
@@ -446,7 +452,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         <PlayCircle size={17} />
                                     </div>
                                     <div>
-                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('courseDetail.hours_label')}</div>
+                                        <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('courseDetail.hours_label')}</div>
                                         <div className="text-sm font-black text-white">{course.hoursOfContent}</div>
                                     </div>
                                 </div>
@@ -457,7 +463,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         <Users size={17} />
                                     </div>
                                     <div>
-                                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('explore.students')}</div>
+                                        <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('explore.students')}</div>
                                         <div className="text-sm font-black text-white">{enrolledCount}</div>
                                     </div>
                                 </div>
@@ -467,8 +473,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <User size={17} />
                                 </div>
                                 <div>
-                                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('courseDetail.expert_instructor')}</div>
-                                    <div className="text-sm font-black text-white max-w-[160px] truncate">{instructorName || t('courseDetail.expert_instructor')}</div>
+                                    <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('courseDetail.expert_instructor')}</div>
+                                    <div className="text-sm font-black text-white max-w-[55vw] sm:max-w-[160px] truncate">{instructorName || t('courseDetail.expert_instructor')}</div>
                                     {courseInstructor?.id && (
                                         <InstructorRating
                                             instructorId={courseInstructor.id}
@@ -581,7 +587,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
             <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-10 relative z-20">
                 {mode !== 'guest' && renderTabs()}
-                <div className={`rounded-3xl shadow-2xl p-6 md:p-12 animate-fade-in-up ${dark ? 'bg-brand-navy shadow-black/20 border border-white/5' : 'bg-white shadow-brand-navy/10 border border-gray-200'}`}>
+                <div className={`rounded-3xl shadow-2xl p-4 sm:p-6 md:p-12 animate-fade-in-up ${dark ? 'bg-brand-navy shadow-black/20 border border-white/5' : 'bg-white shadow-brand-navy/10 border border-gray-200'}`}>
 
                     {mode !== 'guest' && activeTab !== 'overview' ? (
                         <>
@@ -597,11 +603,11 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     {/* What you'll learn — before the syllabus, so the visitor
                         sees the payoff before committing to the syllabus. */}
                     {course.objectives && course.objectives.length > 0 && (
-                        <div className="mb-12 bg-brand-gold/5 border border-brand-gold/10 rounded-3xl p-6">
+                        <div className="mb-8 sm:mb-12 bg-brand-gold/5 border border-brand-gold/10 rounded-3xl p-4 sm:p-6">
                             <SectionTitle icon={<GraduationCap size={18} />}>{t('courseDetail.learn_heading')}</SectionTitle>
                             <div className="grid sm:grid-cols-2 gap-3">
                                 {course.objectives.map((o, idx) => (
-                                    <div key={idx} className={`flex items-start gap-3 rounded-xl p-4 hover:border-brand-gold/20 transition ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                    <div key={idx} className={`flex items-start gap-3 rounded-xl p-3 sm:p-4 hover:border-brand-gold/20 transition ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
                                         <CheckCircle size={18} className="text-emerald-500 mt-0.5 flex-shrink-0" />
                                         <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(o, 'objective')}</span>
                                     </div>
@@ -617,9 +623,9 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                         </div>
                     )}
 
-                    <div className="grid md:grid-cols-3 gap-12">
+                    <div className="grid md:grid-cols-3 gap-10 md:gap-12">
                         {/* Highlights */}
-                        <div className="md:col-span-2 space-y-10">
+                        <div className="md:col-span-2 space-y-8 sm:space-y-10">
 
                             {/* About */}
                             {(pick(course, 'description') || pick(course, 'syllabus')) && (
@@ -688,11 +694,14 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                                 {(instructorName || '?').trim().charAt(0).toUpperCase()}
                                             </span>
                                         )}
-                                        <div className="min-w-0 flex-1">
-                                            <div className={`truncate font-black ${dark ? 'text-white' : 'text-brand-navy'}`} dir="auto">
+                                        <div className="min-w-0 flex-1 basis-40">
+                                            {/* Wraps instead of truncating: a clipped
+                                                name is unreadable on a phone, and
+                                                Arabic job titles are long. */}
+                                            <div className={`font-black break-words ${dark ? 'text-white' : 'text-brand-navy'}`} dir="auto">
                                                 {instructorName || t('courseDetail.expert_instructor')}
                                             </div>
-                                            <div className={`mt-0.5 text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="auto">
+                                            <div className={`mt-0.5 text-sm break-words ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="auto">
                                                 {instructorJobTitle || t('courseDetail.instructor_role')}
                                             </div>
                                             <Link
@@ -717,7 +726,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     </p>
                                 ) : (
                                     <div className="space-y-4">
-                                        <div className={`flex flex-wrap items-center gap-5 rounded-2xl p-5 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                    <div className={`flex flex-wrap items-center gap-4 sm:gap-5 rounded-2xl p-4 sm:p-5 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
                                             <div className="text-center">
                                                 <div className="text-4xl font-black text-brand-gold-dark dark:text-brand-gold-light">
                                                     {reviews.average.toFixed(1)}
@@ -749,13 +758,13 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         <ul className="space-y-3">
                                             {reviews.reviews.slice(0, REVIEWS_PREVIEW).map(r => (
                                                 <li key={r.id} className={`rounded-2xl p-4 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-white border border-gray-200'}`}>
-                                                    <div className="mb-2 flex items-center gap-2">
-                                                        <span className="flex items-center gap-0.5" aria-label={`${r.rating}/5`}>
+                                                    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                        <span className="flex items-center gap-0.5 shrink-0" aria-label={`${r.rating}/5`}>
                                                             {[1, 2, 3, 4, 5].map(s => (
                                                                 <Star key={s} size={12} className={s <= r.rating ? 'fill-brand-gold text-brand-gold' : dark ? 'text-gray-600' : 'text-gray-300'} />
                                                             ))}
                                                         </span>
-                                                        <span className={`truncate text-xs font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="ltr">
+                                                        <span className={`truncate text-[13px] font-bold max-w-[55vw] sm:max-w-[220px] ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="ltr">
                                                             {r.user?.email}
                                                         </span>
                                                         <span className={`ms-auto shrink-0 text-xs ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -820,7 +829,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     </div>
                                     <h2 className="font-black text-brand-gold-light uppercase tracking-wider text-sm">{t('courseDetail.course_details')}</h2>
                                 </div>
-                                <div className="p-6 space-y-1">
+                                <div className="p-4 sm:p-6 space-y-1">
                                     {[
                                         { icon: <Clock size={16} />, label: pick(course, 'duration') || t('courseDetail.self_paced') },
                                         { icon: <User size={16} />, label: instructorName || t('courseDetail.expert_instructor') },
@@ -838,7 +847,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                             <div className="w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold-light shrink-0">
                                                 {row.icon}
                                             </div>
-                                            <span className="truncate">{row.label}</span>
+                                            <span className="break-words">{row.label}</span>
                                         </div>
                                     ))}
                                     {metaOpening && (
@@ -856,7 +865,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
                             {/* Included features */}
                             {included.length > 0 && (
-                                <div className="rounded-3xl border border-white/5 p-6 shadow-sm bg-brand-navy-dark animate-fade-in-up">
+                                <div className="rounded-3xl border border-white/5 p-4 sm:p-6 shadow-sm bg-brand-navy-dark animate-fade-in-up">
                                     <h2 className="font-black text-white mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
                                         <span className="w-1 h-5 bg-brand-gold-light rounded-full" /> {t('courseDetail.features_heading')}
                                     </h2>
@@ -873,7 +882,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </div>
                             )}
 
-                            <div className="rounded-3xl border border-white/5 p-6 shadow-sm bg-brand-navy-dark animate-fade-in-up">
+                            <div className="rounded-3xl border border-white/5 p-4 sm:p-6 shadow-sm bg-brand-navy-dark animate-fade-in-up">
                                 <h2 className="font-black text-white mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
                                     <span className="w-1 h-5 bg-brand-gold-light rounded-full" /> {t('courseDetail.achievements')}
                                 </h2>
@@ -916,9 +925,9 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
             {/* Enrollment Modal with Receipt Upload */}
             {selectedOpening && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className={`rounded-3xl w-full max-w-lg p-8 shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto ${dark ? 'bg-brand-navy border border-white/10' : 'bg-white border border-gray-200'}`}>
-                        <h2 className={`text-2xl font-black mb-2 ${dark ? 'text-white' : 'text-brand-navy'}`}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+                    <div className={`rounded-3xl w-full max-w-lg p-5 sm:p-8 shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto ${dark ? 'bg-brand-navy border border-white/10' : 'bg-white border border-gray-200'}`}>
+                        <h2 className={`text-xl sm:text-2xl font-black mb-2 break-words ${dark ? 'text-white' : 'text-brand-navy'}`}>
                             {t('explore.enroll_in')} {pick(course, 'title')}
                         </h2>
                         <p className={`mb-6 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -952,7 +961,10 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             )}
                         </div>
 
-                        <div className="flex gap-4 mt-8">
+                        {/* Stacked on a phone: two Arabic labels side by side in a
+                            320px viewport left each button ~100px and wrapped the
+                            text onto three lines. */}
+                        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 mt-8">
                             <button
                                 onClick={handleEnrollSubmit}
                                 disabled={isSubmitting || !receiptFile || !gatewayId}
