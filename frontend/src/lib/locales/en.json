@@ -160,7 +160,15 @@
         "email_fields_required": "Please enter the new email and your current password.",
         "pw_fields_required": "Please enter your current and new passwords.",
         "pw_too_short": "New password must be at least 6 characters.",
-        "pw_mismatch": "Passwords do not match."
+        "pw_mismatch": "Passwords do not match.",
+        "country": "Country",
+        "field_country": "Country",
+        "field_name_en": "Name in English (shown on your certificate)",
+        "level": "Level",
+        "stat_certificates": "Certificates",
+        "stat_completed": "Completed",
+        "stat_enrolled": "Enrolled Courses",
+        "stat_learning_hours": "Learning Hours"
     },
     "details": {
         "heading": "All My Details",

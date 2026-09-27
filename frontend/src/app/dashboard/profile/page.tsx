@@ -10,7 +10,7 @@ import { useState } from 'react';
 import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, FileText,
     Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, ShieldAlert,
-    Users, UserCog,
+    Users, UserCog, Trophy, Flame, Globe2, BookOpen, Award, Clock,
 } from 'lucide-react';
 import SelectField from '@/components/SelectField';
 
@@ -21,12 +21,42 @@ interface MyProfile {
     isActive: boolean;
     metadata?: Record<string, unknown> | null;
     createdAt: string;
+    stats?: {
+        enrollments: number;
+        certificates: number;
+    };
+}
+
+/** GET /gamification/me — the level badge in the hero. */
+interface GamificationMe {
+    points: number;
+    level: number;
+    streak: number;
+    xpInLevel: number;
+    xpToNextLevel: number;
+}
+
+/** GET /analytics/me — the only source of learning hours and completions. */
+interface AnalyticsMe {
+    totalHours: number;
+    coursesInProgress: number;
+    coursesCompleted: number;
 }
 
 export default function ProfilePage() {
     const { user } = useAuth();
     const { t } = useI18n();
     const { data: profile, loading, error, refetch } = useFetchData<MyProfile>('/users/me');
+    // Reused rather than re-counted: the platform already tracks points/level
+    // and study sessions, so the hero and the stats bar read those numbers
+    // instead of growing a parallel profile-stats endpoint.
+    const { data: gamification } = useFetchData<GamificationMe>('/gamification/me');
+    // Learning hours and completions are a student-only resource. Passing null
+    // keeps a 403 off the wire for instructors and staff, and the stats bar
+    // renders those two cards as unavailable instead of showing a fake zero.
+    const { data: analytics } = useFetchData<AnalyticsMe>(
+        profile?.role === 'STUDENT' ? '/analytics/me' : null,
+    );
 
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', gender: '', birthDate: '', university: '', studyStatus: '', studyLevel: '' });
@@ -146,12 +176,23 @@ export default function ProfilePage() {
         }
     };
 
-    const fullName =
-        (profile?.metadata?.fullName as string) ||
-        user?.email?.split('@')[0] ||
-        profile?.email || '';
+    const meta = (profile?.metadata ?? {}) as Record<string, string | undefined>;
+    const emailPrefix = user?.email?.split('@')[0] || profile?.email || '';
+
+    // The Arabic name leads; the English one sits under it because that is the
+    // name the certificate prints, and having it visible here is how a student
+    // notices it is set correctly.
+    const nameAr = meta.nameAr || meta.fullName || '';
+    const nameEn = meta.nameEn || '';
+    const fullName = nameAr || nameEn || emailPrefix;
     const initials = fullName.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
     const roleLabel = t('roles.' + (profile?.role || '').toLowerCase()) || profile?.role || '';
+
+    // Only render the English line when it is genuinely a second language
+    // version, otherwise the same string would appear twice.
+    const showNameEn = !!nameEn && nameEn !== nameAr;
+
+    const joinedLabel = profile ? new Date(profile.createdAt).toLocaleDateString() : '';
 
     const infoRows: { icon: typeof Mail; label: string; value: string }[] = [
         { icon: Mail, label: t('profile.email'), value: profile?.email || '' },
@@ -177,16 +218,26 @@ export default function ProfilePage() {
                     </div>
                 ) : (
                     <>
-                        {/* Header card */}
+                        {/* Hero header: identity, level badge, and the three
+                            facts a learner checks first. */}
                         <div className="relative overflow-hidden bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] rounded-3xl p-4 sm:p-6 lg:p-8 text-white shadow-lg shadow-brand-navy/20">
                             <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand-gold/20 rounded-full blur-3xl" />
                             <div className="absolute -bottom-20 -left-10 w-72 h-72 bg-brand-gold/10 rounded-full blur-3xl" />
                             <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)', backgroundSize: '22px 22px' }} />
-                            <div className="relative flex items-center gap-6 flex-wrap">
+                            <div className="relative flex items-start gap-6 flex-wrap">
                                 <div className="relative shrink-0">
-                                    <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-3xl bg-gradient-to-br from-brand-gold to-brand-gold/50 flex items-center justify-center shadow-lg shadow-brand-gold/30 ring-4 ring-white/15">
-                                        <span className="text-3xl lg:text-4xl font-black text-brand-navy">{initials || <UserRound size={44} />}</span>
-                                    </div>
+                                    {meta.avatarUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                            src={meta.avatarUrl}
+                                            alt={fullName}
+                                            className="w-24 h-24 lg:w-28 lg:h-28 rounded-full object-cover ring-4 ring-white/15 shadow-lg"
+                                        />
+                                    ) : (
+                                        <div className="w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-gradient-to-br from-brand-gold to-brand-gold/50 flex items-center justify-center shadow-lg shadow-brand-gold/30 ring-4 ring-white/15">
+                                            <span className="text-3xl lg:text-4xl font-black text-brand-navy">{initials || <UserRound size={40} />}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 flex-wrap">
@@ -197,15 +248,44 @@ export default function ProfilePage() {
                                             </span>
                                         )}
                                     </div>
+                                    {showNameEn && (
+                                        <p className="text-brand-mist/80 mt-1 font-bold" dir="ltr">{nameEn}</p>
+                                    )}
                                     <p className="text-brand-mist/90 mt-1.5 font-semibold truncate" dir="ltr">{profile.email}</p>
+
                                     <div className="flex flex-wrap gap-2 mt-4">
-                                        <span className="px-3.5 py-1.5 rounded-full bg-brand-gold text-brand-navy text-xs font-black shadow-sm shadow-brand-gold/30">
+                                        {/* Level comes from the points the learner
+                                            already earned; it is not a separate
+                                            profile flag that could drift. */}
+                                        {gamification && (
+                                            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-brand-gold text-brand-navy text-xs font-black shadow-sm shadow-brand-gold/30">
+                                                <Trophy size={13} /> {t('profile.level')} {gamification.level}
+                                            </span>
+                                        )}
+                                        {gamification && gamification.streak > 0 && (
+                                            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-orange-400/15 text-orange-200 text-xs font-black">
+                                                <Flame size={13} /> {gamification.streak}
+                                            </span>
+                                        )}
+                                        <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-brand-mist/80 text-xs font-semibold backdrop-blur">
                                             {roleLabel}
                                         </span>
-                                        <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-brand-mist/80 text-xs font-semibold backdrop-blur">
-                                            {t('profile.since')} {new Date(profile.createdAt).toLocaleDateString()}
-                                        </span>
                                     </div>
+
+                                    {/* Quick basics */}
+                                    <dl className="flex flex-wrap gap-x-6 gap-y-2 mt-5 pt-5 border-t border-white/10">
+                                        {[
+                                            { icon: Globe2, label: t('profile.country'), value: meta.country },
+                                            { icon: Calendar, label: t('profile.member_since'), value: joinedLabel },
+                                            { icon: Phone, label: t('profile.phone'), value: meta.phone },
+                                        ].map((row) => (
+                                            <div key={row.label} className="flex items-center gap-2 min-w-0">
+                                                <row.icon size={14} className="text-brand-gold-light shrink-0" />
+                                                <dt className="text-brand-mist/60 text-xs font-bold">{row.label}</dt>
+                                                <dd className="text-white text-xs font-bold truncate" dir="auto">{row.value || '—'}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
                                 </div>
                                 <button
                                     onClick={startEdit}
@@ -214,6 +294,38 @@ export default function ProfilePage() {
                                     <Edit3 size={16} /> {t('profile.edit_profile')}
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Stats bar. Enrolled and certificates come from
+                            /users/me, hours and completions from /analytics/me.
+                            The two student-only figures render as unavailable
+                            rather than a misleading zero. */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            {[
+                                { icon: BookOpen, label: t('profile.stat_enrolled'), value: profile.stats?.enrollments },
+                                { icon: Trophy, label: t('profile.stat_completed'), value: analytics?.coursesCompleted },
+                                { icon: Award, label: t('profile.stat_certificates'), value: profile.stats?.certificates },
+                                { icon: Clock, label: t('profile.stat_learning_hours'), value: analytics?.totalHours },
+                            ].map((card) => (
+                                <div
+                                    key={card.label}
+                                    className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm p-5 flex items-center gap-4"
+                                >
+                                    <div className="w-11 h-11 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
+                                        <card.icon size={20} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        {/* undefined means "not tracked for this
+                                            role", which is not the same as zero. */}
+                                        <div className="text-2xl font-black text-brand-navy dark:text-white leading-none">
+                                            {card.value === undefined ? '—' : card.value}
+                                        </div>
+                                        <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1.5 truncate">
+                                            {card.label}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
