@@ -168,7 +168,25 @@
         "stat_certificates": "الشهادات",
         "stat_completed": "الدورات المكتملة",
         "stat_enrolled": "الدورات المسجلة",
-        "stat_learning_hours": "ساعات التعلم"
+        "stat_learning_hours": "ساعات التعلم",
+        "badges": "الإنجازات",
+        "certificate_name": "الاسم على الشهادة",
+        "certificate_name_hint": "هذا الاسم ما سيُطبع على شهادتك. تأكد من صحته قبل الإصدار.",
+        "continue": "متابعة",
+        "download_pdf": "تحميل PDF",
+        "issued_on": "تاريخ الإصدار:",
+        "name_en_set": "✓ اسمك الإنجليزي مضبوط وسيظهر على الشهادة",
+        "no_courses": "لم تسجّل في أي دورة بعد.",
+        "no_certificates": "لا توجد شهادات بعد.",
+        "no_lessons": "لا توجد دروس في هذه الدورة بعد.",
+        "printed_on": "تم التسليم الورقي:",
+        "progress": "نسبة الإنجاز",
+        "share_linkedin": "مشاركة",
+        "tab_certificates": "الشهادات والإنجازات",
+        "tab_courses": "دوراتي وتقدمي",
+        "tab_personal": "البيانات الشخصية",
+        "tab_security": "الأمان والحساب",
+        "view_certificate": "عرض"
     },
     "details": {
         "heading": "كل بياناتي",
@@ -278,7 +296,9 @@
         "filter": "الفلاتر",
         "back": "رجوع",
         "next": "التالي",
-        "items": "عناصر"
+        "items": "عناصر",
+        "certificate": "شهادة",
+        "course": "دورة"
     },
     "dashboard": {
         "welcome_back": "مرحباً بعودتك",

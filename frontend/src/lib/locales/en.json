@@ -168,7 +168,25 @@
         "stat_certificates": "Certificates",
         "stat_completed": "Completed",
         "stat_enrolled": "Enrolled Courses",
-        "stat_learning_hours": "Learning Hours"
+        "stat_learning_hours": "Learning Hours",
+        "badges": "Badges",
+        "certificate_name": "Name on your certificate",
+        "certificate_name_hint": "This is the name that gets printed on your certificate. Check it before a certificate is issued.",
+        "continue": "Continue",
+        "download_pdf": "Download PDF",
+        "issued_on": "Issued:",
+        "name_en_set": "✓ Your English name is set and will appear on your certificate",
+        "no_courses": "You have not enrolled in any course yet.",
+        "no_certificates": "No certificates yet.",
+        "no_lessons": "This course has no lessons yet.",
+        "printed_on": "Paper copy delivered:",
+        "progress": "Progress",
+        "share_linkedin": "Share",
+        "tab_certificates": "Certificates & Badges",
+        "tab_courses": "My Courses & Progress",
+        "tab_personal": "Personal Info",
+        "tab_security": "Account & Security",
+        "view_certificate": "View"
     },
     "details": {
         "heading": "All My Details",
@@ -278,7 +296,9 @@
         "filter": "Filters",
         "back": "Back",
         "next": "Next",
-        "items": "items"
+        "items": "items",
+        "certificate": "Certificate",
+        "course": "Course"
     },
     "dashboard": {
         "welcome_back": "Welcome back",

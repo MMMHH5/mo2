@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { CertificatesService } from '../src/certificates/certificates.service';
 import { UsersService } from '../src/users/users.service';
+import { EnrollmentsService } from '../src/enrollments/enrollments.service';
 
 /**
  * Regression tests for two defects found while building the profile redesign.
@@ -148,5 +149,59 @@ describe('profile metadata sanitiser', () => {
 
     test('an empty avatar clears the picture', () => {
         assert.equal(clean({ avatarUrl: '' }).avatarUrl, null);
+    });
+});
+
+/**
+ * The profile's "my courses" tab shows a completion percentage. It is computed
+ * in getMyEnrollments so there is one definition of the number, and these lock
+ * the degenerate cases: a course with no lessons must read as unknown rather
+ * than 0% or NaN, and progress must never exceed 100.
+ */
+describe('course completion percentage', () => {
+    const svc = (rows: any[]) => {
+        const prisma = {
+            enrollment: { findMany: () => Promise.resolve(rows) },
+        };
+        return new EnrollmentsService(prisma as any, noopService, noopService as any, {} as any);
+    };
+    const row = (modules: number, done: number) => ({
+        id: 'e1',
+        course: { id: 'c1', _count: { modules } },
+        _count: { lessonProgress: done },
+    });
+
+    test('a course with no lessons reports unknown, not 0% and not NaN', async () => {
+        const out: any = await svc([row(0, 0)]).getMyEnrollments('s1');
+        assert.equal(out[0].progressPercent, null);
+    });
+
+    test('a half-finished course reports 50', async () => {
+        const out: any = await svc([row(4, 2)]).getMyEnrollments('s1');
+        assert.equal(out[0].progressPercent, 50);
+    });
+
+    test('a finished course reports 100', async () => {
+        const out: any = await svc([row(10, 10)]).getMyEnrollments('s1');
+        assert.equal(out[0].progressPercent, 100);
+    });
+
+    test('progress is capped at 100 even if the counts disagree', async () => {
+        const out: any = await svc([row(3, 7)]).getMyEnrollments('s1');
+        assert.equal(out[0].progressPercent, 100, 'a stale progress row must not render 233%');
+    });
+
+    test('a course with one lesson reads 0% before anything is finished', async () => {
+        const out: any = await svc([row(1, 0)]).getMyEnrollments('s1');
+        assert.equal(out[0].progressPercent, 0);
+    });
+
+    test('the existing enrollment payload is left intact', async () => {
+        const original = { ...row(4, 1), status: 'APPROVED', opening: { id: 'o1', status: 'OPEN' } };
+        const out: any = await svc([original]).getMyEnrollments('s1');
+        assert.equal(out[0].id, 'e1');
+        assert.equal(out[0].status, 'APPROVED');
+        assert.deepEqual(out[0].opening, { id: 'o1', status: 'OPEN' }, 'my-courses still reads these');
+        assert.equal(out[0].course._count.modules, 4, 'the raw count is still available');
     });
 });

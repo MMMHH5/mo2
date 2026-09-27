@@ -6,12 +6,15 @@ import { useI18n } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, FileText,
     Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, ShieldAlert,
     Users, UserCog, Trophy, Flame, Globe2, BookOpen, Award, Clock,
+    Play, Eye, Share2,
 } from 'lucide-react';
+import Link from 'next/link';
 import SelectField from '@/components/SelectField';
 
 interface MyProfile {
@@ -28,14 +31,6 @@ interface MyProfile {
 }
 
 /** GET /gamification/me — the level badge in the hero. */
-interface GamificationMe {
-    points: number;
-    level: number;
-    streak: number;
-    xpInLevel: number;
-    xpToNextLevel: number;
-}
-
 /** GET /analytics/me — the only source of learning hours and completions. */
 interface AnalyticsMe {
     totalHours: number;
@@ -43,9 +38,71 @@ interface AnalyticsMe {
     coursesCompleted: number;
 }
 
-export default function ProfilePage() {
+interface MyEnrollment {
+    id: string;
+    status: string;
+    progressPercent?: number | null;
+    course: {
+        id: string;
+        titleAr: string | null;
+        titleEn: string | null;
+    } | null;
+    opening?: { id: string; status: string; nameAr: string | null; nameEn: string | null } | null;
+}
+
+interface MyCertificate {
+    id: string;
+    verificationCode: string;
+    issuingDate: string;
+    verificationStatus: string;
+    printedAt?: string | null;
+    course: { id: string; titleAr: string | null; titleEn: string | null; certificateIssued: boolean } | null;
+}
+
+interface GamificationBadge {
+    type: string;
+    nameAr: string;
+    nameEn: string;
+    icon: string;
+    earned: boolean;
+}
+
+interface GamificationMe {
+    points: number;
+    level: number;
+    streak: number;
+    xpInLevel: number;
+    xpToNextLevel: number;
+    allBadges?: GamificationBadge[];
+}
+
+const TABS = [
+    { id: 'courses', icon: BookOpen },
+    { id: 'certificates', icon: Award },
+    { id: 'personal', icon: UserRound },
+    { id: 'security', icon: ShieldCheck },
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
+
+function EmptyState({ icon: Icon, text }: { icon: typeof BookOpen; text: string }) {
+    return (
+        <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm p-12 flex flex-col items-center gap-3 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
+                <Icon size={22} />
+            </div>
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400">{text}</p>
+        </div>
+    );
+}
+
+function ProfileContent() {
     const { user } = useAuth();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
+    // Falls back to the other language rather than showing a blank title when
+    // one translation has not been filled in.
+    const localized = (ar?: string | null, en?: string | null) =>
+        (locale === 'ar' ? (ar || en) : (en || ar)) || '';
     const { data: profile, loading, error, refetch } = useFetchData<MyProfile>('/users/me');
     // Reused rather than re-counted: the platform already tracks points/level
     // and study sessions, so the hero and the stats bar read those numbers
@@ -57,6 +114,19 @@ export default function ProfilePage() {
     const { data: analytics } = useFetchData<AnalyticsMe>(
         profile?.role === 'STUDENT' ? '/analytics/me' : null,
     );
+    // Both are student resources, gated the same way as /analytics/me.
+    const { data: enrollments } = useFetchData<MyEnrollment[]>(
+        profile?.role === 'STUDENT' ? '/enrollments/my' : null,
+    );
+    const { data: certificates } = useFetchData<MyCertificate[]>('/certificates/my');
+
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    // The tab lives in the URL so that the sidebar entry and the per-course
+    // "view certificate" link in my-courses can deep-link into it.
+    const tabParam = searchParams.get('tab');
+    const activeTab: TabId = TABS.some((x) => x.id === tabParam) ? (tabParam as TabId) : 'courses';
+    const setTab = (id: TabId) => router.replace(`/dashboard/profile?tab=${id}`, { scroll: false });
 
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState({ fullName: '', phone: '', city: '', bio: '', specialty: '', gender: '', birthDate: '', university: '', studyStatus: '', studyLevel: '' });
@@ -328,161 +398,346 @@ export default function ProfilePage() {
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Personal info */}
-                            <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                                <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-gray-200 dark:border-white/5">
-                                    <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
-                                        <UserRound size={20} />
+                        {/* Tab bar */}
+                        <div className="flex gap-1 p-1.5 bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm overflow-x-auto">
+                            {TABS.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setTab(tab.id)}
+                                    aria-current={activeTab === tab.id ? 'page' : undefined}
+                                    className={`flex-1 min-w-max inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition ${
+                                        activeTab === tab.id
+                                            ? 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-brand-navy shadow-sm'
+                                            : 'text-gray-500 dark:text-gray-400 hover:bg-brand-gold/10 hover:text-brand-gold-dark dark:hover:text-brand-gold-light'
+                                    }`}
+                                >
+                                    <tab.icon size={16} /> {t(`profile.tab_${tab.id}`)}
+                                </button>
+                            ))}
+                        </div>
+
+                        {activeTab === 'courses' && (
+                            <div className="space-y-4">
+                                {!enrollments?.length ? (
+                                    <EmptyState icon={BookOpen} text={t('profile.no_courses')} />
+                                ) : (
+                                    enrollments.map((e) => {
+                                        // null when the course has no lessons yet:
+                                        // unknown, not zero.
+                                        const pct = e.progressPercent ?? null;
+                                        const title = localized(e.course?.titleAr, e.course?.titleEn) || t('common.course');
+                                        return (
+                                            <div key={e.id} className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm p-5">
+                                                <div className="flex items-start justify-between gap-4 flex-wrap">
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3 className="font-black text-brand-navy dark:text-white" dir="auto">{title}</h3>
+                                                        {e.opening && (
+                                                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1" dir="auto">
+                                                                {localized(e.opening.nameAr, e.opening.nameEn)}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <Link
+                                                        href={`/courses/${e.course?.id}`}
+                                                        className="shrink-0 inline-flex items-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl bg-brand-gold text-brand-navy hover:bg-brand-gold/90 transition"
+                                                    >
+                                                        {t('profile.continue')} <Play size={13} />
+                                                    </Link>
+                                                </div>
+                                                {pct !== null ? (
+                                                    <div className="mt-4">
+                                                        <div className="flex items-center justify-between text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+                                                            <span>{t('profile.progress')}</span>
+                                                            <span>{pct}%</span>
+                                                        </div>
+                                                        <div className="h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
+                                                            <div
+                                                                className="h-full rounded-full bg-gradient-to-r from-brand-gold to-brand-gold-dark transition-all"
+                                                                style={{ width: `${pct}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 mt-3">{t('profile.no_lessons')}</p>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'certificates' && (
+                            <div className="space-y-6">
+                                {/* Badges */}
+                                {gamification?.allBadges && (
+                                    <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm p-6">
+                                        <h3 className="font-black text-brand-navy dark:text-white mb-4">{t('profile.badges')}</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {gamification.allBadges.map((b) => (
+                                                <span
+                                                    key={b.type}
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-black ${
+                                                        b.earned
+                                                            ? 'bg-brand-gold/15 text-brand-gold-dark dark:text-brand-gold-light'
+                                                            : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-gray-500 line-through'
+                                                    }`}
+                                                >
+                                                    {localized(b.nameAr, b.nameEn)}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.personal_info')}</h3>
+                                )}
+
+                                {/* Certificates */}
+                                {!certificates?.length ? (
+                                    <EmptyState icon={Award} text={t('profile.no_certificates')} />
+                                ) : (
+                                    <div className="space-y-4">
+                                        {certificates.map((cert) => {
+                                            const title = localized(cert.course?.titleAr, cert.course?.titleEn) || t('common.certificate');
+                                            const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/certificate/${cert.id}`;
+                                            const linkedIn = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+                                            return (
+                                                <div key={cert.id} className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm p-5">
+                                                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                                                        <div className="min-w-0 flex-1">
+                                                            <h3 className="font-black text-brand-navy dark:text-white" dir="auto">{title}</h3>
+                                                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mt-1.5">
+                                                                {t('profile.issued_on')} {new Date(cert.issuingDate).toLocaleDateString()}
+                                                            </p>
+                                                            {cert.printedAt && (
+                                                                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                                                                    {t('profile.printed_on')} {new Date(cert.printedAt).toLocaleDateString()}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2 shrink-0">
+                                                            <Link
+                                                                href={`/dashboard/certificates/${cert.id}`}
+                                                                className="inline-flex items-center gap-1.5 text-xs font-black px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-brand-gold hover:text-brand-gold-dark dark:hover:text-brand-gold-light transition"
+                                                            >
+                                                                <Eye size={13} /> {t('profile.view_certificate')}
+                                                            </Link>
+                                                            <Link
+                                                                href={`/certificate/${cert.id}`}
+                                                                className="inline-flex items-center gap-1.5 text-xs font-black px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-brand-gold hover:text-brand-gold-dark dark:hover:text-brand-gold-light transition"
+                                                            >
+                                                                <Download size={13} /> {t('profile.download_pdf')}
+                                                            </Link>
+                                                            <a
+                                                                href={linkedIn}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-1.5 text-xs font-black px-3.5 py-2.5 rounded-xl bg-[#0A66C2] text-white hover:bg-[#084e94] transition"
+                                                            >
+                                                                <Share2 size={13} /> {t('profile.share_linkedin')}
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'personal' && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Personal info */}
+                                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                    <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-gray-200 dark:border-white/5">
+                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
+                                            <UserRound size={20} />
+                                        </div>
+                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.personal_info')}</h3>
+                                    </div>
+                                    <div className="space-y-1">
+                                        {infoRows.map((row) => (
+                                            <div key={row.label} className="flex items-center gap-4 py-2.5">
+                                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
+                                                    <row.icon size={18} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wide">{row.label}</div>
+                                                    <div className="font-bold text-brand-navy dark:text-white truncate" dir="auto">{row.value}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {(meta.bio) && (
+                                        <div className="mt-5 pt-5 border-t border-gray-200 dark:border-white/5">
+                                            <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
+                                                <FileText size={14} /> {t('profile.bio')}
+                                            </div>
+                                            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" dir="auto">
+                                                {meta.bio}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {(meta.specialty) && (
+                                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/5 flex items-center gap-2">
+                                            <GraduationCap size={16} className="text-brand-gold-dark dark:text-brand-gold-light shrink-0" />
+                                            <span dir="auto" className="px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light text-xs font-black">
+                                                {meta.specialty}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="space-y-1">
-                                    {infoRows.map((row) => (
-                                        <div key={row.label} className="flex items-center gap-4 py-2.5">
+
+                                {/* The English name is surfaced here because it is
+                                    the name the certificate prints, so a student
+                                    can confirm it before it is issued. */}
+                                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                    <div className="flex items-center gap-2.5 mb-5">
+                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
+                                            <Award size={20} />
+                                        </div>
+                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.certificate_name')}</h3>
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('profile.certificate_name_hint')}</p>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-4 py-2.5">
                                             <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
-                                                <row.icon size={18} />
+                                                <UserRound size={18} />
                                             </div>
                                             <div className="min-w-0">
-<div className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wide">{row.label}</div>
-                                                 <div className="font-bold text-brand-navy dark:text-white truncate" dir="auto">{row.value}</div>
+                                                <div className="text-xs font-bold text-gray-500 dark:text-gray-400">{t('profile.field_full_name')}</div>
+                                                <div className="font-bold text-brand-navy dark:text-white truncate" dir="auto">{nameAr || '—'}</div>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-
-                                {(profile.metadata?.bio as string) && (
-                                    <div className="mt-5 pt-5 border-t border-gray-200 dark:border-white/5">
-                                        <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
-                                            <FileText size={14} /> {t('profile.bio')}
+                                        <div className="flex items-center gap-4 py-2.5">
+                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light shrink-0">
+                                                <Globe2 size={18} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-xs font-bold text-gray-500 dark:text-gray-400">{t('profile.field_name_en')}</div>
+                                                <div className="font-bold text-brand-navy dark:text-white truncate" dir="ltr">{nameEn || '—'}</div>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" dir="auto">
-                                            {profile.metadata?.bio as string}
-                                        </p>
                                     </div>
-                                )}
-
-                                {(profile.metadata?.specialty as string) && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/5 flex items-center gap-2">
-                                        <GraduationCap size={16} className="text-brand-gold-dark dark:text-brand-gold-light shrink-0" />
-                                        <span dir="auto" className="px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light text-xs font-black">
-                                            {profile.metadata?.specialty as string}
-                                        </span>
-                                    </div>
-                                )}
+                                    {nameEn && (
+                                        <p className="mt-4 text-xs font-black text-emerald-600 dark:text-emerald-400">{t('profile.name_en_set')}</p>
+                                    )}
+                                </div>
                             </div>
+                        )}
 
-                            {/* Account security: email + password */}
+                        {activeTab === 'security' && (
                             <div className="space-y-6">
-                                {/* Email change */}
-                                <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                                    <div className="flex items-center gap-2.5 mb-5">
-                                        <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
-                                            <Mail size={20} />
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Email change */}
+                                    <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                        <div className="flex items-center gap-2.5 mb-5">
+                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
+                                                <Mail size={20} />
+                                            </div>
+                                            <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.change_email')}</h3>
                                         </div>
-                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.change_email')}</h3>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className={labelCls}>{t('profile.field_new_email')}</label>
+                                                <input
+                                                    type="email"
+                                                    value={emailForm.email}
+                                                    onChange={(e) => setEmailForm({ ...emailForm, email: e.target.value })}
+                                                    className={inputCls}
+                                                    dir="ltr"
+                                                    placeholder={t('profile.field_new_email_ph')}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={labelCls}>{t('profile.field_current_password')}</label>
+                                                <input
+                                                    type="password"
+                                                    value={emailForm.currentPassword}
+                                                    onChange={(e) => setEmailForm({ ...emailForm, currentPassword: e.target.value })}
+                                                    className={inputCls}
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={saveEmail}
+                                                disabled={savingEmail}
+                                                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
+                                            >
+                                                {savingEmail ? t('common.saving') : t('profile.save_email')}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className={labelCls}>{t('profile.field_new_email')}</label>
-                                            <input
-                                                type="email"
-                                                value={emailForm.email}
-                                                onChange={(e) => setEmailForm({ ...emailForm, email: e.target.value })}
-                                                className={inputCls}
-                                                dir="ltr"
-                                                placeholder={t('profile.field_new_email_ph')}
-                                            />
+
+                                    {/* Password change */}
+                                    <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
+                                        <div className="flex items-center gap-2.5 mb-5">
+                                            <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
+                                                <KeyRound size={20} />
+                                            </div>
+                                            <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.change_password')}</h3>
                                         </div>
-                                        <div>
-                                            <label className={labelCls}>{t('profile.field_current_password')}</label>
-                                            <input
-                                                type="password"
-                                                value={emailForm.currentPassword}
-                                                onChange={(e) => setEmailForm({ ...emailForm, currentPassword: e.target.value })}
-                                                className={inputCls}
-                                            />
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className={labelCls}>{t('profile.field_current_password')}</label>
+                                                <input
+                                                    type="password"
+                                                    value={pwForm.currentPassword}
+                                                    onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })}
+                                                    className={inputCls}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={labelCls}>{t('profile.field_new_password')}</label>
+                                                <input
+                                                    type="password"
+                                                    value={pwForm.newPassword}
+                                                    onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })}
+                                                    className={inputCls}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={labelCls}>{t('profile.field_confirm_password')}</label>
+                                                <input
+                                                    type="password"
+                                                    value={pwForm.confirmPassword}
+                                                    onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })}
+                                                    className={inputCls}
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={savePassword}
+                                                disabled={savingPw}
+                                                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
+                                            >
+                                                {savingPw ? t('common.saving') : t('profile.save_password')}
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={saveEmail}
-                                            disabled={savingEmail}
-                                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
-                                        >
-                                            {savingEmail ? t('common.saving') : t('profile.save_email')}
-                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Password change */}
+                                {/* GDPR privacy card */}
                                 <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                                    <div className="flex items-center gap-2.5 mb-5">
+                                    <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-gray-200 dark:border-white/5">
                                         <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
-                                            <KeyRound size={20} />
+                                            <ShieldAlert size={20} />
                                         </div>
-                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('profile.change_password')}</h3>
+                                        <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('gdpr.heading')}</h3>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className={labelCls}>{t('profile.field_current_password')}</label>
-                                            <input
-                                                type="password"
-                                                value={pwForm.currentPassword}
-                                                onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })}
-                                                className={inputCls}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className={labelCls}>{t('profile.field_new_password')}</label>
-                                            <input
-                                                type="password"
-                                                value={pwForm.newPassword}
-                                                onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })}
-                                                className={inputCls}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className={labelCls}>{t('profile.field_confirm_password')}</label>
-                                            <input
-                                                type="password"
-                                                value={pwForm.confirmPassword}
-                                                onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })}
-                                                className={inputCls}
-                                            />
-                                        </div>
+                                    <div className="bg-brand-gold/5 border border-brand-gold/10 rounded-2xl p-6">
+                                        <h4 className="font-black text-brand-gold-dark dark:text-brand-gold-light mb-1.5">{t('gdpr.export_title')}</h4>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{t('gdpr.export_desc')}</p>
                                         <button
-                                            onClick={savePassword}
-                                            disabled={savingPw}
-                                            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
+                                            onClick={exportData}
+                                            disabled={exportLoading}
+                                            className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-6 py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
                                         >
-                                            {savingPw ? t('common.saving') : t('profile.save_password')}
+                                            <Download size={16} /> {exportLoading ? t('gdpr.exporting') : t('gdpr.export_btn')}
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* GDPR privacy card */}
-                        <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                            <div className="flex items-center gap-2.5 mb-6 pb-5 border-b border-gray-200 dark:border-white/5">
-                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
-                                    <ShieldAlert size={20} />
-                                </div>
-                                <h3 className="text-xl font-black text-brand-navy dark:text-white">{t('gdpr.heading')}</h3>
-                            </div>
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="bg-brand-gold/5 border border-brand-gold/10 rounded-2xl p-6">
-                                    <h4 className="font-black text-brand-gold-dark dark:text-brand-gold-light mb-1.5">{t('gdpr.export_title')}</h4>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">{t('gdpr.export_desc')}</p>
-                                    <button
-                                        onClick={exportData}
-                                        disabled={exportLoading}
-                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-6 py-3 font-bold rounded-xl hover:from-brand-gold-dark hover:to-brand-gold-dark transition disabled:opacity-50"
-                                    >
-                                        <Download size={16} /> {exportLoading ? t('gdpr.exporting') : t('gdpr.export_btn')}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </>
                 )}
             </div>
@@ -642,5 +897,15 @@ export default function ProfilePage() {
                 </div>
             )}
         </ProtectedRoute>
+    );
+}
+
+// useSearchParams drives the deep-linked tab, which requires a Suspense
+// boundary for the static shell to build.
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen" />}>
+            <ProfileContent />
+        </Suspense>
     );
 }

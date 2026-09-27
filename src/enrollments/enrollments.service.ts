@@ -173,8 +173,17 @@ export class EnrollmentsService {
         });
     }
 
+    /**
+     * The student's own enrollments, for "my courses".
+     *
+     * `progressPercent` is computed here rather than in the browser so there is
+     * one definition of "how far through this course is the student", and so it
+     * can be tested. It is null - not 0 - when the course has no lessons yet,
+     * because "unknown" and "not started" are different facts. It is capped at
+     * 100 so a stale progress row can never render as 233%.
+     */
     async getMyEnrollments(studentId: string) {
-        return this.prisma.enrollment.findMany({
+        const enrollments = await this.prisma.enrollment.findMany({
             where: { studentId },
             include: {
                 course: {
@@ -185,6 +194,7 @@ export class EnrollmentsService {
                         descriptionAr: true,
                         descriptionEn: true,
                         instructor: { select: { id: true, email: true, role: true } },
+                        _count: { select: { modules: true } },
                     },
                 },
                 opening: {
@@ -202,8 +212,20 @@ export class EnrollmentsService {
                         instructor: { select: { id: true, email: true, role: true } },
                     },
                 },
+                _count: { select: { lessonProgress: true } },
             },
             orderBy: { createdAt: 'desc' },
+        });
+
+        return enrollments.map((e) => {
+            const total = e.course?._count.modules ?? 0;
+            const done = e._count.lessonProgress;
+            return {
+                ...e,
+                progressPercent: total === 0
+                    ? null
+                    : Math.min(100, Math.round((done / total) * 100)),
+            };
         });
     }
 
