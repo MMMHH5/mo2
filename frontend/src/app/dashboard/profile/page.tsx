@@ -6,13 +6,13 @@ import { useI18n } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { useState, Suspense } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
     UserRound, Mail, ShieldCheck, Calendar, Phone, MapPin, FileText,
     Edit3, Check, X, BadgeCheck, KeyRound, GraduationCap, Download, ShieldAlert,
     Users, UserCog, Trophy, Flame, Globe2, BookOpen, Award, Clock,
-    Play, Eye, Share2,
+    Play, Eye, Share2, Camera,
 } from 'lucide-react';
 import Link from 'next/link';
 import SelectField from '@/components/SelectField';
@@ -139,6 +139,26 @@ function ProfileContent() {
     const [savingPw, setSavingPw] = useState(false);
 
     const [exportLoading, setExportLoading] = useState(false);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+    const uploadAvatar = async (file: File) => {
+        setUploadingAvatar(true);
+        try {
+            // Same multipart call shape the course media, chat and receipt
+            // uploads already use.
+            const body = new FormData();
+            body.append('file', file);
+            await api.post('/users/me/avatar', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+            toast.success(t('profile.avatar_updated'));
+            refetch();
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('profile.avatar_failed'));
+        } finally {
+            setUploadingAvatar(false);
+            if (avatarInputRef.current) avatarInputRef.current.value = '';
+        }
+    };
 
     const startEdit = () => {
         const m = profile?.metadata ?? {};
@@ -308,6 +328,29 @@ function ProfileContent() {
                                             <span className="text-3xl lg:text-4xl font-black text-brand-navy">{initials || <UserRound size={40} />}</span>
                                         </div>
                                     )}
+                                    <button
+                                        onClick={() => avatarInputRef.current?.click()}
+                                        disabled={uploadingAvatar}
+                                        title={t('profile.change_photo')}
+                                        aria-label={t('profile.change_photo')}
+                                        className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-brand-gold text-brand-navy flex items-center justify-center shadow-lg ring-2 ring-brand-navy hover:bg-brand-gold/90 transition disabled:opacity-60"
+                                    >
+                                        {uploadingAvatar ? (
+                                            <span className="w-3.5 h-3.5 rounded-full border-2 border-brand-navy border-t-transparent animate-spin" />
+                                        ) : (
+                                            <Camera size={15} />
+                                        )}
+                                    </button>
+                                    <input
+                                        ref={avatarInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/gif"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const f = e.target.files?.[0];
+                                            if (f) uploadAvatar(f);
+                                        }}
+                                    />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 flex-wrap">

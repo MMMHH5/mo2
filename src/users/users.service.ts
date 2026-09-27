@@ -4,6 +4,9 @@ import { AuditService } from '../audit/audit.service';
 import { Role, EnrollmentStatus, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { unlink } from 'fs';
+import { basename, join } from 'path';
+import { hasValidSignature } from '../common/file-signatures';
 import { CreateUserDto, UpdateUserDto, UpdateMeDto } from './dto/user.dto';
 
 @Injectable()
@@ -145,6 +148,57 @@ export class UsersService {
         }
 
         return out;
+    }
+
+    /**
+     * Stores an uploaded avatar and points metadata.avatarUrl at it.
+     *
+     * The declared Content-Type is client-controlled, so the magic bytes are
+     * verified before the path is trusted. The previous avatar is removed from
+     * disk on success so replacing a picture does not leave orphans, but only
+     * after the new one is safely recorded: if the write fails the old picture
+     * stays and the user is not left with a broken reference.
+     */
+    async setAvatar(userId: string, file: Express.Multer.File) {
+        if (!hasValidSignature(file.path, file.mimetype)) {
+            unlink(file.path, () => undefined);
+            throw new BadRequestException('The uploaded file is not a valid image.');
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { metadata: true },
+        });
+        if (!user) {
+            unlink(file.path, () => undefined);
+            throw new NotFoundException('User not found');
+        }
+
+        const previous = (user.metadata as Record<string, unknown> | null)?.avatarUrl;
+        const publicPath = `/uploads/avatars/${file.filename}`;
+
+        // Goes through the same sanitiser as PATCH /users/me, so an avatar can
+        // only ever be a path inside our own uploads directory.
+        const updated = await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                metadata: this.sanitizeProfileMetadata({
+                    ...((user.metadata as Record<string, unknown>) ?? {}),
+                    avatarUrl: publicPath,
+                }) as unknown as Prisma.InputJsonObject,
+            },
+            select: { id: true, metadata: true },
+        });
+
+        if (typeof previous === 'string' && previous.startsWith('/uploads/avatars/')) {
+            // basename() so a crafted stored value cannot escape the folder.
+            const oldName = basename(previous);
+            if (oldName && oldName !== file.filename) {
+                unlink(join(process.cwd(), 'uploads', 'avatars', oldName), () => undefined);
+            }
+        }
+
+        return { avatarUrl: publicPath, metadata: updated.metadata };
     }
 
     async updateMe(userId: string, dto: UpdateMeDto) {

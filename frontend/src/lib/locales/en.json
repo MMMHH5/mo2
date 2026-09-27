@@ -186,7 +186,10 @@
         "tab_courses": "My Courses & Progress",
         "tab_personal": "Personal Info",
         "tab_security": "Account & Security",
-        "view_certificate": "View"
+        "view_certificate": "View",
+        "avatar_failed": "Could not upload the picture.",
+        "avatar_updated": "Profile picture updated.",
+        "change_photo": "Change profile picture"
     },
     "details": {
         "heading": "All My Details",

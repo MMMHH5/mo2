@@ -1,5 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { CertificatesService } from '../src/certificates/certificates.service';
 import { UsersService } from '../src/users/users.service';
 import { EnrollmentsService } from '../src/enrollments/enrollments.service';
@@ -203,5 +206,85 @@ describe('course completion percentage', () => {
         assert.equal(out[0].status, 'APPROVED');
         assert.deepEqual(out[0].opening, { id: 'o1', status: 'OPEN' }, 'my-courses still reads these');
         assert.equal(out[0].course._count.modules, 4, 'the raw count is still available');
+    });
+});
+
+/**
+ * Avatar upload. The dangerous inputs are a file whose bytes contradict its
+ * declared Content-Type, and a stored avatar path that tries to escape the
+ * uploads directory when the previous picture is deleted.
+ */
+describe('avatar upload', () => {
+    // hasValidSignature reads the file from disk, so these are real files with
+    // real bytes: a PNG signature, and text pretending to be one.
+    const TMP = join(tmpdir(), 'laxalab-avatar-test');
+    mkdirSync(TMP, { recursive: true });
+    const writeFixture = (name: string, bytes: number[] | string) => {
+        const p = join(TMP, name);
+        writeFileSync(p, typeof bytes === 'string' ? bytes : Buffer.from(bytes));
+        return p;
+    };
+    const realPng = writeFixture('avatar-1.png', [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const notAnImage = writeFixture('evil.png', '<?php system($_GET["c"]); ?>');
+
+    const svc = (existing: Record<string, unknown> | null) => {
+        const written: any[] = [];
+        const prisma = {
+            user: {
+                findUnique: () => Promise.resolve({ metadata: existing }),
+                update: (args: any) => {
+                    written.push(args);
+                    return Promise.resolve({ id: 'u1', metadata: args.data.metadata });
+                },
+            },
+        };
+        return {
+            written,
+            service: new UsersService(prisma as any, noopService),
+        };
+    };
+    const png = () => ({ path: realPng, filename: 'avatar-1.png', mimetype: 'image/png' });
+
+    test('a real image is stored under /uploads/avatars', async () => {
+        const { service } = svc({ fullName: 'M' });
+        const out: any = await service.setAvatar('u1', png() as any);
+        assert.equal(out.avatarUrl, '/uploads/avatars/avatar-1.png');
+    });
+
+    test('a file whose bytes are not an image is rejected', async () => {
+        // A PHP script or an HTML page renamed to .png and sent as image/png.
+        const lying = { path: notAnImage, filename: 'evil.png', mimetype: 'image/png' };
+        const { service, written } = svc(null);
+        await assert.rejects(() => service.setAvatar('u1', lying as any), /not a valid image/i);
+        assert.equal(written.length, 0, 'a rejected upload must not be recorded');
+    });
+
+    test('a missing file is rejected rather than stored', async () => {
+        const ghost = { path: join(TMP, 'does-not-exist.png'), filename: 'ghost.png', mimetype: 'image/png' };
+        const { service, written } = svc(null);
+        await assert.rejects(() => service.setAvatar('u1', ghost as any), /not a valid image/i);
+        assert.equal(written.length, 0);
+    });
+
+    test('the stored path cannot point outside the avatars folder', async () => {
+        // A crafted stored value must not make the cleanup unlink something
+        // outside uploads/avatars when the picture is replaced.
+        const { service, written } = svc({ avatarUrl: '/uploads/avatars/../../etc/passwd' });
+        await service.setAvatar('u1', png() as any);
+        assert.equal(
+            (written[0].data.metadata as any).avatarUrl,
+            '/uploads/avatars/avatar-1.png',
+            'the new path is regenerated, never taken from the old value',
+        );
+    });
+
+    test('other profile fields survive an avatar change', async () => {
+        const { service, written } = svc({ fullName: 'M', country: 'SA', nameEn: 'M A' });
+        await service.setAvatar('u1', png() as any);
+        const md: any = written[0].data.metadata;
+        assert.equal(md.fullName, 'M');
+        assert.equal(md.country, 'SA');
+        assert.equal(md.nameEn, 'M A');
+        assert.equal(md.avatarUrl, '/uploads/avatars/avatar-1.png');
     });
 });

@@ -1,11 +1,18 @@
-import { Controller, Get, Param, Patch, Body, Delete, UseGuards, Request, Ip, Post } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Param, Patch, Body, Delete, UseGuards, Request, Ip, Post, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { existsSync, mkdirSync } from 'fs';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { CreateUserDto, UpdateUserDto, UpdateMeDto } from './dto/user.dto';
+import { hasValidSignature } from '../common/file-signatures';
+
+const ALLOWED_AVATAR_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
 @ApiTags('Users & Roles')
 @ApiBearerAuth('JWT-auth')
@@ -13,6 +20,7 @@ import { CreateUserDto, UpdateUserDto, UpdateMeDto } from './dto/user.dto';
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
+
     @ApiResponse({ status: 200, description: 'Returns all users.' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
     @Get()
@@ -34,6 +42,49 @@ export class UsersController {
     @Patch('me')
     updateMe(@Body() dto: UpdateMeDto, @Request() req: any) {
         return this.usersService.updateMe(req.user.userId, dto);
+    }
+
+    /**
+     * Avatar upload. The filename is generated server-side and the extension is
+     * derived from the validated MIME type, so a caller cannot choose either -
+     * a name like "../../x.svg" never reaches the filesystem. The service also
+     * re-checks the magic bytes, because Content-Type is client-supplied.
+     */
+    @ApiOperation({ summary: 'Upload a profile picture for the current user' })
+    @ApiConsumes('multipart/form-data')
+    @ApiResponse({ status: 201, description: 'Returns the public path of the stored avatar.' })
+    @Roles(Role.STUDENT, Role.INSTRUCTOR, Role.COURSE_MANAGER, Role.FINANCE, Role.ADMIN)
+    @Post('me/avatar')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: (req: any, file, cb) => {
+                const dir = './uploads/avatars';
+                if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+                cb(null, dir);
+            },
+            filename: (req: any, file, cb) => {
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                const mimeToExt: Record<string, string> = {
+                    'image/jpeg': '.jpg',
+                    'image/png': '.png',
+                    'image/webp': '.webp',
+                    'image/gif': '.gif',
+                };
+                cb(null, `avatar-${uniqueSuffix}${mimeToExt[file.mimetype] || '.bin'}`);
+            },
+        }),
+        limits: { fileSize: AVATAR_MAX_BYTES },
+        fileFilter: (req, file, cb) => {
+            if (ALLOWED_AVATAR_MIMES.includes(file.mimetype)) {
+                cb(null, true);
+            } else {
+                cb(new BadRequestException('Only JPEG, PNG, WEBP or GIF images are allowed.'), false);
+            }
+        },
+    }))
+    uploadAvatar(@UploadedFile() file: Express.Multer.File, @Request() req: any) {
+        if (!file) throw new BadRequestException('No image was uploaded.');
+        return this.usersService.setAvatar(req.user.userId, file);
     }
 
     @ApiOperation({ summary: 'Export all of my personal data (GDPR)' })

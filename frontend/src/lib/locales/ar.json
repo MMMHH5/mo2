@@ -186,7 +186,10 @@
         "tab_courses": "دوراتي وتقدمي",
         "tab_personal": "البيانات الشخصية",
         "tab_security": "الأمان والحساب",
-        "view_certificate": "عرض"
+        "view_certificate": "عرض",
+        "avatar_failed": "تعذّر رفع الصورة.",
+        "avatar_updated": "تم تحديث الصورة الشخصية.",
+        "change_photo": "تغيير الصورة الشخصية"
     },
     "details": {
         "heading": "كل بياناتي",
