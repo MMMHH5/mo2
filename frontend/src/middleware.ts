@@ -55,11 +55,22 @@ export function middleware(req: NextRequest) {
         return res;
     }
 
-    // No locale prefix: redirect to the canonical locale-prefixed URL (308 permanent).
+    // No locale prefix: redirect to the locale-prefixed canonical URL.
+    //
+    // 307 (temporary), not 308 (permanent). The destination is a function of
+    // this request — the cookie, i.e. what the visitor chose — so "permanent"
+    // was never the right status. Worse, browsers cache a 308 indefinitely and
+    // never re-ask: one visit while the old Accept-Language sniffing was active
+    // left `https://site/` -> `https://site/en` sitting in the visitor's disk
+    // cache, so the site kept serving English even after the server was fixed
+    // and started answering /ar. A 307 plus no-store means the redirect is
+    // re-evaluated on every visit, which is what a preference-dependent
+    // redirect has to do.
     const locale = getPreferredLocale(req);
     const url = req.nextUrl.clone();
     url.pathname = `/${locale}${pathname}`;
-    const res = NextResponse.redirect(url, 308);
+    const res = NextResponse.redirect(url, 307);
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     setLocaleCookie(res, locale);
     return res;
 }
