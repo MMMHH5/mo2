@@ -22,10 +22,10 @@ interface Props {
 }
 
 const statusMeta: Record<string, { label: string; cls: string }> = {
-    VALID: { label: '✅ سارية / Valid', cls: 'bg-green-500/10 text-green-400 border border-green-500/20' },
-    REVOKED: { label: '🚫 ملغاة / Revoked', cls: 'bg-red-500/10 text-red-400 border border-red-500/20' },
-    EXPIRED: { label: '⏰ منتهية / Expired', cls: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
-    EXTERNAL: { label: '🌐 خارجية / External', cls: 'bg-brand-navy-light/10 text-brand-navy-light border border-brand-navy-light/20' },
+    VALID: { label: '✅ سارية / Valid', cls: 'bg-green-500/10 text-green-900 dark:text-green-400 border border-green-500/20' },
+    REVOKED: { label: '🚫 ملغاة / Revoked', cls: 'bg-red-500/10 text-red-800 dark:text-red-400 border border-red-500/20' },
+    EXPIRED: { label: '⏰ منتهية / Expired', cls: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20' },
+    EXTERNAL: { label: '🌐 خارجية / External', cls: 'bg-surface-raised text-ink border border-brand-navy-light/20' },
 };
 
 export default function CertificateApprovalModal({ openingId, openingTitle, canRevoke, onClose, onIssued }: Props) {
@@ -93,26 +93,26 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
 
     return (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-brand-navy border border-white/10 rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="bg-surface border border-line rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h3 className="text-xl font-black text-white flex items-center gap-2">
-                            <Award size={20} className="text-brand-gold-light" />
+                        <h3 className="text-xl font-black text-ink flex items-center gap-2">
+                            <Award size={20} className="text-accent" />
                             {isAr ? 'إصدار الشهادات' : 'Issue Certificates'}
                         </h3>
-                        <p className="text-sm text-gray-400 mt-1">{openingTitle}</p>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-sm text-ink-subtle mt-1">{openingTitle}</p>
+                        <p className="text-xs text-ink-subtle mt-2">
                             {isAr ? 'اختر الطلاب المستحقين للشهادة ثم اضغط إصدار. لا تُصدر الشهادات تلقائياً بعد انتهاء الدورة.' : 'Select the students to receive a certificate, then click issue. Certificates are not issued automatically when the opening ends.'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={20} /></button>
+                    <button onClick={onClose} className="text-ink-subtle hover:text-ink"><X size={20} /></button>
                 </div>
 
                 {loading ? (
-                    <div className="h-40 flex items-center justify-center text-gray-400"><Loader className="animate-spin me-2" size={20} /> {isAr ? 'جاري التحميل...' : 'Loading...'}</div>
+                    <div className="h-40 flex items-center justify-center text-ink-subtle"><Loader className="animate-spin me-2" size={20} /> {isAr ? 'جاري التحميل...' : 'Loading...'}</div>
                 ) : (candidates || []).length === 0 ? (
-                    <div className="text-center py-12 text-gray-400 border-2 border-dashed border-white/10 rounded-xl">
-                        <Award size={40} className="mx-auto mb-3 text-gray-500" />
+                    <div className="text-center py-12 text-ink-subtle border-2 border-dashed border-line rounded-xl">
+                        <Award size={40} className="mx-auto mb-3 text-ink-subtle" />
                         <p className="font-bold">{isAr ? 'لا يوجد طلاب معتمدون مؤهلون' : 'No approved students eligible'}</p>
                         <p className="text-xs mt-1">{isAr ? 'تُمنح الشهادات للطلاب ذوي التسجيل المعتمد (APPROVED) فقط.' : 'Certificates are granted only to students with an APPROVED enrollment.'}</p>
                     </div>
@@ -124,7 +124,7 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
                                 const hasValid = c.certificateStatus === 'VALID';
                                 const meta = statusMeta[c.certificateStatus || ''];
                                 return (
-                                    <div key={c.studentId} className={`flex items-center gap-3 bg-brand-navy-dark border border-white/5 rounded-xl px-4 py-3 transition ${isChecked ? 'border-brand-gold/40' : ''}`}>
+                                    <div key={c.studentId} className={`flex items-center gap-3 bg-surface-sunken border border-line rounded-xl px-4 py-3 transition ${isChecked ? 'border-brand-gold/40' : ''}`}>
                                         <input
                                             type="checkbox"
                                             checked={isChecked}
@@ -133,15 +133,15 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
                                             className="w-5 h-5 accent-brand-gold cursor-pointer shrink-0"
                                         />
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-bold text-white truncate">{c.email}</p>
-                                            <p className="text-xs text-gray-500">{c.studentId}</p>
+                                            <p className="text-sm font-bold text-ink truncate">{c.email}</p>
+                                            <p className="text-xs text-ink-muted">{c.studentId}</p>
                                         </div>
                                         {c.certificateStatus ? (
                                             <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full shrink-0 ${meta?.cls ?? statusMeta.EXTERNAL.cls}`}>
                                                 {meta?.label ?? c.certificateStatus}
                                             </span>
                                         ) : (
-                                            <span className="px-2.5 py-1 text-[10px] font-bold rounded-full shrink-0 bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                                            <span className="px-2.5 py-1 text-[10px] font-bold rounded-full shrink-0 bg-ink/[0.01] text-ink-muted border border-line">
                                                 {isAr ? 'بدون شهادة' : 'No certificate'}
                                             </span>
                                         )}
@@ -150,7 +150,7 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
                                                 onClick={() => revoke(c)}
                                                 disabled={revokingId === c.certificateId}
                                                 title={isAr ? 'إلغاء الشهادة' : 'Revoke certificate'}
-                                                className={`admin-action-btn shrink-0 tooltip disabled:opacity-40 text-red-400 hover:bg-red-500/10 ${c.certificateStatus === 'VALID' ? '' : 'opacity-40 pointer-events-none'}`}
+                                                className={`admin-action-btn shrink-0 tooltip disabled:opacity-40 text-red-800 dark:text-red-400 hover:bg-red-500/10 ${c.certificateStatus === 'VALID' ? '' : 'opacity-40 pointer-events-none'}`}
                                             >
                                                 {revokingId === c.certificateId ? <Loader className="animate-spin" size={16} /> : <ShieldOff size={16} />}
                                             </button>
@@ -169,7 +169,7 @@ export default function CertificateApprovalModal({ openingId, openingTitle, canR
                                 {issuing ? <Loader className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
                                 {isAr ? `إصدار (${selected.size})` : `Issue (${selected.size})`}
                             </button>
-                            <button onClick={onClose} className="px-6 bg-white/5 text-gray-300 hover:bg-white/10 font-bold py-3 rounded-xl transition">Cancel</button>
+                            <button onClick={onClose} className="px-6 bg-ink/[0.04] text-ink-muted hover:bg-ink/[0.08] font-bold py-3 rounded-xl transition">Cancel</button>
                         </div>
                     </>
                 )}

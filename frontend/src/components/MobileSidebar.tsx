@@ -48,7 +48,7 @@ export default function MobileSidebar() {
         <>
             <button
                 onClick={() => setOpen(true)}
-                className={`lg:hidden p-2 text-brand-navy dark:text-brand-mist hover:bg-brand-mist dark:hover:bg-white/10 rounded-xl transition ${dark ? 'text-brand-mist' : 'text-brand-navy'}`}
+                className="lg:hidden p-2 text-ink hover:bg-ink/[0.06] rounded-xl transition"
                 aria-label="Menu"
             >
                 <Menu size={24} />
@@ -57,8 +57,8 @@ export default function MobileSidebar() {
             {open && createPortal(
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
-                    <div className={`fixed top-0 bottom-0 start-0 w-[85%] max-w-xs overflow-y-auto shadow-2xl ${dark ? 'bg-brand-navy-dark text-white' : 'bg-white text-brand-navy'}`}>
-                        <div className={`flex items-center justify-between p-5 border-b ${dark ? 'border-white/10' : 'border-gray-200'}`}>
+                    <div className={`fixed top-0 bottom-0 start-0 w-[85%] max-w-xs overflow-y-auto shadow-2xl ${dark ? 'bg-surface-sunken text-ink' : 'bg-surface-raised text-ink'}`}>
+                        <div className={`flex items-center justify-between p-5 border-b ${'border-line'}`}>
                             <div className="flex items-center gap-3">
                                 <img
                                     src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
@@ -66,7 +66,7 @@ export default function MobileSidebar() {
                                     className="h-8 w-auto object-contain"
                                 />
                             </div>
-                            <button onClick={() => setOpen(false)} className={`transition ${dark ? 'text-white/70 hover:text-white' : 'text-brand-charcoal/60 hover:text-brand-navy'}`} aria-label="Close">
+                            <button onClick={() => setOpen(false)} className="transition text-ink hover:text-ink" aria-label="Close">
                                 <X size={24} />
                             </button>
                         </div>
@@ -78,8 +78,8 @@ export default function MobileSidebar() {
                                 return (
                                     <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
                                         <div className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors ${isActive
-                                                ? dark ? 'bg-brand-gold/20 text-brand-gold' : 'bg-brand-gold/10 text-brand-gold-dark'
-                                                : dark ? 'text-brand-mist/70 hover:bg-white/10 hover:text-white' : 'text-brand-charcoal/70 hover:bg-brand-mist/60 hover:text-brand-navy'
+                                                ? dark ? 'bg-brand-gold/20 text-gold-ink' : 'bg-brand-gold/10 text-gold-ink'
+                                                : 'text-ink-muted hover:bg-ink/[0.06] hover:text-ink'
                                             }`}>
                                             <Icon size={19} />
                                             <span>{link.name}</span>
@@ -93,8 +93,8 @@ export default function MobileSidebar() {
                                 return (
                                     <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
                                         <div className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors ${isActive
-                                                ? dark ? 'bg-brand-gold/20 text-brand-gold' : 'bg-brand-gold/10 text-brand-gold-dark'
-                                                : dark ? 'text-brand-mist/70 hover:bg-white/10 hover:text-white' : 'text-brand-charcoal/70 hover:bg-brand-mist/60 hover:text-brand-navy'
+                                                ? dark ? 'bg-brand-gold/20 text-gold-ink' : 'bg-brand-gold/10 text-gold-ink'
+                                                : 'text-ink-muted hover:bg-ink/[0.06] hover:text-ink'
                                             }`}>
                                             <Icon size={19} />
                                             <span>{link.name}</span>
@@ -104,10 +104,10 @@ export default function MobileSidebar() {
                             })}
                         </div>
 
-                        <div className={`p-4 border-t space-y-4 ${dark ? 'border-white/10' : 'border-gray-200'}`}>
+                        <div className={`p-4 border-t space-y-4 ${'border-line'}`}>
                             <LanguageSwitcher />
                             <ThemeToggle />
-                            <button onClick={logout} className={`flex items-center gap-3 w-full px-3.5 py-3 rounded-xl transition-colors font-bold ${dark ? 'text-red-300 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}>
+                            <button onClick={logout} className="flex items-center gap-3 w-full px-3.5 py-3 rounded-xl transition-colors font-bold text-danger hover:bg-danger-soft">
                                 <LogOut size={19} className="rtl:rotate-180" />
                                 <span>{t('sidebar.logout')}</span>
                             </button>

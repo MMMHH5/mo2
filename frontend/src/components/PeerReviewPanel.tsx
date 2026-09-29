@@ -141,16 +141,16 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-brand-gold-light" />
+                <Loader size={28} className="animate-spin text-accent" />
             </div>
         );
     }
 
     if (error || !rubric) {
         return (
-            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
-                <ClipboardCheck size={32} className="mx-auto text-gray-600 mb-3" />
-                <p className="text-gray-400 font-bold text-sm">{error || (isAr ? 'لا توجد سلسلة تقييم لهذه المهمة' : 'No rubric found for this task')}</p>
+            <div className="bg-surface-sunken border border-line rounded-2xl p-8 text-center">
+                <ClipboardCheck size={32} className="mx-auto text-ink-subtle mb-3" />
+                <p className="text-ink-subtle font-bold text-sm">{error || (isAr ? 'لا توجد سلسلة تقييم لهذه المهمة' : 'No rubric found for this task')}</p>
             </div>
         );
     }
@@ -158,53 +158,53 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
     return (
         <div className="space-y-5">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h3 className="flex items-center gap-2 text-lg font-black text-white">
-                    <ClipboardCheck size={20} className="text-brand-gold-light" />
+                <h3 className="flex items-center gap-2 text-lg font-black text-ink">
+                    <ClipboardCheck size={20} className="text-accent" />
                     {pick(rubric, 'title') || (isAr ? 'تقييم الأقران' : 'Peer Review')}
                 </h3>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-subtle">
                     <Users size={13} />
                     {reviews.length} {isAr ? 'مراجعة' : reviews.length === 1 ? 'review' : 'reviews'}
                 </span>
             </div>
 
             {/* ===== My review form ===== */}
-            <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 space-y-5">
+            <div className="bg-surface-sunken border border-line rounded-2xl p-5 space-y-5">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <h4 className="text-sm font-black text-white">
+                    <h4 className="text-sm font-black text-ink">
                         {myReview ? (isAr ? 'تعديل مراجعتك' : 'Update your review') : (isAr ? 'مراجعتك' : 'Your review')}
                     </h4>
                     <span className={`px-3 py-1 rounded-lg text-xs font-black tabular-nums ${
                         totalGiven >= totalMax / 2
-                            ? 'bg-brand-gold/10 text-brand-gold-light border border-brand-gold/30'
-                            : 'bg-red-500/10 text-red-300 border border-red-500/30'
+                            ? 'bg-brand-gold/10 text-gold-ink border border-brand-gold/30'
+                            : 'bg-red-500/10 text-red-800 dark:text-red-400 border border-red-500/30'
                     }`}>
                         {totalGiven} / {totalMax}
                     </span>
                 </div>
 
                 {criteria.length === 0 ? (
-                    <p className="text-gray-500 font-bold text-xs text-center py-6">{isAr ? 'لا توجد معايير في سلسلة التقييم' : 'This rubric has no criteria'}</p>
+                    <p className="text-ink-subtle font-bold text-xs text-center py-6">{isAr ? 'لا توجد معايير في سلسلة التقييم' : 'This rubric has no criteria'}</p>
                 ) : (
                     <div className="space-y-4">
                         {criteria.map((c, i) => {
                             const val = scores[c.id];
                             const max = Math.max(1, Number(c.maxScore || 10));
                             return (
-                                <div key={c.id} className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                                <div key={c.id} className="bg-ink/[0.02] border border-line rounded-xl p-4">
                                     <div className="flex items-start justify-between gap-3 mb-2.5">
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold text-gray-200 leading-snug">
+                                            <p className="text-sm font-bold text-ink-muted leading-snug">
                                                 {i + 1}. {pick(c, 'title')}
                                             </p>
                                             {pick(c, 'description') && (
-                                                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{pick(c, 'description')}</p>
+                                                <p className="text-[11px] text-ink-subtle mt-1 leading-relaxed">{pick(c, 'description')}</p>
                                             )}
                                         </div>
                                         <span className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-black tabular-nums ${
                                             val === undefined
-                                                ? 'bg-white/5 text-gray-500'
-                                                : 'bg-brand-gold/10 text-brand-gold-light'
+                                                ? 'bg-ink/[0.04] text-gold-ink'
+                                                : 'bg-brand-gold/10 text-gold-ink'
                                         }`}>
                                             {val === undefined ? `? / ${max}` : `${val} / ${max}`}
                                         </span>
@@ -223,7 +223,7 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                                         value={comments[c.id] || ''}
                                         onChange={(e) => setComments((prev) => ({ ...prev, [c.id]: e.target.value }))}
                                         placeholder={isAr ? `تعليق على "${pick(c, 'title')}" (اختياري)...` : `Comment on "${pick(c, 'title')}" (optional)...`}
-                                        className="mt-2.5 w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-xs focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                                        className="mt-2.5 w-full px-3 py-2 bg-ink/[0.04] border border-line rounded-xl text-ink placeholder-gray-500 text-xs focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                             );
@@ -232,8 +232,8 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                 )}
 
                 <div>
-                    <label className="flex items-center gap-1.5 text-sm font-bold text-gray-300 mb-1.5">
-                        <MessageSquareQuote size={14} className="text-brand-gold-light" />
+                    <label className="flex items-center gap-1.5 text-sm font-bold text-ink-muted mb-1.5">
+                        <MessageSquareQuote size={14} className="text-accent" />
                         {isAr ? 'تعليق عام' : 'Overall comment'}
                     </label>
                     <textarea
@@ -241,14 +241,14 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                         onChange={(e) => setOverall(e.target.value)}
                         rows={3}
                         placeholder={isAr ? 'رأيك العام في هذا العمل...' : 'Your overall feedback on this submission...'}
-                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
+                        className="w-full px-4 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-ink placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                     />
                 </div>
 
                 <button
                     onClick={submitReview}
                     disabled={submitting || criteria.length === 0}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-black bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-black bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light transition disabled:opacity-50"
                 >
                     {submitting ? <Loader size={15} className="animate-spin" /> : <Send size={15} />}
                     {myReview ? (isAr ? 'تحديث المراجعة' : 'Update review') : (isAr ? 'إرسال المراجعة' : 'Submit review')}
@@ -257,8 +257,8 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
 
             {/* ===== Received reviews summary ===== */}
             {reviews.length > 0 && (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 space-y-5">
-                    <h4 className="text-sm font-black text-white">{isAr ? 'ملخص المراجعات المستلمة' : 'Received reviews summary'}</h4>
+                <div className="bg-surface-sunken border border-line rounded-2xl p-5 space-y-5">
+                    <h4 className="text-sm font-black text-ink">{isAr ? 'ملخص المراجعات المستلمة' : 'Received reviews summary'}</h4>
 
                     <div className="space-y-3.5">
                         {summary.map(({ criterion, avg, count }) => {
@@ -267,13 +267,13 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
                             return (
                                 <div key={criterion.id}>
                                     <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-xs font-bold text-gray-300 truncate">{pick(criterion, 'title')}</span>
-                                        <span className="text-[11px] font-black text-gray-400 tabular-nums shrink-0 ms-2">
+                                        <span className="text-xs font-bold text-ink-muted truncate">{pick(criterion, 'title')}</span>
+                                        <span className="text-[11px] font-black text-ink-subtle tabular-nums shrink-0 ms-2">
                                             {avg !== null ? `${avg.toFixed(1)} / ${max}` : '—'}
-                                            <span className="text-gray-600 font-bold ms-1.5">({count})</span>
+                                            <span className="text-ink-subtle font-bold ms-1.5">({count})</span>
                                         </span>
                                     </div>
-                                    <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-2.5 bg-ink/[0.04] rounded-full overflow-hidden">
                                         <div
                                             className="h-full rounded-full bg-gradient-to-r from-brand-gold-dark to-brand-gold-light transition-all duration-700"
                                             style={{ width: `${Math.max(2, pct)}%` }}
@@ -286,18 +286,18 @@ export default function PeerReviewPanel({ taskId, submissionId, rubricId }: Prop
 
                     <div className="space-y-2.5 pt-1">
                         {reviews.map((r) => (
-                            <div key={r.id} className="bg-white/[0.02] border border-white/5 rounded-xl p-3.5">
+                            <div key={r.id} className="bg-ink/[0.02] border border-line rounded-xl p-3.5">
                                 <div className="flex items-center justify-between gap-2 flex-wrap mb-1.5">
-                                    <span className="text-xs font-bold text-gray-300 truncate">
+                                    <span className="text-xs font-bold text-ink-muted truncate">
                                         {r.reviewer?.email || (isAr ? 'مراجع' : 'Reviewer')}
                                     </span>
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 shrink-0">
-                                        <CheckCircle2 size={11} className="text-green-400" />
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-ink-subtle shrink-0">
+                                        <CheckCircle2 size={11} className="text-green-700 dark:text-green-400" />
                                         {new Date(r.createdAt).toLocaleDateString(isAr ? 'ar' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </span>
                                 </div>
                                 {pick(r, 'comment') && (
-                                    <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-wrap">{pick(r, 'comment')}</p>
+                                    <p className="text-xs text-ink-subtle leading-relaxed whitespace-pre-wrap">{pick(r, 'comment')}</p>
                                 )}
                             </div>
                         ))}

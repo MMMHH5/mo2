@@ -127,8 +127,8 @@ export default function CourseCard({
         <article
             className={`group flex h-full flex-col overflow-hidden rounded-3xl border transition-all duration-300 animate-fade-in-up hover:-translate-y-1 ${
                 isDark
-                    ? 'border-white/5 bg-brand-navy hover:border-brand-gold/30 hover:shadow-2xl hover:shadow-black/30'
-                    : 'border-brand-mist/70 bg-white shadow-sm hover:border-brand-gold/40 hover:shadow-2xl hover:shadow-brand-navy/10'
+                    ? 'border-line bg-surface hover:border-brand-gold/30 hover:shadow-2xl hover:shadow-black/30'
+                    : 'border-brand-mist/70 bg-surface-raised shadow-sm hover:border-brand-gold/40 hover:shadow-2xl hover:shadow-brand-navy/10'
             } ${className}`}
         >
             {/* Cover */}
@@ -142,27 +142,27 @@ export default function CourseCard({
                     />
                 ) : (
                     <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-brand-navy via-brand-navy/90 to-brand-mist">
-                        <BookOpen size={variant === 'featured' ? 44 : 52} className="mb-2 text-brand-gold opacity-60 transition-transform duration-500 group-hover:scale-110" />
+                        <BookOpen size={variant === 'featured' ? 44 : 52} className="mb-2 text-accent opacity-60 transition-transform duration-500 group-hover:scale-110" />
                     </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-brand-navy/55 via-transparent to-transparent opacity-70 transition-opacity group-hover:opacity-90" aria-hidden />
-                <span className="absolute end-4 top-4 rounded-full border border-white/10 bg-brand-navy/90 px-3.5 py-1.5 text-sm font-black text-brand-gold shadow-lg backdrop-blur-sm flex items-center gap-1.5">
+                <span className="absolute end-4 top-4 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-black text-accent shadow-lg backdrop-blur-sm flex items-center gap-1.5">
                     {oldPrice && (
-                        <s className="text-[11px] font-bold text-gray-400">{oldPrice}</s>
+                        <s className="text-[11px] font-bold text-ink-subtle">{oldPrice}</s>
                     )}
                     {price}
                 </span>
                 <div className="absolute bottom-3 start-3 flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-3 py-1 text-xs font-black shadow-sm backdrop-blur-sm ${isDark ? 'border border-white/10 bg-black/40 text-white' : 'bg-white/95 text-brand-navy'}`}>
+                    <span className={`rounded-full px-3 py-1 text-xs font-black shadow-sm backdrop-blur-sm ${isDark ? 'border border-line bg-black/40 text-ink' : 'bg-surface-raised text-ink'}`}>
                         {levelLabel}
                     </span>
                     {isOpen && (
-                        <span className="flex items-center gap-1 rounded-full bg-green-500 px-3 py-1 text-xs font-black text-white shadow-sm">
+                        <span className="flex items-center gap-1 rounded-full bg-green-700 px-3 py-1 text-xs font-black text-ink-inverse shadow-sm">
                             <CheckCircle2 size={12} /> {t('statuses.open')}
                         </span>
                     )}
                     {announced && (
-                        <span className="flex items-center gap-1 rounded-full bg-brand-gold px-3 py-1 text-xs font-black text-brand-navy-dark shadow-sm">
+                        <span className="flex items-center gap-1 rounded-full bg-brand-gold px-3 py-1 text-xs font-black text-ink-on-gold shadow-sm">
                             <Sparkles size={12} /> {t('explore.announced_pill')}
                         </span>
                     )}
@@ -174,12 +174,12 @@ export default function CourseCard({
                 {(pick(course, 'category') || course.language) && (
                     <div className="mb-2.5 flex flex-wrap gap-2">
                         {pick(course, 'category') && (
-                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${isDark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/10 text-brand-gold-dark'}`}>
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${isDark ? 'bg-brand-gold/15 text-gold-ink' : 'bg-brand-gold/10 text-gold-ink'}`}>
                                 {pick(course, 'category')}
                             </span>
                         )}
                         {course.language && (
-                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-white/5 text-gray-300' : 'bg-gray-100 text-gray-500'}`}>
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-ink/[0.04] text-ink-muted' : 'bg-surface-sunken text-ink-subtle'}`}>
                                 {course.language}
                             </span>
                         )}
@@ -187,16 +187,16 @@ export default function CourseCard({
                 )}
 
                 <Link href={`/courses/${course.id}`}>
-                    <h3 className={`mb-2 line-clamp-2 text-xl font-black leading-snug transition-colors ${isDark ? 'text-white group-hover:text-brand-gold-light' : 'text-brand-charcoal group-hover:text-brand-navy'}`}>
+                    <h3 className={`mb-2 line-clamp-2 text-xl font-black leading-snug transition-colors ${isDark ? 'text-ink group-hover:text-accent' : 'text-ink group-hover:text-ink'}`}>
                         {pick(course, 'title')}
                     </h3>
                 </Link>
-                <p className={`mb-4 line-clamp-2 text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <p className={`mb-4 line-clamp-2 text-sm leading-relaxed 'text-ink-subtle'`}>
                     {pick(course, 'excerpt') || pick(course, 'description')}
                 </p>
 
                 {/* ★ rating · N reviews · N students */}
-                <div className={`mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <div className={`mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-bold 'text-ink-subtle'`}>
                     {reviewCount > 0 && (
                         <span className="inline-flex items-center gap-1" title={t('explore.rating_title')}>
                             <span className="inline-flex items-center gap-0.5" aria-hidden>
@@ -205,30 +205,30 @@ export default function CourseCard({
                                         key={star}
                                         size={13}
                                         className={star <= Math.round(averageRating)
-                                            ? 'fill-brand-gold text-brand-gold'
-                                            : isDark ? 'text-gray-600' : 'text-gray-300'}
+                                            ? 'fill-brand-gold text-accent'
+                                            : isDark ? 'text-ink-subtle' : 'text-ink-muted'}
                                     />
                                 ))}
                             </span>
-                            <span className={isDark ? 'text-gray-200' : 'text-brand-charcoal'}>{averageRating.toFixed(1)}</span>
+                            <span className={isDark ? 'text-ink-muted' : 'text-ink'}>{averageRating.toFixed(1)}</span>
                             <span>({formatNumber(reviewCount, locale)})</span>
                         </span>
                     )}
                     {totalLessons > 0 && (
                         <span className="inline-flex items-center gap-1.5">
-                            <BookOpen size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} />
+                            <BookOpen size={14} className={'text-accent'} />
                             {count('explore.outline_lessons_count', totalLessons)}
                         </span>
                     )}
                     {pick(course, 'duration') && (
                         <span className="inline-flex items-center gap-1.5">
-                            <Clock size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} />
+                            <Clock size={14} className={'text-accent'} />
                             {pick(course, 'duration')}
                         </span>
                     )}
                     {studentCount > 0 && (
                         <span className="inline-flex items-center gap-1.5">
-                            <Users size={14} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} />
+                            <Users size={14} className={'text-accent'} />
                             {formatNumber(studentCount, locale)} {t('explore.students')}
                         </span>
                     )}
@@ -236,21 +236,21 @@ export default function CourseCard({
 
                 {/* Course outline (محاور الدورة) — hidden until asked for */}
                 {chapters.length > 0 && (
-                    <div className={`mb-5 overflow-hidden rounded-2xl border ${isDark ? 'border-white/5 bg-white/[0.03]' : 'border-brand-mist/80 bg-brand-white'}`}>
+                    <div className={`mb-5 overflow-hidden rounded-2xl border ${isDark ? 'border-line bg-ink/[0.024]' : 'border-brand-mist/80 bg-brand-white'}`}>
                         <button
                             type="button"
                             onClick={() => setOutlineOpen(v => !v)}
                             aria-expanded={outlineOpen}
-                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-start transition-colors cursor-pointer ${isDark ? 'hover:bg-white/5' : 'hover:bg-brand-mist/40'}`}
+                            className={`flex w-full items-center gap-2 px-4 py-2.5 text-start transition-colors cursor-pointer 'hover:bg-ink/[0.04]'`}
                         >
-                            <Layers size={15} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold'} />
-                            <span className={`text-xs font-black uppercase tracking-wide ${isDark ? 'text-white' : 'text-brand-navy'}`}>
+                            <Layers size={15} className={'text-accent'} />
+                            <span className={`text-xs font-black uppercase tracking-wide 'text-ink'`}>
                                 {t('explore.outline_heading')}
                             </span>
-                            <span className={`ms-auto rounded-full px-2 py-0.5 text-[10px] font-black ${isDark ? 'bg-white/5 text-gray-400' : 'bg-brand-mist/70 text-gray-500'}`}>
+                            <span className={`ms-auto rounded-full px-2 py-0.5 text-[10px] font-black ${isDark ? 'bg-ink/[0.04] text-ink-muted' : 'bg-ink/[0.07] text-ink-muted'}`}>
                                 {count('explore.outline_chapters_count', chapters.length)}
                             </span>
-                            <ChevronDown size={15} className={`shrink-0 transition-transform duration-300 ${outlineOpen ? 'rotate-180' : ''} ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                            <ChevronDown size={15} className={`shrink-0 transition-transform duration-300 ${outlineOpen ? 'rotate-180' : ''} 'text-ink-subtle'`} />
                         </button>
 
                         {outlineOpen && (
@@ -264,30 +264,30 @@ export default function CourseCard({
                                     <li key={chapter.id || `flat-${ci}`} className="py-2.5">
                                         {title && (
                                             <div className="flex items-center gap-2">
-                                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black ${isDark ? 'bg-brand-gold/20 text-brand-gold-light' : 'bg-brand-gold/15 text-brand-gold-dark'}`}>
+                                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black ${isDark ? 'bg-brand-gold/20 text-gold-ink' : 'bg-brand-gold/15 text-gold-ink'}`}>
                                                     {formatNumber(ci + 1, locale)}
                                                 </span>
-                                                <span className={`text-[13px] font-bold leading-snug ${isDark ? 'text-gray-100' : 'text-brand-charcoal'}`}>
+                                                <span className={`text-[13px] font-bold leading-snug ${isDark ? 'text-ink-subtle' : 'text-ink'}`}>
                                                     {pick(chapter, 'title')}
                                                 </span>
                                             </div>
                                         )}
                                         <ul className="mt-1.5 space-y-1 ps-7">
                                             {lessons.map((lesson) => (
-                                                <li key={lesson.id} className={`flex items-start gap-2 text-[12px] leading-snug ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                                    <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${isDark ? 'bg-gray-600' : 'bg-brand-mist'}`} aria-hidden />
+                                                <li key={lesson.id} className={`flex items-start gap-2 text-[12px] leading-snug 'text-ink-subtle'`}>
+                                                    <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${isDark ? 'bg-gray-600' : 'bg-surface-sunken'}`} aria-hidden />
                                                     <span className="flex-1">{pick(lesson, 'title')}</span>
                                                     {lesson.isFree ? (
-                                                        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black uppercase ${isDark ? 'bg-brand-gold/20 text-brand-gold-light' : 'bg-brand-gold/15 text-brand-gold-dark'}`}>
+                                                        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black uppercase ${isDark ? 'bg-brand-gold/20 text-gold-ink' : 'bg-brand-gold/15 text-gold-ink'}`}>
                                                             {t('explore.outline_free')}
                                                         </span>
                                                     ) : (
-                                                        <Lock size={11} className={`mt-0.5 shrink-0 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} aria-label={t('explore.outline_locked')} />
+                                                        <Lock size={11} className={`mt-0.5 shrink-0 'text-ink-subtle'`} aria-label={t('explore.outline_locked')} />
                                                     )}
                                                 </li>
                             ))}
                                             {restCount > 0 && (
-                                                <li className={`text-[11px] font-bold ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                <li className={`text-[11px] font-bold 'text-ink-subtle'`}>
                                                     {count('explore.outline_more_lessons', restCount)}
                                                 </li>
                                             )}
@@ -301,7 +301,7 @@ export default function CourseCard({
                             <button
                                 type="button"
                                 onClick={() => setExpanded(v => !v)}
-                                className={`flex w-full items-center justify-center gap-1.5 border-t py-2.5 text-[11px] font-black transition-colors cursor-pointer ${isDark ? 'border-white/5 text-brand-gold-light hover:bg-white/5' : 'border-brand-mist/80 text-brand-gold-dark hover:bg-brand-gold/5'}`}
+                                className={`flex w-full items-center justify-center gap-1.5 border-t py-2.5 text-[11px] font-black transition-colors cursor-pointer ${isDark ? 'border-line text-accent hover:bg-ink/[0.04]' : 'border-brand-mist/80 text-gold-ink hover:bg-brand-gold/5'}`}
                             >
                                 {expanded
                                     ? t('explore.outline_hide')
@@ -320,8 +320,8 @@ export default function CourseCard({
                         href={`/courses/${course.id}`}
                         className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all ${
                             isDark
-                                ? 'border border-white/10 text-gray-300 hover:border-brand-gold/40 hover:bg-white/5 hover:text-white'
-                                : 'border-2 border-brand-mist text-brand-charcoal hover:border-brand-navy hover:bg-brand-navy/5 hover:text-brand-navy'
+                                ? 'border border-line text-ink-muted hover:border-brand-gold/40 hover:bg-ink/[0.04] hover:text-ink'
+                                : 'border-2 border-brand-mist text-ink hover:border-brand-navy hover:bg-surface hover:text-ink'
                         }`}
                     >
                         <Eye size={16} /> {t('explore.view_details')}
@@ -332,8 +332,8 @@ export default function CourseCard({
                             onClick={() => onEnroll(course)}
                             className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold shadow-md transition-all cursor-pointer ${
                                 isDark
-                                    ? 'bg-brand-gold text-brand-navy-dark shadow-brand-gold/25 hover:bg-brand-gold-light'
-                                    : 'bg-brand-navy text-white shadow-brand-navy/20 hover:bg-brand-charcoal'
+                                    ? 'bg-brand-gold text-ink-on-gold shadow-brand-gold/25 hover:bg-brand-gold-light'
+                                    : 'bg-surface text-ink-on-gold shadow-brand-navy/20 hover:bg-brand-charcoal'
                             }`}
                         >
                             <Sparkles size={16} /> {t('explore.enroll_now')}
@@ -345,15 +345,15 @@ export default function CourseCard({
                             onClick={() => onReserve(course)}
                             className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all cursor-pointer ${
                                 isDark
-                                    ? 'border border-brand-gold/40 text-brand-gold-light hover:bg-brand-gold hover:text-brand-navy-dark'
-                                    : 'border-2 border-brand-gold/50 text-brand-navy hover:bg-brand-gold'
+                                    ? 'border border-brand-gold/40 text-ink-on-gold hover:bg-brand-gold hover:text-ink-on-gold'
+                                    : 'border-2 border-brand-gold/50 text-ink-on-gold hover:bg-brand-gold'
                             }`}
                         >
                             <Unlock size={16} /> {t('courseDetail.reserve_seat')}
                         </button>
                     )}
                     {!isOpen && !announced && (
-                        <span className={`rounded-xl py-3.5 text-center text-sm font-bold ${isDark ? 'bg-white/5 text-gray-400' : 'bg-gray-50 text-gray-500'}`}>
+                        <span className={`rounded-xl py-3.5 text-center text-sm font-bold ${isDark ? 'bg-ink/[0.04] text-ink-muted' : 'bg-surface-sunken text-ink-subtle'}`}>
                             {t('courseDetail.not_open_yet')}
                         </span>
                     )}

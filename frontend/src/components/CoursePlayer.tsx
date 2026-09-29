@@ -413,7 +413,7 @@ export default function CoursePlayer({ courseId }: Props) {
     const renderStatus = (m: CourseModule) => {
         if (completedSet.has(m.id)) return <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" title={t('player.completed')} />;
         if (isInProgress(m)) return <span className="w-2 h-2 rounded-full bg-brand-gold-light animate-pulse shrink-0" title={t('player.in_progress')} />;
-        return <span className="w-2 h-2 rounded-full bg-white/20 shrink-0" />;
+        return <span className="w-2 h-2 rounded-full bg-ink/[0.16] shrink-0" />;
     };
 
     const renderLessonButton = (m: CourseModule, active: boolean) => {
@@ -424,22 +424,22 @@ export default function CoursePlayer({ courseId }: Props) {
                 onClick={() => setSelectedId(m.id)}
                 className={`w-full flex items-center gap-3 text-left rtl:text-right px-3 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer ${
                     active
-                        ? 'bg-gradient-to-r from-brand-gold/10 to-brand-gold/5 border-l-2 border-l-brand-gold-light border-white/10 text-white shadow-lg shadow-black/10'
-                        : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/10 text-gray-300'
+                        ? 'bg-gradient-to-r from-brand-gold/10 to-brand-gold/5 border-l-2 border-l-brand-gold-light border-line text-ink shadow-lg shadow-black/10'
+                        : 'bg-transparent border-transparent hover:bg-ink/[0.04] hover:border-line text-ink-muted'
                 }`}
             >
                 <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs ${
                     active
-                        ? 'bg-brand-gold/20 text-brand-gold-light'
+                        ? 'bg-brand-gold/20 text-accent'
                         : done
-                            ? 'bg-emerald-500/20 text-emerald-400'
-                            : 'bg-white/10 text-gray-400'
+                            ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                            : 'bg-ink/[0.08] text-ink-muted'
                 }`}>
                     {done ? <CheckCircle size={14} /> : renderIcon(m)}
                 </span>
-                <span className={`flex-1 min-w-0 truncate text-sm font-bold ${active ? 'text-white' : ''}`}>{pick(m, 'title')}</span>
+                <span className={`flex-1 min-w-0 truncate text-sm font-bold ${active ? 'text-ink' : ''}`}>{pick(m, 'title')}</span>
                 {!!m.durationMinutes && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold shrink-0 text-gray-500">
+                    <span className="flex items-center gap-1 text-[10px] font-bold shrink-0 text-ink-subtle">
                         <Clock size={11} /> {m.durationMinutes}
                     </span>
                 )}
@@ -463,7 +463,7 @@ export default function CoursePlayer({ courseId }: Props) {
                         title={block || undefined}
                         className={`w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-black transition-all duration-300 ${
                             completedSet.has(m.id)
-                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40'
+                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-ink shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40'
                                 : 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black shadow-lg shadow-brand-gold/20 hover:shadow-brand-gold/40 hover:scale-[1.01]'
                         } ${block && !completedSet.has(m.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
@@ -471,7 +471,7 @@ export default function CoursePlayer({ courseId }: Props) {
                         {completedSet.has(m.id) ? t('player.completed') : t('player.mark_complete')}
                     </button>
                     {block && !completedSet.has(m.id) && (
-                        <p className="flex items-start gap-2 text-xs font-bold text-amber-400 leading-relaxed">
+                        <p className="flex items-start gap-2 text-xs font-bold text-amber-800 dark:text-amber-300 leading-relaxed">
                             <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                             {block}
                         </p>
@@ -485,8 +485,8 @@ export default function CoursePlayer({ courseId }: Props) {
     const renderStage = () => {
         if (!selected) {
             return (
-                <div className="h-72 flex flex-col items-center justify-center text-center text-gray-400">
-                    <BookMarked size={44} className="mb-3 text-brand-gold-light/40" />
+                <div className="h-72 flex flex-col items-center justify-center text-center text-ink-subtle">
+                    <BookMarked size={44} className="mb-3 text-accent" />
                     <p className="font-bold">{t('player.no_lesson')}</p>
                 </div>
             );
@@ -507,20 +507,20 @@ export default function CoursePlayer({ courseId }: Props) {
             <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-black/20 ${done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-brand-gold/20 text-brand-gold-light'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-black/20 ${done ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300' : 'bg-brand-gold/20 text-accent'}`}>
                             {done ? <CheckCircle size={18} /> : renderIcon(selected)}
                         </div>
                         <div className="min-w-0">
                             {chIdx >= 0 && (
-                                <div className="text-[10px] font-black uppercase tracking-widest mb-0.5 text-brand-gold-light/70">
+                                <div className="text-[10px] font-black uppercase tracking-widest mb-0.5 text-accent">
                                     {pick(chapters[chIdx], 'title')}{chMods.length > 1 && chPos > 0 ? ` · ${chPos} / ${chMods.length}` : ''}
                                 </div>
                             )}
-                            <h2 className="text-2xl font-black text-white leading-tight truncate">{pick(selected, 'title')}</h2>
+                            <h2 className="text-2xl font-black text-ink leading-tight truncate">{pick(selected, 'title')}</h2>
                             {!!selected.durationMinutes && (
-                                <p className="text-[11px] font-bold text-gray-400 flex items-center gap-1 mt-0.5">
+                                <p className="text-[11px] font-bold text-ink-subtle flex items-center gap-1 mt-0.5">
                                     <Clock size={11} /> {selected.durationMinutes} {t('lessons.minutes_short')}
-                                    {!!selected.isFree && <span className="flex items-center gap-1 text-emerald-400 bg-emerald-500/20 rounded-full px-2 py-0.5"><Gift size={10} /> {t('lessons.free_badge')}</span>}
+                                    {!!selected.isFree && <span className="flex items-center gap-1 text-emerald-800 dark:text-emerald-300 bg-emerald-500/20 rounded-full px-2 py-0.5"><Gift size={10} /> {t('lessons.free_badge')}</span>}
                                 </p>
                             )}
                         </div>
@@ -530,7 +530,7 @@ export default function CoursePlayer({ courseId }: Props) {
                         disabled={progressing || !progress?.enrollmentId}
                         className={`w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-black transition-all duration-300 cursor-pointer disabled:opacity-40 ${
                             done
-                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40'
+                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-ink shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40'
                                 : 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black shadow-lg shadow-brand-gold/20 hover:shadow-brand-gold/40 hover:scale-[1.01]'
                         }`}
                     >
@@ -567,11 +567,11 @@ export default function CoursePlayer({ courseId }: Props) {
                     </motion.div>
                 </AnimatePresence>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/5 mt-1">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-line mt-1">
                     {prevM ? (
                         <button
                             onClick={() => setSelectedId(prevM.id)}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-white/5 border border-white/10 text-gray-300 hover:border-white/20 hover:text-white"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer bg-ink/[0.04] border border-line text-ink-muted hover:border-line-strong hover:text-ink"
                         >
                             <ArrowLeft size={14} className="rtl:-scale-x-100 shrink-0" />
                             <span className="max-w-[180px] truncate">{pick(prevM, 'title')}</span>
@@ -602,7 +602,7 @@ export default function CoursePlayer({ courseId }: Props) {
         ];
         return (
             <div className="mt-6">
-                <div className="flex gap-1 border-b border-white/5 overflow-x-auto">
+                <div className="flex gap-1 border-b border-line overflow-x-auto">
                     {tabs.map(tb => {
                         const Icon = tb.icon;
                         const active = deckTab === tb.key;
@@ -611,7 +611,7 @@ export default function CoursePlayer({ courseId }: Props) {
                                 key={tb.key}
                                 onClick={() => setDeckTab(tb.key)}
                                 className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all duration-200 whitespace-nowrap cursor-pointer relative ${
-                                    active ? 'text-brand-gold-light' : 'text-gray-400 hover:text-gray-200'
+                                    active ? 'text-accent' : 'text-ink-subtle hover:text-ink-muted'
                                 }`}
                             >
                                 <Icon size={15} /> {tb.label}
@@ -624,17 +624,17 @@ export default function CoursePlayer({ courseId }: Props) {
                     {deckTab === 'overview' && selected && (
                         <div className="space-y-4">
                             {pick(selected, 'description') && (
-                                <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed font-medium">{pick(selected, 'description')}</p>
+                                <p className="text-sm text-ink-muted whitespace-pre-wrap leading-relaxed font-medium">{pick(selected, 'description')}</p>
                             )}
                             {selected.outcomes && selected.outcomes.length > 0 && (
                                 <div>
-                                    <h4 className="text-xs font-black text-brand-gold-light/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                        <CheckCircle size={14} className="text-brand-gold-light" /> {t('createCourse.outcomes_heading')}
+                                    <h4 className="text-xs font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <CheckCircle size={14} className="text-accent" /> {t('createCourse.outcomes_heading')}
                                     </h4>
                                     <ul className="space-y-2">
                                         {selected.outcomes.map((o, j) => (
-                                            <li key={j} className="flex items-start gap-2 text-sm text-gray-300">
-                                                <CheckCircle size={16} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+                                            <li key={j} className="flex items-start gap-2 text-sm text-ink-muted">
+                                                <CheckCircle size={16} className="text-emerald-800 dark:text-emerald-300 mt-0.5 flex-shrink-0" />
                                                 <span>{pick(o, 'description')}</span>
                                             </li>
                                         ))}
@@ -643,13 +643,13 @@ export default function CoursePlayer({ courseId }: Props) {
                             )}
                             {(selected.files || []).length > 0 && (
                                 <div>
-                                    <h4 className="text-xs font-black text-brand-gold-light/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                        <FileText size={14} className="text-brand-gold-light" /> {t('courseDetail.lesson_files')}
+                                    <h4 className="text-xs font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <FileText size={14} className="text-accent" /> {t('courseDetail.lesson_files')}
                                     </h4>
                                     <div className="flex flex-wrap gap-2">
                                         {(selected.files || []).map((f, fi) => (
                                             <a key={fi} href={f.url.startsWith('/') ? API_BASE_URL + f.url : f.url} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-ink-muted bg-surface-sunken border border-line rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-accent transition-all duration-200 max-w-full">
                                                 <Download size={14} className="shrink-0" /> <span className="break-all min-w-0">{pick(f, 'name') || f.url.split('/').pop() || f.url}</span>
                                             </a>
                                         ))}
@@ -658,13 +658,13 @@ export default function CoursePlayer({ courseId }: Props) {
                             )}
                             {(selected.links || []).length > 0 && (
                                 <div>
-                                    <h4 className="text-xs font-black text-brand-gold-light/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                        <Link2 size={14} className="text-brand-gold-light" /> {t('courseDetail.lesson_links')}
+                                    <h4 className="text-xs font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <Link2 size={14} className="text-accent" /> {t('courseDetail.lesson_links')}
                                     </h4>
                                     <div className="flex flex-wrap gap-2">
                                         {(selected.links || []).map((lk, li) => (
                                             <a key={li} href={lk.url} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                                className="inline-flex items-center gap-1.5 text-sm font-bold text-ink-muted bg-surface-sunken border border-line rounded-xl px-3 py-2 hover:border-brand-gold-light/30 hover:text-accent transition-all duration-200 max-w-full">
                                                 <Link2 size={14} className="shrink-0" /> <span className="break-all min-w-0">{pick(lk, 'label') || lk.url}</span>
                                             </a>
                                         ))}
@@ -687,11 +687,11 @@ export default function CoursePlayer({ courseId }: Props) {
                     {deckTab === 'quizzes' && progress?.openingId && (
                         <div className="space-y-4">
                             {moduleQuizzes.filter((q) => q.moduleId === selected?.id).length === 0 ? (
-                                <p className="text-sm text-gray-400 text-center py-8">{isAr ? 'لا يوجد اختبارات لهذا الدرس بعد' : 'No quizzes for this lesson yet'}</p>
+                                <p className="text-sm text-ink-subtle text-center py-8">{isAr ? 'لا يوجد اختبارات لهذا الدرس بعد' : 'No quizzes for this lesson yet'}</p>
                             ) : (
                                 moduleQuizzes.filter((q) => q.moduleId === selected?.id).map((quiz) => (
                                     <div key={quiz.id}>
-                                        <p className="text-sm text-gray-400 mb-3">{isAr ? 'اختبر معلوماتك' : 'Test your knowledge'}</p>
+                                        <p className="text-sm text-ink-subtle mb-3">{isAr ? 'اختبر معلوماتك' : 'Test your knowledge'}</p>
                                         <InteractiveQuiz
                                             quizId={quiz.id}
                                             enrollmentId={progress.enrollmentId}
@@ -714,18 +714,18 @@ export default function CoursePlayer({ courseId }: Props) {
     // ---------- Render ----------
     if (loading) {
         return (
-            <div className="h-[70vh] flex items-center justify-center bg-brand-navy-dark">
-                <Loader className="animate-spin text-brand-gold-light" size={36} />
+            <div className="h-[70vh] flex items-center justify-center bg-surface-sunken">
+                <Loader className="animate-spin text-accent" size={36} />
             </div>
         );
     }
 
     if (loadError) {
         return (
-            <div className="h-[60vh] flex flex-col items-center justify-center text-center gap-3 bg-brand-navy-dark">
-                <BookMarked size={44} className="text-brand-gold-light/40" />
-                <p className="text-lg font-bold text-white">{t('player.not_enrolled_title')}</p>
-                <p className="text-sm text-gray-400 max-w-md">{loadError}</p>
+            <div className="h-[60vh] flex flex-col items-center justify-center text-center gap-3 bg-surface-sunken">
+                <BookMarked size={44} className="text-accent" />
+                <p className="text-lg font-bold text-ink">{t('player.not_enrolled_title')}</p>
+                <p className="text-sm text-ink-subtle max-w-md">{loadError}</p>
                 <button onClick={() => router.push(`/courses/${courseId}`)} className="bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black px-6 py-3 rounded-xl font-black hover:shadow-lg hover:shadow-brand-gold/20 transition-all duration-300">
                     {t('player.go_to_course')}
                 </button>
@@ -736,31 +736,31 @@ export default function CoursePlayer({ courseId }: Props) {
     const pct = progress?.percent ?? 0;
 
     return (
-        <div className="min-h-screen bg-brand-navy-dark">
+        <div className="min-h-screen bg-surface-sunken">
             {/* Header */}
-            <header className="sticky top-0 z-30 bg-gradient-to-r from-brand-navy via-brand-navy-light to-brand-navy border-b border-white/5 px-4 md:px-6 py-3 flex items-center gap-3">
+            <header className="sticky top-0 z-30 bg-gradient-to-r from-brand-navy via-brand-navy-light to-brand-navy border-b border-line px-4 md:px-6 py-3 flex items-center gap-3">
                 <button
                     onClick={() => router.push('/dashboard')}
                     title={t('player.back')}
-                    className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                    className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-ink/[0.04] text-ink-muted hover:bg-ink/[0.08] hover:text-ink transition-all duration-200"
                 >
                     <ArrowLeft className="rtl:-scale-x-100" size={18} />
                 </button>
 
                 <div className="flex-1 min-w-0">
-                    <h1 className="text-white font-black text-lg truncate">
+                    <h1 className="text-ink font-black text-lg truncate">
                         {pick(course, 'title')}
                     </h1>
                     <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex-1 max-w-[120px] sm:max-w-[220px] md:max-w-xs h-3 rounded-full overflow-hidden bg-white/10">
+                        <div className="flex-1 max-w-[120px] sm:max-w-[220px] md:max-w-xs h-3 rounded-full overflow-hidden bg-ink/[0.08]">
                             <div
                                 className={`h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(245,158,11,0.3)] ${pct === 100 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-brand-gold-light via-emerald-400 to-emerald-500'}`}
                                 style={{ width: `${pct}%` }}
                             />
                         </div>
-                        <span className="text-brand-gold-light font-black text-lg tabular-nums transition-all duration-300">{pct}%</span>
+                        <span className="text-accent font-black text-lg tabular-nums transition-all duration-300">{pct}%</span>
                         {isCourseComplete && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black rounded-full px-2 py-0.5 bg-brand-gold-light/20 text-brand-gold-light">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black rounded-full px-2 py-0.5 bg-brand-gold-light/20 text-accent">
                                 <Award size={12} /> {t('player.completion_badge')}
                             </span>
                         )}
@@ -773,32 +773,32 @@ export default function CoursePlayer({ courseId }: Props) {
                             <button
                                 onClick={() => setAnnouncementsOpen(o => !o)}
                                 title={t('announcements.title')}
-                                className="relative w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200 cursor-pointer"
+                                className="relative w-10 h-10 rounded-xl flex items-center justify-center bg-ink/[0.04] text-ink-on-gold hover:bg-ink/[0.08] hover:text-ink-on-gold transition-all duration-200 cursor-pointer"
                             >
                                 <Bell size={18} />
-                                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand-gold text-brand-navy-dark text-[10px] font-black flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand-gold text-ink-on-gold text-[10px] font-black flex items-center justify-center">
                                     {announcements.length}
                                 </span>
                             </button>
                             {announcementsOpen && (
                                 <>
                                     <div className="fixed inset-0 z-40" onClick={() => setAnnouncementsOpen(false)} />
-                                    <div className="absolute top-12 right-0 z-50 w-[85vw] max-w-[380px] max-h-[420px] overflow-y-auto bg-brand-navy border border-white/10 rounded-2xl shadow-2xl shadow-black/40 admin-scroll">
-                                        <div className="p-4 border-b border-white/5 sticky top-0 bg-brand-navy z-10">
+                                    <div className="absolute top-12 right-0 z-50 w-[85vw] max-w-[380px] max-h-[420px] overflow-y-auto bg-surface border border-line rounded-2xl shadow-2xl shadow-black/40 admin-scroll">
+                                        <div className="p-4 border-b border-line sticky top-0 bg-surface z-10">
                                             <div className="flex items-center gap-2">
-                                                <Megaphone size={16} className="text-brand-gold-light" />
-                                                <h3 className="text-white font-black text-sm">{t('announcements.title')}</h3>
+                                                <Megaphone size={16} className="text-ink-on-gold" />
+                                                <h3 className="text-ink-on-gold font-black text-sm">{t('announcements.title')}</h3>
                                             </div>
                                         </div>
                                         <div className="p-2">
                                             {announcements.map(a => (
-                                                <div key={a.id} className="p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 mb-1 last:mb-0">
+                                                <div key={a.id} className="p-3 rounded-xl hover:bg-ink/[0.04] transition-colors border border-transparent hover:border-line mb-1 last:mb-0">
                                                     <div className="flex items-center gap-2 mb-1.5">
-                                                        <span className="text-brand-gold-light"><Megaphone size={13} /></span>
-                                                        <h4 className="text-white font-bold text-sm">{pick(a, 'title')}</h4>
+                                                        <span className="text-accent"><Megaphone size={13} /></span>
+                                                        <h4 className="text-ink font-bold text-sm">{pick(a, 'title')}</h4>
                                                     </div>
-                                                    <p className="text-gray-300 text-xs leading-relaxed line-clamp-3 mb-2">{pick(a, 'content')}</p>
-                                                    <div className="flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
+                                                    <p className="text-ink-muted text-xs leading-relaxed line-clamp-3 mb-2">{pick(a, 'content')}</p>
+                                                    <div className="flex flex-wrap items-center gap-3 text-[10px] text-ink-subtle">
                                                         <span className="flex items-center gap-1">
                                                             <Calendar size={10} />
                                                             {new Date(a.createdAt).toLocaleDateString()}
@@ -821,7 +821,7 @@ export default function CoursePlayer({ courseId }: Props) {
                     <button
                         onClick={() => setFocusMode(f => !f)}
                         title={focusMode ? t('player.focus_exit') : t('player.focus_mode')}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200 cursor-pointer"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center bg-ink/[0.04] text-ink-muted hover:bg-ink/[0.08] hover:text-ink transition-all duration-200 cursor-pointer"
                     >
                         {focusMode ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
                     </button>
@@ -836,17 +836,17 @@ export default function CoursePlayer({ courseId }: Props) {
                     }`}
                 >
                     <div className="md:p-4 md:pr-0 h-full">
-                        <div className="md:border-r border-white/5 md:p-4 md:h-[calc(100vh-64px)] overflow-y-auto admin-scroll bg-[#0b1929]">
+                        <div className="md:border-r border-line md:p-4 md:h-[calc(100vh-64px)] overflow-y-auto admin-scroll bg-[#0b1929]">
                             <div className={`relative mb-3 ${focusMode ? 'hidden' : 'block'}`}>
-                                <Search size={15} className="absolute top-1/2 -translate-y-1/2 left-3 text-gray-400" />
+                                <Search size={15} className="absolute top-1/2 -translate-y-1/2 left-3 text-ink-subtle" />
                                 <input
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                     placeholder={t('player.search_lessons')}
-                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-white/10 bg-brand-navy text-sm font-medium text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-gold-light/50 transition-all duration-200"
+                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-line bg-surface text-sm font-medium text-ink text-placeholder:ink-subtle focus:outline-none focus:ring-2 focus:ring-brand-gold-light/50 transition-all duration-200"
                                 />
                                 {search && (
-                                    <button onClick={() => setSearch('')} className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-400 hover:text-white transition-colors">
+                                    <button onClick={() => setSearch('')} className="absolute top-1/2 -translate-y-1/2 right-3 text-ink-subtle hover:text-ink transition-colors">
                                         <X size={14} />
                                     </button>
                                 )}
@@ -856,10 +856,10 @@ export default function CoursePlayer({ courseId }: Props) {
                                 filteredModules.length > 0 ? (
                                     <div className="space-y-1.5">
                                         {filteredModules.map(m => renderLessonButton(m, selected?.id === m.id))}
-                                        <p className="text-[10px] font-bold text-gray-500 pt-1">{t('player.search_results')} ({filteredModules.length})</p>
+                                        <p className="text-[10px] font-bold text-ink-subtle pt-1">{t('player.search_results')} ({filteredModules.length})</p>
                                     </div>
                                 ) : (
-                                    <p className="text-xs font-bold text-gray-500 text-center py-6">{t('player.search_empty')}</p>
+                                    <p className="text-xs font-bold text-ink-subtle text-center py-6">{t('player.search_empty')}</p>
                                 )
                             ) : (
                                 <nav className="space-y-3">
@@ -869,24 +869,24 @@ export default function CoursePlayer({ courseId }: Props) {
                                         const chDur = chMods.reduce((s, m) => s + (m.durationMinutes || 0), 0);
                                         const chDone = chMods.filter(m => completedSet.has(m.id)).length;
                                         return (
-                                            <div key={ch.id || ci} className="rounded-xl overflow-hidden border border-white/5">
+                                            <div key={ch.id || ci} className="rounded-xl overflow-hidden border border-line">
                                                 <button
                                                     onClick={() => setOpenChs(p => ({ ...p, [ci]: !(p[ci] ?? true) }))}
-                                                    className="w-full flex items-center justify-between gap-2 px-3.5 py-3 cursor-pointer text-left rtl:text-right transition-all duration-200 bg-brand-navy hover:bg-white/5"
+                                                    className="w-full flex items-center justify-between gap-2 px-3.5 py-3 cursor-pointer text-left rtl:text-right transition-all duration-200 bg-surface hover:bg-ink/[0.04]"
                                                 >
-                                                    <span className="flex items-center gap-2 min-w-0 font-black text-sm truncate text-white">
-                                                        <ChevronDown size={15} className={`text-brand-gold-light transition-transform duration-200 ease-out shrink-0 ${open ? 'rotate-180' : ''}`} />
+                                                    <span className="flex items-center gap-2 min-w-0 font-black text-sm truncate text-ink">
+                                                        <ChevronDown size={15} className={`text-accent transition-transform duration-200 ease-out shrink-0 ${open ? 'rotate-180' : ''}`} />
                                                         {pick(ch, 'title') || t('player.lessons')}
                                                     </span>
-                                                    <span className="flex items-center gap-2 text-[10px] font-bold shrink-0 text-gray-400">
+                                                    <span className="flex items-center gap-2 text-[10px] font-bold shrink-0 text-ink-subtle">
                                                         {chDur > 0 && <span className="flex items-center gap-0.5"><Clock size={11} /> {chDur} {t('lessons.minutes_short')}</span>}
-                                                        <span className="bg-emerald-500/20 text-emerald-400 rounded-full px-2 py-0.5">
+                                                        <span className="bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-full px-2 py-0.5">
                                                             {chDone}/{chMods.length}
                                                         </span>
                                                     </span>
                                                 </button>
                                                 {open && (
-                                                    <div className="px-2 pb-2 space-y-1.5 border-t border-white/5">
+                                                    <div className="px-2 pb-2 space-y-1.5 border-t border-line">
                                                         {chMods.map(m => renderLessonButton(m, selected?.id === m.id))}
                                                     </div>
                                                 )}
@@ -906,7 +906,7 @@ export default function CoursePlayer({ courseId }: Props) {
                         <select
                             value={selected?.id ?? ''}
                             onChange={e => setSelectedId(e.target.value)}
-                            className="w-full px-3 py-3 rounded-xl border border-white/10 bg-brand-navy font-bold text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-gold-light/50 cursor-pointer transition-all duration-200"
+                            className="w-full px-3 py-3 rounded-xl border border-line bg-surface font-bold text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-gold-light/50 cursor-pointer transition-all duration-200"
                         >
                             {chapters.map((ch, ci) => (
                                 <optgroup key={ci} label={pick(ch, 'title') || t('player.lessons')}>
@@ -1038,25 +1038,25 @@ function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete,
                         className="w-full h-1.5 accent-brand-gold-light cursor-pointer"
                     />
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 text-white">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-ink">
                     <div className="flex items-center gap-2">
-                        <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-all duration-200 cursor-pointer" title={playing ? t('player.pause') : t('player.play')}>
+                        <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-ink/[0.12] hover:bg-ink/[0.24] flex items-center justify-center transition-all duration-200 cursor-pointer" title={playing ? t('player.pause') : t('player.play')}>
                             {playing ? <Pause size={16} /> : <Play size={16} className="translate-x-[1px]" />}
                         </button>
                         <select
                             value={speed}
                             onChange={e => { const f = parseFloat(e.target.value); setSpeed(f); if (videoRef.current) videoRef.current.playbackRate = f; }}
-                            className="bg-white/15 hover:bg-white/30 text-xs font-bold rounded-lg px-2 py-1.5 cursor-pointer outline-none transition-all duration-200"
+                            className="bg-ink/[0.12] hover:bg-ink/[0.24] text-xs font-bold rounded-lg px-2 py-1.5 cursor-pointer outline-none transition-all duration-200"
                             title={t('player.speed')}
                         >
                             {speedList.map(sp => (
                                 <option key={sp} value={sp} className="text-black">{sp}x</option>
                             ))}
                         </select>
-                        <button onClick={toggleMute} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-all duration-200 cursor-pointer">
+                        <button onClick={toggleMute} className="w-9 h-9 rounded-full bg-ink/[0.12] hover:bg-ink/[0.24] flex items-center justify-center transition-all duration-200 cursor-pointer">
                             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                         </button>
-                        <span className="text-[11px] font-bold text-white/80 hidden sm:inline" dir="ltr">
+                        <span className="text-[11px] font-bold text-ink hidden sm:inline" dir="ltr">
                             {fmtTime(current)} / {fmtTime(duration)}
                         </span>
                     </div>
@@ -1065,18 +1065,18 @@ function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete,
                             onClick={onToggleComplete}
                             disabled={progressing || (!!blockReason && !completed)}
                             title={blockReason || undefined}
-                            className="flex items-center gap-1.5 text-[11px] font-bold rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-white/15 hover:bg-white/30"
+                            className="flex items-center gap-1.5 text-[11px] font-bold rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-ink/[0.12] hover:bg-ink/[0.24]"
                         >
-                            {completed ? <CheckCircle size={13} className="text-emerald-400" /> : <CheckCircle size={13} />}
+                            {completed ? <CheckCircle size={13} className="text-emerald-800 dark:text-emerald-300" /> : <CheckCircle size={13} />}
                             <span className="hidden sm:inline">{completed ? t('player.completed') : t('player.mark_complete')}</span>
                         </button>
-                        <button onClick={fullscreen} className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-all duration-200 cursor-pointer" title={t('player.fullscreen')}>
+                        <button onClick={fullscreen} className="w-9 h-9 rounded-full bg-ink/[0.12] hover:bg-ink/[0.24] flex items-center justify-center transition-all duration-200 cursor-pointer" title={t('player.fullscreen')}>
                             <Maximize size={16} />
                         </button>
                     </div>
                 </div>
                 {initialPos > 5 && !completed && (
-                    <p className="text-[10px] text-white/60 mt-1 flex items-center gap-1">
+                    <p className="text-[10px] text-ink mt-1 flex items-center gap-1">
                         <RotateCcw size={10} /> {t('player.resumed_at')} {fmtTime(initialPos)}
                     </p>
                 )}
@@ -1092,21 +1092,21 @@ function PdfViewer({ url, m }: { url: string; m: CourseModule }) {
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
-                <button onClick={() => setZoom(z => Math.min(2.5, z + 0.2))} className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/10 text-white px-3 py-2 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer" title={t('player.zoom_in')}>
+                <button onClick={() => setZoom(z => Math.min(2.5, z + 0.2))} className="inline-flex items-center gap-1.5 text-xs font-bold bg-ink/[0.08] text-ink px-3 py-2 rounded-xl hover:bg-ink/[0.16] transition-all duration-200 cursor-pointer" title={t('player.zoom_in')}>
                     <ZoomIn size={14} /> {t('player.zoom_in')}
                 </button>
-                <button onClick={() => setZoom(z => Math.max(0.6, z - 0.2))} className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/10 text-white px-3 py-2 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer" title={t('player.zoom_out')}>
+                <button onClick={() => setZoom(z => Math.max(0.6, z - 0.2))} className="inline-flex items-center gap-1.5 text-xs font-bold bg-ink/[0.08] text-ink px-3 py-2 rounded-xl hover:bg-ink/[0.16] transition-all duration-200 cursor-pointer" title={t('player.zoom_out')}>
                     <ZoomOut size={14} /> {t('player.zoom_out')}
                 </button>
-                <button onClick={() => setZoom(1)} className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/10 text-white px-3 py-2 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer" title={t('player.zoom_reset')}>
+                <button onClick={() => setZoom(1)} className="inline-flex items-center gap-1.5 text-xs font-bold bg-ink/[0.08] text-ink px-3 py-2 rounded-xl hover:bg-ink/[0.16] transition-all duration-200 cursor-pointer" title={t('player.zoom_reset')}>
                     <Maximize2 size={14} /> {Math.round(zoom * 100)}%
                 </button>
-                <a href={src} target="_blank" rel="noreferrer" download className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-300 border border-white/10 px-3 py-2 rounded-xl hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200 cursor-pointer">
+                <a href={src} target="_blank" rel="noreferrer" download className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-muted border border-line px-3 py-2 rounded-xl hover:border-brand-gold-light/30 hover:text-accent transition-all duration-200 cursor-pointer">
                     <Download size={14} /> {t('player.download_pdf')}
                 </a>
-                <span className="text-[11px] font-bold text-gray-500 truncate max-w-[200px]">{pick(m, 'title')}</span>
+                <span className="text-[11px] font-bold text-ink-subtle truncate max-w-[200px]">{pick(m, 'title')}</span>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-black h-[60vh] max-h-[600px] min-h-[300px] overflow-auto">
+            <div className="rounded-2xl border border-line bg-black h-[60vh] max-h-[600px] min-h-[300px] overflow-auto">
                 <object data={src} type="application/pdf" className="w-full h-full" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
                     <iframe src={src} className="w-full h-full" title="PDF" />
                 </object>
@@ -1138,31 +1138,31 @@ function TaskStage({ tasks, taskDraft, setTaskDraft, taskFile, setTaskFile, subm
                 const sub = task.submissions?.[0] ?? null;
                 const graded = typeof sub?.score === 'number';
                 return (
-                    <div key={task.id} className="rounded-2xl border border-white/5 overflow-hidden shadow-xl shadow-black/20 bg-brand-navy-dark">
-                        <div className="px-5 py-4 bg-white/5 border-b border-white/5 flex flex-wrap items-center justify-between gap-2">
-                            <h3 className="font-black text-white flex items-center gap-2 text-sm">
-                                <ClipboardList size={16} className="text-brand-gold-light" /> {pick(task, 'title')}
+                    <div key={task.id} className="rounded-2xl border border-line overflow-hidden shadow-xl shadow-black/20 bg-surface-sunken">
+                        <div className="px-5 py-4 bg-ink/[0.04] border-b border-line flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="font-black text-ink flex items-center gap-2 text-sm">
+                                <ClipboardList size={16} className="text-accent" /> {pick(task, 'title')}
                             </h3>
                             <div className="flex items-center gap-2 text-xs font-bold">
                                 {task.dueDate && (
-                                    <span className={`px-2.5 py-1 rounded-lg ${overdue ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-gray-300'}`}>
+                                    <span className={`px-2.5 py-1 rounded-lg ${overdue ? 'bg-red-500/20 text-red-700 dark:text-red-400' : 'bg-ink/[0.08] text-ink-muted'}`}>
                                         {t('tasks.due_on')} {new Date(task.dueDate).toLocaleDateString()}
                                     </span>
                                 )}
-                                <span className="bg-brand-gold/20 text-brand-gold-light px-2.5 py-1 rounded-lg">{t('tasks.max_score_label')} {task.maxScore}</span>
+                                <span className="bg-brand-gold/20 text-gold-ink px-2.5 py-1 rounded-lg">{t('tasks.max_score_label')} {task.maxScore}</span>
                             </div>
                         </div>
                         <div className="p-5 space-y-4">
-                            {pick(task, 'description') && <p className="text-sm text-gray-300 whitespace-pre-wrap break-words font-medium">{pick(task, 'description')}</p>}
+                            {pick(task, 'description') && <p className="text-sm text-ink-muted whitespace-pre-wrap break-words font-medium">{pick(task, 'description')}</p>}
                             {(task.attachmentUrl || (task.links || []).length > 0) && (
                                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
                                     {task.attachmentUrl && (
-                                        <a href={task.attachmentUrl.startsWith('/') ? API_BASE_URL + task.attachmentUrl : task.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-gray-300 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                        <a href={task.attachmentUrl.startsWith('/') ? API_BASE_URL + task.attachmentUrl : task.attachmentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-ink-muted hover:text-accent transition-all duration-200 max-w-full">
                                             <Download size={14} className="shrink-0" /> <span className="truncate">{t('tasks.attachment')}</span>
                                         </a>
                                     )}
                                     {(task.links || []).map((lk, i) => (
-                                        <a key={i} href={lk.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-gray-300 hover:text-brand-gold-light transition-all duration-200 max-w-full">
+                                        <a key={i} href={lk.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-bold text-ink-muted hover:text-accent transition-all duration-200 max-w-full">
                                             <Link2 size={14} className="shrink-0" /> <span className="break-all min-w-0">{pick(lk, 'label') || lk.url}</span>
                                         </a>
                                     ))}
@@ -1170,12 +1170,12 @@ function TaskStage({ tasks, taskDraft, setTaskDraft, taskFile, setTaskFile, subm
                             )}
 
                             {graded ? (
-                                <div className="flex items-center gap-2 text-sm font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                                <div className="flex items-center gap-2 text-sm font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
                                     <CheckCircle size={16} /> {t('tasks.current_grade')}: {sub?.score} / {task.maxScore}
                                     {sub?.notes ? ` — ${sub.notes}` : ''}
                                 </div>
                             ) : sub ? (
-                                <div className="text-sm text-gray-300 bg-white/5 border border-white/10 rounded-xl p-3">
+                                <div className="text-sm text-ink-muted bg-ink/[0.04] border border-line rounded-xl p-3">
                                     {t('tasks.submitted_at')} {sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : ''}
                                 </div>
                             ) : (
@@ -1188,16 +1188,16 @@ function TaskStage({ tasks, taskDraft, setTaskDraft, taskFile, setTaskFile, subm
                                         className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-200 cursor-pointer ${
                                             dragOver
                                                 ? 'border-brand-gold-light bg-brand-gold-light/10'
-                                                : 'border-white/10 hover:border-brand-gold-light/50 hover:bg-white/5'
+                                                : 'border-line hover:border-brand-gold-light/50 hover:bg-ink/[0.04]'
                                         }`}
                                     >
-                                        <UploadCloud size={30} className={`mx-auto mb-2 ${dragOver ? 'text-brand-gold-light' : 'text-brand-gold-light/70'}`} />
+                                        <UploadCloud size={30} className={`mx-auto mb-2 ${dragOver ? 'text-accent' : 'text-accent'}`} />
                                         {taskFile ? (
-                                            <p className="text-sm font-bold text-white truncate max-w-sm mx-auto">{taskFile.name}</p>
+                                            <p className="text-sm font-bold text-ink truncate max-w-sm mx-auto">{taskFile.name}</p>
                                         ) : (
                                             <>
-                                                <p className="text-sm font-bold text-white">{t('player.drop_zone')}</p>
-                                                <p className="text-xs text-gray-400 font-semibold mt-1">{t('player.drop_hint')}</p>
+                                                <p className="text-sm font-bold text-ink">{t('player.drop_zone')}</p>
+                                                <p className="text-xs text-ink-subtle font-semibold mt-1">{t('player.drop_hint')}</p>
                                             </>
                                         )}
                                         <input
@@ -1208,7 +1208,7 @@ function TaskStage({ tasks, taskDraft, setTaskDraft, taskFile, setTaskFile, subm
                                         />
                                     </div>
                                     {taskFile && (
-                                        <button onClick={() => setTaskFile(null)} className="text-xs font-bold text-red-400 hover:text-red-300 transition-all duration-200">
+                                        <button onClick={() => setTaskFile(null)} className="text-xs font-bold text-red-700 dark:text-red-400 text-red-700 dark:text-red-400 transition-all duration-200">
                                             {t('player.remove_file')}
                                         </button>
                                     )}
@@ -1217,7 +1217,7 @@ function TaskStage({ tasks, taskDraft, setTaskDraft, taskFile, setTaskFile, subm
                                         onChange={e => setTaskDraft(e.target.value)}
                                         rows={3}
                                         placeholder={t('lessons.answer_placeholder')}
-                                        className="w-full bg-brand-navy border border-white/10 rounded-xl p-3.5 focus:ring-2 focus:ring-brand-gold-light/50 outline-none transition-all duration-200 placeholder:text-gray-500 text-sm text-white"
+                                        className="w-full bg-surface border border-line rounded-xl p-3.5 focus:ring-2 focus:ring-brand-gold-light/50 outline-none transition-all duration-200 text-placeholder:ink-subtle text-sm text-ink"
                                     />
                                     <button
                                         onClick={() => onSubmit(task)}
@@ -1242,18 +1242,18 @@ function ResourceStage({ m }: { m: CourseModule }) {
         <div className="space-y-4">
             {(m.files || []).length > 0 && (
                 <div>
-                    <h4 className="text-xs font-black text-brand-gold-light/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <FileText size={14} className="text-brand-gold-light" /> {t('courseDetail.lesson_files')}
+                    <h4 className="text-xs font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <FileText size={14} className="text-accent" /> {t('courseDetail.lesson_files')}
                     </h4>
                     <div className="grid sm:grid-cols-2 gap-2">
                         {(m.files || []).map((f, i) => {
                             const isPdf = /\.pdf$/i.test(f.url);
                             return (
                                 <a key={i} href={f.url.startsWith('/') ? API_BASE_URL + f.url : f.url} target="_blank" rel="noreferrer"
-                                    className="flex items-center gap-2 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-xl px-4 py-3 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200">
-                                    <FileText size={16} className="text-brand-gold-light" />
+                                    className="flex items-center gap-2 text-sm font-bold text-ink-muted bg-surface-sunken border border-line rounded-xl px-4 py-3 hover:border-brand-gold-light/30 hover:text-accent transition-all duration-200">
+                                    <FileText size={16} className="text-accent" />
                                     <span className="truncate">{pick(f, 'name') || f.url.split('/').pop() || f.url}</span>
-                                    {isPdf && <span className="text-[9px] font-black text-emerald-400 bg-emerald-500/20 rounded px-1.5 py-0.5 uppercase">pdf</span>}
+                                    {isPdf && <span className="text-[9px] font-black text-emerald-800 dark:text-emerald-300 bg-emerald-500/20 rounded px-1.5 py-0.5 uppercase">pdf</span>}
                                     <Download size={14} className="ml-auto shrink-0" />
                                 </a>
                             );
@@ -1263,13 +1263,13 @@ function ResourceStage({ m }: { m: CourseModule }) {
             )}
             {(m.links || []).length > 0 && (
                 <div>
-                    <h4 className="text-xs font-black text-brand-gold-light/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Link2 size={14} className="text-brand-gold-light" /> {t('courseDetail.lesson_links')}
+                    <h4 className="text-xs font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <Link2 size={14} className="text-accent" /> {t('courseDetail.lesson_links')}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                         {(m.links || []).map((lk, i) => (
                             <a key={i} href={lk.url} target="_blank" rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-300 bg-brand-navy-dark border border-white/5 rounded-lg px-4 py-2.5 hover:border-brand-gold-light/30 hover:text-brand-gold-light transition-all duration-200">
+                                className="inline-flex items-center gap-1.5 text-sm font-bold text-ink-muted bg-surface-sunken border border-line rounded-lg px-4 py-2.5 hover:border-brand-gold-light/30 hover:text-accent transition-all duration-200">
                                 <Link2 size={14} /> {pick(lk, 'label') || lk.url}
                             </a>
                         ))}
@@ -1277,7 +1277,7 @@ function ResourceStage({ m }: { m: CourseModule }) {
                 </div>
             )}
             {(!(m.files || []).length && !(m.links || []).length) && (
-                <p className="text-sm text-gray-500 font-bold text-center py-4">{t('player.resource_empty')}</p>
+                <p className="text-sm text-ink-subtle font-bold text-center py-4">{t('player.resource_empty')}</p>
             )}
         </div>
     );
@@ -1318,13 +1318,13 @@ function NotesEditor({ initial, moduleId, onSave }: {
                 onChange={e => onChange(e.target.value)}
                 rows={7}
                 placeholder={t('player.notes_placeholder')}
-                className="w-full bg-brand-navy border border-white/10 rounded-2xl p-4 focus:ring-2 focus:ring-brand-gold-light/50 outline-none transition-all duration-200 placeholder:text-gray-500 text-sm text-white"
+                className="w-full bg-surface border border-line rounded-2xl p-4 focus:ring-2 focus:ring-brand-gold-light/50 outline-none transition-all duration-200 text-placeholder:ink-subtle text-sm text-ink"
             />
-            <div className="flex items-center gap-2 mt-2 text-xs font-bold text-gray-500">
+            <div className="flex items-center gap-2 mt-2 text-xs font-bold text-ink-subtle">
                 {status === 'idle' && <span>{t('player.notes_autosave')}</span>}
                 {status === 'saving' && <span className="flex items-center gap-1.5"><Loader size={12} className="animate-spin" /> {t('player.notes_saving')}</span>}
-                {status === 'saved' && <span className="text-emerald-400 flex items-center gap-1"><CheckCircle size={12} /> {t('player.notes_saved')}</span>}
-                {status === 'error' && <span className="text-red-400">{t('player.notes_error')}</span>}
+                {status === 'saved' && <span className="text-emerald-800 dark:text-emerald-300 flex items-center gap-1"><CheckCircle size={12} /> {t('player.notes_saved')}</span>}
+                {status === 'error' && <span className="text-red-700 dark:text-red-400">{t('player.notes_error')}</span>}
             </div>
         </div>
     );

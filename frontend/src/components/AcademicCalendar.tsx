@@ -36,10 +36,10 @@ interface Props {
 const EVENT_TYPES = ['deadline', 'live_session', 'exam', 'other'] as const;
 
 const EVENT_STYLES: Record<string, { dot: string; badge: string; ar: string; en: string }> = {
-    deadline: { dot: 'bg-red-500', badge: 'bg-red-500/10 text-red-300 border-red-500/30', ar: 'موعد نهائي', en: 'Deadline' },
-    live_session: { dot: 'bg-brand-navy-light', badge: 'bg-brand-navy-light/10 text-blue-300 border-brand-navy-light/30', ar: 'جلسة مباشرة', en: 'Live session' },
-    exam: { dot: 'bg-brand-gold-light', badge: 'bg-brand-gold/10 text-brand-gold-light border-brand-gold/30', ar: 'اختبار', en: 'Exam' },
-    other: { dot: 'bg-gray-500', badge: 'bg-gray-500/10 text-gray-300 border-gray-500/30', ar: 'أخرى', en: 'Other' },
+    deadline: { dot: 'bg-red-500', badge: 'bg-red-500/10 text-red-800 dark:text-red-400 border-red-500/30', ar: 'موعد نهائي', en: 'Deadline' },
+    live_session: { dot: 'bg-surface-raised', badge: 'bg-surface-raised text-blue-700 dark:text-blue-400 border-brand-navy-light/30', ar: 'جلسة مباشرة', en: 'Live session' },
+    exam: { dot: 'bg-brand-gold-light', badge: 'bg-brand-gold/10 text-gold-ink border-brand-gold/30', ar: 'اختبار', en: 'Exam' },
+    other: { dot: 'bg-gray-500', badge: 'bg-ink/[0.01] text-ink-muted border-line', ar: 'أخرى', en: 'Other' },
 };
 
 const eventStyle = (type: string) => EVENT_STYLES[type] || EVENT_STYLES.other;
@@ -150,14 +150,14 @@ export default function AcademicCalendar({ openingId }: Props) {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h3 className="flex items-center gap-2 text-lg font-black text-white">
-                    <CalendarDays size={20} className="text-brand-gold-light" />
+                <h3 className="flex items-center gap-2 text-lg font-black text-ink">
+                    <CalendarDays size={20} className="text-accent" />
                     {isAr ? 'التقويم الأكاديمي' : 'Academic Calendar'}
                 </h3>
                 {canCreate && (
                     <button
                         onClick={() => setModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light transition"
                     >
                         <Plus size={16} /> {isAr ? 'حدث جديد' : 'New Event'}
                     </button>
@@ -169,7 +169,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                 {EVENT_TYPES.map((type) => {
                     const s = eventStyle(type);
                     return (
-                        <span key={type} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
+                        <span key={type} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ink-subtle">
                             <span className={`w-2.5 h-2.5 rounded-full ${s.dot}`} />
                             {isAr ? s.ar : s.en}
                         </span>
@@ -179,28 +179,28 @@ export default function AcademicCalendar({ openingId }: Props) {
 
             {loading ? (
                 <div className="flex items-center justify-center py-20">
-                    <Loader size={28} className="animate-spin text-brand-gold-light" />
+                    <Loader size={28} className="animate-spin text-accent" />
                 </div>
             ) : error ? (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
-                    <CalendarDays size={32} className="mx-auto text-gray-600 mb-3" />
-                    <p className="text-gray-400 font-bold text-sm">{error}</p>
+                <div className="bg-surface-sunken border border-line rounded-2xl p-8 text-center">
+                    <CalendarDays size={32} className="mx-auto text-ink-subtle mb-3" />
+                    <p className="text-ink-subtle font-bold text-sm">{error}</p>
                 </div>
             ) : (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-2 sm:p-5">
+                <div className="bg-surface-sunken border border-line rounded-2xl p-2 sm:p-5">
                     {/* Month nav */}
                     <div className="flex items-center justify-between mb-4">
                         <button
                             onClick={prevMonth}
-                            className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition"
+                            className="p-2 rounded-xl bg-ink/[0.04] border border-line text-ink-muted hover:text-ink hover:bg-ink/[0.08] transition"
                             aria-label={isAr ? 'الشهر السابق' : 'Previous month'}
                         >
                             {isAr ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
                         </button>
-                        <span className="text-white font-black capitalize">{monthLabel}</span>
+                        <span className="text-ink font-black capitalize">{monthLabel}</span>
                         <button
                             onClick={nextMonth}
-                            className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition"
+                            className="p-2 rounded-xl bg-ink/[0.04] border border-line text-ink-muted hover:text-ink hover:bg-ink/[0.08] transition"
                             aria-label={isAr ? 'الشهر التالي' : 'Next month'}
                         >
                             {isAr ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
@@ -210,7 +210,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                     {/* Weekday header */}
                     <div className="grid grid-cols-7 gap-1.5 mb-1.5">
                         {weekdays.map((w) => (
-                            <div key={w} className="text-center text-[10px] font-black uppercase tracking-wider text-gray-600 py-1">
+                            <div key={w} className="text-center text-[10px] font-black uppercase tracking-wider text-ink-subtle py-1">
                                 {w}
                             </div>
                         ))}
@@ -233,11 +233,11 @@ export default function AcademicCalendar({ openingId }: Props) {
                                         isSelected
                                             ? 'border-brand-gold/50 bg-brand-gold/10'
                                             : isToday
-                                              ? 'border-brand-gold/30 bg-white/[0.03]'
-                                              : 'border-white/5 bg-white/[0.02] hover:border-white/15 hover:bg-white/5'
+                                              ? 'border-brand-gold/30 bg-ink/[0.024]'
+                                              : 'border-line bg-ink/[0.02] hover:border-line hover:bg-ink/[0.04]'
                                     }`}
                                 >
-                                    <span className={`text-xs font-black tabular-nums ${isToday ? 'text-brand-gold-light' : 'text-gray-300'}`}>
+                                    <span className={`text-xs font-black tabular-nums ${isToday ? 'text-accent' : 'text-ink-muted'}`}>
                                         {day}
                                     </span>
                                     {dayEvents.length > 0 && (
@@ -246,7 +246,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                                 <span key={ev.id} className={`w-1.5 h-1.5 rounded-full ${eventStyle(ev.eventType).dot}`} />
                                             ))}
                                             {dayEvents.length > 3 && (
-                                                <span className="text-[9px] font-black text-gray-500">+{dayEvents.length - 3}</span>
+                                                <span className="text-[9px] font-black text-ink-subtle">+{dayEvents.length - 3}</span>
                                             )}
                                         </span>
                                     )}
@@ -257,23 +257,23 @@ export default function AcademicCalendar({ openingId }: Props) {
 
                     {/* Selected day details */}
                     {selectedDate && (
-                        <div className="mt-4 pt-4 border-t border-white/5 animate-fade-in">
-                            <h4 className="text-sm font-black text-white mb-3">
+                        <div className="mt-4 pt-4 border-t border-line animate-fade-in">
+                            <h4 className="text-sm font-black text-ink mb-3">
                                 {new Date(`${selectedDate}T00:00:00`).toLocaleDateString(isAr ? 'ar' : 'en-US', {
                                     weekday: 'long', month: 'long', day: 'numeric',
                                 })}
                             </h4>
                             {selectedEvents.length === 0 ? (
-                                <p className="text-xs text-gray-500 font-bold">{isAr ? 'لا توجد أحداث في هذا اليوم' : 'No events on this day'}</p>
+                                <p className="text-xs text-ink-subtle font-bold">{isAr ? 'لا توجد أحداث في هذا اليوم' : 'No events on this day'}</p>
                             ) : (
                                 <div className="space-y-2">
                                     {selectedEvents.map((ev) => (
-                                        <div key={ev.id} className="bg-white/[0.02] border border-white/5 rounded-xl p-3.5">
+                                        <div key={ev.id} className="bg-ink/[0.02] border border-line rounded-xl p-3.5">
                                             <div className="flex items-start justify-between gap-3 flex-wrap">
                                                 <div className="min-w-0">
-                                                    <p className="text-white text-sm font-bold">{pick(ev, 'title')}</p>
+                                                    <p className="text-ink text-sm font-bold">{pick(ev, 'title')}</p>
                                                     {pick(ev, 'description') && (
-                                                        <p className="text-gray-400 text-xs mt-1 leading-relaxed whitespace-pre-wrap break-words">{pick(ev, 'description')}</p>
+                                                        <p className="text-ink-subtle text-xs mt-1 leading-relaxed whitespace-pre-wrap break-words">{pick(ev, 'description')}</p>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2 shrink-0">
@@ -281,7 +281,7 @@ export default function AcademicCalendar({ openingId }: Props) {
                                                         <span className={`w-1.5 h-1.5 rounded-full ${eventStyle(ev.eventType).dot}`} />
                                                         {isAr ? eventStyle(ev.eventType).ar : eventStyle(ev.eventType).en}
                                                     </span>
-                                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-400 tabular-nums">
+                                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-ink-subtle tabular-nums">
                                                         <Clock size={11} />
                                                         {fmtTime(ev.startsAt)}{ev.endsAt ? ` – ${fmtTime(ev.endsAt)}` : ''}
                                                     </span>
@@ -299,67 +299,67 @@ export default function AcademicCalendar({ openingId }: Props) {
             {modalOpen && openingId && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalOpen(false)}>
                     <div
-                        className="bg-brand-navy border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+                        className="bg-surface border border-line rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between p-6 border-b border-white/5">
-                            <h3 className="text-lg font-black text-white">{isAr ? 'حدث تقويم جديد' : 'New Calendar Event'}</h3>
-                            <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                        <div className="flex items-center justify-between p-6 border-b border-line">
+                            <h3 className="text-lg font-black text-ink">{isAr ? 'حدث تقويم جديد' : 'New Calendar Event'}</h3>
+                            <button onClick={() => setModalOpen(false)} className="text-ink-subtle hover:text-ink transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
                         <div className="p-6 space-y-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'العنوان بالعربي' : 'Title (Arabic)'}</label>
+                                    <label className="block text-sm font-bold text-ink-muted mb-1.5">{isAr ? 'العنوان بالعربي' : 'Title (Arabic)'}</label>
                                     <input
                                         type="text"
                                         value={form.titleAr}
                                         onChange={(e) => setForm({ ...form, titleAr: e.target.value })}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                                        className="w-full px-4 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-ink placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'العنوان بالإنجليزي' : 'Title (English)'}</label>
+                                    <label className="block text-sm font-bold text-ink-muted mb-1.5">{isAr ? 'العنوان بالإنجليزي' : 'Title (English)'}</label>
                                     <input
                                         type="text"
                                         value={form.titleEn}
                                         onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                                        className="w-full px-4 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-ink placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'الوصف بالعربي (اختياري)' : 'Description (Arabic, optional)'}</label>
+                                    <label className="block text-sm font-bold text-ink-muted mb-1.5">{isAr ? 'الوصف بالعربي (اختياري)' : 'Description (Arabic, optional)'}</label>
                                     <textarea
                                         value={form.descriptionAr}
                                         onChange={(e) => setForm({ ...form, descriptionAr: e.target.value })}
                                         rows={2}
                                         dir="rtl"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-ink placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'الوصف بالإنجليزي (اختياري)' : 'Description (English, optional)'}</label>
+                                    <label className="block text-sm font-bold text-ink-muted mb-1.5">{isAr ? 'الوصف بالإنجليزي (اختياري)' : 'Description (English, optional)'}</label>
                                     <textarea
                                         value={form.descriptionEn}
                                         onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })}
                                         rows={2}
                                         dir="ltr"
-                                        className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
+                                        className="w-full px-4 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-ink placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'نوع الحدث' : 'Event type'}</label>
+                                    <label className="block text-sm font-bold text-ink-muted mb-1.5">{isAr ? 'نوع الحدث' : 'Event type'}</label>
                                     <select
                                         value={form.eventType}
                                         onChange={(e) => setForm({ ...form, eventType: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [&>option]:bg-brand-navy"
+                                        className="w-full px-3 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-sm text-ink cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [&>option]:bg-surface"
                                     >
                                         {EVENT_TYPES.map((type) => (
                                             <option key={type} value={type}>
@@ -369,36 +369,36 @@ export default function AcademicCalendar({ openingId }: Props) {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'يبدأ' : 'Starts at'}</label>
+                                    <label className="block text-sm font-bold text-ink-muted mb-1.5">{isAr ? 'يبدأ' : 'Starts at'}</label>
                                     <input
                                         type="datetime-local"
                                         value={form.startsAt}
                                         onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [color-scheme:dark]"
+                                        className="w-full px-3 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [color-scheme:dark]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'ينتهي' : 'Ends at'}</label>
+                                    <label className="block text-sm font-bold text-ink-muted mb-1.5">{isAr ? 'ينتهي' : 'Ends at'}</label>
                                     <input
                                         type="datetime-local"
                                         value={form.endsAt}
                                         onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [color-scheme:dark]"
+                                        className="w-full px-3 py-2.5 bg-ink/[0.04] border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-gold/50 [color-scheme:dark]"
                                     />
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center justify-end gap-3 p-6 border-t border-white/5">
+                        <div className="flex items-center justify-end gap-3 p-6 border-t border-line">
                             <button
                                 onClick={() => setModalOpen(false)}
-                                className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                                className="px-5 py-2.5 rounded-xl text-sm font-bold text-ink-muted hover:text-ink hover:bg-ink/[0.04] transition-all"
                             >
                                 {isAr ? 'إلغاء' : 'Cancel'}
                             </button>
                             <button
                                 onClick={saveEvent}
                                 disabled={saving}
-                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition-all disabled:opacity-50 flex items-center gap-2"
+                                className="px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light transition-all disabled:opacity-50 flex items-center gap-2"
                             >
                                 {saving && <Loader size={14} className="animate-spin" />}
                                 {isAr ? 'إنشاء' : 'Create'}

@@ -134,20 +134,20 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
-                <ClipboardList size={24} className="text-brand-gold" />
-                <h2 className="text-2xl font-black text-brand-navy">{t('tasks.tasks_title')}</h2>
+                <ClipboardList size={24} className="text-accent" />
+                <h2 className="text-2xl font-black text-ink">{t('tasks.tasks_title')}</h2>
             </div>
 
             {loading ? (
-                <div className="h-48 flex items-center justify-center text-brand-navy">
+                <div className="h-48 flex items-center justify-center text-ink">
                     <Loader className="animate-spin" size={32} />
                 </div>
             ) : unresolved ? (
-                <div className="text-center text-gray-500 font-bold py-16">
+                <div className="text-center text-ink-subtle font-bold py-16">
                     {t('tasks.not_linked_to_batch')}
                 </div>
             ) : sorted.length === 0 ? (
-                <div className="text-center text-gray-400 font-bold py-16">{t('tasks.no_tasks')}</div>
+                <div className="text-center text-ink-subtle font-bold py-16">{t('tasks.no_tasks')}</div>
             ) : (
                 <div className="space-y-4">
                     {sorted.map(task => {
@@ -159,22 +159,22 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
                             : null;
                         const chosen = files[task.id] ?? null;
                         return (
-                            <div key={task.id} className="border border-brand-mist rounded-2xl p-5 bg-white shadow-sm">
+                            <div key={task.id} className="border border-brand-mist rounded-2xl p-5 bg-surface-raised shadow-sm">
                                 <div className="flex items-start justify-between gap-3 flex-wrap">
                                     <div>
                                         {task.module && (
-                                            <p className="text-[11px] font-bold text-brand-gold-dark mb-1">
+                                            <p className="text-[11px] font-bold text-accent mb-1">
                                                 {pick(task.module as any, 'title')}
                                             </p>
                                         )}
-                                        <h3 className="font-bold text-brand-navy">{pick(task, 'title')}</h3>
+                                        <h3 className="font-bold text-ink">{pick(task, 'title')}</h3>
                                         {pick(task, 'description') && (
-                                            <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{pick(task, 'description')}</p>
+                                            <p className="text-sm text-ink-subtle mt-1 whitespace-pre-wrap">{pick(task, 'description')}</p>
                                         )}
                                         {task.attachmentUrl && (
                                             <a href={task.attachmentUrl.startsWith('/') ? API_BASE_URL + task.attachmentUrl : task.attachmentUrl}
                                                 target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy underline mt-2">
+                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-ink underline mt-2">
                                                 <Paperclip size={13} />
                                                 {task.attachmentName || t('tasks.attachment')}
                                             </a>
@@ -182,11 +182,11 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
                                     </div>
                                     <div className="flex items-center gap-2 text-xs font-bold">
                                         {task.dueDate && (
-                                            <span className={`flex items-center gap-1 px-2.5 py-1 rounded-lg ${overdue ? 'bg-red-50 text-red-600' : 'bg-brand-mist/50 text-gray-600'}`}>
+                                            <span className={`flex items-center gap-1 px-2.5 py-1 rounded-lg ${overdue ? 'bg-danger-soft text-danger' : 'bg-ink/[0.05] text-ink-muted'}`}>
                                                 <Clock size={12} /> {t('tasks.due_on')} {new Date(task.dueDate).toLocaleDateString()}
                                             </span>
                                         )}
-                                        <span className="bg-brand-navy text-white px-2.5 py-1 rounded-lg">
+                                        <span className="bg-surface text-ink px-2.5 py-1 rounded-lg">
                                             {t('tasks.max_score_label')} {task.maxScore}
                                         </span>
                                     </div>
@@ -194,18 +194,18 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
 
                                 {graded ? (
                                     <div className="mt-4 space-y-3">
-                                        <div className="flex items-center gap-2 text-sm font-bold text-green-600 bg-green-50 border border-green-200 rounded-xl p-3">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-success dark:text-success bg-success-soft border border-line rounded-xl p-3">
                                             <CheckCircle size={16} />
                                             {t('tasks.current_grade')}: {mySubmission?.score} / {task.maxScore}
                                         </div>
                                         {mySubmission?.notes && (
-                                            <p className="text-sm text-gray-700 bg-brand-mist/30 border border-brand-mist rounded-xl p-3 whitespace-pre-wrap">
+                                            <p className="text-sm text-ink-muted bg-ink/[0.03] border border-brand-mist rounded-xl p-3 whitespace-pre-wrap">
                                                 {mySubmission.notes}
                                             </p>
                                         )}
                                         {submittedFileUrl && (
                                             <a href={submittedFileUrl} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy">
+                                                className="inline-flex items-center gap-2 text-sm font-bold text-ink">
                                                 <FileText size={15} />
                                                 {mySubmission?.attachmentName || t('tasks.attachment')}
                                                 {mySubmission?.attachmentSize ? ` (${formatFileSize(mySubmission.attachmentSize)})` : ''}
@@ -214,18 +214,18 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
                                     </div>
                                 ) : mySubmission ? (
                                     <div className="mt-4 space-y-3">
-                                        <div className="text-sm text-gray-600 bg-brand-mist/30 border border-brand-mist rounded-xl p-3">
+                                        <div className="text-sm text-ink-muted bg-ink/[0.03] border border-brand-mist rounded-xl p-3">
                                             {t('tasks.submitted_at')} {new Date(mySubmission.submittedAt).toLocaleString()}
                                         </div>
                                         {submittedFileUrl && (
                                             <a href={submittedFileUrl} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy">
+                                                className="inline-flex items-center gap-2 text-sm font-bold text-ink">
                                                 <FileText size={15} />
                                                 {mySubmission.attachmentName || t('tasks.attachment')}
                                                 {mySubmission.attachmentSize ? ` (${formatFileSize(mySubmission.attachmentSize)})` : ''}
                                             </a>
                                         )}
-                                        <p className="text-xs text-gray-500">{t('tasks.resubmit_hint')}</p>
+                                        <p className="text-xs text-ink-subtle">{t('tasks.resubmit_hint')}</p>
                                     </div>
                                 ) : null}
 
@@ -235,7 +235,7 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
                                         onChange={e => setDrafts(prev => ({ ...prev, [task.id]: e.target.value }))}
                                         rows={2}
                                         placeholder={t('tasks.answer_hint')}
-                                        className="w-full bg-white border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40 resize-y"
+                                        className="w-full bg-surface-raised border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40 resize-y"
                                     />
                                     <div className="mt-2 flex flex-wrap items-center gap-3">
                                         <input
@@ -248,17 +248,17 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
                                             type="button"
                                             onClick={() => inputs.current[task.id]?.click()}
                                             disabled={uploadingId === task.id}
-                                            className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy border border-brand-mist rounded-xl px-4 py-2.5 hover:bg-brand-mist/40 disabled:opacity-50 transition"
+                                            className="inline-flex items-center gap-2 text-sm font-bold text-ink border border-brand-mist rounded-xl px-4 py-2.5 hover:bg-ink/[0.04] disabled:opacity-50 transition"
                                         >
                                             {uploadingId === task.id ? <Loader size={14} className="animate-spin" /> : <Paperclip size={14} />}
                                             {t('tasks.attach_file')}
                                         </button>
                                         {chosen && (
-                                            <span className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 bg-brand-mist/40 rounded-lg px-3 py-2">
+                                            <span className="inline-flex items-center gap-2 text-xs font-bold text-ink-muted bg-ink/[0.04] rounded-lg px-3 py-2">
                                                 <FileText size={14} /> {chosen.name}
                                                 {chosen.size ? ` (${formatFileSize(chosen.size)})` : ''}
                                                 <button type="button" onClick={() => setFiles(prev => ({ ...prev, [task.id]: null }))}
-                                                    className="text-gray-500 hover:text-red-600" aria-label={t('common.remove')}>
+                                                    className="text-ink-subtle hover:text-red-600" aria-label={t('common.remove')}>
                                                     <Trash2 size={13} />
                                                 </button>
                                             </span>
@@ -266,13 +266,13 @@ export default function StudentTasksPanel({ courseId }: { courseId: string }) {
                                         <button
                                             onClick={() => handleSubmit(task.id)}
                                             disabled={submittingId === task.id || uploadingId === task.id || (!(drafts[task.id] || '').trim() && !chosen)}
-                                            className="inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-2.5 rounded-xl font-bold text-sm transition"
+                                            className="inline-flex items-center gap-2 bg-surface hover:bg-brand-charcoal text-ink disabled:opacity-40 px-5 py-2.5 rounded-xl font-bold text-sm transition"
                                         >
                                             {submittingId === task.id ? <Loader size={14} className="animate-spin" /> : <Send size={14} />}
                                             {mySubmission ? t('tasks.update_submission') : t('common.submit')}
                                         </button>
                                     </div>
-                                    <p className="mt-2 text-[11px] text-gray-400">{t('tasks.any_file_hint')}</p>
+                                    <p className="mt-2 text-[11px] text-ink-subtle">{t('tasks.any_file_hint')}</p>
                                 </div>
                             </div>
                         );

@@ -274,7 +274,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                 href={`${API_BASE_URL}${m.attachmentUrl}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 text-brand-gold underline text-xs"
+                className="mt-2 inline-flex items-center gap-1.5 text-accent underline text-xs"
             >
                 <FileText size={13} /> {t('courseChat.view_attachment')}
             </a>
@@ -284,14 +284,14 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
     const renderBubble = (m: ChatMsg) => (
         <div className={`flex ${isMine(m) ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
-                isMine(m) ? 'bg-brand-navy text-white rounded-br-md' : 'bg-white border border-brand-mist text-gray-700 rounded-bl-md'
+                isMine(m) ? 'bg-surface text-ink rounded-br-md' : 'bg-surface-raised border border-brand-mist text-ink-muted rounded-bl-md'
             }`}>
                 {!isMine(m) && (
-                    <div className="text-[10px] font-bold text-brand-gold mb-0.5">{m.sender?.email ?? ''}</div>
+                    <div className="text-[10px] font-bold text-accent mb-0.5">{m.sender?.email ?? ''}</div>
                 )}
                 {m.content && <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>}
                 {renderAttachment(m)}
-                <div className={`text-[9px] mt-1 ${isMine(m) ? 'text-white/50' : 'text-gray-400'}`}>
+                <div className={`text-[9px] mt-1 ${isMine(m) ? 'text-ink' : 'text-ink-subtle'}`}>
                     {new Date(m.createdAt).toLocaleString()}
                 </div>
             </div>
@@ -300,10 +300,10 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
 
     const renderThreadPanel = (messages: ChatMsg[], emptyKey: string) => (
         <>
-            <div className="bg-gray-50 border border-brand-mist rounded-2xl p-4 h-[60vh] max-h-[420px] min-h-[300px] overflow-y-auto flex flex-col gap-3">
+            <div className="bg-surface-sunken border border-brand-mist rounded-2xl p-4 h-[60vh] max-h-[420px] min-h-[300px] overflow-y-auto flex flex-col gap-3">
                 {messages.length === 0 && (
-                    <div className="m-auto text-center text-gray-400">
-                        <Inbox size={36} className="mx-auto mb-2 text-brand-gold/60" />
+                    <div className="m-auto text-center text-ink-muted">
+                        <Inbox size={36} className="mx-auto mb-2 text-accent" />
                         <p className="font-bold">{t(emptyKey)}</p>
                     </div>
                 )}
@@ -315,14 +315,14 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
 
             <div className="mt-4">
                 {pendingAttachment && (
-                    <div className="mb-2 flex items-center justify-between bg-brand-mist/40 border border-brand-mist rounded-xl px-3 py-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-brand-navy">
+                    <div className="mb-2 flex items-center justify-between bg-ink/[0.04] border border-brand-mist rounded-xl px-3 py-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-ink">
                             {pendingAttachment.type.startsWith('image/')
-                                ? <ImageIcon size={14} className="text-brand-gold" />
-                                : <FileText size={14} className="text-brand-gold" />}
+                                ? <ImageIcon size={14} className="text-accent" />
+                                : <FileText size={14} className="text-accent" />}
                             <span className="truncate max-w-[220px]">{pendingAttachment.url.split('/').pop()}</span>
                         </div>
-                        <button onClick={() => setPendingAttachment(null)} className="text-gray-400 hover:text-red-500 transition">
+                        <button onClick={() => setPendingAttachment(null)} className="text-ink-subtle hover:text-red-500 transition">
                             <X size={14} />
                         </button>
                     </div>
@@ -339,7 +339,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                         onClick={() => fileRef.current?.click()}
                         disabled={uploading}
                         title={t('courseChat.attach')}
-                        className="bg-white border border-brand-mist hover:border-brand-gold text-brand-navy p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40 shrink-0"
+                        className="bg-surface-raised border border-brand-mist hover:border-brand-gold text-ink p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40 shrink-0"
                     >
                         {uploading ? <Loader size={16} className="animate-spin" /> : <Paperclip size={16} />}
                     </button>
@@ -348,12 +348,12 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                         onChange={e => setDraft(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
                         placeholder={t('courseChat.placeholder')}
-                        className="flex-1 min-w-0 bg-white border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
+                        className="flex-1 min-w-0 bg-surface-raised border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
                     />
                     <button
                         onClick={handleSend}
                         disabled={sending || (!draft.trim() && !pendingAttachment)}
-                        className="bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition shrink-0"
+                        className="bg-surface hover:bg-brand-charcoal text-ink disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition shrink-0"
                     >
                         <Send size={16} /> <span className="hidden sm:inline">{t('courseChat.send')}</span>
                     </button>
@@ -383,7 +383,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
     const renderInstructorDirectChat = () => {
         if (directLoading && courseDirectChats.length === 0) {
             return (
-                <div className="h-[60vh] max-h-[520px] min-h-[300px] flex items-center justify-center text-brand-navy">
+                <div className="h-[60vh] max-h-[520px] min-h-[300px] flex items-center justify-center text-ink">
                     <Loader className="animate-spin" size={32} />
                 </div>
             );
@@ -391,8 +391,8 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
 
         if (courseDirectChats.length === 0) {
             return (
-                <div className="h-[60vh] max-h-[520px] min-h-[300px] flex flex-col items-center justify-center text-center text-gray-400">
-                    <MessageCircle size={40} className="mb-3 text-brand-gold/60" />
+                <div className="h-[60vh] max-h-[520px] min-h-[300px] flex flex-col items-center justify-center text-center text-ink-subtle">
+                    <MessageCircle size={40} className="mb-3 text-accent" />
                     <p className="font-bold">{t('courseChat.no_students')}</p>
                     <p className="text-sm mt-1">{t('courseChat.no_students_hint')}</p>
                 </div>
@@ -400,14 +400,14 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
         }
 
         return (
-            <div className="flex border border-brand-mist rounded-2xl overflow-hidden h-[60vh] max-h-[520px] min-h-[300px] bg-white">
+            <div className="flex border border-brand-mist rounded-2xl overflow-hidden h-[60vh] max-h-[520px] min-h-[300px] bg-surface-raised">
                 {/* Left sidebar — student list */}
                 <div className={`w-full md:w-80 lg:w-96 border-r border-brand-mist flex flex-col shrink-0 ${mobileShowChat ? 'hidden md:flex' : 'flex'}`}>
-                    <div className="px-4 py-3 border-b border-brand-mist bg-gray-50/80">
+                    <div className="px-4 py-3 border-b border-brand-mist bg-surface-sunken/80">
                         <div className="flex items-center gap-2">
-                            <MessageCircle size={18} className="text-brand-gold" />
-                            <h3 className="font-black text-brand-navy text-sm">{t('courseChat.students_list')}</h3>
-                            <span className="ml-auto text-[11px] text-gray-400 font-bold">{courseDirectChats.length}</span>
+                            <MessageCircle size={18} className="text-accent" />
+                            <h3 className="font-black text-ink text-sm">{t('courseChat.students_list')}</h3>
+                            <span className="ml-auto text-[11px] text-ink-subtle font-bold">{courseDirectChats.length}</span>
                         </div>
                     </div>
                     <div className="flex-1 overflow-y-auto">
@@ -418,34 +418,34 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                     key={chat.id}
                                     onClick={() => selectStudentChat(chat)}
                                     className={`w-full text-left px-4 py-3 flex items-center gap-3 transition border-b border-brand-mist/50 ${
-                                        isActive ? 'bg-brand-navy/5' : 'hover:bg-gray-50'
+                                        isActive ? 'bg-surface' : 'hover:bg-surface-sunken'
                                     }`}
                                 >
                                     {/* Avatar */}
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-xs font-black ${
-                                        isActive ? 'bg-brand-navy text-white' : 'bg-brand-gold/15 text-brand-gold-dark'
+                                        isActive ? 'bg-surface text-ink' : 'bg-brand-gold/15 text-accent dark:text-brand-gold-light'
                                     }`}>
                                         {getInitials(chat.student.email)}
                                     </div>
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className={`font-bold text-sm truncate ${isActive ? 'text-brand-navy' : 'text-gray-800'}`}>
+                                            <span className={`font-bold text-sm truncate ${isActive ? 'text-ink' : 'text-gray-800'}`}>
                                                 {chat.student.email.split('@')[0]}
                                             </span>
-                                            <span className="text-[10px] text-gray-400 shrink-0 font-semibold">
+                                            <span className="text-[10px] text-ink-subtle shrink-0 font-semibold">
                                                 {formatTime(chat.lastMessage?.createdAt)}
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between gap-2 mt-0.5">
-                                            <p className="text-xs text-gray-400 truncate">
+                                            <p className="text-xs text-ink-subtle truncate">
                                                 {chat.lastMessage
                                                     ? (chat.lastMessage.fromMe ? '✓ ' : '') + (chat.lastMessage.content || (chat.lastMessage.attachmentType ? '📎' : t('courseChat.no_messages')))
                                                     : t('courseChat.start_conversation')
                                                 }
                                             </p>
                                             {(chat.unreadCount ?? 0) > 0 && (
-                                                <span className="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-brand-gold text-white flex items-center justify-center shrink-0">
+                                                <span className="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-brand-gold text-ink-on-gold flex items-center justify-center shrink-0">
                                                     {chat.unreadCount}
                                                 </span>
                                             )}
@@ -462,30 +462,30 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                     {directChat ? (
                         <>
                             {/* Chat header */}
-                            <div className="px-4 py-3 border-b border-brand-mist bg-gray-50/80 flex items-center gap-3">
+                            <div className="px-4 py-3 border-b border-brand-mist bg-surface-sunken/80 flex items-center gap-3">
                                 <button
                                     onClick={() => setMobileShowChat(false)}
-                                    className="md:hidden text-brand-navy p-1"
+                                    className="md:hidden text-gold-ink p-1"
                                 >
                                     <ArrowLeft size={20} />
                                 </button>
-                                <div className="w-9 h-9 rounded-full bg-brand-gold/15 text-brand-gold-dark flex items-center justify-center text-xs font-black">
+                                <div className="w-9 h-9 rounded-full bg-brand-gold/15 text-gold-ink dark:text-brand-gold-light flex items-center justify-center text-xs font-black">
                                     {getInitials(directChat.student.email)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-sm text-brand-navy truncate">{directChat.student.email}</p>
-                                    <p className="text-[11px] text-gray-400">{t('courseChat.direct_with_suffix')}</p>
+                                    <p className="font-bold text-sm text-gold-ink truncate">{directChat.student.email}</p>
+                                    <p className="text-[11px] text-gold-ink">{t('courseChat.direct_with_suffix')}</p>
                                 </div>
                             </div>
                             {/* Messages */}
-                            <div className="flex-1 bg-gray-50/50 p-4 overflow-y-auto flex flex-col gap-3">
+                            <div className="flex-1 bg-surface-sunken/50 p-4 overflow-y-auto flex flex-col gap-3">
                                 {directLoading ? (
-                                    <div className="m-auto text-brand-navy">
+                                    <div className="m-auto text-ink">
                                         <Loader className="animate-spin" size={28} />
                                     </div>
                                 ) : directThread.length === 0 ? (
-                                    <div className="m-auto text-center text-gray-400">
-                                        <Inbox size={36} className="mx-auto mb-2 text-brand-gold/60" />
+                                    <div className="m-auto text-center text-ink-subtle">
+                                        <Inbox size={36} className="mx-auto mb-2 text-accent" />
                                         <p className="font-bold">{t('courseChat.direct_no_messages')}</p>
                                     </div>
                                 ) : (
@@ -496,16 +496,16 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                 <div ref={msgEndRef} />
                             </div>
                             {/* Input */}
-                            <div className="px-4 py-3 border-t border-brand-mist bg-white">
+                            <div className="px-4 py-3 border-t border-brand-mist bg-surface-raised">
                                 {pendingAttachment && (
-                                    <div className="mb-2 flex items-center justify-between bg-brand-mist/40 border border-brand-mist rounded-xl px-3 py-2">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-brand-navy">
+                                    <div className="mb-2 flex items-center justify-between bg-ink/[0.04] border border-brand-mist rounded-xl px-3 py-2">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-ink">
                                             {pendingAttachment.type.startsWith('image/')
-                                                ? <ImageIcon size={14} className="text-brand-gold" />
-                                                : <FileText size={14} className="text-brand-gold" />}
+                                                ? <ImageIcon size={14} className="text-accent" />
+                                                : <FileText size={14} className="text-accent" />}
                                             <span className="truncate max-w-[220px]">{pendingAttachment.url.split('/').pop()}</span>
                                         </div>
-                                        <button onClick={() => setPendingAttachment(null)} className="text-gray-400 hover:text-red-500 transition">
+                                        <button onClick={() => setPendingAttachment(null)} className="text-ink-subtle hover:text-red-500 transition">
                                             <X size={14} />
                                         </button>
                                     </div>
@@ -522,7 +522,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                         onClick={() => fileRef.current?.click()}
                                         disabled={uploading}
                                         title={t('courseChat.attach')}
-                                        className="bg-white border border-brand-mist hover:border-brand-gold text-brand-navy p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40 shrink-0"
+                                        className="bg-surface-raised border border-brand-mist hover:border-brand-gold text-ink p-3 rounded-xl flex items-center justify-center transition disabled:opacity-40 shrink-0"
                                     >
                                         {uploading ? <Loader size={16} className="animate-spin" /> : <Paperclip size={16} />}
                                     </button>
@@ -531,12 +531,12 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                         onChange={e => setDraft(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
                                         placeholder={t('courseChat.placeholder')}
-                                        className="flex-1 min-w-0 bg-gray-50 border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
+                                        className="flex-1 min-w-0 bg-surface-sunken border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
                                     />
                                     <button
                                         onClick={handleSend}
                                         disabled={sending || (!draft.trim() && !pendingAttachment)}
-                                        className="bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition shrink-0"
+                                        className="bg-surface hover:bg-brand-charcoal text-ink disabled:opacity-40 px-5 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition shrink-0"
                                     >
                                         <Send size={16} />
                                     </button>
@@ -544,9 +544,9 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex items-center justify-center text-gray-400">
+                        <div className="flex-1 flex items-center justify-center text-ink-subtle">
                             <div className="text-center">
-                                <MessageCircle size={40} className="mx-auto mb-3 text-brand-gold/40" />
+                                <MessageCircle size={40} className="mx-auto mb-3 text-accent" />
                                 <p className="font-bold">{t('courseChat.select_student_hint')}</p>
                             </div>
                         </div>
@@ -564,7 +564,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                     <button
                         onClick={() => setMode('group')}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition ${
-                            mode === 'group' ? 'bg-brand-navy text-white' : 'text-gray-500 hover:bg-brand-mist/40'
+                            mode === 'group' ? 'bg-surface text-ink' : 'text-ink-subtle hover:bg-ink/[0.04]'
                         }`}
                     >
                         <MessagesSquare size={16} /> {t('courseChat.tab_group')}
@@ -572,7 +572,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                     <button
                         onClick={() => setMode('direct')}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition ${
-                            mode === 'direct' ? 'bg-brand-navy text-white' : 'text-gray-500 hover:bg-brand-mist/40'
+                            mode === 'direct' ? 'bg-surface text-ink' : 'text-ink-subtle hover:bg-ink/[0.04]'
                         }`}
                     >
                         <MessageCircle size={16} /> {t('courseChat.tab_direct')}
@@ -583,14 +583,14 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
             {mode === 'group' && (
                 <>
                     {loading ? (
-                        <div className="h-64 flex items-center justify-center text-brand-navy">
+                        <div className="h-64 flex items-center justify-center text-ink">
                             <Loader className="animate-spin" size={32} />
                         </div>
                     ) : rooms && rooms.length > 0 ? (
                         <div className="grid md:grid-cols-3 gap-6">
                             <div className="md:col-span-1 space-y-2">
-                                <h3 className="font-black text-brand-navy flex items-center gap-2 mb-3">
-                                    <MessagesSquare size={18} className="text-brand-gold" /> {t('courseChat.rooms')}
+                                <h3 className="font-black text-ink flex items-center gap-2 mb-3">
+                                    <MessagesSquare size={18} className="text-accent" /> {t('courseChat.rooms')}
                                 </h3>
                                 {rooms.map(room => (
                                     <button
@@ -598,15 +598,15 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                         onClick={() => setActiveRoomId(room.id)}
                                         className={`w-full text-left p-4 rounded-xl border transition ${
                                             activeRoomId === room.id
-                                                ? 'bg-brand-navy text-white border-brand-navy shadow-md'
-                                                : 'bg-white text-gray-700 border-brand-mist hover:bg-brand-mist/40'
+                                                ? 'bg-surface text-ink border-brand-navy shadow-md'
+                                                : 'bg-surface-raised text-ink-muted border-brand-mist hover:bg-ink/[0.04]'
                                         }`}
                                     >
                                         <div className="font-bold text-sm flex items-center gap-2">
                                             <span className="truncate">{room.name}</span>
                                             {(room.unreadCount ?? 0) > 0 && (
                                                 <span className={`ml-auto min-w-[20px] px-1.5 py-0.5 rounded-full text-[10px] font-bold text-center ${
-                                                    activeRoomId === room.id ? 'bg-brand-gold text-brand-navy' : 'bg-brand-gold text-white'
+                                                    activeRoomId === room.id ? 'bg-brand-gold text-ink-on-gold' : 'bg-brand-gold text-ink-on-gold'
                                                 }`}>
                                                     {room.unreadCount}
                                                 </span>
@@ -616,7 +616,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                             <Users size={12} /> {room.memberCount}
                                         </div>
                                         {room.lastMessage && (
-                                            <p className={`text-xs mt-1.5 truncate ${activeRoomId === room.id ? 'text-brand-mist/80' : 'text-gray-400'}`}>
+                                            <p className={`text-xs mt-1.5 truncate ${activeRoomId === room.id ? 'text-ink-muted' : 'text-ink-subtle'}`}>
                                                 {room.lastMessage.content}
                                             </p>
                                         )}
@@ -627,8 +627,8 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                             <div className="md:col-span-2">{renderThreadPanel(thread, 'courseChat.no_messages')}</div>
                         </div>
                     ) : (
-                        <div className="h-64 flex flex-col items-center justify-center text-center text-gray-400">
-                            <MessagesSquare size={40} className="mb-3 text-brand-gold/60" />
+                        <div className="h-64 flex flex-col items-center justify-center text-center text-ink-subtle">
+                            <MessagesSquare size={40} className="mb-3 text-accent" />
                             <p className="font-bold">{t('courseChat.empty')}</p>
                             <p className="text-sm mt-1">{t('courseChat.empty_hint')}</p>
                         </div>
@@ -643,7 +643,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                     ) : (
                         <>
                             {directLoading && !directChat ? (
-                                <div className="h-64 flex items-center justify-center text-brand-navy">
+                                <div className="h-64 flex items-center justify-center text-ink">
                                     <Loader className="animate-spin" size={32} />
                                 </div>
                             ) : directChat ? (
@@ -651,8 +651,8 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                     {renderThreadPanel(directThread, 'courseChat.direct_no_messages')}
                                 </div>
                             ) : (
-                                <div className="h-64 flex flex-col items-center justify-center text-center text-gray-400">
-                                    <MessageCircle size={40} className="mb-3 text-brand-gold/60" />
+                                <div className="h-64 flex flex-col items-center justify-center text-center text-ink-subtle">
+                                    <MessageCircle size={40} className="mb-3 text-accent" />
                                     <p className="font-bold">{t('courseChat.direct_empty')}</p>
                                     <p className="text-sm mt-1">{t('courseChat.direct_empty_hint')}</p>
                                 </div>

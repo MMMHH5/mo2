@@ -137,10 +137,10 @@ const SectionTitle = ({ icon, children }: { icon: React.ReactNode; children: Rea
     return (
         <div className="flex flex-col gap-2 mb-5">
             <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center shrink-0 ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}>
+                <div className={`w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center shrink-0 'text-gold-ink'`}>
                     {icon}
                 </div>
-                <h2 className={`text-xl md:text-2xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>{children}</h2>
+                <h2 className={`text-xl md:text-2xl font-black 'text-ink'`}>{children}</h2>
             </div>
             <div className="w-12 h-1 bg-brand-gold/30 rounded-full ms-[52px]" />
         </div>
@@ -220,8 +220,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                 onClick={() => setActiveTab(key)}
                 className={`relative inline-flex shrink-0 items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 cursor-pointer ${
                     tab === key
-                        ? dark ? 'bg-brand-gold/15 text-brand-gold-light border border-brand-gold/25' : 'bg-brand-gold/15 text-brand-gold-dark border border-brand-gold/25'
-                        : dark ? 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent' : 'text-gray-500 hover:text-brand-navy hover:bg-brand-mist border border-transparent'
+                        ? 'bg-brand-gold/15 text-gold-ink border border-brand-gold/25'
+                        : dark ? 'text-gold-ink hover:text-ink hover:bg-ink/[0.04] border border-transparent' : 'text-gold-ink hover:text-ink hover:bg-surface-sunken border border-transparent'
                 }`}
             >
                 {icon}
@@ -237,7 +237,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                 {/* One scrollable row instead of wrapping: with six tabs a phone
                     wrapped them onto three lines, which turned the sticky strip
                     into a wall that ate a third of the viewport. */}
-                <div className={`inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border p-1.5 shadow-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${dark ? 'bg-brand-navy-dark backdrop-blur-md border-white/5 shadow-black/20' : 'bg-white backdrop-blur-md border-gray-200 shadow-brand-navy/10'}`}>
+                <div className={`inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border p-1.5 shadow-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${dark ? 'bg-surface-sunken backdrop-blur-md border-line shadow-black/20' : 'bg-surface-raised backdrop-blur-md border-line shadow-brand-navy/10'}`}>
                     {item('overview', <BookOpen size={18} />, t('courseDetail.tab_overview'))}
                     {mode === 'student' && item('tasks', <ClipboardList size={18} />, t('courseDetail.tab_tasks'))}
                     {mode === 'student' && item('grades', <GraduationCap size={18} />, t('courseDetail.tab_grades'))}
@@ -335,8 +335,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
         setSelectedOpening(target);
     };
 
-    if (loading) return <div className={`min-h-screen flex items-center justify-center ${dark ? 'bg-brand-navy-dark' : 'bg-brand-white'}`}><Loader className="animate-spin text-brand-gold" size={48} /></div>;
-    if (!course) return <div className={`min-h-screen flex items-center justify-center ${dark ? 'bg-brand-navy-dark' : 'bg-brand-white'} text-red-400 font-bold text-2xl`}>{t('courseDetail.not_found')}</div>;
+    if (loading) return <div className={`min-h-screen flex items-center justify-center ${dark ? 'bg-surface-sunken' : 'bg-brand-white'}`}><Loader className="animate-spin text-accent" size={48} /></div>;
+    if (!course) return <div className={`min-h-screen flex items-center justify-center ${dark ? 'bg-surface-sunken' : 'bg-brand-white'} text-red-700 dark:text-red-400 font-bold text-2xl`}>{t('courseDetail.not_found')}</div>;
 
     const levelLabel = (lvl?: string | null) => t(`course.level_${String(lvl || 'BEGINNER').toLowerCase()}`);
     const fmtDate = (d?: string | null) => formatDate(d, { locale });
@@ -391,7 +391,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const introVideo = getVideoUrl(course.introVideoUrl) || getVideoUrl(course.videoFileUrl);
 
     return (
-        <div className={`min-h-screen ${dark ? 'bg-brand-navy-dark' : 'bg-brand-white'} pb-20`}>
+        <div className={`min-h-screen ${dark ? 'bg-surface-sunken' : 'bg-brand-white'} pb-20`}>
             <style>{`
                 html { scroll-behavior: smooth; }
                 @keyframes fadeInUp {
@@ -404,7 +404,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             `}</style>
 
             {/* Header */}
-            <header className={`px-4 sm:px-6 md:px-8 h-16 sm:h-20 flex items-center justify-between border-b sticky top-0 z-50 ${dark ? 'border-white/5 bg-brand-navy-dark' : 'border-gray-200 bg-white/90 backdrop-blur-md'}`}>
+            <header className={`px-4 sm:px-6 md:px-8 h-16 sm:h-20 flex items-center justify-between border-b sticky top-0 z-50 ${dark ? 'border-line bg-surface-sunken' : 'border-line bg-ink/[0.45] backdrop-blur-md'}`}>
                 {/* Brand: this header used to draw a hand-rolled "L" tile plus
                     a typed `laxa|lab` wordmark, so the course page showed a
                     different identity from every other page. Use the real mark,
@@ -421,10 +421,10 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     />
                 </button>
                 <nav className="hidden md:flex items-center gap-8">
-                    <button onClick={() => router.push('/courses')} className={`font-bold transition cursor-pointer ${dark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-brand-navy'}`}>
+                    <button onClick={() => router.push('/courses')} className={`font-bold transition cursor-pointer ${dark ? 'text-ink-muted hover:text-ink' : 'text-ink-subtle hover:text-ink'}`}>
                         {t('landing.explore_courses')}
                     </button>
-                    <button onClick={() => router.push('/join-as-instructor')} className={`font-bold transition cursor-pointer ${dark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-brand-navy'}`}>
+                    <button onClick={() => router.push('/join-as-instructor')} className={`font-bold transition cursor-pointer ${dark ? 'text-ink-muted hover:text-ink' : 'text-ink-subtle hover:text-ink'}`}>
                         {t('landing.join_as_instructor')}
                     </button>
                 </nav>
@@ -432,15 +432,15 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     <PublicMobileMenu />
                     <div className="hidden sm:flex items-center gap-4">
                         {user ? (
-                            <button onClick={() => router.push('/dashboard')} className="bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
+                            <button onClick={() => router.push('/dashboard')} className="bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
                                 {t('courseDetail.dashboard')}
                             </button>
                         ) : (
                             <>
-                                <button onClick={() => router.push('/login')} className={`hover:text-brand-gold font-bold transition cursor-pointer ${dark ? 'text-white' : 'text-brand-navy'}`}>
+                                <button onClick={() => router.push('/login')} className={`hover:text-accent font-bold transition cursor-pointer 'text-ink'`}>
                                     {t('auth.login')}
                                 </button>
-                                <button onClick={() => router.push('/register')} className="bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
+                                <button onClick={() => router.push('/register')} className="bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
                                     {t('auth.register')}
                                 </button>
                             </>
@@ -458,89 +458,89 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-navy-dark/70 via-brand-navy/85 to-brand-navy-dark/95" aria-hidden />
                 <div className="absolute -top-24 -start-24 w-96 h-96 bg-brand-gold/10 rounded-full blur-3xl" aria-hidden />
                 <div className="absolute top-1/2 end-0 w-72 h-72 bg-brand-gold/8 rounded-full blur-3xl" aria-hidden />
-                <div className="absolute bottom-0 start-1/3 w-80 h-80 bg-brand-navy-light/8 rounded-full blur-3xl" aria-hidden />
+                <div className="absolute bottom-0 start-1/3 w-80 h-80 bg-surface-raised rounded-full blur-3xl" aria-hidden />
                 <div className="absolute bottom-0 end-0 w-80 h-80 bg-brand-gold/5 rounded-full blur-3xl" aria-hidden />
 
                 <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-10 pt-10 sm:pt-16 md:pt-20 pb-14 sm:pb-24 md:pb-28 grid lg:grid-cols-[1.2fr_1fr] gap-10 md:gap-12 items-center">
                     {/* Left */}
                     <div className="animate-fade-in-up">
                         {/* Breadcrumb */}
-                        <nav className="flex items-center gap-2 text-xs font-bold text-gray-400 mb-6 flex-wrap">
-                            <button onClick={() => router.push('/')} className="hover:text-brand-gold-light transition cursor-pointer">{t('landing.home')}</button>
-                            <span className="text-brand-gold-light">/</span>
-                            <button onClick={() => router.push('/courses')} className="hover:text-brand-gold-light transition cursor-pointer">{t('landing.explore_courses')}</button>
-                            <span className="text-brand-gold-light">/</span>
-                            <span className="text-brand-gold-light truncate max-w-[60vw] sm:max-w-[200px]">{pick(course, 'title')}</span>
+                        <nav className="flex items-center gap-2 text-xs font-bold text-gold-ink mb-6 flex-wrap">
+                            <button onClick={() => router.push('/')} className="hover:text-accent transition cursor-pointer">{t('landing.home')}</button>
+                            <span className="text-accent">/</span>
+                            <button onClick={() => router.push('/courses')} className="hover:text-accent transition cursor-pointer">{t('landing.explore_courses')}</button>
+                            <span className="text-accent">/</span>
+                            <span className="text-accent truncate max-w-[60vw] sm:max-w-[200px]">{pick(course, 'title')}</span>
                         </nav>
 
                         <div className="flex flex-wrap items-center gap-2 mb-5">
                             {pick(course, 'duration') && (
-                                <span className="bg-brand-gold text-brand-navy font-black text-xs px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
+                                <span className="bg-brand-gold text-ink-on-gold font-black text-xs px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
                                     {pick(course, 'duration')}
                                 </span>
                             )}
                             {pick(course, 'category') && (
-                                <span className="bg-white/10 border border-white/20 text-white font-bold text-xs px-3 py-1.5 rounded-full">
+                                <span className="bg-ink/[0.08] border border-line-strong text-ink font-bold text-xs px-3 py-1.5 rounded-full">
                                     {pick(course, 'category')}
                                 </span>
                             )}
-                            <span className="bg-white/10 border border-white/20 text-white font-bold text-xs px-3 py-1.5 rounded-full">
+                            <span className="bg-ink/[0.08] border border-line-strong text-ink font-bold text-xs px-3 py-1.5 rounded-full">
                                 {levelLabel(course.level)}
                             </span>
                             {course.language && (
-                                <span className="bg-white/10 border border-white/20 text-white font-bold text-xs px-3 py-1.5 rounded-full">
+                                <span className="bg-ink/[0.08] border border-line-strong text-ink font-bold text-xs px-3 py-1.5 rounded-full">
                                     <Globe size={11} className="inline me-1" />{course.language}
                                 </span>
                             )}
                         </div>
 
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-5 sm:mb-6 leading-[1.15] sm:leading-[1.08] tracking-tight break-words" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.5)' }}>{pick(course, 'title')}</h1>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-ink mb-5 sm:mb-6 leading-[1.15] sm:leading-[1.08] tracking-tight break-words" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.5)' }}>{pick(course, 'title')}</h1>
                         {(pick(course, 'excerpt') || pick(course, 'description')) && (
-                            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mb-6 sm:mb-8 font-medium leading-relaxed break-words">
+                            <p className="text-base sm:text-lg md:text-xl text-ink-muted max-w-2xl mb-6 sm:mb-8 font-medium leading-relaxed break-words">
                                 {pick(course, 'excerpt') || pick(course, 'description')}
                             </p>
                         )}
 
                         {/* Stats */}
                         <div className="flex flex-wrap gap-3 mb-8">
-                            <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-brand-gold-light">
+                            <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
+                                <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
                                     <Clock size={17} />
                                 </div>
                                 <div>
-                                    <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('explore.duration')}</div>
-                                    <div className="text-sm font-black text-white">{pick(course, 'duration') || t('courseDetail.self_paced')}</div>
+                                    <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('explore.duration')}</div>
+                                    <div className="text-sm font-black text-ink">{pick(course, 'duration') || t('courseDetail.self_paced')}</div>
                                 </div>
                             </div>
                             {course.hoursOfContent ? (
-                                <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-brand-gold-light">
+                                <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
+                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
                                         <PlayCircle size={17} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('courseDetail.hours_label')}</div>
-                                        <div className="text-sm font-black text-white">{course.hoursOfContent}</div>
+                                        <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('courseDetail.hours_label')}</div>
+                                        <div className="text-sm font-black text-gold-ink">{course.hoursOfContent}</div>
                                     </div>
                                 </div>
                             ) : null}
                             {enrolledCount ? (
-                                <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-brand-gold-light">
+                                <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
+                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
                                         <Users size={17} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('explore.students')}</div>
-                                        <div className="text-sm font-black text-white">{enrolledCount}</div>
+                                        <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('explore.students')}</div>
+                                        <div className="text-sm font-black text-gold-ink">{enrolledCount}</div>
                                     </div>
                                 </div>
                             ) : null}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-brand-gold-light">
+                            <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
+                                <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
                                     <User size={17} />
                                 </div>
                                 <div>
-                                    <div className="text-[11px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('courseDetail.expert_instructor')}</div>
-                                    <div className="text-sm font-black text-white max-w-[55vw] sm:max-w-[160px] truncate">{instructorName || t('courseDetail.expert_instructor')}</div>
+                                    <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('courseDetail.expert_instructor')}</div>
+                                    <div className="text-sm font-black text-ink max-w-[55vw] sm:max-w-[160px] truncate">{instructorName || t('courseDetail.expert_instructor')}</div>
                                     {courseInstructor?.id && (
                                         <InstructorRating
                                             instructorId={courseInstructor.id}
@@ -561,12 +561,12 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         {Number(opening.price) === 0 ? t('course.free') : `${t('courseDetail.enroll_for')} ${formatPrice(opening.price, { locale })}`}
                                     </button>
                                     {opening.priceOld && Number(opening.priceOld) > Number(opening.price) && (
-                                        <span className="text-gray-300 text-sm font-semibold">
-                                            {t('courseDetail.was_price')} <s className="text-gray-400">{formatPrice(opening.priceOld, { locale })}</s>
+                                        <span className="text-ink-muted text-sm font-semibold">
+                                            {t('courseDetail.was_price')} <s className="text-ink-muted">{formatPrice(opening.priceOld, { locale })}</s>
                                         </span>
                                     )}
                                     {announced && (
-                                        <button onClick={handleReserveClick} className="bg-white/10 hover:bg-white/15 border border-white/20 text-white flex items-center gap-2 font-bold py-4 px-8 rounded-2xl transition transform hover:-translate-y-0.5 cursor-pointer">
+                                        <button onClick={handleReserveClick} className="bg-ink/[0.08] hover:bg-ink/[0.12] border border-line-strong text-ink flex items-center gap-2 font-bold py-4 px-8 rounded-2xl transition transform hover:-translate-y-0.5 cursor-pointer">
                                             {t('courseDetail.reserve_seat')}
                                         </button>
                                     )}
@@ -577,7 +577,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     {t('courseDetail.reserve_seat')}
                                 </button>
                             ) : (
-                                <div className="bg-white/5 border border-white/15 text-gray-400 font-bold py-3 px-7 rounded-2xl">
+                                <div className="bg-ink/[0.04] border border-line text-ink-muted font-bold py-3 px-7 rounded-2xl">
                                     {t('courseDetail.not_open_yet')}
                                 </div>
                             )}
@@ -588,7 +588,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     <div className="hidden lg:block animate-fade-in-up">
                         <div className="relative">
                             <div className="absolute -inset-3 bg-gradient-to-tr from-brand-gold/30 to-transparent rounded-[2rem] blur-2xl opacity-50" aria-hidden />
-                            <div className="relative rounded-[1.75rem] overflow-hidden border border-white/15 shadow-2xl shadow-black/40 hover:scale-[1.02] transition-transform duration-500">
+                            <div className="relative rounded-[1.75rem] overflow-hidden border border-line shadow-2xl shadow-black/40 hover:scale-[1.02] transition-transform duration-500">
                                 {showTrailer && introVideo ? (
                                     <div className="w-full aspect-[4/3] bg-black">
                                         {introVideo.type === 'embed' ? (
@@ -609,20 +609,20 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                             <img src={`${API_BASE_URL}${course.coverImageUrl}`} alt={pick(course, 'title') || ''} className="w-full aspect-[4/3] object-cover" />
                                         ) : (
                                             <div className="w-full aspect-[4/3] bg-gradient-to-br from-brand-navy-light to-brand-navy-dark flex items-center justify-center">
-                                                <BookOpen size={72} className="text-brand-gold-light/30" />
+                                                <BookOpen size={72} className="text-accent" />
                                             </div>
                                         )}
                                         {introVideo && (
                                             <button
                                                 type="button"
                                                 onClick={() => setShowTrailer(true)}
-                                                className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brand-navy-dark/35 backdrop-blur-[2px] transition hover:bg-brand-navy-dark/50 cursor-pointer group"
+                                                className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface-sunken backdrop-blur-[2px] transition hover:bg-surface-sunken cursor-pointer group"
                                                 aria-label={t('courseDetail.watch_intro')}
                                             >
-                                                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-gold text-brand-navy-dark shadow-2xl transition-transform duration-300 group-hover:scale-110">
+                                                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-gold text-ink-on-gold shadow-2xl transition-transform duration-300 group-hover:scale-110">
                                                     <PlayCircle size={42} />
                                                 </span>
-                                                <span className="rounded-full bg-brand-navy/85 px-4 py-1.5 text-xs font-black text-white backdrop-blur-sm">
+                                                <span className="rounded-full bg-surface px-4 py-1.5 text-xs font-black text-ink backdrop-blur-sm">
                                                     {t('courseDetail.watch_intro')}
                                                 </span>
                                             </button>
@@ -632,15 +632,15 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-navy-dark/95 to-transparent p-6 pt-16 pointer-events-none">
                                     <div className="flex items-center justify-between gap-4">
                                         <div>
-                                            <div className="text-[10px] font-bold text-brand-gold-light uppercase tracking-[0.2em] mb-1">
+                                            <div className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] mb-1">
                                                 {opening ? (Number(opening.price) === 0 ? t('course.free') : formatPrice(opening.price, { locale })) : t('courseDetail.not_open_yet')}
                                             </div>
-                                            <div className="text-white font-black text-2xl">{pick(course, 'title')}</div>
+                                            <div className="text-ink font-black text-2xl">{pick(course, 'title')}</div>
                                         </div>
                                         {course._count?.modules ? (
-                                            <div className="bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 text-center shrink-0">
-                                                <div className="text-xl font-black text-brand-gold-light">{course._count.modules}</div>
-                                                <div className="text-[10px] font-bold text-white/70">{t('course.modules')}</div>
+                                            <div className="bg-ink/[0.12] backdrop-blur-sm rounded-2xl px-4 py-3 text-center shrink-0">
+                                                <div className="text-xl font-black text-accent">{course._count.modules}</div>
+                                                <div className="text-[10px] font-bold text-ink">{t('course.modules')}</div>
                                             </div>
                                         ) : null}
                                     </div>
@@ -653,7 +653,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
             <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-10 relative z-20">
                 {mode !== 'guest' && renderTabs()}
-                <div className={`rounded-3xl shadow-2xl p-4 sm:p-6 md:p-12 animate-fade-in-up ${dark ? 'bg-brand-navy shadow-black/20 border border-white/5' : 'bg-white shadow-brand-navy/10 border border-gray-200'}`}>
+                <div className={`rounded-3xl shadow-2xl p-4 sm:p-6 md:p-12 animate-fade-in-up ${dark ? 'bg-surface shadow-black/20 border border-line' : 'bg-surface-raised shadow-brand-navy/10 border border-line'}`}>
 
                     {mode !== 'guest' && tab !== 'overview' ? (
                         <>
@@ -676,9 +676,9 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             <SectionTitle icon={<GraduationCap size={18} />}>{t('courseDetail.learn_heading')}</SectionTitle>
                             <div className="grid sm:grid-cols-2 gap-3">
                                 {course.objectives.map((o, idx) => (
-                                    <div key={idx} className={`flex items-start gap-3 rounded-xl p-3 sm:p-4 hover:border-brand-gold/20 transition ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                    <div key={idx} className={`flex items-start gap-3 rounded-xl p-3 sm:p-4 hover:border-brand-gold/20 transition ${'bg-surface-sunken border border-line'}`}>
                                         <CheckCircle size={18} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                                        <span className={`text-sm font-medium ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(o, 'objective')}</span>
+                                        <span className={`text-sm font-medium ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>{pick(o, 'objective')}</span>
                                     </div>
                                 ))}
                             </div>
@@ -701,12 +701,12 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 <div>
                                     <SectionTitle icon={<BookOpen size={18} />}>{t('courseDetail.about_heading')}</SectionTitle>
                                     {pick(course, 'description') && (
-                                        <p className={`whitespace-pre-wrap leading-relaxed mb-6 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(course, 'description')}</p>
+                                        <p className={`whitespace-pre-wrap leading-relaxed mb-6 ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>{pick(course, 'description')}</p>
                                     )}
                                     {pick(course, 'syllabus') && (
                                         <div>
-                                            <h3 className={`text-lg font-bold mb-2 ${dark ? 'text-white' : 'text-brand-navy'}`}>{t('courseDetail.syllabus_heading')}</h3>
-                                            <p className={`whitespace-pre-wrap leading-relaxed rounded-2xl p-5 ${dark ? 'text-gray-300 bg-brand-navy-dark border border-white/5' : 'text-gray-700 bg-gray-50 border border-gray-200'}`}>
+                                            <h3 className={`text-lg font-bold mb-2 'text-ink'`}>{t('courseDetail.syllabus_heading')}</h3>
+                                            <p className={`whitespace-pre-wrap leading-relaxed rounded-2xl p-5 ${'text-ink-muted bg-surface-sunken border border-line'}`}>
                                                 {pick(course, 'syllabus') || t('courseDetail.syllabus_fallback')}
                                             </p>
                                         </div>
@@ -721,8 +721,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <ul className="space-y-3">
                                         {course.prerequisites.map((p, idx) => (
                                             <li key={idx} className="flex items-start gap-3">
-                                                <ListChecks size={18} className={`mt-0.5 flex-shrink-0 ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`} />
-                                                <span className={`font-medium ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(p, 'prerequisite')}</span>
+                                                <ListChecks size={18} className={`mt-0.5 flex-shrink-0 'text-accent'`} />
+                                                <span className={`font-medium ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>{pick(p, 'prerequisite')}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -736,8 +736,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <ul className="space-y-3">
                                         {course.audiences.map((a, idx) => (
                                             <li key={idx} className="flex items-start gap-3">
-                                                <CheckCircle size={18} className={`mt-0.5 flex-shrink-0 ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`} />
-                                                <span className={`font-medium ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(a, 'audience')}</span>
+                                                <CheckCircle size={18} className={`mt-0.5 flex-shrink-0 'text-accent'`} />
+                                                <span className={`font-medium ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>{pick(a, 'audience')}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -750,7 +750,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             {courseInstructor?.id && (
                                 <div>
                                     <SectionTitle icon={<User size={18} />}>{t('courseDetail.instructor_heading')}</SectionTitle>
-                                    <div className={`flex flex-wrap items-center gap-5 rounded-2xl p-5 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                    <div className={`flex flex-wrap items-center gap-5 rounded-2xl p-5 ${'bg-surface-sunken border border-line'}`}>
                                         {courseInstructor.avatarUrl ? (
                                             // eslint-disable-next-line @next/next/no-img-element
                                             <img
@@ -759,7 +759,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                                 className="h-16 w-16 flex-shrink-0 rounded-full object-cover"
                                             />
                                         ) : (
-                                            <span className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-gold to-brand-gold-dark text-2xl font-black text-brand-navy-dark">
+                                            <span className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-gold to-brand-gold-dark text-2xl font-black text-ink">
                                                 {(instructorName || '?').trim().charAt(0).toUpperCase()}
                                             </span>
                                         )}
@@ -767,15 +767,15 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                             {/* Wraps instead of truncating: a clipped
                                                 name is unreadable on a phone, and
                                                 Arabic job titles are long. */}
-                                            <div className={`font-black break-words ${dark ? 'text-white' : 'text-brand-navy'}`} dir="auto">
+                                            <div className={`font-black break-words 'text-ink'`} dir="auto">
                                                 {instructorName || t('courseDetail.expert_instructor')}
                                             </div>
-                                            <div className={`mt-0.5 text-sm break-words ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="auto">
+                                            <div className={`mt-0.5 text-sm break-words 'text-ink-subtle'`} dir="auto">
                                                 {instructorJobTitle || t('courseDetail.instructor_role')}
                                             </div>
                                             <Link
                                                 href={`/instructors/${courseInstructor.id}`}
-                                                className={`mt-2 inline-flex items-center gap-1.5 text-sm font-bold hover:underline ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}
+                                                className={`mt-2 inline-flex items-center gap-1.5 text-sm font-bold hover:underline 'text-accent'`}
                                             >
                                                 {t('courseDetail.instructor_view_profile')}
                                             </Link>
@@ -788,60 +788,60 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             <div>
                                 <SectionTitle icon={<Star size={18} />}>{t('courseDetail.reviews_heading')}</SectionTitle>
                                 {reviewsLoading ? (
-                                    <div className={`h-20 animate-pulse rounded-2xl ${dark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                                    <div className={`h-20 animate-pulse rounded-2xl ${dark ? 'bg-ink/[0.04]' : 'bg-surface-sunken'}`} />
                                 ) : !reviews || reviews.total === 0 ? (
-                                    <p className={`rounded-2xl border border-dashed p-5 text-sm ${dark ? 'border-white/10 text-gray-400' : 'border-gray-200 text-gray-500'}`}>
+                                    <p className={`rounded-2xl border border-dashed p-5 text-sm ${'border-line text-ink-subtle'}`}>
                                         {t('courseDetail.reviews_empty')}
                                     </p>
                                 ) : (
                                     <div className="space-y-4">
-                                    <div className={`flex flex-wrap items-center gap-4 sm:gap-5 rounded-2xl p-4 sm:p-5 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                    <div className={`flex flex-wrap items-center gap-4 sm:gap-5 rounded-2xl p-4 sm:p-5 ${'bg-surface-sunken border border-line'}`}>
                                             <div className="text-center">
-                                                <div className="text-4xl font-black text-brand-gold-dark dark:text-brand-gold-light">
+                                                <div className="text-4xl font-black text-accent dark:text-brand-gold-light">
                                                     {reviews.average.toFixed(1)}
                                                 </div>
                                                 <div className="mt-1 flex items-center justify-center gap-0.5" aria-hidden>
                                                     {[1, 2, 3, 4, 5].map(s => (
-                                                        <Star key={s} size={13} className={s <= Math.round(reviews.average) ? 'fill-brand-gold text-brand-gold' : dark ? 'text-gray-600' : 'text-gray-300'} />
+                                                        <Star key={s} size={13} className={s <= Math.round(reviews.average) ? 'fill-brand-gold text-accent' : dark ? 'text-ink-subtle' : 'text-ink-muted'} />
                                                     ))}
                                                 </div>
-                                                <div className={`mt-1 text-xs font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                <div className={`mt-1 text-xs font-bold 'text-ink-subtle'`}>
                                                     {t('courseDetail.reviews_count').replace('{n}', formatNumber(reviews.total, locale))}
                                                 </div>
                                             </div>
                                             <ul className="flex-1 space-y-1">
                                                 {reviews.distribution.map(d => (
                                                     <li key={d.stars} className="flex items-center gap-2 text-xs">
-                                                        <span className={`w-8 shrink-0 font-black ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{d.stars}★</span>
-                                                        <span className={`h-2 flex-1 overflow-hidden rounded-full ${dark ? 'bg-white/10' : 'bg-gray-200'}`}>
+                                                        <span className={`w-8 shrink-0 font-black 'text-ink-subtle'`}>{d.stars}★</span>
+                                                        <span className={`h-2 flex-1 overflow-hidden rounded-full ${'bg-ink/[0.08]'}`}>
                                                             <span
                                                                 className="block h-full rounded-full bg-brand-gold"
                                                                 style={{ width: `${reviews.total ? (d.count / reviews.total) * 100 : 0}%` }}
                                                             />
                                                         </span>
-                                                        <span className={`w-6 shrink-0 text-end font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{d.count}</span>
+                                                        <span className={`w-6 shrink-0 text-end font-bold 'text-ink-subtle'`}>{d.count}</span>
                                                     </li>
                                                 ))}
                                             </ul>
                                         </div>
                                         <ul className="space-y-3">
                                             {reviews.reviews.slice(0, REVIEWS_PREVIEW).map(r => (
-                                                <li key={r.id} className={`rounded-2xl p-4 ${dark ? 'bg-brand-navy-dark border border-white/5' : 'bg-white border border-gray-200'}`}>
+                                                <li key={r.id} className={`rounded-2xl p-4 ${dark ? 'bg-surface-sunken border border-line' : 'bg-surface-raised border border-line'}`}>
                                                     <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                                                         <span className="flex items-center gap-0.5 shrink-0" aria-label={`${r.rating}/5`}>
                                                             {[1, 2, 3, 4, 5].map(s => (
-                                                                <Star key={s} size={12} className={s <= r.rating ? 'fill-brand-gold text-brand-gold' : dark ? 'text-gray-600' : 'text-gray-300'} />
+                                                                <Star key={s} size={12} className={s <= r.rating ? 'fill-brand-gold text-accent' : dark ? 'text-ink-subtle' : 'text-ink-muted'} />
                                                             ))}
                                                         </span>
-                                                        <span className={`truncate text-[13px] font-bold max-w-[55vw] sm:max-w-[220px] ${dark ? 'text-gray-400' : 'text-gray-500'}`} dir="ltr">
+                                                        <span className={`truncate text-[13px] font-bold max-w-[55vw] sm:max-w-[220px] 'text-ink-subtle'`} dir="ltr">
                                                             {r.user?.email}
                                                         </span>
-                                                        <span className={`ms-auto shrink-0 text-xs ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                        <span className={`ms-auto shrink-0 text-xs 'text-ink-subtle'`}>
                                                             {fmtDate(r.createdAt)}
                                                         </span>
                                                     </div>
                                                     {(pick(r, 'comment')) && (
-                                                        <p className={`text-sm leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(r, 'comment')}</p>
+                                                        <p className={`text-sm leading-relaxed ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>{pick(r, 'comment')}</p>
                                                     )}
                                                 </li>
                                             ))}
@@ -856,16 +856,16 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <SectionTitle icon={<MessagesSquare size={18} />}>{t('courseDetail.faq_heading')}</SectionTitle>
                                     <div className="space-y-3">
                                         {course.faqs.map((f, idx) => (
-                                            <div key={idx} className={`rounded-2xl overflow-hidden ${dark ? 'border border-white/5 bg-brand-navy-dark' : 'border border-gray-200 bg-gray-50'}`}>
+                                            <div key={idx} className={`rounded-2xl overflow-hidden ${'border border-line bg-surface-sunken'}`}>
                                                 <button
                                                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                                                    className={`w-full flex items-center justify-between gap-3 p-4 text-left font-bold transition ${dark ? 'text-white hover:bg-white/5' : 'text-brand-navy hover:bg-gray-100'}`}
+                                                    className={`w-full flex items-center justify-between gap-3 p-4 text-left font-bold transition ${dark ? 'text-ink hover:bg-ink/[0.04]' : 'text-ink hover:bg-surface-sunken'}`}
                                                 >
                                                     <span>{pick(f, 'question')}</span>
-                                                    <ChevronDown size={18} className={`flex-shrink-0 transition-transform ${openFaq === idx ? 'rotate-180' : ''} ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`} />
+                                                    <ChevronDown size={18} className={`flex-shrink-0 transition-transform ${openFaq === idx ? 'rotate-180' : ''} 'text-accent'`} />
                                                 </button>
                                                 {openFaq === idx && (
-                                                    <p className={`px-4 pb-4 text-sm leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{pick(f, 'answer')}</p>
+                                                    <p className={`px-4 pb-4 text-sm leading-relaxed ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>{pick(f, 'answer')}</p>
                                                 )}
                                             </div>
                                         ))}
@@ -879,7 +879,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <SectionTitle icon={<Award size={18} />}>{t('courseDetail.course_gallery')}</SectionTitle>
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {course.gallery.map((g, idx) => (
-                                            <a key={idx} href={`${API_BASE_URL}${g.url}`} target="_blank" rel="noreferrer" className={`group overflow-hidden rounded-2xl transition ${dark ? 'border border-white/5 hover:border-brand-gold/20' : 'border border-gray-200 hover:border-brand-gold/40'}`}>
+                                            <a key={idx} href={`${API_BASE_URL}${g.url}`} target="_blank" rel="noreferrer" className={`group overflow-hidden rounded-2xl transition ${dark ? 'border border-line hover:border-brand-gold/20' : 'border border-line hover:border-brand-gold/40'}`}>
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                                 <img src={`${API_BASE_URL}${g.url}`} alt={`gallery-${idx}`} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" />
                                             </a>
@@ -891,12 +891,12 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
                         {/* Sidebar Info */}
                         <div className="space-y-6 lg:sticky lg:top-24 self-start">
-                            <div className="rounded-3xl overflow-hidden border border-white/5 shadow-2xl shadow-black/20 bg-brand-navy-dark border-t-2 border-t-brand-gold-light animate-fade-in-up">
+                            <div className="rounded-3xl overflow-hidden border border-line shadow-2xl shadow-black/20 bg-surface-sunken border-t-2 border-t-brand-gold-light animate-fade-in-up">
                                 <div className="bg-gradient-to-r from-brand-gold/10 to-transparent px-6 py-4 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold-light">
+                                    <div className="w-8 h-8 rounded-full bg-brand-gold/20 flex items-center justify-center text-gold-ink">
                                         <BookOpen size={16} />
                                     </div>
-                                    <h2 className="font-black text-brand-gold-light uppercase tracking-wider text-sm">{t('courseDetail.course_details')}</h2>
+                                    <h2 className="font-black text-accent uppercase tracking-wider text-sm">{t('courseDetail.course_details')}</h2>
                                 </div>
                                 <div className="p-4 sm:p-6 space-y-1">
                                     {[
@@ -912,8 +912,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         fmtDate(metaOpening?.endDate) ? { icon: <CalendarDays size={16} />, label: `${t('courseDetail.ends_label')}: ${fmtDate(metaOpening?.endDate)}` } : null,
                                         fmtDate(metaOpening?.enrollmentDeadline) ? { icon: <CalendarDays size={16} />, label: `${t('courseDetail.deadline_label')}: ${fmtDate(metaOpening?.enrollmentDeadline)}` } : null,
                                     ].filter(Boolean).map((row, idx) => row && (
-                                        <div key={idx} className="flex items-center gap-3 py-2.5 text-gray-300 font-medium text-sm border-b border-white/5 last:border-0">
-                                            <div className="w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center text-brand-gold-light shrink-0">
+                                        <div key={idx} className="flex items-center gap-3 py-2.5 text-ink-muted font-medium text-sm border-b border-line last:border-0">
+                                            <div className="w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center text-gold-ink shrink-0">
                                                 {row.icon}
                                             </div>
                                             <span className="break-words">{row.label}</span>
@@ -921,10 +921,10 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     ))}
                                     {metaOpening && (
                                         <div className="flex items-center gap-3 py-3 mt-1">
-                                            <div className="w-8 h-8 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold-light shrink-0">
+                                            <div className="w-8 h-8 rounded-full bg-brand-gold/20 flex items-center justify-center text-gold-ink shrink-0">
                                                 <BookOpen size={16} />
                                             </div>
-                                            <span className="font-black text-brand-gold-light text-3xl">
+                                            <span className="font-black text-accent text-3xl">
                                                 {Number(metaOpening.price) === 0 ? t('course.free') : formatPrice(metaOpening.price, { locale })}
                                             </span>
                                         </div>
@@ -934,45 +934,45 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
                             {/* Included features */}
                             {included.length > 0 && (
-                                <div className="rounded-3xl border border-white/5 p-4 sm:p-6 shadow-sm bg-brand-navy-dark animate-fade-in-up">
-                                    <h2 className="font-black text-white mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                <div className="rounded-3xl border border-line p-4 sm:p-6 shadow-sm bg-surface-sunken animate-fade-in-up">
+                                    <h2 className="font-black text-ink mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
                                         <span className="w-1 h-5 bg-brand-gold-light rounded-full" /> {t('courseDetail.features_heading')}
                                     </h2>
                                     <ul className="space-y-2.5">
                                         {included.map((f, idx) => (
                                             <li key={idx} className="flex items-start gap-2.5">
-                                                <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
+                                                <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
                                                     <CheckCircle size={13} />
                                                 </span>
-                                                <span className="text-sm text-gray-300 font-medium">{f.label}</span>
+                                                <span className="text-sm text-ink-muted font-medium">{f.label}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             )}
 
-                            <div className="rounded-3xl border border-white/5 p-4 sm:p-6 shadow-sm bg-brand-navy-dark animate-fade-in-up">
-                                <h2 className="font-black text-white mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+                            <div className="rounded-3xl border border-line p-4 sm:p-6 shadow-sm bg-surface-sunken animate-fade-in-up">
+                                <h2 className="font-black text-ink mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
                                     <span className="w-1 h-5 bg-brand-gold-light rounded-full" /> {t('courseDetail.achievements')}
                                 </h2>
                                 <ul className="space-y-2.5">
                                     <li className="flex items-start gap-2.5">
-                                        <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
+                                        <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
                                             <CheckCircle size={13} />
                                         </span>
-                                        <span className="text-sm text-gray-300 font-medium">{t('courseDetail.achievement_1')}</span>
+                                        <span className="text-sm text-ink-muted font-medium">{t('courseDetail.achievement_1')}</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
-                                        <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
+                                        <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
                                             <CheckCircle size={13} />
                                         </span>
-                                        <span className="text-sm text-gray-300 font-medium">{t('courseDetail.achievement_2')}</span>
+                                        <span className="text-sm text-ink-muted font-medium">{t('courseDetail.achievement_2')}</span>
                                     </li>
                                     <li className="flex items-start gap-2.5">
-                                        <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
+                                        <span className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 flex items-center justify-center mt-0.5 flex-shrink-0">
                                             <CheckCircle size={13} />
                                         </span>
-                                        <span className="text-sm text-gray-300 font-medium">{t('courseDetail.achievement_3')}</span>
+                                        <span className="text-sm text-ink-muted font-medium">{t('courseDetail.achievement_3')}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -995,19 +995,19 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             {/* Enrollment Modal with Receipt Upload */}
             {selectedOpening && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
-                    <div className={`rounded-3xl w-full max-w-lg p-5 sm:p-8 shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto ${dark ? 'bg-brand-navy border border-white/10' : 'bg-white border border-gray-200'}`}>
-                        <h2 className={`text-xl sm:text-2xl font-black mb-2 break-words ${dark ? 'text-white' : 'text-brand-navy'}`}>
+                    <div className={`rounded-3xl w-full max-w-lg p-5 sm:p-8 shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto ${dark ? 'bg-surface border border-line' : 'bg-surface-raised border border-line'}`}>
+                        <h2 className={`text-xl sm:text-2xl font-black mb-2 break-words 'text-ink'`}>
                             {t('explore.enroll_in')} {pick(course, 'title')}
                         </h2>
-                        <p className={`mb-6 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>
-                            {t('explore.transfer_part1')} <strong className={dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}>{formatPrice(selectedOpening.price, { locale })}</strong> {t('explore.transfer_part2')}
+                        <p className={`mb-6 ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>
+                            {t('explore.transfer_part1')} <strong className={'text-accent'}>{formatPrice(selectedOpening.price, { locale })}</strong> {t('explore.transfer_part2')}
                         </p>
 
                         <EnrollSteps step={gatewayId ? 2 : 1} dark={dark} />
 
                         <div className="mb-6 space-y-3">
-                            <h3 className={`font-bold text-sm uppercase tracking-wider ${dark ? 'text-gray-300' : 'text-brand-charcoal'}`}>{t('payment.payment_method')}:</h3>
-                            <p className={`text-xs -mt-1 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('payment.choose_method_hint')}</p>
+                            <h3 className={`font-bold text-sm uppercase tracking-wider ${dark ? 'text-ink-muted' : 'text-ink'}`}>{t('payment.payment_method')}:</h3>
+                            <p className={`text-xs -mt-1 'text-ink-subtle'`}>{t('payment.choose_method_hint')}</p>
                             <PaymentMethods
                                 gateways={gateways}
                                 loading={gatewaysLoading}
@@ -1019,10 +1019,10 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                         </div>
 
                         <div className="space-y-3">
-                            <h3 className={`font-bold text-sm uppercase tracking-wider ${dark ? 'text-gray-300' : 'text-brand-charcoal'}`}>{t('payment.step_receipt')}:</h3>
+                            <h3 className={`font-bold text-sm uppercase tracking-wider ${dark ? 'text-ink-muted' : 'text-ink'}`}>{t('payment.step_receipt')}:</h3>
                             {!gatewayId ? (
-                                <p className={`text-sm p-3 rounded-xl border flex items-center gap-2 ${dark ? 'text-gray-400 bg-white/5 border-white/10' : 'text-gray-600 bg-brand-mist/40 border-brand-mist'}`}>
-                                    <AlertTriangle size={16} className="flex-shrink-0 text-brand-gold" />
+                                <p className={`text-sm p-3 rounded-xl border flex items-center gap-2 ${dark ? 'text-ink-muted bg-ink/[0.04] border-line' : 'text-ink-muted bg-ink/[0.04] border-brand-mist'}`}>
+                                    <AlertTriangle size={16} className="flex-shrink-0 text-accent" />
                                     {t('payment.receipt_section_locked')}
                                 </p>
                             ) : (
@@ -1044,7 +1044,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             <button
                                 onClick={() => setSelectedOpening(null)}
                                 disabled={isSubmitting}
-                                className={`flex-1 py-3 font-bold rounded-xl transition ${dark ? 'bg-white/5 text-gray-300 hover:bg-white/10' : 'bg-brand-mist text-gray-700 hover:bg-gray-200'}`}
+                                className={`flex-1 py-3 font-bold rounded-xl transition ${dark ? 'bg-ink/[0.04] text-ink-muted hover:bg-ink/[0.08]' : 'bg-surface-sunken text-ink-muted hover:bg-ink/[0.08]'}`}
                             >
                                 {t('common.cancel')}
                             </button>

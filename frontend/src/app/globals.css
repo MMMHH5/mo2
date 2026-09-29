@@ -100,6 +100,118 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Semantic surface + ink tokens.
+
+   Every open-course panel used to hard-code `bg-brand-navy` with `text-white`
+   and a stack of `bg-white/10` overlays, none of which react to the theme
+   toggle. In light mode those panels sat inside a light shell, and text that
+   assumed a navy backdrop became invisible wherever the parent was light.
+
+   `inline` makes Tailwind emit `var(--token)` rather than a frozen literal, so
+   one utility follows the theme on its own. The rule this enforces: a surface
+   and its ink are always two different tokens, and they always move together.
+   ------------------------------------------------------------------------- */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-inverse-deep: var(--surface-inverse-deep);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-inverse: var(--ink-inverse);
+  --color-ink-on-accent: var(--ink-on-accent);
+  --color-ink-on-gold: var(--ink-on-gold);
+  --color-gold-ink: var(--gold-ink);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+}
+
+:root {
+  /* Page-level surfaces: white cards on a warm off-white page. */
+  --surface: #ffffff;
+  --surface-sunken: #f2f5fa;
+  --surface-raised: #ffffff;
+  /* Brand panels stay navy in both themes, so white ink is always right on them. */
+  --surface-inverse: #12305a;
+  --surface-inverse-deep: #0a1c35;
+
+  --ink: #1b2434;
+  --ink-muted: #4f5c73;
+  /* Clears 4.5:1 on both --surface and --surface-sunken, so secondary text
+     still passes AA rather than only being "large text". */
+  --ink-subtle: #647084;
+  --ink-inverse: #ffffff;
+  --ink-on-accent: #ffffff;
+  /* Gold is a light, warm surface, so it takes dark ink in *both* themes. White
+     on #C6A15B only reaches 2.43:1; navy on the same gold reaches 7.3:1. */
+  --ink-on-gold: #0a1c35;
+  /* Gold ink for text sitting on a *tinted* gold chip (gold/10 .. gold/30).
+     --accent is tuned for gold text on a plain surface and only reaches
+     ~4.1:1 on the tint, so the tinted case needs a deeper gold. */
+  --gold-ink: #6b5410;
+
+  --line: #dde4ee;
+  --line-strong: #c3cedd;
+
+  --accent: #1a4480;
+  --accent-soft: #e8eefa;
+
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  --success: #05603a;
+  --success-soft: #e6f4ec;
+  --warning: #8a5a00;
+  --warning-soft: #fdf3e0;
+}
+
+html.dark {
+  /* The page stays dark; cards lift one step off it so the edges stay visible. */
+  --surface: #11294a;
+  --surface-sunken: #0a1c35;
+  --surface-raised: #17325a;
+  --surface-inverse: #16325c;
+  --surface-inverse-deep: #0a1c35;
+
+  --ink: #eaf0f8;
+  --ink-muted: #a9bad1;
+  --ink-subtle: #8296b2;
+  --ink-inverse: #ffffff;
+  --ink-on-accent: #0a1c35;
+  --ink-on-gold: #0a1c35;
+  --gold-ink: #e8d3a0;
+
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.2);
+
+  --accent: #d4b67a;
+  /* A `-soft` chip is a *tinted surface*, so it has to stay dark while its ink
+     stays bright. These used to be the ink's own hue at low alpha, which made
+     the chip and its own label the same colour. Opaque, so the value is exact
+     and hue-preserving rather than washed out by the navy underneath. */
+  --accent-soft: #3d3014;
+
+  --danger: #ff9a8f;
+  --danger-soft: #421d1f;
+  --success: #6ee7b0;
+  --success-soft: #0e4433;
+  --warning: #f0c674;
+  --warning-soft: #402f0f;
+}
+
 .glass-panel {
   background: var(--color-glass-white);
   backdrop-filter: blur(12px);

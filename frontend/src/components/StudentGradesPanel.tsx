@@ -35,28 +35,28 @@ export default function StudentGradesPanel({ courseId }: Props) {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-3">
-                <GraduationCap size={24} className="text-brand-gold" />
-                <h2 className="text-2xl font-black text-brand-navy">{t('myGrades.heading')}</h2>
+                <GraduationCap size={24} className="text-accent" />
+                <h2 className="text-2xl font-black text-ink">{t('myGrades.heading')}</h2>
             </div>
 
             {loading ? (
-                <div className="h-48 flex items-center justify-center text-brand-navy">
+                <div className="h-48 flex items-center justify-center text-ink">
                     <Loader className="animate-spin" size={32} />
                 </div>
             ) : !enrollment || grades.length === 0 ? (
-                <div className="text-center text-gray-400 font-bold py-16">{t('myGrades.no_grades')}</div>
+                <div className="text-center text-ink-subtle font-bold py-16">{t('myGrades.no_grades')}</div>
             ) : (
                 <div className="border border-brand-mist rounded-3xl overflow-x-auto">
-                    <div className="bg-gradient-to-r from-brand-navy to-brand-charcoal text-white p-5 flex items-center justify-between gap-4 flex-wrap">
+                    <div className="bg-gradient-to-r from-brand-navy to-brand-charcoal text-ink p-5 flex items-center justify-between gap-4 flex-wrap">
                         <div>
                             <h3 className="text-xl font-black">{pick(enrollment.course, 'title')}</h3>
                             {pick(enrollment.opening, 'name') && (
-                                <p className="text-sm text-brand-mist/70 mt-0.5">{pick(enrollment.opening, 'name')}</p>
+                                <p className="text-sm text-ink-muted mt-0.5">{pick(enrollment.opening, 'name')}</p>
                             )}
                         </div>
                         <div className="text-right">
-                            <div className="text-2xl font-black text-brand-gold">{avg}%</div>
-                            <div className="text-[11px] uppercase tracking-wider text-brand-mist/60 font-bold">{t('myGrades.average')}</div>
+                            <div className="text-2xl font-black text-accent">{avg}%</div>
+                            <div className="text-[11px] uppercase tracking-wider text-ink-muted font-bold">{t('myGrades.average')}</div>
                         </div>
                     </div>
                     <table className="admin-table text-left">
@@ -71,10 +71,10 @@ export default function StudentGradesPanel({ courseId }: Props) {
                         <tbody className="divide-y divide-brand-mist/50">
                             {grades.map(g => (
                                 <tr key={g.id}>
-                                    <td className="p-4 font-bold text-gray-700">{pick(g.assessment, 'name')}</td>
+                                    <td className="p-4 font-bold text-ink-muted">{pick(g.assessment, 'name')}</td>
                                     <td className="p-4">{g.score} / {g.assessment.maxScore}</td>
                                     <td className="p-4">{pct(g)}%</td>
-                                    <td className="p-4 text-gray-500 text-sm">{g.notes || '—'}</td>
+                                    <td className="p-4 text-ink-subtle text-sm">{g.notes || '—'}</td>
                                 </tr>
                             ))}
                         </tbody>

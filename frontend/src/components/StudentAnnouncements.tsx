@@ -81,7 +81,7 @@ export default function StudentAnnouncements() {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-12">
-                <Loader size={24} className="animate-spin text-brand-gold-light" />
+                <Loader size={24} className="animate-spin text-accent" />
             </div>
         );
     }
@@ -90,16 +90,16 @@ export default function StudentAnnouncements() {
         <div className="space-y-4">
             <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center">
-                    <Bell size={20} className="text-brand-gold-light" />
+                    <Bell size={20} className="text-accent" />
                 </div>
                 <div>
-                    <h3 className="text-xl font-black text-white">{t('announcements.title')}</h3>
-                    <p className="text-gray-400 text-sm">{isAr ? 'آخر الإعلانات من دوراتك' : 'Latest announcements from your courses'}</p>
+                    <h3 className="text-xl font-black text-ink">{t('announcements.title')}</h3>
+                    <p className="text-ink-subtle text-sm">{isAr ? 'آخر الإعلانات من دوراتك' : 'Latest announcements from your courses'}</p>
                 </div>
             </div>
 
             {announcements.length === 0 ? (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8">
+                <div className="bg-surface-sunken border border-line rounded-2xl p-8">
                     <EmptyPanel icon={Megaphone} title={isAr ? 'لا توجد إعلانات' : 'No announcements yet'} />
                 </div>
             ) : (
@@ -107,24 +107,24 @@ export default function StudentAnnouncements() {
                     {announcements.map((a) => (
                         <div
                             key={a.id}
-                            className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5 hover:border-brand-gold/20 transition-all duration-200"
+                            className="bg-surface-sunken border border-line rounded-2xl p-5 hover:border-brand-gold/20 transition-all duration-200"
                         >
                             <div className="flex items-start gap-3">
                                 <div className="shrink-0 w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center mt-0.5">
-                                    <Megaphone size={18} className="text-brand-gold-light" />
+                                    <Megaphone size={18} className="text-accent" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-white font-bold text-base mb-1">{isAr ? a.titleAr : a.titleEn}</h4>
+                                    <h4 className="text-ink font-bold text-base mb-1">{isAr ? a.titleAr : a.titleEn}</h4>
                                     {a.openingName && (
-                                        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+                                        <div className="flex items-center gap-1.5 text-xs text-ink-subtle mb-2">
                                             <BookOpen size={11} />
                                             <span>{a.openingName}</span>
                                         </div>
                                     )}
-                                    <p className="text-gray-300 text-sm leading-relaxed line-clamp-3 mb-3">
+                                    <p className="text-ink-muted text-sm leading-relaxed line-clamp-3 mb-3">
                                         {isAr ? a.contentAr : a.contentEn}
                                     </p>
-                                    <div className="flex flex-wrap items-center gap-4 text-[10px] text-gray-500">
+                                    <div className="flex flex-wrap items-center gap-4 text-[10px] text-ink-subtle">
                                         <span className="flex items-center gap-1">
                                             <Calendar size={10} />
                                             {new Date(a.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {

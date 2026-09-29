@@ -82,7 +82,7 @@ function ScoreRing({ pct, passed }: { pct: number; passed: boolean }) {
                 />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black text-white">{clamped}%</span>
+                <span className="text-3xl font-black text-ink">{clamped}%</span>
             </div>
         </div>
     );
@@ -223,7 +223,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader size={28} className="animate-spin text-brand-gold-light" />
+                <Loader size={28} className="animate-spin text-accent" />
             </div>
         );
     }
@@ -231,8 +231,8 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
     if (error || !quiz) {
         return (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <AlertTriangle size={32} className="text-red-400" />
-                <p className="text-gray-400 font-bold">{error || (isAr ? 'تعذر تحميل الاختبار' : 'Failed to load quiz')}</p>
+                <AlertTriangle size={32} className="text-red-700 dark:text-red-400" />
+                <p className="text-ink-subtle font-bold">{error || (isAr ? 'تعذر تحميل الاختبار' : 'Failed to load quiz')}</p>
             </div>
         );
     }
@@ -245,20 +245,20 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
         const correctCount = questions.filter((q) => detailMap.get(q.id)?.isCorrect).length || (result.score >= passScore ? questions.length : 0);
         return (
             <div className="space-y-5 animate-fade-in">
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
+                <div className="bg-surface-sunken border border-line rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
                     <ScoreRing pct={Number(result.score ?? 0)} passed={!!result.passed} />
                     <div className="flex-1 text-center sm:text-start space-y-2">
-                        <h3 className={`text-xl font-black ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
+                        <h3 className={`text-xl font-black ${result.passed ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                             {result.passed
                                 ? (isAr ? 'نجحت في الاختبار!' : 'You passed the quiz!')
                                 : (isAr ? 'لم تجتز الاختبار هذه المرة' : 'Not passed this time')}
                         </h3>
-                        <p className="text-gray-400 text-sm font-bold">
+                        <p className="text-ink-subtle text-sm font-bold">
                             {isAr ? 'درجة النجاح' : 'Pass score'}: {passScore}% · {isAr ? 'إجابات صحيحة' : 'Correct answers'}: {correctCount}/{questions.length}
                         </p>
                         <button
                             onClick={startQuiz}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-brand-gold/10 text-brand-gold-light border border-brand-gold/30 hover:bg-brand-gold/20 transition"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-brand-gold/10 text-gold-ink border border-brand-gold/30 hover:bg-brand-gold/20 transition"
                         >
                             <RotateCcw size={14} /> {isAr ? 'إعادة المحاولة' : 'Retake quiz'}
                         </button>
@@ -273,14 +273,14 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         const correctIdx = d?.correctAnswer || [];
                         const explanation = isAr ? q.explanationAr : q.explanationEn;
                         return (
-                            <div key={q.id} className={`bg-brand-navy-dark border rounded-2xl p-5 ${d?.isCorrect ? 'border-green-500/20' : 'border-red-500/20'}`}>
+                            <div key={q.id} className={`bg-surface-sunken border rounded-2xl p-5 ${d?.isCorrect ? 'border-green-500/20' : 'border-red-500/20'}`}>
                                 <div className="flex items-start justify-between gap-3 mb-3">
-                                    <h4 className="text-white font-bold text-sm leading-relaxed">
+                                    <h4 className="text-ink font-bold text-sm leading-relaxed">
                                         {qi + 1}. {pick(q, 'text')}
                                     </h4>
                                     {d?.isCorrect
-                                        ? <CheckCircle2 size={18} className="text-green-400 shrink-0" />
-                                        : <XCircle size={18} className="text-red-400 shrink-0" />}
+                                        ? <CheckCircle2 size={18} className="text-green-700 dark:text-green-400 shrink-0" />
+                                        : <XCircle size={18} className="text-red-700 dark:text-red-400 shrink-0" />}
                                 </div>
                                 <div className="space-y-1.5 mb-3">
                                     {labels.map((label, oi) => {
@@ -291,10 +291,10 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                                                 key={oi}
                                                 className={`px-3 py-2 rounded-xl text-xs font-bold border ${
                                                     isCorrectOpt
-                                                        ? 'border-green-500/30 bg-green-500/10 text-green-300'
+                                                        ? 'border-green-500/30 bg-green-500/10 text-green-900 dark:text-green-400'
                                                         : wasChosen
-                                                          ? 'border-red-500/30 bg-red-500/10 text-red-300'
-                                                          : 'border-white/5 bg-white/[0.02] text-gray-500'
+                                                          ? 'border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-400'
+                                                          : 'border-line bg-ink/[0.02] text-ink-muted'
                                                 }`}
                                             >
                                                 {label}
@@ -304,7 +304,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                                     })}
                                 </div>
                                 {explanation && (
-                                    <div className="border-s-2 border-brand-gold ps-3 text-xs text-brand-gold-light/70/80 leading-relaxed">
+                                    <div className="border-s-2 border-brand-gold ps-3 text-xs text-accent leading-relaxed">
                                         {explanation}
                                     </div>
                                 )}
@@ -324,39 +324,39 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
         const lowTime = secondsLeft <= 30;
         return (
             <div className="space-y-4">
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-5">
+                <div className="bg-surface-sunken border border-line rounded-2xl p-5">
                     <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
                         <div>
-                            <h3 className="text-white font-black">{pick(quiz, 'title')}</h3>
-                            <p className="text-xs text-gray-500 font-bold mt-0.5">
+                            <h3 className="text-ink font-black">{pick(quiz, 'title')}</h3>
+                            <p className="text-xs text-ink-subtle font-bold mt-0.5">
                                 {isAr ? `سؤال ${current + 1} من ${questions.length}` : `Question ${current + 1} of ${questions.length}`}
                             </p>
                         </div>
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-black tabular-nums ${
-                            lowTime ? 'bg-red-500/15 text-red-300 animate-pulse' : 'bg-white/5 text-gray-300'
+                            lowTime ? 'bg-red-500/15 text-red-800 dark:text-red-400 animate-pulse' : 'bg-ink/[0.04] text-ink-muted'
                         }`}>
                             <Clock size={14} /> {fmtTime(secondsLeft)}
                         </span>
                     </div>
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-2 bg-ink/[0.04] rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-brand-gold to-brand-gold-light rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                     </div>
-                    <p className="text-[11px] text-gray-500 font-bold mt-1.5">
+                    <p className="text-[11px] text-ink-subtle font-bold mt-1.5">
                         {isAr ? `أجبت على ${answeredCount} من ${questions.length}` : `Answered ${answeredCount} of ${questions.length}`}
                     </p>
                 </div>
 
-                <div key={current} className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6 animate-fade-in">
+                <div key={current} className="bg-surface-sunken border border-line rounded-2xl p-6 animate-fade-in">
                     <span className={`inline-block mb-4 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
                         isMultiple(q)
-                            ? 'bg-brand-navy-light/10 text-blue-300 border-brand-navy-light/30'
-                            : 'bg-brand-gold/10 text-brand-gold-light border-brand-gold/30'
+                            ? 'bg-surface-raised text-blue-700 dark:text-blue-400 border-brand-navy-light/30'
+                            : 'bg-brand-gold/10 text-gold-ink border-brand-gold/30'
                     }`}>
                         {isMultiple(q)
                             ? (isAr ? 'اختيار متعدد' : 'Multiple choice')
                             : (isAr ? 'اختيار واحد' : 'Single choice')}
                     </span>
-                    <h4 className="text-white font-bold text-base leading-relaxed mb-5">{pick(q, 'text')}</h4>
+                    <h4 className="text-ink font-bold text-base leading-relaxed mb-5">{pick(q, 'text')}</h4>
                     <div className="space-y-2.5">
                         {optionLabels(q).map((label, oi) => {
                             const checked = (answers[q.id] || []).includes(oi);
@@ -366,7 +366,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
                                         checked
                                             ? 'border-brand-gold/50 bg-brand-gold/10'
-                                            : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/5'
+                                            : 'border-line bg-ink/[0.02] hover:border-line-strong hover:bg-ink/[0.04]'
                                     }`}
                                 >
                                     <input
@@ -376,7 +376,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                                         onChange={() => selectOption(q, oi)}
                                         className="w-4 h-4 accent-brand-gold cursor-pointer"
                                     />
-                                    <span className={`text-sm font-semibold ${checked ? 'text-white' : 'text-gray-300'}`}>{label}</span>
+                                    <span className={`text-sm font-semibold ${checked ? 'text-ink' : 'text-ink-muted'}`}>{label}</span>
                                 </label>
                             );
                         })}
@@ -387,7 +387,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                     <button
                         onClick={() => setCurrent((c) => Math.max(0, c - 1))}
                         disabled={current === 0 || phase === 'submitting'}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-400 bg-white/5 border border-white/10 hover:text-white hover:bg-white/10 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-ink-muted bg-ink/[0.04] border border-line hover:text-ink hover:bg-ink/[0.08] transition disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                         {isAr ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
                         {isAr ? 'السابق' : 'Previous'}
@@ -397,7 +397,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         <button
                             onClick={() => setCurrent((c) => Math.min(questions.length - 1, c + 1))}
                             disabled={phase === 'submitting'}
-                            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light transition disabled:opacity-50"
                         >
                             {isAr ? 'التالي' : 'Next'}
                             {isAr ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
@@ -406,7 +406,7 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
                         <button
                             onClick={() => doSubmit(false)}
                             disabled={phase === 'submitting'}
-                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light transition disabled:opacity-50"
                         >
                             {phase === 'submitting' ? <Loader size={14} className="animate-spin" /> : <Send size={14} />}
                             {isAr ? 'إرسال الاختبار' : 'Submit quiz'}
@@ -419,56 +419,56 @@ export default function InteractiveQuiz({ quizId, enrollmentId, onComplete }: Pr
 
     // ===== Idle / intro =====
     return (
-        <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center space-y-4">
+        <div className="bg-surface-sunken border border-line rounded-2xl p-8 text-center space-y-4">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center">
-                <ListChecks size={28} className="text-brand-gold-light" />
+                <ListChecks size={28} className="text-accent" />
             </div>
-            <h3 className="text-xl font-black text-white">{pick(quiz, 'title')}</h3>
+            <h3 className="text-xl font-black text-ink">{pick(quiz, 'title')}</h3>
             {pick(quiz, 'description') && (
-                <p className="text-gray-400 text-sm max-w-md mx-auto">{pick(quiz, 'description')}</p>
+                <p className="text-ink-subtle text-sm max-w-md mx-auto">{pick(quiz, 'description')}</p>
             )}
             <div className="flex items-center justify-center gap-3 flex-wrap text-xs font-bold">
-                <span className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-300">
+                <span className="px-3 py-1.5 rounded-lg bg-ink/[0.04] border border-line text-ink-muted">
                     {questions.length} {isAr ? 'سؤال' : 'questions'}
                 </span>
-                <span className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-300">
+                <span className="px-3 py-1.5 rounded-lg bg-ink/[0.04] border border-line text-ink-muted">
                     {isAr ? 'النجاح عند' : 'Pass at'} {passScore}%
                 </span>
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-300">
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-ink/[0.04] border border-line text-ink-muted">
                     <Clock size={12} />
                     {isAr ? '~' : '~'}{Math.ceil((questions.length * SECONDS_PER_QUESTION) / 60)} {isAr ? 'دقيقة' : 'min'}
                 </span>
             </div>
 
             {previous && (
-                <div className="max-w-sm mx-auto flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4 text-start">
+                <div className="max-w-sm mx-auto flex items-center gap-3 bg-ink/[0.024] border border-line rounded-xl p-4 text-start">
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
-                        previous.passed ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                        previous.passed ? 'bg-green-500/15 text-green-900 dark:text-green-400' : 'bg-red-500/15 text-red-800 dark:text-red-400'
                     }`}>
                         <Trophy size={20} />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-white font-black text-sm">{isAr ? 'أفضل نتيجة' : 'Best score'}: {previous.score}%</p>
-                        <p className="text-[11px] text-gray-500 font-bold">
+                        <p className="text-ink font-black text-sm">{isAr ? 'أفضل نتيجة' : 'Best score'}: {previous.score}%</p>
+                        <p className="text-[11px] text-ink-subtle font-bold">
                             {previous.passed
                                 ? (isAr ? 'ناجح' : 'Passed')
                                 : (isAr ? 'غير مجتاز' : 'Not passed')}
                             {previous.submittedAt ? ` · ${new Date(previous.submittedAt).toLocaleDateString(isAr ? 'ar' : 'en-US')}` : ''}
                         </p>
                     </div>
-                    <History size={16} className="text-gray-600 shrink-0" />
+                    <History size={16} className="text-ink-subtle shrink-0" />
                 </div>
             )}
 
             <button
                 onClick={startQuiz}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-black bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-black bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light transition"
             >
                 {previous ? <RotateCcw size={16} /> : <ListChecks size={16} />}
                 {previous ? (isAr ? 'إعادة المحاولة' : 'Retake quiz') : (isAr ? 'ابدأ الاختبار' : 'Start quiz')}
             </button>
             {previous && (
-                <p className="text-[11px] text-gray-500 font-bold">
+                <p className="text-[11px] text-ink-subtle font-bold">
                     {isAr ? 'يتم الاحتفاظ بأفضل درجة لديك' : 'Your best score is kept'}
                 </p>
             )}
