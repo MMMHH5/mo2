@@ -123,12 +123,18 @@ export class TasksController {
         if (!file) {
             throw new BadRequestException('File is required.');
         }
-        // A student may only upload into a task they are actually enrolled in.
-        // Without this check the endpoint was an open, authenticated file host.
-        await this.tasksService.assertStudentCanSubmit(id, req.user.userId);
-        if (file.mimetype && !hasValidSignature(file.path, file.mimetype)) {
+        // The interceptor has already streamed the file to disk by the time the
+        // handler runs, so a rejected request has to take the file back off it.
+        // Without this, any authenticated student could park arbitrary bytes in
+        // the uploads volume for a task they are not enrolled in.
+        try {
+            await this.tasksService.assertStudentCanSubmit(id, req.user.userId);
+            if (file.mimetype && !hasValidSignature(file.path, file.mimetype)) {
+                throw new BadRequestException('File content does not match its declared type.');
+            }
+        } catch (err) {
             unlink(file.path, () => { /* best-effort cleanup */ });
-            throw new BadRequestException('File content does not match its declared type.');
+            throw err;
         }
         return {
             url: `/uploads/tasks/${file.filename}`,

@@ -217,16 +217,17 @@ export default function CoursePlayer({ courseId }: Props) {
                 setCourse(c.data as CourseData);
                 setProgress(p.data as ProgressData);
                 setNotesData(n.data as NotesData);
+                // Course-scoped: the server resolves the student's batch, so an
+                // enrollment that never recorded an opening still sees the work
+                // instead of an empty lesson. The course is what we have here, not
+                // a batch, so this must not sit behind an openingId check.
+                try {
+                    const tr = await api.get(`/tasks/course/${courseId}`);
+                    if (active) setTasks(tr.data || []);
+                } catch {
+                    if (active) setTasks([]);
+                }
                 if (p.data?.openingId) {
-                    try {
-                        // Course-scoped: the server resolves the student's batch,
-                        // so an enrollment that never recorded one still sees the
-                        // work instead of an empty lesson.
-                        const tr = await api.get(`/tasks/course/${courseId}`);
-                        if (active) setTasks(tr.data || []);
-                    } catch {
-                        if (active) setTasks([]);
-                    }
                     try {
                         const ar = await api.get(`/announcements/opening/${p.data.openingId}`);
                         if (active) setAnnouncements(ar.data || []);
@@ -234,7 +235,7 @@ export default function CoursePlayer({ courseId }: Props) {
                         if (active) setAnnouncements([]);
                     }
                 } else {
-                    setTasks([]);
+                    setAnnouncements([]);
                 }
                 try {
                     const qr = await api.get(`/quizzes/course/${courseId}`);
