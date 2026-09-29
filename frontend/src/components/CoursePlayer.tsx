@@ -11,7 +11,7 @@ import {
     PlayCircle, FileText, ClipboardList, Link2, Clock, CheckCircle, Play, Pause,
     RotateCcw, Volume2, VolumeX, Maximize, ZoomIn, ZoomOut, Maximize2, Download,
     UploadCloud, StickyNote, MessagesSquare, Send, X, Gift, BookMarked, MessageCircle, ArrowRight,
-    Bell, Megaphone, Calendar, User,
+    Bell, Megaphone, Calendar, User, AlertTriangle,
 } from 'lucide-react';
 import CourseChat from '@/components/CourseChat';
 import DiscussionForum from '@/components/DiscussionForum';
@@ -55,6 +55,10 @@ interface CourseChapter {
 interface ProgressModule extends CourseModule {
     completed: boolean;
     completedAt: string | null;
+    // Outstanding work the server counts as blocking completion.
+    pendingTasks: number;
+    failedQuizzes: number;
+    canComplete: boolean;
 }
 interface ProgressData {
     enrollmentId: string;
@@ -287,6 +291,24 @@ export default function CoursePlayer({ courseId }: Props) {
     const selectedTasks = useMemo(() => tasks.filter(tk => tk.moduleId === selected?.id), [tasks, selected]);
     const selectedKind = useMemo(() => (selected ? kindOf(selected, selectedTasks) : null), [selected, selectedTasks]);
 
+    // Why the server would refuse to mark this lesson complete. The refusal is
+    // enforced server-side (POST /lms/progress); showing the reason here is what
+    // turns a dead button into an instruction.
+    // `t` takes no interpolation, so the counts are spliced in here. The server
+    // is the authority on these numbers; this only explains them.
+    const blockReason = useCallback((m: CourseModule): string | null => {
+        const row = (progress?.modules || []).find(x => x.id === m.id);
+        if (!row || m.isFree) return null;
+        const tasks = row.pendingTasks ?? 0;
+        const quizzes = row.failedQuizzes ?? 0;
+        if (tasks > 0 && quizzes > 0) {
+            return t('player.block_both').replace('{tasks}', String(tasks)).replace('{quizzes}', String(quizzes));
+        }
+        if (tasks > 0) return t('player.block_tasks').replace('{count}', String(tasks));
+        if (quizzes > 0) return t('player.block_quizzes').replace('{count}', String(quizzes));
+        return null;
+    }, [progress, t]);
+
     const filteredModules = useMemo(() => {
         if (!search.trim()) return null;
         const q = search.trim().toLowerCase();
@@ -414,6 +436,7 @@ export default function CoursePlayer({ courseId }: Props) {
 
     // Video player (file videos only get custom controls)
     const renderVideoPlayer = (m: CourseModule, vid: { type: string; src: string }) => {
+        const block = blockReason(m);
         if (vid.type === 'embed') {
             return (
                 <div className="space-y-3">
@@ -422,20 +445,27 @@ export default function CoursePlayer({ courseId }: Props) {
                     </div>
                     <button
                         onClick={flipComplete}
-                        disabled={progressing || !progress?.enrollmentId}
+                        disabled={progressing || !progress?.enrollmentId || (!!block && !completedSet.has(m.id))}
+                        title={block || undefined}
                         className={`w-full flex items-center justify-center gap-2 px-5 py-4 rounded-2xl text-sm font-black transition-all duration-300 ${
                             completedSet.has(m.id)
                                 ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40'
                                 : 'bg-gradient-to-r from-brand-gold to-brand-gold-dark text-black shadow-lg shadow-brand-gold/20 hover:shadow-brand-gold/40 hover:scale-[1.01]'
-                        }`}
+                        } ${block && !completedSet.has(m.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <CheckCircle size={16} />
                         {completedSet.has(m.id) ? t('player.completed') : t('player.mark_complete')}
                     </button>
+                    {block && !completedSet.has(m.id) && (
+                        <p className="flex items-start gap-2 text-xs font-bold text-amber-400 leading-relaxed">
+                            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                            {block}
+                        </p>
+                    )}
                 </div>
             );
         }
-        return <FileVideoPlayer src={vid.src} posKey={posKey(m)} initialPos={watchPos.get(m.id) || 0} completed={completedSet.has(m.id)} onToggleComplete={flipComplete} progressing={progressing} />;
+        return <FileVideoPlayer src={vid.src} posKey={posKey(m)} initialPos={watchPos.get(m.id) || 0} completed={completedSet.has(m.id)} onToggleComplete={flipComplete} progressing={progressing} blockReason={block} isComplete={completedSet.has(m.id)} />;
     };
 
     const renderStage = () => {
@@ -887,13 +917,15 @@ export default function CoursePlayer({ courseId }: Props) {
 
 // ---------- Sub components ----------
 
-function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete, progressing }: {
+function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete, progressing, blockReason = null, isComplete }: {
     src: string;
     posKey: string;
     initialPos: number;
     completed: boolean;
     onToggleComplete: () => void;
     progressing: boolean;
+    blockReason?: string | null;
+    isComplete?: boolean;
 }) {
     const { t } = useI18n();
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -969,7 +1001,14 @@ function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete,
                 onTimeUpdate={onTime}
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
-                onEnded={() => { setPlaying(false); window.localStorage.removeItem(posKey); onToggleComplete(); }}
+                onEnded={() => {
+                    setPlaying(false);
+                    window.localStorage.removeItem(posKey);
+                    // Watching to the end used to mark the lesson complete, which
+                    // quietly bypassed the required work. Only auto-complete when
+                    // there is nothing owed.
+                    if (!blockReason || isComplete) onToggleComplete();
+                }}
                 preload="metadata"
             />
             {/* Controls */}
@@ -1008,7 +1047,12 @@ function FileVideoPlayer({ src, posKey, initialPos, completed, onToggleComplete,
                         </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        <button onClick={onToggleComplete} disabled={progressing} className="flex items-center gap-1.5 text-[11px] font-bold rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer disabled:opacity-40 bg-white/15 hover:bg-white/30">
+                        <button
+                            onClick={onToggleComplete}
+                            disabled={progressing || (!!blockReason && !completed)}
+                            title={blockReason || undefined}
+                            className="flex items-center gap-1.5 text-[11px] font-bold rounded-lg px-3 py-2 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-white/15 hover:bg-white/30"
+                        >
                             {completed ? <CheckCircle size={13} className="text-emerald-400" /> : <CheckCircle size={13} />}
                             <span className="hidden sm:inline">{completed ? t('player.completed') : t('player.mark_complete')}</span>
                         </button>

@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GamificationService } from '../gamification/gamification.service';
 
@@ -52,6 +52,60 @@ export class LessonsService {
     });
   }
 
+  /**
+   * The work a student still owes before a module can count as complete.
+   *
+   * A module can carry assignments (`CourseTask`, scoped to the opening) and
+   * quizzes (`Quiz`, scoped to the course). `markComplete` used to record the
+   * module unconditionally, so claiming a lesson — and the `course_complete`
+   * points that go with 100% — never required submitting the assignment or
+   * passing the quiz. The gate belongs here rather than in the UI: a disabled
+   * button is cosmetic, and this is the only writer of `LessonProgress`.
+   */
+  private async moduleRequirements(
+    courseId: string,
+    enrollment: { id: string; openingId: string | null },
+  ): Promise<Map<string, { pendingTasks: number; failedQuizzes: number }>> {
+    // Assignments belong to an opening. A legacy `openingId = NULL` row cannot
+    // be scoped to one, so counting every opening's tasks would invent work
+    // this student was never given; there is nothing to check in that case.
+    const tasks = enrollment.openingId
+      ? await this.prisma.courseTask.findMany({
+          where: { moduleId: { not: null }, openingId: enrollment.openingId },
+          select: {
+            moduleId: true,
+            submissions: { where: { enrollmentId: enrollment.id }, select: { id: true } },
+          },
+        })
+      : [];
+
+    const quizzes = await this.prisma.quiz.findMany({
+      where: { moduleId: { not: null }, courseId, isPublished: true },
+      select: {
+        moduleId: true,
+        attempts: { where: { enrollmentId: enrollment.id }, select: { passed: true } },
+      },
+    });
+
+    const map = new Map<string, { pendingTasks: number; failedQuizzes: number }>();
+    const slot = (moduleId: string) => {
+      let entry = map.get(moduleId);
+      if (!entry) {
+        entry = { pendingTasks: 0, failedQuizzes: 0 };
+        map.set(moduleId, entry);
+      }
+      return entry;
+    };
+
+    for (const t of tasks) {
+      if (!t.submissions.length) slot(t.moduleId as string).pendingTasks += 1;
+    }
+    for (const q of quizzes) {
+      if (!q.attempts.some((a: { passed: boolean }) => a.passed)) slot(q.moduleId as string).failedQuizzes += 1;
+    }
+    return map;
+  }
+
   async courseProgress(courseId: string, studentId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { studentId_courseId: { studentId, courseId } },
@@ -64,24 +118,33 @@ export class LessonsService {
       select: { moduleId: true, completedAt: true },
     });
     const completedMap = new Map(progress.map((p) => [p.moduleId, p.completedAt]));
+    const requirements = await this.moduleRequirements(courseId, enrollment);
 
-    const list = modules.map((m: any) => ({
-      id: m.id,
-      titleAr: m.titleAr,
-      titleEn: m.titleEn,
-      descriptionAr: m.descriptionAr,
-      descriptionEn: m.descriptionEn,
-      videoUrl: m.videoUrl,
-      orderIndex: m.orderIndex,
-      isFree: m.isFree,
-      durationMinutes: m.durationMinutes,
-      files: m.files ?? null,
-      links: m.links ?? null,
-      chapterId: m.chapterId,
-      outcomes: m.outcomes,
-      completed: completedMap.has(m.id),
-      completedAt: completedMap.get(m.id) ?? null,
-    }));
+    const list = modules.map((m: any) => {
+      const owed = requirements.get(m.id) ?? { pendingTasks: 0, failedQuizzes: 0 };
+      return {
+        id: m.id,
+        titleAr: m.titleAr,
+        titleEn: m.titleEn,
+        descriptionAr: m.descriptionAr,
+        descriptionEn: m.descriptionEn,
+        videoUrl: m.videoUrl,
+        orderIndex: m.orderIndex,
+        isFree: m.isFree,
+        durationMinutes: m.durationMinutes,
+        files: m.files ?? null,
+        links: m.links ?? null,
+        chapterId: m.chapterId,
+        outcomes: m.outcomes,
+        completed: completedMap.has(m.id),
+        completedAt: completedMap.get(m.id) ?? null,
+        // Surfaced so the player can explain the block instead of showing a
+        // dead button, and so a client cannot pretend the gate does not exist.
+        pendingTasks: owed.pendingTasks,
+        failedQuizzes: owed.failedQuizzes,
+        canComplete: owed.pendingTasks === 0 && owed.failedQuizzes === 0,
+      };
+    });
 
     const completedCount = list.filter((m) => m.completed).length;
     const percent = modules.length === 0 ? 0 : Math.round((completedCount / modules.length) * 100);
@@ -125,6 +188,16 @@ export class LessonsService {
 
     const module = await this.prisma.module.findUnique({ where: { id: moduleId } });
     if (!module || module.courseId !== enrollment.courseId) throw new NotFoundException('Module not found in this course');
+
+    const owed = (await this.moduleRequirements(enrollment.courseId, enrollment)).get(moduleId);
+    if (owed && (owed.pendingTasks > 0 || owed.failedQuizzes > 0)) {
+      throw new ConflictException({
+        message: 'Finish the required work for this lesson first',
+        code: 'LESSON_REQUIREMENTS_PENDING',
+        pendingTasks: owed.pendingTasks,
+        failedQuizzes: owed.failedQuizzes,
+      });
+    }
 
     await this.prisma.lessonProgress.upsert({
       where: { enrollmentId_moduleId: { enrollmentId, moduleId } },
