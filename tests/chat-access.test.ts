@@ -33,6 +33,7 @@ function makeHarness(handlers: {
     rooms?: any[];
     roomMembers?: any[];
     course?: any;
+    courses?: any[];
     users?: any[];
 }) {
     const calls: Rec[] = [];
@@ -45,7 +46,12 @@ function makeHarness(handlers: {
                 calls.push({ model: 'enrollment', op: 'findMany', args });
                 // `syncRoomMembers` includes the student to read their role, so
                 // every row the double returns has to carry one.
-                return (handlers.enrollments ?? []).map((e) => ({
+                let rows = handlers.enrollments ?? [];
+                // Honour the legacy-row lookup (`openingId: null`) the way Prisma
+                // would, so the single-batch fallback cannot be faked by a row
+                // that does carry a batch.
+                if (args?.where?.openingId === null) rows = rows.filter((e) => !e.openingId);
+                return rows.map((e) => ({
                     student: { id: e.studentId ?? e.student?.id ?? 'student-1', role: Role.STUDENT },
                     ...e,
                 }));
@@ -112,6 +118,17 @@ function makeHarness(handlers: {
             findUnique: async (args: any) => {
                 calls.push({ model: 'course', op: 'findUnique', args });
                 return handlers.course ?? null;
+            },
+            findFirst: async (args: any) => {
+                calls.push({ model: 'course', op: 'findFirst', args });
+                return (handlers.courses ?? [])[0] ?? null;
+            },
+            // `getRooms` uses this to expand a course the caller owns into the
+            // batches of that course, since `Course.instructorId` and
+            // `CourseOpening.instructorId` are separate columns.
+            findMany: async (args: any) => {
+                calls.push({ model: 'course', op: 'findMany', args });
+                return handlers.courses ?? [];
             },
         },
         directChat: {
@@ -203,6 +220,51 @@ describe('batch chat: the room list is an allow-list, even when empty', () => {
         const rooms = await service.getRooms('me', Role.INSTRUCTOR);
 
         assert.deepEqual(rooms.map((r: any) => r.name), ['My batch']);
+    });
+
+    test("an instructor who owns the course gets its rooms even when no batch is theirs", async () => {
+        // `Course.instructorId` and `CourseOpening.instructorId` are separate
+        // columns. Keying only on openings locked the course's own instructor
+        // out of the chat for a course they own, which is what surfaced as
+        // "group chat does not open for the instructor".
+        const { service } = makeHarness({
+            openings: [{ id: 'o1', instructorId: 'other-teacher', courseId: 'c1' }],
+            courses: [{ id: 'c1', instructorId: 'me', openings: [{ id: 'o1' }] }],
+            rooms: [{ id: 'r1', openingId: 'o1', nameEn: 'My course batch', members: [], messages: [] }],
+        });
+
+        const rooms = await service.getRooms('me', Role.INSTRUCTOR);
+
+        assert.deepEqual(rooms.map((r: any) => r.name), ['My course batch']);
+    });
+
+    test('a student whose enrollment has no batch is resolved only when the course has one batch', async () => {
+        // `Enrollment.openingId` is nullable and predates the backfill, so some
+        // approved students have no batch. Their chat tab renders (status is
+        // APPROVED) but the room list was empty. A single-batch course is
+        // unambiguous, so the room should appear; several batches is a genuine
+        // ambiguity and guessing would leak a cohort they were not admitted to.
+        const single = makeHarness({
+            enrollments: [{ openingId: null, courseId: 'c1' }],
+            openings: [{ id: 'o1', instructorId: 't1', courseId: 'c1' }],
+            rooms: [{ id: 'r1', openingId: 'o1', nameEn: 'Only batch', members: [], messages: [] }],
+        });
+        const resolved = await single.service.getRooms('student-1', Role.STUDENT);
+        assert.deepEqual(resolved.map((r: any) => r.name), ['Only batch']);
+
+        const ambiguous = makeHarness({
+            enrollments: [{ openingId: null, courseId: 'c1' }],
+            openings: [
+                { id: 'o1', instructorId: 't1', courseId: 'c1' },
+                { id: 'o2', instructorId: 't1', courseId: 'c1' },
+            ],
+            rooms: [
+                { id: 'r1', openingId: 'o1', nameEn: 'A', members: [], messages: [] },
+                { id: 'r2', openingId: 'o2', nameEn: 'B', members: [], messages: [] },
+            ],
+        });
+        const left = await ambiguous.service.getRooms('student-1', Role.STUDENT);
+        assert.equal(left.length, 0, 'with two batches the correct one must not be guessed');
     });
 });
 

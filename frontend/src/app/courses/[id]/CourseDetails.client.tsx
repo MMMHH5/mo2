@@ -201,7 +201,17 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     // without writing state back from an effect.
     const tab = activeTab === 'chat' && !chatAvailable ? 'overview' : activeTab;
 
-    const instructorOpeningId = course?.openings?.find(o => o.instructor?.id === user?.userId)?.id ?? null;
+    // The batch whose work the instructor manages. `Course.instructorId` and
+    // `CourseOpening.instructorId` are separate fields, so an instructor who
+    // owns the course may own no batch at all — matching only on the batch's
+    // instructor left `instructorOpeningId` null for them, which hid the tasks
+    // and roster tabs entirely and read as "the assignment tools are missing".
+    const instructorOpeningId = (() => {
+        const openings = course?.openings ?? [];
+        return openings.find(o => o.instructor?.id === user?.userId)?.id
+            ?? (course?.instructor?.id === user?.userId ? openings[0]?.id : null)
+            ?? null;
+    })();
 
     // --- Tabs render ---
     const renderTabs = () => {

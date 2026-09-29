@@ -1,10 +1,28 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { api, getErrorMessage } from '@/lib/api';
+import { useEffect, useRef, useState } from 'react';
+import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import toast from 'react-hot-toast';
-import { Loader, ClipboardList, Send, CheckCircle, Clock } from 'lucide-react';
+import { Loader, ClipboardList, Send, CheckCircle, Clock, Paperclip, FileText, Trash2 } from 'lucide-react';
+
+interface SubmittedFile {
+    url: string;
+    name: string;
+    size?: number;
+    mimetype?: string | null;
+}
+
+interface SubmissionRow {
+    id: string;
+    content?: string | null;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentSize?: number | null;
+    score?: number | null;
+    notes?: string | null;
+    submittedAt: string;
+}
 
 interface TaskItem {
     id: string;
@@ -14,42 +32,53 @@ interface TaskItem {
     descriptionEn?: string | null;
     dueDate?: string | null;
     maxScore: number;
-    submissions?: { id: string; content?: string | null; score?: number | null; notes?: string | null; submittedAt: string }[];
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentType?: string | null;
+    module?: { id: string; titleAr?: string | null; titleEn?: string | null } | null;
+    submissions?: SubmissionRow[];
 }
 
-interface Props {
-    courseId: string;
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function StudentTasksPanel({ courseId }: Props) {
+export default function StudentTasksPanel({ courseId }: { courseId: string }) {
     const { t, pick } = useI18n();
-    const [openingId, setOpeningId] = useState<string | null>(null);
     const [tasks, setTasks] = useState<TaskItem[] | null>(null);
     const [loading, setLoading] = useState(true);
+    const [unresolved, setUnresolved] = useState(false);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
+    const [files, setFiles] = useState<Record<string, SubmittedFile | null>>({});
+    const [uploadingId, setUploadingId] = useState<string | null>(null);
     const [submittingId, setSubmittingId] = useState<string | null>(null);
+    const inputs = useRef<Record<string, HTMLInputElement | null>>({});
 
     useEffect(() => {
         let active = true;
         (async () => {
             try {
                 if (typeof window === 'undefined' || !localStorage.getItem('laxalab_token')) {
-                    if (active) { setOpeningId(null); setTasks([]); }
+                    if (active) { setTasks([]); }
                     return;
                 }
-                const enr = await api.get('/enrollments/my');
-                const mine = (enr.data || []).find((e: { course?: { id: string }; opening?: { id: string } }) => e.course?.id === courseId);
-                const oid = mine?.opening?.id ?? null;
+                // The server resolves the student's batch. Asking the client to
+                // read it off `/enrollments/my` meant an enrollment that never
+                // recorded a batch produced "no tasks", and the student was
+                // told the course had no assignments.
+                const res = await api.get(`/tasks/course/${courseId}`);
                 if (!active) return;
-                setOpeningId(oid);
-                if (oid) {
-                    const res = await api.get(`/tasks/opening/${oid}`);
-                    if (active) setTasks(res.data || []);
-                } else {
-                    if (active) setTasks([]);
-                }
-            } catch {
-                if (active) setTasks([]);
+                setTasks(res.data || []);
+                setUnresolved(false);
+            } catch (e: any) {
+                if (!active) return;
+                const status = e?.response?.status;
+                // 403 here means "enrolled, but not tied to one batch", which is
+                // a different message from "no assignments exist".
+                setUnresolved(status === 403);
+                setTasks([]);
             } finally {
                 if (active) setLoading(false);
             }
@@ -57,18 +86,42 @@ export default function StudentTasksPanel({ courseId }: Props) {
         return () => { active = false; };
     }, [courseId]);
 
+    const handleFile = async (taskId: string, file: File | null | undefined) => {
+        if (!file) return;
+        setUploadingId(taskId);
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            const res = await api.post(`/tasks/${taskId}/submit-file`, form, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            setFiles(prev => ({ ...prev, [taskId]: res.data }));
+        } catch (e) {
+            toast.error(getErrorMessage(e) || t('tasks.load_fail'));
+        } finally {
+            setUploadingId(null);
+            if (inputs.current[taskId]) inputs.current[taskId]!.value = '';
+        }
+    };
+
     const handleSubmit = async (taskId: string) => {
         const content = (drafts[taskId] || '').trim();
-        if (!content) return;
+        const file = files[taskId] ?? null;
+        if (!content && !file) return;
         setSubmittingId(taskId);
         try {
-            await api.post(`/tasks/${taskId}/submit`, { content });
-            toast.success(t('courseChat.send'));
+            await api.post(`/tasks/${taskId}/submit`, {
+                content: content || undefined,
+                attachmentUrl: file?.url,
+                attachmentName: file?.name,
+                attachmentType: file?.mimetype,
+                attachmentSize: file?.size,
+            });
+            toast.success(t('tasks.submitted_ok'));
             setDrafts(prev => ({ ...prev, [taskId]: '' }));
-            if (openingId) {
-                const res = await api.get(`/tasks/opening/${openingId}`);
-                setTasks(res.data || []);
-            }
+            setFiles(prev => ({ ...prev, [taskId]: null }));
+            const res = await api.get(`/tasks/course/${courseId}`);
+            setTasks(res.data || []);
         } catch (e) {
             toast.error(getErrorMessage(e) || t('tasks.load_fail'));
         } finally {
@@ -89,8 +142,10 @@ export default function StudentTasksPanel({ courseId }: Props) {
                 <div className="h-48 flex items-center justify-center text-brand-navy">
                     <Loader className="animate-spin" size={32} />
                 </div>
-            ) : !openingId ? (
-                <div className="text-center text-gray-400 font-bold py-16">{t('courseChat.empty')}</div>
+            ) : unresolved ? (
+                <div className="text-center text-gray-500 font-bold py-16">
+                    {t('tasks.not_linked_to_batch')}
+                </div>
             ) : sorted.length === 0 ? (
                 <div className="text-center text-gray-400 font-bold py-16">{t('tasks.no_tasks')}</div>
             ) : (
@@ -99,13 +154,30 @@ export default function StudentTasksPanel({ courseId }: Props) {
                         const mySubmission = task.submissions?.length ? task.submissions[0] : null;
                         const graded = typeof mySubmission?.score === 'number';
                         const overdue = task.dueDate ? new Date(task.dueDate) < new Date() : false;
+                        const submittedFileUrl = mySubmission?.attachmentUrl
+                            ? (mySubmission.attachmentUrl.startsWith('/') ? API_BASE_URL + mySubmission.attachmentUrl : mySubmission.attachmentUrl)
+                            : null;
+                        const chosen = files[task.id] ?? null;
                         return (
                             <div key={task.id} className="border border-brand-mist rounded-2xl p-5 bg-white shadow-sm">
                                 <div className="flex items-start justify-between gap-3 flex-wrap">
                                     <div>
+                                        {task.module && (
+                                            <p className="text-[11px] font-bold text-brand-gold-dark mb-1">
+                                                {pick(task.module as any, 'title')}
+                                            </p>
+                                        )}
                                         <h3 className="font-bold text-brand-navy">{pick(task, 'title')}</h3>
                                         {pick(task, 'description') && (
                                             <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{pick(task, 'description')}</p>
+                                        )}
+                                        {task.attachmentUrl && (
+                                            <a href={task.attachmentUrl.startsWith('/') ? API_BASE_URL + task.attachmentUrl : task.attachmentUrl}
+                                                target="_blank" rel="noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-navy underline mt-2">
+                                                <Paperclip size={13} />
+                                                {task.attachmentName || t('tasks.attachment')}
+                                            </a>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2 text-xs font-bold">
@@ -121,33 +193,87 @@ export default function StudentTasksPanel({ courseId }: Props) {
                                 </div>
 
                                 {graded ? (
-                                    <div className="mt-4 flex items-center gap-2 text-sm font-bold text-green-600 bg-green-50 border border-green-200 rounded-xl p-3">
-                                        <CheckCircle size={16} />
-                                        {t('tasks.current_grade')}: {mySubmission?.score} / {task.maxScore}
-                                        {mySubmission?.notes ? ` — ${mySubmission.notes}` : ''}
+                                    <div className="mt-4 space-y-3">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-green-600 bg-green-50 border border-green-200 rounded-xl p-3">
+                                            <CheckCircle size={16} />
+                                            {t('tasks.current_grade')}: {mySubmission?.score} / {task.maxScore}
+                                        </div>
+                                        {mySubmission?.notes && (
+                                            <p className="text-sm text-gray-700 bg-brand-mist/30 border border-brand-mist rounded-xl p-3 whitespace-pre-wrap">
+                                                {mySubmission.notes}
+                                            </p>
+                                        )}
+                                        {submittedFileUrl && (
+                                            <a href={submittedFileUrl} target="_blank" rel="noreferrer"
+                                                className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy">
+                                                <FileText size={15} />
+                                                {mySubmission?.attachmentName || t('tasks.attachment')}
+                                                {mySubmission?.attachmentSize ? ` (${formatFileSize(mySubmission.attachmentSize)})` : ''}
+                                            </a>
+                                        )}
                                     </div>
                                 ) : mySubmission ? (
-                                    <div className="mt-4 text-sm text-gray-600 bg-brand-mist/30 border border-brand-mist rounded-xl p-3">
-                                        {t('tasks.submitted_at')} {new Date(mySubmission.submittedAt).toLocaleString()}
+                                    <div className="mt-4 space-y-3">
+                                        <div className="text-sm text-gray-600 bg-brand-mist/30 border border-brand-mist rounded-xl p-3">
+                                            {t('tasks.submitted_at')} {new Date(mySubmission.submittedAt).toLocaleString()}
+                                        </div>
+                                        {submittedFileUrl && (
+                                            <a href={submittedFileUrl} target="_blank" rel="noreferrer"
+                                                className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy">
+                                                <FileText size={15} />
+                                                {mySubmission.attachmentName || t('tasks.attachment')}
+                                                {mySubmission.attachmentSize ? ` (${formatFileSize(mySubmission.attachmentSize)})` : ''}
+                                            </a>
+                                        )}
+                                        <p className="text-xs text-gray-500">{t('tasks.resubmit_hint')}</p>
                                     </div>
-                                ) : (
-                                    <div className="mt-4">
-                                        <textarea
-                                            value={drafts[task.id] || ''}
-                                            onChange={e => setDrafts(prev => ({ ...prev, [task.id]: e.target.value }))}
-                                            rows={2}
-                                            placeholder={t('courseChat.placeholder')}
-                                            className="w-full bg-white border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40 resize-y"
+                                ) : null}
+
+                                <div className="mt-4">
+                                    <textarea
+                                        value={drafts[task.id] || ''}
+                                        onChange={e => setDrafts(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                        rows={2}
+                                        placeholder={t('tasks.answer_hint')}
+                                        className="w-full bg-white border border-brand-mist rounded-xl px-4 py-3 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/40 resize-y"
+                                    />
+                                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                                        <input
+                                            ref={el => { inputs.current[task.id] = el; }}
+                                            type="file"
+                                            className="hidden"
+                                            onChange={e => handleFile(task.id, e.target.files?.[0])}
                                         />
                                         <button
-                                            onClick={() => handleSubmit(task.id)}
-                                            disabled={submittingId === task.id || !(drafts[task.id] || '').trim()}
-                                            className="mt-2 inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-2.5 rounded-xl font-bold text-sm transition"
+                                            type="button"
+                                            onClick={() => inputs.current[task.id]?.click()}
+                                            disabled={uploadingId === task.id}
+                                            className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy border border-brand-mist rounded-xl px-4 py-2.5 hover:bg-brand-mist/40 disabled:opacity-50 transition"
                                         >
-                                            <Send size={14} /> {t('common.submit')}
+                                            {uploadingId === task.id ? <Loader size={14} className="animate-spin" /> : <Paperclip size={14} />}
+                                            {t('tasks.attach_file')}
+                                        </button>
+                                        {chosen && (
+                                            <span className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 bg-brand-mist/40 rounded-lg px-3 py-2">
+                                                <FileText size={14} /> {chosen.name}
+                                                {chosen.size ? ` (${formatFileSize(chosen.size)})` : ''}
+                                                <button type="button" onClick={() => setFiles(prev => ({ ...prev, [task.id]: null }))}
+                                                    className="text-gray-500 hover:text-red-600" aria-label={t('common.remove')}>
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </span>
+                                        )}
+                                        <button
+                                            onClick={() => handleSubmit(task.id)}
+                                            disabled={submittingId === task.id || uploadingId === task.id || (!(drafts[task.id] || '').trim() && !chosen)}
+                                            className="inline-flex items-center gap-2 bg-brand-navy hover:bg-brand-charcoal text-white disabled:opacity-40 px-5 py-2.5 rounded-xl font-bold text-sm transition"
+                                        >
+                                            {submittingId === task.id ? <Loader size={14} className="animate-spin" /> : <Send size={14} />}
+                                            {mySubmission ? t('tasks.update_submission') : t('common.submit')}
                                         </button>
                                     </div>
-                                )}
+                                    <p className="mt-2 text-[11px] text-gray-400">{t('tasks.any_file_hint')}</p>
+                                </div>
                             </div>
                         );
                     })}

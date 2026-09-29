@@ -22,28 +22,82 @@ export class ChatService {
 
     // ============================= Group (batch) chat =============================
 
-    /**
-     * Get all group chat rooms the user has access to.
+  /**
+   * Some enrollment rows predate `Enrollment.openingId` and were never
+   * backfilled, so they carry NULL. A student has exactly one enrollment per
+   * course, so the course names the batch they belong to — but only when the
+   * course has a single batch. With several, the right batch is genuinely
+   * ambiguous, and picking one would drop a student into a cohort they were
+   * never admitted to. Those are left unresolved on purpose: they keep 1:1
+   * chat with the instructor, and a human decides their batch.
+   */
+  private async resolveUnambiguousBatchIds(courseIds: string[]): Promise<string[]> {
+    if (!courseIds.length) return [];
+    const batches = await this.prisma.courseOpening.findMany({
+      where: { courseId: { in: courseIds } },
+      select: { id: true, courseId: true },
+    });
+    const byCourse = new Map<string, string[]>();
+    for (const b of batches) {
+      const list = byCourse.get(b.courseId) ?? [];
+      list.push(b.id);
+      byCourse.set(b.courseId, list);
+    }
+    const resolved: string[] = [];
+    for (const courseId of courseIds) {
+      const ids = byCourse.get(courseId) ?? [];
+      if (ids.length === 1) resolved.push(ids[0]);
+    }
+    return resolved;
+  }
+
+  /**
+   * Get all group chat rooms the user has access to.
      * - Students: rooms for openings they are enrolled+approved/reserved in
      * - Instructors: rooms for openings they teach
      * - Admins/CM: all rooms
      */
-    async getRooms(userId: string, role: Role) {
-        let candidateOpeningIds: string[] = [];
+  async getRooms(userId: string, role: Role) {
+    let candidateOpeningIds: string[] = [];
 
-        if (role === Role.STUDENT) {
-            const enrollments = await this.prisma.enrollment.findMany({
-                where: { studentId: userId, status: { in: ['APPROVED', 'RESERVED'] } },
-                select: { openingId: true },
-            });
-            candidateOpeningIds = enrollments.map(e => e.openingId).filter((id): id is string => !!id);
-        } else if (role === Role.INSTRUCTOR) {
-            const openings = await this.prisma.courseOpening.findMany({
-                where: { instructorId: userId },
-                select: { id: true },
-            });
-            candidateOpeningIds = openings.map(o => o.id);
-        }
+    if (role === Role.STUDENT) {
+      const enrollments = await this.prisma.enrollment.findMany({
+        where: { studentId: userId, status: { in: ['APPROVED', 'RESERVED'] } },
+        select: { openingId: true, courseId: true },
+      });
+      candidateOpeningIds = enrollments.map(e => e.openingId).filter((id): id is string => !!id);
+
+      // A legacy enrollment row has `openingId = NULL`: the column was added
+      // after those rows existed and no backfill was run. Such a student passes
+      // `viewerAccess.chatEnabled` (their status is APPROVED) so the chat tab
+      // renders, but they contribute no opening to the allow-list above, so the
+      // room list came back empty and the panel read as "the chat is broken".
+      const orphans = enrollments.filter(e => !e.openingId).map(e => e.courseId);
+      if (orphans.length) {
+        const resolved = await this.resolveUnambiguousBatchIds(orphans);
+        candidateOpeningIds.push(...resolved);
+      }
+    } else if (role === Role.INSTRUCTOR) {
+      // `Course.instructorId` (instructor of record) and
+      // `CourseOpening.instructorId` (who runs that batch) are separate
+      // columns. Keying only on openings meant the course's own instructor
+      // could hold a course with no batch assigned to them, get an empty room
+      // list, and conclude the chat was down. Both assignments now count.
+      const [assignments, owned] = await Promise.all([
+        this.prisma.courseOpening.findMany({
+          where: { instructorId: userId },
+          select: { id: true },
+        }),
+        this.prisma.course.findMany({
+          where: { instructorId: userId },
+          select: { openings: { select: { id: true } } },
+        }),
+      ]);
+      candidateOpeningIds = [
+        ...assignments.map(o => o.id),
+        ...owned.flatMap(c => c.openings.map(o => o.id)),
+      ];
+    }
 
         // The opening list is the allow-list for students and instructors, and
         // it stays the allow-list when it is EMPTY. An empty `in` matches
@@ -217,6 +271,19 @@ export class ChatService {
         const opening = await this.prisma.courseOpening.findUnique({ where: { id: room.openingId } });
         if (opening && opening.instructorId === userId) return true;
 
+        // The course's own instructor is not necessarily the batch's instructor
+        // — those are two separate columns — so ownership of the course is a
+        // second, independent claim on the rooms of that course. Checked here as
+        // well as in `getRooms`, otherwise the room would be listed and then
+        // refused the moment its thread was opened.
+        if (opening) {
+            const owner = await this.prisma.course.findFirst({
+                where: { id: opening.courseId, instructorId: userId },
+                select: { id: true },
+            });
+            if (owner) return true;
+        }
+
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (user && this.isOversight(user.role)) return true;
 
@@ -231,6 +298,18 @@ export class ChatService {
                 where: { openingId: room.openingId, studentId: userId, status: { in: ['APPROVED', 'RESERVED'] } },
             });
             if (enrollment) return true;
+
+            // ...or their batch was never recorded, and this course has only
+            // one batch, so this room is the one they were admitted to.
+            const [ownEnrollment] = await this.prisma.enrollment.findMany({
+                where: { studentId: userId, courseId: opening.courseId, openingId: null, status: { in: ['APPROVED', 'RESERVED'] } },
+                select: { id: true },
+                take: 1,
+            });
+            if (ownEnrollment) {
+                const [resolved] = await this.resolveUnambiguousBatchIds([opening.courseId]);
+                if (resolved === room.openingId) return true;
+            }
         }
 
         return false;
@@ -255,6 +334,27 @@ export class ChatService {
             userId: e.studentId,
             role: e.student.role,
         }));
+
+        // Students whose enrollment predates `openingId` are absent from the
+        // query above even though `userHasRoomAccess` lets them in, so they
+        // would hold a room they are not a member of: no unread badge, no
+        // mentions, no notifications. Give them rows too, under the same
+        // single-batch rule the access check uses.
+        const unbatched = await this.prisma.enrollment.findMany({
+            where: { courseId: opening.courseId, openingId: null, status: { in: ['APPROVED', 'RESERVED'] } },
+            select: { studentId: true },
+        });
+        const [resolved] = await this.resolveUnambiguousBatchIds([opening.courseId]);
+        if (unbatched && resolved === room.openingId) {
+            const known = new Set(studentMembers.map(m => m.userId));
+            const extras = await this.prisma.user.findMany({
+                where: { id: { in: unbatched.map(e => e.studentId) }, role: Role.STUDENT, isActive: true },
+                select: { id: true, role: true },
+            });
+            for (const u of extras) {
+                if (!known.has(u.id)) studentMembers.push({ roomId, userId: u.id, role: u.role });
+            }
+        }
 
         const instructorMember = {
             roomId,

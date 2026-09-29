@@ -341,22 +341,29 @@ export class CoursesService {
 
         const isStaff = viewer.role === Role.ADMIN || viewer.role === Role.COURSE_MANAGER;
 
-        const [teaches, enrollment] = await Promise.all([
-            this.prisma.courseOpening.findFirst({
-                where: { courseId, instructorId: viewer.userId },
-                select: { id: true },
-            }),
-            this.prisma.enrollment.findFirst({
-                where: { courseId, studentId: viewer.userId },
-                select: { status: true, openingId: true },
-            }),
-        ]);
+        const enrollment = await this.prisma.enrollment.findFirst({
+            where: { courseId, studentId: viewer.userId },
+            select: { status: true, openingId: true },
+        });
 
-        // An instructor's role is not a claim on every course: it has to be an
-        // opening they are actually assigned to. Trusting the role here would
-        // hand every instructor in the platform the cohort chat of a course
-        // they have never taught.
-        const teachesCourse = !!teaches;
+    // An instructor's role is not a claim on every course: it has to be a
+    // course they own or a batch assigned to them. Trusting the role alone
+    // would hand every instructor in the platform the cohort chat of a course
+    // they have never taught. Owning the course counts, because
+    // `Course.instructorId` and `CourseOpening.instructorId` are separate
+    // columns: the course's own instructor was otherwise locked out of the
+    // chat for a course they own whenever the batch belonged to someone else.
+    const [owns, teaches] = await Promise.all([
+      this.prisma.course.findFirst({
+        where: { id: courseId, instructorId: viewer.userId },
+        select: { id: true },
+      }),
+      this.prisma.courseOpening.findFirst({
+        where: { courseId, instructorId: viewer.userId },
+        select: { id: true },
+      }),
+    ]);
+    const teachesCourse = !!owns || !!teaches;
         // APPROVED and RESERVED both hold a seat and both grant chat access;
         // PENDING does not, which is what "accepted" means here.
         const approved = enrollment?.status === 'APPROVED' || enrollment?.status === 'RESERVED';

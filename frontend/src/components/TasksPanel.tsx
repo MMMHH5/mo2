@@ -12,13 +12,25 @@ import {
 import { EmptyPanel, BtnPrimary } from '@/app/dashboard/admin/components';
 import PeerReviewPanel from '@/components/PeerReviewPanel';
 
+/** A submitted file is shown with its size; a bare "attachment" is unhelpful. */
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 interface TaskSubmission {
     id: string;
     content?: string | null;
     attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentType?: string | null;
+    attachmentSize?: number | null;
     score?: number | null;
     notes?: string | null;
     submittedAt: string;
+    /** The student's own name, derived server-side from their profile. */
+    studentName?: string | null;
     enrollment?: { id: string; student: { id: string; email: string } } | null;
 }
 
@@ -332,11 +344,17 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                         <div className="space-y-3 mt-4">
                                             {task.submissions.map((sub) => {
                                                 const email = sub.enrollment?.student?.email ?? '—';
+                                                // The name is what a teacher recognises; the email stays as
+                                                // the fallback for an account registered without one.
+                                                const who = sub.studentName || email;
                                                 return (
                                                     <div key={sub.id} className="border border-white/10 rounded-xl p-4 bg-brand-navy">
-                                                            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                                        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                                                             <div className="flex items-center gap-2 text-sm font-bold text-brand-gold-light">
-                                                                <Mail size={14} className="text-gray-400" /> {email}
+                                                                <Mail size={14} className="text-gray-400" /> {who}
+                                                                {sub.studentName && sub.studentName !== email && (
+                                                                    <span className="text-xs font-semibold text-gray-400">{email}</span>
+                                                                )}
                                                                 {task.dueDate && new Date(sub.submittedAt) > new Date(task.dueDate) && (
                                                                     <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">LATE</span>
                                                                 )}
@@ -351,7 +369,11 @@ export default function TasksPanel({ openingId }: { openingId: string }) {
                                                         {sub.attachmentUrl && (
                                                             <a href={sub.attachmentUrl.startsWith('/') ? API_BASE_URL + sub.attachmentUrl : sub.attachmentUrl} target="_blank" rel="noreferrer"
                                                                 className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-gold-light hover:text-brand-gold-light transition mb-3">
-                                                                <Download size={15} /> {t('tasks.attachment')}
+                                                                <Download size={15} />
+                                                                {sub.attachmentName || t('tasks.attachment')}
+                                                                {sub.attachmentSize ? (
+                                                                    <span className="text-xs font-semibold text-gray-400">({formatFileSize(sub.attachmentSize)})</span>
+                                                                ) : null}
                                                             </a>
                                                         )}
                                                         <div className="grid sm:grid-cols-[180px_1fr_auto] gap-2 items-end">

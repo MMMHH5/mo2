@@ -88,13 +88,15 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
 
     const fetchTasks = async (): Promise<LessonTask[] | null> => {
         if (mode === 'guest') return [];
-        let oid = openingId ?? null;
-        if (!oid && mode === 'student') {
+        // A student has no business resolving a batch id: the enrollment row may
+        // never have recorded one, and the course-scoped route decides that
+        // server-side under the same single-batch rule as everything else.
+        if (mode === 'student') {
             if (typeof window === 'undefined' || !localStorage.getItem('laxalab_token')) return [];
-            const enr = await api.get('/enrollments/my');
-            const mine = (enr.data || []).find((e: { course?: { id: string }; opening?: { id: string } }) => e.course?.id === courseId);
-            oid = mine?.opening?.id ?? null;
+            const res = await api.get(`/tasks/course/${courseId}`);
+            return res.data || [];
         }
+        const oid = openingId ?? null;
         if (!oid) return [];
         const res = await api.get(`/tasks/opening/${oid}`);
         return res.data || [];

@@ -219,7 +219,10 @@ export default function CoursePlayer({ courseId }: Props) {
                 setNotesData(n.data as NotesData);
                 if (p.data?.openingId) {
                     try {
-                        const tr = await api.get(`/tasks/opening/${p.data.openingId}`);
+                        // Course-scoped: the server resolves the student's batch,
+                        // so an enrollment that never recorded one still sees the
+                        // work instead of an empty lesson.
+                        const tr = await api.get(`/tasks/course/${courseId}`);
                         if (active) setTasks(tr.data || []);
                     } catch {
                         if (active) setTasks([]);
@@ -363,18 +366,28 @@ export default function CoursePlayer({ courseId }: Props) {
         if ((!content && !file) || submitting) return;
         setSubmitting(true);
         try {
-            let attachmentUrl: string | undefined;
+            let attachment: { url: string; name?: string; mimetype?: string; size?: number } | null = null;
             if (file) {
+                // Through the task upload endpoint, not the chat one: `/chat/upload`
+                // only accepted images, PDF and video, so a .docx or a .zip of source
+                // was rejected here, and the file was filed under the chat folder
+                // where nothing knew to look for it.
                 const fd = new FormData();
                 fd.append('file', file);
-                const up = await api.post('/chat/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-                attachmentUrl = up.data.url;
+                const up = await api.post(`/tasks/${task.id}/submit-file`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                attachment = up.data;
             }
-            await api.post(`/tasks/${task.id}/submit`, { content, attachmentUrl });
+            await api.post(`/tasks/${task.id}/submit`, {
+                content: content || undefined,
+                attachmentUrl: attachment?.url,
+                attachmentName: attachment?.name,
+                attachmentType: attachment?.mimetype,
+                attachmentSize: attachment?.size,
+            });
             toast.success(t('player.task_submitted'));
             setTaskDraft('');
             setTaskFile(null);
-            const tr = await api.get(`/tasks/opening/${progress?.openingId}`);
+            const tr = await api.get(`/tasks/course/${courseId}`);
             setTasks(tr.data || []);
         } catch (e) {
             toast.error(getErrorMessage(e) || t('player.task_fail'));
@@ -1189,7 +1202,6 @@ function TaskStage({ tasks, taskDraft, setTaskDraft, taskFile, setTaskFile, subm
                                         <input
                                             ref={fileInputRef}
                                             type="file"
-                                            accept=".pdf,.jpg,.jpeg,.png,.webp"
                                             className="hidden"
                                             onChange={e => { handleFile(e.target.files?.[0]); e.target.value = ''; }}
                                         />

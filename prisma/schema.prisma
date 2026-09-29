@@ -740,6 +740,12 @@ model TaskSubmission {
   id            String    @id @default(uuid())
   content       String?
   attachmentUrl String?
+  // The student's own file is shown to the instructor by name, type and size.
+  // Without these the submission is an opaque `/uploads/tasks/<uuid>.<ext>` and
+  // a teacher cannot tell a PDF report from a ZIP of source files.
+  attachmentName String?
+  attachmentType String?
+  attachmentSize Int?
   score         Float?
   notes         String?
   submittedAt   DateTime  @default(now())

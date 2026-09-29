@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { Role } from '@prisma/client';
+import { Role, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -22,16 +22,78 @@ export class TasksService {
         const opening = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
         if (!opening) throw new NotFoundException('Opening not found');
         if (actorRole === Role.ADMIN || actorRole === Role.COURSE_MANAGER) return opening;
-        if (actorRole === Role.INSTRUCTOR && opening.instructorId === actorId) return opening;
+        if (actorRole === Role.INSTRUCTOR) {
+            if (opening.instructorId === actorId) return opening;
+            // The course's own instructor is a separate column from the batch's
+            // instructor. Without this, the instructor of record was refused
+            // "not allowed" when they tried to set the work for their own
+            // course, and no task ever reached their students.
+            const owns = await this.prisma.course.findFirst({
+                where: { id: opening.courseId, instructorId: actorId },
+                select: { id: true },
+            });
+            if (owns) return opening;
+        }
         throw new ForbiddenException('You are not allowed to manage tasks for this opening');
     }
 
+    /**
+     * The student's enrollment for an opening.
+     *
+     * `Enrollment.openingId` is nullable and rows that predate the column were
+     * never backfilled, so an approved student could be matched by nothing
+     * here: no task list, and a 403 on submit. The enrollment's course still
+     * identifies the batch, but only when the course has exactly one — with
+     * several, attaching the student to the wrong one would expose another
+     * cohort's work, so that case stays unresolved for a human to fix.
+     */
     private async getEnrollmentId(studentId: string, openingId: string) {
         const enrollment = await this.prisma.enrollment.findFirst({
             where: { studentId, openingId, status: { in: ['APPROVED', 'PENDING', 'RESERVED'] } },
             orderBy: { createdAt: 'desc' },
         });
-        return enrollment?.id ?? null;
+        if (enrollment) return enrollment.id;
+
+        const opening = await this.prisma.courseOpening.findUnique({
+            where: { id: openingId },
+            select: { id: true, courseId: true },
+        });
+        if (!opening) return null;
+
+        const [legacy] = await this.prisma.enrollment.findMany({
+            where: { studentId, courseId: opening.courseId, openingId: null, status: { in: ['APPROVED', 'PENDING', 'RESERVED'] } },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+        });
+        if (!legacy) return null;
+
+        const batches = await this.prisma.courseOpening.findMany({
+            where: { courseId: opening.courseId },
+            select: { id: true },
+        });
+        if (batches.length !== 1) return null;
+        return legacy.id;
+    }
+
+    /**
+     * The batch a student's enrollment points at, resolved the same way
+     * `getEnrollmentId` does, so a student UI never has to guess an opening id
+     * from an enrollment that may not have one.
+     */
+    async getStudentOpeningId(studentId: string, courseId: string): Promise<string | null> {
+        const enrollment = await this.prisma.enrollment.findFirst({
+            where: { studentId, courseId, status: { in: ['APPROVED', 'PENDING', 'RESERVED'] } },
+            orderBy: { createdAt: 'desc' },
+            select: { openingId: true },
+        });
+        if (!enrollment) return null;
+        if (enrollment.openingId) return enrollment.openingId;
+
+        const batches = await this.prisma.courseOpening.findMany({
+            where: { courseId },
+            select: { id: true },
+        });
+        return batches.length === 1 ? batches[0].id : null;
     }
 
     /** Ensure the target module belongs to the same course as the opening. */
@@ -88,12 +150,51 @@ export class TasksService {
         return task;
     }
 
+    /**
+     * A student's real name, for the instructor's submissions list.
+     *
+     * `User` has no name column: the name is whatever the person typed at
+     * registration and it is kept in `metadata` (`fullName` / `nameAr` /
+     * `nameEn`, the same place the CV and certificates read it from). Without
+     * this the instructor's only identifier for a submission was the email
+     * address, which is both unusable on a screen and an address the student
+     * never agreed to be shown to a teacher. Only the name is derived; the rest
+     * of `metadata` (phone, birth date, university) is not echoed.
+     */
+    private studentDisplayName(metadata: unknown): { nameAr: string | null; nameEn: string | null } {
+        const md = (metadata ?? {}) as Record<string, unknown>;
+        const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+        const fullName = str(md.fullName);
+        return { nameAr: str(md.nameAr) ?? fullName, nameEn: str(md.nameEn) ?? fullName };
+    }
+
+    private decorateSubmission<T extends { enrollment: { student: { id: string; email: string; metadata: unknown } | null } }>(submission: T) {
+        const student = submission.enrollment?.student ?? null;
+        if (!student) return submission;
+        return {
+            ...submission,
+            studentName: this.studentDisplayName(student.metadata).nameAr || this.studentDisplayName(student.metadata).nameEn,
+            enrollment: { ...submission.enrollment, student: { id: student.id, email: student.email } },
+        };
+    }
+
     async listTasks(openingId: string, actorId: string, actorRole: Role) {
         const opening = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
         if (!opening) throw new NotFoundException('Opening not found');
 
+        // Owning the course counts as teaching its batch, for the same reason
+        // `assertCanManageOpening` allows it: the two instructor columns are not
+        // the same field, and refusing the owner left the instructor staring at
+        // an empty task list for their own course.
+        const ownsCourse = actorRole === Role.INSTRUCTOR
+            ? await this.prisma.course.findFirst({
+                where: { id: opening.courseId, instructorId: actorId },
+                select: { id: true },
+            })
+            : null;
+
         const isStaff = actorRole === Role.ADMIN || actorRole === Role.COURSE_MANAGER ||
-            (actorRole === Role.INSTRUCTOR && opening.instructorId === actorId);
+            (actorRole === Role.INSTRUCTOR && (opening.instructorId === actorId || !!ownsCourse));
         const isStudent = actorRole === Role.STUDENT;
 
         if (!isStaff && !isStudent) {
@@ -104,17 +205,27 @@ export class TasksService {
             if (!enrollmentId) throw new ForbiddenException('You are not enrolled in this opening');
         }
 
+        // Typed as a concrete shape rather than an inline ternary: the two
+        // branches select different submission fields, and letting the ternary
+        // stand lost `task.submissions` from the result type entirely. The
+        // student select is spelled out inline because a shared `Prisma.UserSelect`
+        // const does not satisfy the generated `UserDefaultArgs` here.
+        const include = {
+            module: { select: { id: true, titleAr: true, titleEn: true, orderIndex: true } },
+            submissions: isStaff
+                ? { include: { enrollment: { select: { id: true, student: { select: { id: true, email: true, metadata: true } } } } } }
+                : { where: { enrollmentId: await this.getEnrollmentId(actorId, openingId) ?? '00000000' } },
+        } satisfies Prisma.CourseTaskInclude;
         const tasks = await this.prisma.courseTask.findMany({
             where: { openingId },
             orderBy: [{ moduleId: 'asc' }, { createdAt: 'desc' }],
-            include: {
-                module: { select: { id: true, titleAr: true, titleEn: true, orderIndex: true } },
-                submissions: isStaff
-                    ? { include: { enrollment: { select: { id: true, student: { select: { id: true, email: true } } } } } }
-                    : { where: { enrollmentId: await this.getEnrollmentId(actorId, openingId) ?? '00000000' } },
-            },
+            include,
         });
-        return tasks;
+        if (!isStaff) return tasks;
+        return tasks.map(task => ({
+            ...task,
+            submissions: task.submissions.map(s => this.decorateSubmission(s as any)),
+        }));
     }
 
     async updateTask(taskId: string, dto: {
@@ -171,20 +282,65 @@ export class TasksService {
 
     // ---------- Submissions ----------
 
-    async submitTask(taskId: string, studentId: string, dto: { content?: string; attachmentUrl?: string }) {
+    /** Throws unless this student is enrolled in the task's opening. */
+    async assertStudentCanSubmit(taskId: string, studentId: string) {
         const task = await this.getTaskOrThrow(taskId);
         const enrollmentId = await this.getEnrollmentId(studentId, task.openingId);
         if (!enrollmentId) throw new ForbiddenException('You are not enrolled in this opening');
+        return enrollmentId;
+    }
+
+    async submitTask(taskId: string, studentId: string, dto: {
+        content?: string;
+        attachmentUrl?: string;
+        attachmentName?: string;
+        attachmentType?: string;
+        attachmentSize?: number;
+    }) {
+        const task = await this.getTaskOrThrow(taskId);
+        const enrollmentId = await this.getEnrollmentId(studentId, task.openingId);
+        if (!enrollmentId) throw new ForbiddenException('You are not enrolled in this opening');
+
+        // The stored URL is ours, not the caller's: a student could otherwise
+        // point their submission at any path on the server, or at a file
+        // another student uploaded, and the instructor would open it as if it
+        // were their own work.
+        const clearingFile = dto.attachmentUrl !== undefined
+            && dto.attachmentUrl !== null
+            && String(dto.attachmentUrl).trim() === '';
+        const replacingFile = !!dto.attachmentUrl && !clearingFile;
+        const attachment = replacingFile ? this.normalizeSubmittedAttachment(dto.attachmentUrl) : null;
+        const submittedFile = attachment
+            ? {
+                attachmentUrl: attachment.url,
+                attachmentName: this.sanitizeFileName(dto.attachmentName),
+                attachmentType: dto.attachmentType?.slice(0, 120) ?? null,
+                attachmentSize: Number.isFinite(dto.attachmentSize) ? Math.max(0, Math.trunc(dto.attachmentSize as number)) : null,
+            }
+            : { attachmentUrl: null, attachmentName: null, attachmentType: null, attachmentSize: null };
 
         const existing = await this.prisma.taskSubmission.findUnique({
             where: { taskId_enrollmentId: { taskId, enrollmentId } },
         });
 
+        // A new file replaces the old one as a whole: keeping the previous
+        // filename next to a new URL, or a URL with no name, would misdescribe
+        // the work the instructor opens. Leaving the field out entirely keeps
+        // the file already there, so adding a note does not silently drop it.
+        const fileFields = replacingFile || clearingFile
+            ? submittedFile
+            : {
+                attachmentUrl: existing?.attachmentUrl ?? null,
+                attachmentName: existing?.attachmentName ?? null,
+                attachmentType: existing?.attachmentType ?? null,
+                attachmentSize: existing?.attachmentSize ?? null,
+            };
+
         const submission = await this.prisma.taskSubmission.upsert({
             where: { taskId_enrollmentId: { taskId, enrollmentId } },
             update: {
                 content: dto.content?.trim() ? dto.content.trim() : (existing?.content ?? null),
-                attachmentUrl: dto.attachmentUrl ?? existing?.attachmentUrl ?? null,
+                ...fileFields,
                 score: existing?.score ?? null,
                 notes: existing?.notes ?? null,
             },
@@ -192,11 +348,41 @@ export class TasksService {
                 taskId,
                 enrollmentId,
                 content: dto.content?.trim() ? dto.content.trim() : null,
-                attachmentUrl: dto.attachmentUrl ?? null,
+                ...submittedFile,
             },
         });
         await this.audit.logAction(`Student ${studentId} submitted Task ${taskId}`, undefined, studentId);
         return submission;
+    }
+
+    /**
+     * Keep only paths produced by our own upload endpoint.
+     *
+     * `attachmentUrl` is accepted from the browser, so anything that is not a
+     * `/uploads/tasks/...` path with a plain filename is rejected outright. The
+     * `..` and encoding tricks that would climb out of the folder are refused by
+     * the pattern itself, and the extension has to be one we wrote.
+     */
+    private normalizeSubmittedAttachment(url?: string): { url: string } | null {
+        if (!url) return null;
+        const value = url.trim();
+        if (/^https?:\/\//i.test(value)) {
+            // The upload response is a same-origin path; an absolute URL here
+            // means the client is posting something we never issued.
+            throw new BadRequestException('Attachment must be an uploaded file');
+        }
+        if (!/^\/uploads\/tasks\/[A-Za-z0-9._-]+$/.test(value) || value.includes('..')) {
+            throw new BadRequestException('Attachment must be an uploaded file');
+        }
+        return { url: value };
+    }
+
+    /** A display name for the submitted file: no path separators, bounded. */
+    private sanitizeFileName(name?: string): string | null {
+        if (!name) return null;
+        const base = name.replace(/\\/g, '/').split('/').pop() ?? '';
+        const cleaned = base.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 200);
+        return cleaned.length ? cleaned : null;
     }
 
     async getMySubmission(taskId: string, studentId: string) {
@@ -211,11 +397,23 @@ export class TasksService {
     async getSubmissions(taskId: string, actorId: string, actorRole: Role) {
         const task = await this.getTaskOrThrow(taskId);
         await this.assertCanManageOpening(task.openingId, actorId, actorRole);
-        return this.prisma.taskSubmission.findMany({
+        const rows = await this.prisma.taskSubmission.findMany({
             where: { taskId },
-            include: { enrollment: { select: { id: true, student: { select: { id: true, email: true } } } } },
+            include: { enrollment: { select: { id: true, student: { select: { id: true, email: true, metadata: true } } } } },
             orderBy: { submittedAt: 'desc' },
         });
+        return rows.map(s => this.decorateSubmission(s as any));
+    }
+
+    /** A student's own task list for a course, batch resolved for them. */
+    async listStudentCourseTasks(courseId: string, studentId: string) {
+        const openingId = await this.getStudentOpeningId(studentId, courseId);
+        if (!openingId) {
+            // No batch recorded and more than one to choose from: say so rather
+            // than returning a list that may belong to a different cohort.
+            throw new ForbiddenException('Your enrollment is not linked to a batch yet');
+        }
+        return this.listTasks(openingId, studentId, Role.STUDENT);
     }
 
     async gradeSubmission(submissionId: string, actorId: string, actorRole: Role, score?: number, notes?: string) {
@@ -227,6 +425,12 @@ export class TasksService {
         await this.assertCanManageOpening(submission.task.openingId, actorId, actorRole);
         if (score != null && (isNaN(score) || score < 0)) {
             throw new BadRequestException('Score must be a non-negative number');
+        }
+        // A mark above the task's maximum is not a rounding detail: it silently
+        // inflates every average the platform shows, and the student sees an
+        // impossible grade on the work they can actually open.
+        if (score != null && score > submission.task.maxScore) {
+            throw new BadRequestException(`Score cannot exceed the maximum of ${submission.task.maxScore}`);
         }
         const updated = await this.prisma.taskSubmission.update({
             where: { id: submissionId },

@@ -289,7 +289,8 @@
         "next": "Next",
         "items": "items",
         "certificate": "Certificate",
-        "course": "Course"
+        "course": "Course",
+        "remove": "Remove"
     },
     "dashboard": {
         "welcome_back": "Welcome back",
@@ -1343,7 +1344,14 @@
         "content_placeholder": "Write your answer here...",
         "view_details": "View details",
         "submit": "Submit",
-        "update_submission": "Update Submission"
+        "update_submission": "Update Submission",
+        "submitted_ok": "Solution submitted",
+        "answer_hint": "Write a note or your answer here…",
+        "attach_file": "Attach a file",
+        "any_file_hint": "You can upload any file type: a document, archive, code, image or video (up to 50 MB).",
+        "update_submission": "Update submission",
+        "resubmit_hint": "You can edit or replace the submission until it is graded.",
+        "not_linked_to_batch": "Your enrollment is not linked to a batch yet. Contact support to be placed in your batch, and your assignments will appear here."
     },
     "announcements": {
         "title": "Announcements",
@@ -1633,7 +1641,8 @@
         "undo_complete": "Undo Complete",
         "zoom_in": "Zoom in",
         "zoom_out": "Zoom out",
-        "zoom_reset": "Reset"
+        "zoom_reset": "Reset",
+        "drop_hint": "Drag & drop or click to browse — any file type (up to 50 MB)"
     },
     "discussions": {
         "heading": "Module Discussions",
