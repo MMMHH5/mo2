@@ -405,6 +405,112 @@ export class TasksService {
         return rows.map(s => this.decorateSubmission(s as any));
     }
 
+    /**
+     * Like `decorateSubmission`, but the name is returned in both scripts as a
+     * `{ nameAr, nameEn }` pair instead of one Arabic-first string, so a caller
+     * can resolve it with the same `pick(obj, 'name')` used for course and task
+     * titles. The single `studentName` string of the per-task list stays
+     * Arabic-first because that view is only ever reached from the Arabic UI.
+     */
+    private decorateInboxSubmission<T extends { enrollment: { student: { id: string; email: string; metadata: unknown } | null } | null }>(row: T) {
+        const student = row.enrollment?.student ?? null;
+        return {
+            ...row,
+            studentName: this.studentDisplayName(student?.metadata),
+            enrollment: {
+                ...row.enrollment,
+                student: student ? { id: student.id, email: student.email } : null,
+            },
+        };
+    }
+
+    /**
+     * Every submission across all the batches an actor teaches.
+     *
+     * `getSubmissions` and `listTasks` answer "how did this one task go" and
+     * "what is in this one batch", so an instructor who owns several courses
+     * could only see what had been handed in by walking each batch in turn.
+     *
+     * The scope deliberately ORs the two instructor columns. `CourseOpening`
+     * has its own `instructorId` and `Course` has a separate one, and
+     * `assertCanManageOpening` already lets the course's instructor of record
+     * grade the work in its batches — so their submissions have to appear
+     * here too, otherwise the same work is gradeable from the batch page but
+     * invisible on the inbox it is supposed to be listed in. Filtering on
+     * `CourseOpening.instructorId` alone is what makes this endpoint useless to
+     * exactly the people who need it.
+     */
+    async listSubmissionsForActor(actorId: string, actorRole: Role, opts: {
+        courseId?: string;
+        openingId?: string;
+        ungradedOnly?: boolean;
+        limit?: number;
+        skip?: number;
+    } = {}) {
+        const parsed = Number(opts.limit);
+        const limit = Math.min(Math.max(Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : 100, 1), 300);
+        // Page through the pile rather than fetching the whole table. Deep
+        // offsets get slower for every row skipped, so the window is bounded;
+        // a teacher with more than this can narrow by course or batch instead.
+        const parsedSkip = Number(opts.skip);
+        const skip = Math.min(Number.isFinite(parsedSkip) && parsedSkip > 0 ? Math.trunc(parsedSkip) : 0, 5000);
+
+        const opening: Prisma.CourseOpeningWhereInput = actorRole === Role.INSTRUCTOR
+            ? { OR: [{ instructorId: actorId }, { course: { instructorId: actorId } }] }
+            : {};
+        if (opts.courseId) opening.courseId = opts.courseId;
+        if (opts.openingId) opening.id = opts.openingId;
+
+        const where: Prisma.TaskSubmissionWhereInput = {
+            task: { opening: { is: opening } },
+            ...(opts.ungradedOnly ? { score: null } : {}),
+        };
+
+        // The course and batch titles are the whole point of an aggregate view:
+        // a submission row carries no readable context of its own, and the
+        // per-task endpoints return only ids. `module` comes along for the same
+        // reason — a teacher triaging a pile of work needs to know which
+        // lecture it belongs to.
+        const include = {
+            task: {
+                select: {
+                    id: true,
+                    titleAr: true,
+                    titleEn: true,
+                    descriptionAr: true,
+                    descriptionEn: true,
+                    dueDate: true,
+                    maxScore: true,
+                    opening: {
+                        select: {
+                            id: true,
+                            nameAr: true,
+                            nameEn: true,
+                            status: true,
+                            course: { select: { id: true, titleAr: true, titleEn: true } },
+                        },
+                    },
+                    module: { select: { id: true, titleAr: true, titleEn: true } },
+                },
+            },
+            enrollment: { select: { id: true, student: { select: { id: true, email: true, metadata: true } } } },
+        } satisfies Prisma.TaskSubmissionInclude;
+
+        const [rows, total] = await Promise.all([
+            this.prisma.taskSubmission.findMany({ where, include, orderBy: { submittedAt: 'desc' }, take: limit, skip }),
+            this.prisma.taskSubmission.count({ where }),
+        ]);
+
+        return {
+            items: rows.map(row => this.decorateInboxSubmission(row)),
+            total,
+            // Offset-aware: on the last page `rows.length` is short, so comparing
+            // it to `total` alone would claim there is more whenever the final
+            // page happened to be smaller than `limit`.
+            hasMore: skip + rows.length < total,
+        };
+    }
+
     /** A student's own task list for a course, batch resolved for them. */
     async listStudentCourseTasks(courseId: string, studentId: string) {
         const openingId = await this.getStudentOpeningId(studentId, courseId);

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, BadRequestException, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request, BadRequestException, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { existsSync, mkdirSync, unlink } from 'fs';
@@ -172,6 +172,26 @@ export class TasksController {
     @Get(':id/my-submission')
     mySubmission(@Param('id') id: string, @Request() req: any) {
         return this.tasksService.getMySubmission(id, req.user.userId);
+    }
+
+    @ApiOperation({ summary: 'Every student submission across all batches the actor teaches' })
+    @Roles(...STAFF_ROLES)
+    @Get('submissions')
+    inbox(
+        @Query('courseId') courseId: string | undefined,
+        @Query('openingId') openingId: string | undefined,
+        @Query('ungraded') ungraded: string | undefined,
+        @Query('limit') limit: string | undefined,
+        @Query('skip') skip: string | undefined,
+        @Request() req: any,
+    ) {
+        return this.tasksService.listSubmissionsForActor(req.user.userId, req.user.role, {
+            courseId: courseId || undefined,
+            openingId: openingId || undefined,
+            ungradedOnly: ungraded === 'true',
+            limit: limit ? Number(limit) : undefined,
+            skip: skip ? Number(skip) : undefined,
+        });
     }
 
     @ApiOperation({ summary: 'List submissions for a task (staff/own openings)' })
