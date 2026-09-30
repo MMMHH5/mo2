@@ -125,6 +125,9 @@
   --color-ink-inverse: var(--ink-inverse);
   --color-ink-on-accent: var(--ink-on-accent);
   --color-ink-on-gold: var(--ink-on-gold);
+  --color-ink-on-navy: var(--ink-on-navy);
+  --color-ink-on-navy-muted: var(--ink-on-navy-muted);
+  --color-ink-on-navy-subtle: var(--ink-on-navy-subtle);
   --color-gold-ink: var(--gold-ink);
 
   --color-line: var(--line);
@@ -161,6 +164,16 @@
   --ink-subtle: #596475;
   --ink-inverse: #ffffff;
   --ink-on-accent: #ffffff;
+  /* A navy panel is dark in *both* themes, so its ink cannot follow the theme
+     the way --ink does. InstructorRating's panel is the case that proved it: it
+     is `bg-brand-navy-dark` in light and dark alike, yet paired with
+     `text-gray-500` (3.53:1) and `text-gray-600` empty stars (2.26:1) off the
+     raw gray ramp, which is a light-mode scale and does not flip. Reused from
+     the dark theme's own ink values, so on #0a1c35 they land at 17.1 / 8.6 /
+     5.7:1. */
+  --ink-on-navy: #ffffff;
+  --ink-on-navy-muted: #a9bad1;
+  --ink-on-navy-subtle: #8296b2;
   /* Gold is a light, warm surface, so it takes dark ink in *both* themes. White
      on #C6A15B only reaches 2.43:1; navy on the same gold reaches 7.3:1. */
   --ink-on-gold: #0a1c35;
@@ -193,10 +206,20 @@ html.dark {
 
   --ink: #eaf0f8;
   --ink-muted: #a9bad1;
-  --ink-subtle: #8296b2;
+  /* #8296b2 cleared the page and the sunken surface but only reached 4.24:1 on
+     --surface-raised, the lifted card surface, which is where most dark-mode
+     captions sit. #95a6be gives 5.89 / 6.89 / 5.17 across the three surfaces and
+     keeps a visible step below --ink-muted. */
+  --ink-subtle: #95a6be;
   --ink-inverse: #ffffff;
   --ink-on-accent: #0a1c35;
   --ink-on-gold: #0a1c35;
+  /* Theme-independent: a navy panel is dark either way. Repeated here so the
+     dark block lists the whole ink set and a future edit cannot silently
+     repoint one of these at a light value. */
+  --ink-on-navy: #ffffff;
+  --ink-on-navy-muted: #a9bad1;
+  --ink-on-navy-subtle: #8296b2;
   --gold-ink: #e8d3a0;
 
   --line: rgba(255, 255, 255, 0.12);

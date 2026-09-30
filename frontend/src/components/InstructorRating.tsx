@@ -30,7 +30,7 @@ function Stars({ value, size = 14 }: { value: number; size?: number }) {
                 <Star
                     key={i}
                     size={size}
-                    className={i <= Math.round(value) ? 'fill-brand-gold-light text-brand-gold-light' : 'text-gray-600'}
+                    className={i <= Math.round(value) ? 'fill-brand-gold-light text-brand-gold-light' : 'text-ink-on-navy-subtle'}
                 />
             ))}
         </div>
@@ -111,7 +111,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                 <div className="text-center">
                     <div className="text-5xl font-black text-white tabular-nums">{avg > 0 ? avg.toFixed(1) : '—'}</div>
                     <div className="mt-1.5"><Stars value={avg} size={16} /></div>
-                    <p className="text-[11px] text-gray-500 font-bold mt-1.5">
+                    <p className="text-[11px] text-ink-on-navy-muted font-bold mt-1.5">
                         {items.length} {isAr ? (items.length === 1 ? 'تقييم' : 'تقييمات') : items.length === 1 ? 'rating' : 'ratings'}
                     </p>
                 </div>
@@ -137,7 +137,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                                                 size={28}
                                                 className={(hover || rating) >= i
                                                     ? 'fill-brand-gold-light text-brand-gold-light'
-                                                    : 'text-gray-600'}
+                                                    : 'text-ink-on-navy-subtle'}
                                             />
                                         </button>
                                     ))}
@@ -147,12 +147,12 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                                     onChange={(e) => setComment(e.target.value)}
                                     rows={3}
                                     placeholder={isAr ? 'تعليق (اختياري)...' : 'Comment (optional)...'}
-                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
+                                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-ink-on-navy-subtle text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50 resize-none"
                                 />
                                 <div className="flex items-center justify-end gap-2">
                                     <button
                                         onClick={() => setFormOpen(false)}
-                                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 transition"
+                                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-ink-on-navy-muted hover:text-white hover:bg-white/5 transition"
                                     >
                                         {isAr ? 'إلغاء' : 'Cancel'}
                                     </button>
@@ -169,7 +169,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                         ) : (
                             <div className="text-center sm:text-start">
                                 {myRating && (
-                                    <p className="text-xs font-bold text-gray-500 mb-2">
+                                    <p className="text-xs font-bold text-ink-on-navy-muted mb-2">
                                         {isAr ? 'تقييمك الحالي:' : 'Your current rating:'} <Stars value={myRating.rating} />
                                     </p>
                                 )}
@@ -184,7 +184,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                         )}
                     </div>
                 ) : (
-                    <p className="sm:ms-auto text-xs text-gray-500 font-bold">
+                    <p className="sm:ms-auto text-xs text-ink-on-navy-muted font-bold">
                         {avg <= 0 ? (isAr ? 'لا توجد تقييمات بعد' : 'No ratings yet') : ''}
                     </p>
                 )}
@@ -197,11 +197,11 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                             <div className="flex items-center justify-between gap-3 flex-wrap">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                     <span className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                                        <User size={16} className="text-gray-400" />
+                                        <User size={16} className="text-ink-on-navy-muted" />
                                     </span>
                                     <div className="min-w-0">
                                         <p className="text-white text-sm font-bold truncate">{r.user?.email || (isAr ? 'طالب' : 'Student')}</p>
-                                        <p className="text-[11px] text-gray-500 font-bold">
+                                        <p className="text-[11px] text-ink-on-navy-muted font-bold">
                                             {new Date(r.createdAt).toLocaleDateString(isAr ? 'ar' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                         </p>
                                     </div>
@@ -209,7 +209,7 @@ export default function InstructorRating({ instructorId, courseId, showRateButto
                                 <Stars value={Number(r.rating)} />
                             </div>
                             {pick(r, 'comment') && (
-                                <p className="text-gray-300 text-sm mt-3 leading-relaxed whitespace-pre-wrap">{pick(r, 'comment')}</p>
+                                <p className="text-ink-on-navy-muted text-sm mt-3 leading-relaxed whitespace-pre-wrap">{pick(r, 'comment')}</p>
                             )}
                         </div>
                     ))}
