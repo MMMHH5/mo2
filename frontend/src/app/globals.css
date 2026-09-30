@@ -151,9 +151,14 @@
 
   --ink: #1b2434;
   --ink-muted: #4f5c73;
-  /* Clears 4.5:1 on both --surface and --surface-sunken, so secondary text
-     still passes AA rather than only being "large text". */
-  --ink-subtle: #647084;
+  /* Secondary text, and the token 179 call sites lean on for labels, captions
+     and 9-11px badges. At #647084 it cleared 4.5:1 on the two page surfaces but
+     only by 0.08, and it failed outright on the tinted chips (4.30:1 on
+     --accent-soft, 4.42 on --success-soft, 4.38 on --danger-soft), which is
+     where it read as washed out. #596475 gives 5.99:1 on white and 5.48:1 on
+     --surface-sunken, clears 5.1:1 on every chip tint, and keeps a visible step
+     below --ink-muted (6.75) so the ink / muted / subtle hierarchy survives. */
+  --ink-subtle: #596475;
   --ink-inverse: #ffffff;
   --ink-on-accent: #ffffff;
   /* Gold is a light, warm surface, so it takes dark ink in *both* themes. White
