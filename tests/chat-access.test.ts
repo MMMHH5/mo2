@@ -104,7 +104,24 @@ function makeHarness(handlers: {
                     && m.userId === args?.where?.roomId_userId?.userId) ?? null;
             },
             deleteMany: async () => ({ count: 0 }),
-            createMany: async () => ({ count: 0 }),
+            // `createMany` issues ONE multi-row INSERT, so `@@unique([roomId,
+            // userId])` is checked within the statement. This double used to be
+            // a no-op, which is exactly why the admin-taught-batch 500 went
+            // unnoticed: nothing here could ever raise P2002.
+            createMany: async (args: any) => {
+                calls.push({ model: 'chatRoomMember', op: 'createMany', args });
+                const seen = new Set<string>();
+                for (const row of args?.data ?? []) {
+                    const key = `${row.roomId}:${row.userId}`;
+                    if (seen.has(key)) {
+                        const err: any = new Error('Unique constraint failed on the fields: (`roomId`,`userId`)');
+                        err.code = 'P2002';
+                        throw err;
+                    }
+                    seen.add(key);
+                }
+                return { count: (args?.data ?? []).length };
+            },
         },
         chatMessage: { count: async () => 0 },
         user: {
@@ -112,7 +129,20 @@ function makeHarness(handlers: {
                 calls.push({ model: 'user', op: 'findUnique', args });
                 return (handlers.users ?? []).find((u) => u.id === args?.where?.id) ?? null;
             },
-            findMany: async () => handlers.users ?? [],
+            findMany: async (args: any) => {
+                calls.push({ model: 'user', op: 'findMany', args });
+                // Honour the filter. This serves two callers with opposite
+                // filters -- the ADMIN roster for the room sync, and the
+                // unbatched-student lookup (`role: STUDENT`, `id: { in: [...] }`)
+                // -- so returning every user for both used to put admins into
+                // the student list and manufacture a duplicate that the real
+                // query would never produce.
+                let rows = handlers.users ?? [];
+                const w = args?.where ?? {};
+                if (w.role) rows = rows.filter((u) => u.role === w.role);
+                if (w.id?.in) rows = rows.filter((u) => w.id.in.includes(u.id));
+                return rows;
+            },
         },
         course: {
             findUnique: async (args: any) => {
@@ -359,5 +389,72 @@ describe('direct chat: a legacy enrollment with no batch is not locked out', () 
             () => service.getOrCreateDirectChat('c1', 'student-1', Role.STUDENT),
             /not enrolled/i,
         );
+    });
+});
+
+/**
+ * Regression: a batch run by an admin returned 500 on every room listing.
+ *
+ * `syncRoomMembers` put the opening's instructor in the member list and then
+ * added every ADMIN on the platform. When those are the same person the array
+ * held one `(roomId, userId)` twice, and `createMany`'s single multi-row INSERT
+ * tripped `@@unique([roomId, userId])` inside the statement. `getRooms` awaits
+ * the sync for each opening, so the whole listing failed — and the client turned
+ * that 500 into "no chat room yet", which is how it reached a user as a missing
+ * feature rather than an outage.
+ */
+describe('batch chat: a room run by an admin can still be listed', () => {
+    const adminTaughtBatch = () => ({
+        enrollments: [{ id: 'e1', studentId: 'student-1', courseId: 'crs-1', openingId: 'opn-1', status: 'APPROVED' }],
+        openings: [{ id: 'opn-1', courseId: 'crs-1', instructorId: 'admin-1', status: 'STARTED' }],
+        rooms: [],
+        users: [{ id: 'admin-1', role: Role.ADMIN }],
+    });
+
+    test('the same person is not inserted twice, so the listing does not throw', async () => {
+        const { service } = makeHarness(adminTaughtBatch());
+
+        const rooms = await service.getRooms('student-1', Role.STUDENT);
+
+        assert.equal(rooms.length, 1, 'the batch still gets its room');
+        assert.equal(rooms[0].openingId, 'opn-1');
+    });
+
+    test('the admin who teaches the batch is still a member, exactly once', async () => {
+        const { service, calls } = makeHarness(adminTaughtBatch());
+
+        await service.getRooms('student-1', Role.STUDENT);
+
+        const insert = calls.find((c) => c.model === 'chatRoomMember' && c.op === 'createMany');
+        assert.ok(insert, 'membership is materialised on the listing path');
+        const userIds = insert!.args.data.map((m: any) => m.userId);
+        assert.equal(new Set(userIds).size, userIds.length, 'no duplicate (roomId, userId) in one INSERT');
+        assert.equal(userIds.filter((id: string) => id === 'admin-1').length, 1);
+        assert.ok(userIds.includes('student-1'), 'the enrolled student is still in the room');
+    });
+
+    test('the insert asks the database to skip duplicates, since the sync re-runs on every listing', async () => {
+        const { service, calls } = makeHarness(adminTaughtBatch());
+
+        await service.getRooms('student-1', Role.STUDENT);
+
+        const insert = calls.find((c) => c.model === 'chatRoomMember' && c.op === 'createMany')!;
+        assert.equal(insert.args.skipDuplicates, true);
+    });
+
+    test('an instructor who is not an admin is unaffected', async () => {
+        const { service, calls } = makeHarness({
+            enrollments: [{ id: 'e1', studentId: 'student-1', courseId: 'crs-1', openingId: 'opn-1', status: 'APPROVED' }],
+            openings: [{ id: 'opn-1', courseId: 'crs-1', instructorId: 'teach-1', status: 'STARTED' }],
+            rooms: [],
+            users: [{ id: 'admin-9', role: Role.ADMIN }],
+        });
+
+        const rooms = await service.getRooms('student-1', Role.STUDENT);
+
+        assert.equal(rooms.length, 1);
+        const insert = calls.find((c) => c.model === 'chatRoomMember' && c.op === 'createMany')!;
+        const userIds = insert.args.data.map((m: any) => m.userId);
+        assert.deepEqual([...userIds].sort(), ['admin-9', 'student-1', 'teach-1']);
     });
 });

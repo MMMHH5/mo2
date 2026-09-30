@@ -6,7 +6,7 @@ import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
 import toast from 'react-hot-toast';
-import { Loader, Send, MessagesSquare, Users, Inbox, MessageCircle, Paperclip, FileText, ImageIcon, X, ArrowLeft } from 'lucide-react';
+import { Loader, Send, MessagesSquare, Users, Inbox, MessageCircle, Paperclip, FileText, ImageIcon, X, ArrowLeft, AlertCircle } from 'lucide-react';
 
 type ChatMode = 'group' | 'direct';
 
@@ -55,6 +55,7 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
     const [directChat, setDirectChat] = useState<DirectChat | null>(null);
     const [directThread, setDirectThread] = useState<ChatMsg[]>([]);
     const [loading, setLoading] = useState(true);
+    const [roomsError, setRoomsError] = useState<string | null>(null);
     const [directLoading, setDirectLoading] = useState(false);
     const [sending, setSending] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -85,18 +86,26 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                 const all: ChatRoom[] = res.data || [];
                 const mine = all.filter(r => r.course?.id === courseId);
                 if (!active) return;
+                setRoomsError(null);
                 setRooms(mine);
                 // Drop a selected room that is no longer in the list, or the
                 // thread pane would sit empty against a room we may not read.
                 setActiveRoomId(prev => (prev && mine.some(r => r.id === prev) ? prev : mine[0]?.id ?? null));
-            } catch {
-                if (active) setRooms([]);
+            } catch (err) {
+                if (!active) return;
+                // A failed listing is NOT an empty one. This used to set `[]`,
+                // which rendered "no chat room yet" — the same panel a genuine
+                // empty allow-list produces — so a server outage reached the
+                // user as a missing feature and the 500 only ever showed up in
+                // the browser console.
+                setRooms([]);
+                setRoomsError(getErrorMessage(err) || t('courseChat.load_failed'));
             } finally {
                 if (active) setLoading(false);
             }
         })();
         return () => { active = false; };
-    }, [courseId]);
+    }, [courseId, t]);
 
     // Load group thread when active room changes
     useEffect(() => {
@@ -488,7 +497,15 @@ export default function CourseChat({ courseId, variant }: CourseChatProps) {
                                         <Inbox size={36} className="mx-auto mb-2 text-accent" />
                                         <p className="font-bold">{t('courseChat.direct_no_messages')}</p>
                                     </div>
-                                ) : (
+                    ) : roomsError ? (
+                        <div className="h-64 flex flex-col items-center justify-center text-center text-ink-subtle">
+                            <AlertCircle size={40} className="mb-3 text-danger" />
+                            <p className="font-bold text-danger">{t('courseChat.load_failed')}</p>
+                            {roomsError !== t('courseChat.load_failed') && (
+                                <p className="text-sm mt-1">{roomsError}</p>
+                            )}
+                        </div>
+                    ) : (
                                     directThread.map(m => (
                                         <div key={m.id}>{renderBubble(m)}</div>
                                     ))

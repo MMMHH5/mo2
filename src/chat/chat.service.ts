@@ -369,8 +369,24 @@ export class ChatService {
             role: Role.ADMIN,
         }));
 
+        // `ChatRoomMember` is `@@unique([roomId, userId])`, and a batch run by
+        // an admin puts the same person in the list twice: once as the opening's
+        // instructor and once in the admin roster. `createMany` sends one
+        // multi-row INSERT, so the duplicate is rejected by the unique index
+        // WITHIN the statement -- not against a pre-existing row, which the
+        // deleteMany above already removed. That surfaced as a 500 on every
+        // `GET /chat/rooms` for those batches, and the client rendered it as
+        // "no chat room yet" because the panel swallowed the error.
+        // Dedupe on the way in, and let the database skip any stragglers so
+        // re-running this sync stays harmless: it fires on every room listing.
+        const byUser = new Map<string, { roomId: string; userId: string; role: Role }>();
+        for (const m of [...studentMembers, instructorMember, ...adminMembers]) {
+            byUser.set(m.userId, m);
+        }
+
         await this.prisma.chatRoomMember.createMany({
-            data: [...studentMembers, instructorMember, ...adminMembers],
+            data: [...byUser.values()],
+            skipDuplicates: true,
         });
     }
 
