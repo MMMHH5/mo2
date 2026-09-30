@@ -51,14 +51,57 @@ export class RubricsService {
     async submitReview(rubricId: string, submissionId: string, reviewerId: string, dto: { scores: { criterionId: string; score: number; commentAr?: string; commentEn?: string }[]; commentAr?: string; commentEn?: string }) {
         const rubric = await this.prisma.rubric.findUnique({ where: { id: rubricId } });
         if (!rubric) throw new NotFoundException('Rubric not found');
-        const submission = await this.prisma.taskSubmission.findUnique({ where: { id: submissionId } });
+        const submission = await this.prisma.taskSubmission.findUnique({
+            where: { id: submissionId },
+            include: { enrollment: { select: { studentId: true, courseId: true, status: true } } },
+        });
         if (!submission) throw new NotFoundException('Submission not found');
-        if (submission.enrollmentId === reviewerId) throw new ForbiddenException('Cannot review your own submission');
+        // Three separate holes, in order of severity.
+        //
+        // The submission must belong to the task this rubric grades. Any
+        // student could otherwise POST any submission id in the platform with
+        // any rubric id and score a stranger's work.
+        if (submission.taskId !== rubric.taskId) {
+            throw new NotFoundException('Submission not found for this task');
+        }
+        // The self-review guard compared `TaskSubmission.enrollmentId` (which
+        // references Enrollment.id) against `reviewerId` (a User.id). Two
+        // different tables, so the comparison was never true and students
+        // could grade their own work. Resolved through the relation.
+        if (submission.enrollment.studentId === reviewerId) {
+            throw new ForbiddenException('Cannot review your own submission');
+        }
+        // A review only counts if the reviewer is actually enrolled in the same
+        // course. Without this, any valid student token was enough.
+        if (submission.enrollment.status !== 'APPROVED') {
+            throw new ForbiddenException('Only approved students may review');
+        }
+        const reviewerEnrollment = await this.prisma.enrollment.findFirst({
+            where: { courseId: submission.enrollment.courseId, studentId: reviewerId, status: 'APPROVED' },
+            select: { id: true },
+        });
+        if (!reviewerEnrollment) throw new ForbiddenException('Not enrolled in this course');
+
+        // The score is derived from the criteria the rubric actually defines,
+        // and each one is clamped to its own maximum. Previously it was an
+        // attacker-controlled sum with no range check, so a peer could hand
+        // out arbitrary marks.
+        const criteria = await this.prisma.rubricCriterion.findMany({
+            where: { rubricId },
+            select: { id: true, maxScore: true },
+        });
+        const byId = new Map(criteria.map((c) => [c.id, c.maxScore]));
+        for (const s of dto.scores ?? []) {
+            if (!byId.has(s.criterionId)) throw new BadRequestException('Unknown criterion for this rubric');
+        }
+        const totalScore = (dto.scores ?? []).reduce(
+            (sum, s) => sum + Math.max(0, Math.min(Number(s.score) || 0, byId.get(s.criterionId) ?? 0)),
+            0,
+        );
         const existing = await this.prisma.peerReview.findUnique({
             where: { rubricId_submissionId_reviewerId: { rubricId, submissionId, reviewerId } },
         });
         if (existing) throw new BadRequestException('Already reviewed this submission');
-        const totalScore = dto.scores.reduce((sum, s) => sum + s.score, 0);
         const review = await this.prisma.peerReview.create({
             data: {
                 rubricId,
@@ -69,9 +112,9 @@ export class RubricsService {
                 commentEn: dto.commentEn || null,
                 status: 'completed',
                 criterionScores: {
-                    create: dto.scores.map(s => ({
+                    create: (dto.scores ?? []).map(s => ({
                         criterionId: s.criterionId,
-                        score: s.score,
+                        score: Math.max(0, Math.min(Number(s.score) || 0, byId.get(s.criterionId) ?? 0)),
                         commentAr: s.commentAr || null,
                         commentEn: s.commentEn || null,
                     })),
@@ -84,7 +127,29 @@ export class RubricsService {
         return review;
     }
 
-    async getReviewsForSubmission(submissionId: string) {
+    async getReviewsForSubmission(submissionId: string, actorId: string, actorRole: Role) {
+        const submission = await this.prisma.taskSubmission.findUnique({
+            where: { id: submissionId },
+            include: { enrollment: { select: { studentId: true, courseId: true } } },
+        });
+        if (!submission) throw new NotFoundException('Submission not found');
+        // Reviews carry reviewer emails and free-text comments, so this used to
+        // let any authenticated user read another student's feedback by
+        // iterating submission ids. Staff may always; the owner may read their
+        // own.
+        if (actorRole === Role.ADMIN || actorRole === Role.COURSE_MANAGER) {
+            // oversight
+        } else if (actorRole === Role.INSTRUCTOR) {
+            const teaches = await this.prisma.courseOpening.findFirst({
+                where: { courseId: submission.enrollment.courseId, instructorId: actorId },
+                select: { id: true },
+            });
+            if (!teaches) throw new ForbiddenException('Not your course');
+        } else if (submission.enrollment.studentId === actorId) {
+            // own submission
+        } else {
+            throw new ForbiddenException('Not your submission');
+        }
         const reviews = await this.prisma.peerReview.findMany({
             where: { submissionId },
             include: {

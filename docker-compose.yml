@@ -13,7 +13,10 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required — create a local .env (see .env.example) and never commit it}
       POSTGRES_DB: ${DB_NAME:-laxalab_db}
     ports:
-      - "5432:5432"
+      # Bound to loopback only. "5432:5432" published Postgres on every
+      # interface, so any host on the network (or a neighbour on shared
+      # infrastructure) could reach the database and try the password.
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

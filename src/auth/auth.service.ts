@@ -90,7 +90,13 @@ export class AuthService {
     async login(dto: LoginDto): Promise<LoginResult> {
         const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
         if (!user) throw new UnauthorizedException('Invalid credentials');
-        if (!user.isActive) throw new ForbiddenException('Account is suspended');
+        // Deliberately the same message and status as a wrong password. A
+        // distinct "Account is suspended" reply — thrown before the bcrypt
+        // comparison, so it was also the fast path — confirmed to anyone that
+        // an address was registered and that it was disabled, which turns
+        // /auth/login into an account-existence oracle. forgotPassword below
+        // already returns {ok:true} unconditionally for the same reason.
+        if (!user.isActive) throw new UnauthorizedException('Invalid credentials');
 
         const pwMatches = await bcrypt.compare(dto.password, user.passwordHash);
         if (!pwMatches) throw new UnauthorizedException('Invalid credentials');

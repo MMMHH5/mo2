@@ -13,6 +13,19 @@ export class QuizzesService {
       ...rest,
       questions: (questions ?? []).map((q: any) => {
         const { correctIndex, ...publicQuestion } = q;
+        // `parseCorrectIndices` also reads the answer out of
+        // `options[i].isCorrect`, so dropping only `correctIndex` left the key
+        // sitting in the payload of a fully public GET /lms/quizzes/:id. Any
+        // quiz authored in that shape was anonymously solvable.
+        if (Array.isArray(publicQuestion.options)) {
+          publicQuestion.options = publicQuestion.options.map((opt: any) => {
+            if (opt && typeof opt === 'object' && 'isCorrect' in opt) {
+              const { isCorrect, ...restOpt } = opt;
+              return restOpt;
+            }
+            return opt;
+          });
+        }
         return publicQuestion;
       }),
     };
@@ -114,7 +127,13 @@ export class QuizzesService {
       const correctSet = this.parseCorrectIndices(question);
       const isCorrect = correctSet.length > 0 && JSON.stringify([...selected].sort()) === JSON.stringify(correctSet);
       if (isCorrect) correct += 1;
-      return { questionId: question.id, isCorrect, correctAnswer: correctSet };
+      // `isCorrect` is feedback a student is entitled to. `correctAnswer` is
+      // the key: returning it let anyone submit dummy answers, read the
+      // correct indices out of the response and resubmit for 100%, which
+      // defeats passScore (gating module completion) and the quiz_perfect /
+      // quiz_master awards. Grading still uses correctSet internally; only the
+      // per-question breakdown is withheld.
+      return { questionId: question.id, isCorrect };
     });
     const score = total === 0 ? 0 : Math.round((correct / total) * 100);
     return { score, passed: score >= quiz.passScore, details };

@@ -484,9 +484,14 @@ export class CoursesService {
         });
     }
 
-    async updateOpening(openingId: string, dto: Partial<CreateOpeningDto>) {
+    async updateOpening(openingId: string, dto: Partial<CreateOpeningDto>, actorId: string, actorRole: Role) {
         const existing = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
         if (!existing) throw new NotFoundException('Opening not found');
+        // Without this, any INSTRUCTOR could rewrite another instructor's batch:
+        // reassign instructorId (taking it and its roster), change the price,
+        // dates and capacity. Every sibling transition already calls this; the
+        // two write paths below were the gap.
+        this.assertCanManage(existing, actorId, actorRole);
 
         const data: Prisma.CourseOpeningUpdateInput = {};
         if (dto.nameAr !== undefined) data.nameAr = dto.nameAr;
@@ -656,12 +661,16 @@ export class CoursesService {
         return result;
     }
 
-    async setOpeningPublished(openingId: string, isPublished: boolean) {
+    async setOpeningPublished(openingId: string, isPublished: boolean, actorId: string, actorRole: Role) {
         const existing = await this.prisma.courseOpening.findUnique({
             where: { id: openingId },
             include: { course: { select: { id: true, titleAr: true, titleEn: true } } },
         });
         if (!existing) throw new NotFoundException('Opening not found');
+        // Publishing is not a cosmetic flag: it emails every wishlist user and
+        // flips PENDING reservations to "payment due". That blast had to be
+        // gated on actually managing the opening.
+        this.assertCanManage(existing, actorId, actorRole);
         const result = await this.setStatus(openingId, isPublished ? CourseOpeningStatus.OPEN : CourseOpeningStatus.DRAFT);
         if (isPublished) {
             const wishlistUsers = await this.prisma.wishlist.findMany({

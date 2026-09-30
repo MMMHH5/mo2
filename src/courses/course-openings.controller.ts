@@ -34,24 +34,24 @@ export class CourseOpeningsController {
     @ApiResponse({ status: 200, description: 'Opening updated.' })
     @Roles(...STAFF_ROLES)
     @Patch(':id')
-    update(@Param('id') id: string, @Body() dto: Partial<CreateOpeningDto>) {
-        return this.coursesService.updateOpening(id, dto);
+    update(@Param('id') id: string, @Body() dto: Partial<CreateOpeningDto>, @Request() req: any) {
+        return this.coursesService.updateOpening(id, dto, req.user.userId, req.user.role);
     }
 
     @ApiOperation({ summary: 'Publish an opening (make it open for registration/payment)' })
     @ApiResponse({ status: 200, description: 'Opening published.' })
     @Roles(...STAFF_ROLES)
     @Post(':id/publish')
-    publish(@Param('id') id: string) {
-        return this.coursesService.setOpeningPublished(id, true);
+    publish(@Param('id') id: string, @Request() req: any) {
+        return this.coursesService.setOpeningPublished(id, true, req.user.userId, req.user.role);
     }
 
     @ApiOperation({ summary: 'Unpublish an opening (close registration)' })
     @ApiResponse({ status: 200, description: 'Opening unpublished.' })
     @Roles(...STAFF_ROLES)
     @Post(':id/unpublish')
-    unpublish(@Param('id') id: string) {
-        return this.coursesService.setOpeningPublished(id, false);
+    unpublish(@Param('id') id: string, @Request() req: any) {
+        return this.coursesService.setOpeningPublished(id, false, req.user.userId, req.user.role);
     }
 
     @ApiOperation({ summary: 'Activate the announcement banner for an opening (DRAFT -> ANNOUNCEMENT)' })

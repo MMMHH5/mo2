@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { SubmitReviewDto } from './dto/submit-review.dto';
 
 const STAFF = [Role.ADMIN, Role.COURSE_MANAGER, Role.INSTRUCTOR];
 
@@ -31,14 +32,23 @@ export class RubricsController {
     @ApiOperation({ summary: 'Submit peer review' })
     @Roles(Role.STUDENT)
     @Post(':id/review')
-    submitReview(@Param('id') id: string, @Body() dto: any, @Request() req: any) {
+    // Was `@Body() dto: any`, which opts the payload out of the global
+    // ValidationPipe entirely: forbidNonWhitelisted and the nested checks never
+    // ran, so `scores` could be any shape and anything else in the body rode
+    // along into the service.
+    submitReview(@Param('id') id: string, @Body() dto: SubmitReviewDto, @Request() req: any) {
         return this.svc.submitReview(id, dto.submissionId, req.user.userId, dto);
     }
 
     @ApiOperation({ summary: 'Get reviews for a submission' })
+    // STUDENT stays allowed here: the ownership decision is per-submission and
+    // lives in the service, where a student may read their own feedback but
+    // not a stranger's. Restricting the route to staff would have silently
+    // cut students off from their own reviews.
+    @Roles(Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN, Role.COURSE_MANAGER)
     @Get('submission/:submissionId/reviews')
-    getReviews(@Param('submissionId') submissionId: string) {
-        return this.svc.getReviewsForSubmission(submissionId);
+    getReviews(@Param('submissionId') submissionId: string, @Request() req: any) {
+        return this.svc.getReviewsForSubmission(submissionId, req.user.userId, req.user.role);
     }
 
     @ApiOperation({ summary: 'Assign random peer reviews' })
