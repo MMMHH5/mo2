@@ -19,6 +19,8 @@ check-*.js
 fix-*.js
 verify-*.js
 list-users.js
+test-*.sh
+=193
 
 # 19 MB of design source, referenced nowhere in the build.
 laxalab_academy_brand

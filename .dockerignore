@@ -21,5 +21,7 @@ check-*.js
 fix-*.js
 verify-*.js
 list-users.js
+test-*.sh
+=193
 *.tsbuildinfo
 coverage
