@@ -126,7 +126,7 @@ export class CoursesController {
     @Get(':id/openings')
     listOpenings(@Param('id') id: string, @Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
         const allowUnpublished = includeUnpublished === 'true' && req?.user?.role && ['ADMIN', 'COURSE_MANAGER'].includes(req.user.role);
-        return this.coursesService.listOpenings(id, allowUnpublished);
+        return this.coursesService.listOpenings(id, allowUnpublished, req?.user);
     }
 
     @ApiOperation({ summary: 'Get specific course details' })

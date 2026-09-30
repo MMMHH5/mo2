@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { Prisma, CourseOpeningStatus, Role } from '@prisma/client';
+import { Prisma, CourseOpeningStatus, DeliveryMode, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { mapPublicCourse, publicInstructorSelect } from '../common/public-instructor';
+import { normalizeMeetLink } from '../common/meeting-links';
 import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
 
@@ -281,7 +282,13 @@ export class CoursesService {
         });
         // This route is reachable without a token, so the instructor row is
         // replaced with the derived public card before it leaves the process.
-        return courses.map((course) => mapPublicCourse(course));
+        return courses.map((course) => {
+            const shaped = mapPublicCourse(course);
+            return {
+                ...shaped,
+                openings: shaped.openings?.map((o) => this.stripClassroomLink(o, viewer)),
+            };
+        });
     }
 
     async findOne(id: string, includeUnpublished = false, viewer?: CourseViewer) {
@@ -322,7 +329,32 @@ export class CoursesService {
         const shaped = await this.canViewPaidContent(course, viewer)
             ? mapPublicCourse(course)
             : mapPublicCourse(this.redactPaidContent(course));
-        return { ...shaped, viewerAccess: await this.viewerAccess(course.id, viewer) };
+        return {
+            ...shaped,
+            openings: shaped.openings?.map((o) => this.stripClassroomLink(o, viewer)),
+            viewerAccess: await this.viewerAccess(course.id, viewer),
+        };
+    }
+
+    /**
+     * Drop the classroom link from a batch before it leaves through a public
+     * route.
+     *
+     * `/courses`, `/courses/:id` and `/courses/:id/openings` are all reachable
+     * without a token, and Prisma's `include` returns every scalar column — so
+     * without this the room an enrolled student is entitled to would be handed
+     * to any anonymous visitor who asks. `deliveryMode` stays: "this batch is
+     * online" is public syllabus information, the room itself is not.
+     */
+    private stripClassroomLink<T extends { meetLink?: string | null; instructorId?: string | null }>(
+        opening: T,
+        viewer?: CourseViewer,
+    ): Omit<T, 'meetLink'> & Partial<Pick<T, 'meetLink'>> {
+        const manages = viewer?.role === Role.ADMIN || viewer?.role === Role.COURSE_MANAGER
+            || (viewer?.role === Role.INSTRUCTOR && opening.instructorId === viewer.userId);
+        if (manages) return opening;
+        const { meetLink: _drop, ...rest } = opening;
+        return rest;
     }
 
     /**
@@ -426,6 +458,8 @@ export class CoursesService {
         const instructor = await this.prisma.user.findUnique({ where: { id: dto.instructorId } });
         if (!instructor) throw new NotFoundException('Instructor not found');
 
+        const resolved = this.resolveDelivery(dto, DeliveryMode.IN_PERSON);
+
         const opening = await this.prisma.courseOpening.create({
             data: {
                 courseId,
@@ -438,16 +472,18 @@ export class CoursesService {
                 price: new Prisma.Decimal(dto.price),
                 priceOld: dto.priceOld != null ? new Prisma.Decimal(dto.priceOld) : null,
                 maxStudents: dto.maxStudents ?? null,
+                deliveryMode: resolved.mode,
+                meetLink: resolved.link ?? null,
             },
             include: this.openingInclude,
         });
         return opening;
     }
 
-    async listOpenings(courseId: string, includeUnpublished = false) {
+    async listOpenings(courseId: string, includeUnpublished = false, viewer?: CourseViewer) {
         const course = await this.prisma.course.findUnique({ where: { id: courseId } });
         if (!course) throw new NotFoundException('Course not found');
-        return this.prisma.courseOpening.findMany({
+        const openings = await this.prisma.courseOpening.findMany({
             where: {
                 courseId,
                 ...(includeUnpublished ? {} : { isPublished: true }),
@@ -455,6 +491,7 @@ export class CoursesService {
             orderBy: { createdAt: 'desc' },
             include: this.openingInclude,
         });
+        return openings.map((o) => this.stripClassroomLink(o, viewer));
     }
 
     async listMyOpenings(userId: string, actorRole: Role) {
@@ -510,6 +547,12 @@ export class CoursesService {
         if (dto.announcementStartAt !== undefined) data.announcementStartAt = dto.announcementStartAt as unknown as Date;
         if (dto.announcementEndAt !== undefined) data.announcementEndAt = dto.announcementEndAt as unknown as Date;
 
+        if (dto.deliveryMode !== undefined || dto.meetLink !== undefined) {
+            const resolved = this.resolveDelivery(dto, existing.deliveryMode);
+            if (dto.deliveryMode !== undefined) data.deliveryMode = resolved.mode;
+            if (dto.meetLink !== undefined || resolved.link === null) data.meetLink = resolved.link;
+        }
+
         return this.prisma.courseOpening.update({
             where: { id: openingId },
             data,
@@ -524,6 +567,34 @@ export class CoursesService {
         });
         if (!opening) throw new NotFoundException('Opening not found');
         return opening;
+    }
+
+    /**
+     * Delivery mode and classroom link are one fact, so they are settled
+     * together and always consistent:
+     *
+     * - IN_PERSON never carries a link. Switching a batch back to in-person
+     *   drops the stored link, so flipping the mode again later cannot silently
+     *   resurrect a stale classroom to students.
+     * - An ONLINE batch with no link yet is allowed: staff often create the
+     *   batch first and paste the room once the instructor hands it over. The
+     *   student button is simply absent until then.
+     * - Validation/normalisation of the URL itself lives in normalizeMeetLink.
+     */
+    private resolveDelivery(
+        dto: Partial<CreateOpeningDto>,
+        currentMode: DeliveryMode,
+    ): { mode: DeliveryMode; link?: string | null } {
+        const mode = dto.deliveryMode ?? currentMode;
+        const normalized = normalizeMeetLink(dto.meetLink);
+        if (mode !== DeliveryMode.ONLINE) {
+            if (normalized) {
+                throw new BadRequestException('meetLink only applies to an ONLINE batch');
+            }
+            return { mode, link: null };
+        }
+        // `undefined` = the caller did not touch the link, so keep what is stored.
+        return { mode, link: normalized };
     }
 
     private assertCanManage(opening: { instructorId: string }, actorId: string, actorRole: Role) {

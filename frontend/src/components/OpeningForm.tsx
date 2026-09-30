@@ -24,7 +24,11 @@ interface FormValues {
     price: string;
     priceOld: string;
     maxStudents: string;
+    deliveryMode: DeliveryMode;
+    meetLink: string;
 }
+
+type DeliveryMode = 'IN_PERSON' | 'ONLINE';
 
 const dateVal = (v?: string | null) => (v ? String(v).slice(0, 10) : '');
 
@@ -35,12 +39,16 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
     const { data: instructors } = useFetchData<Instructor[]>('/users');
     const [loadingInit, setLoadingInit] = useState(!!openingId);
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+    const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
         defaultValues: {
             nameAr: '', nameEn: '', instructorId: '', startDate: '', endDate: '',
             enrollmentDeadline: '', price: '', priceOld: '', maxStudents: '',
+            deliveryMode: 'IN_PERSON', meetLink: '',
         },
     });
+    // The link only means anything for an online batch, so the field appears
+    // with the mode instead of sitting there as a dead input.
+    const deliveryMode = watch('deliveryMode');
 
     useEffect(() => {
         if (!openingId) return;
@@ -63,6 +71,8 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
                         price: o.price ? Number(o.price).toString() : '',
                         priceOld: o.priceOld ? Number(o.priceOld).toString() : '',
                         maxStudents: o.maxStudents ? Number(o.maxStudents).toString() : '',
+                        deliveryMode: (o.deliveryMode as DeliveryMode) || 'IN_PERSON',
+                        meetLink: (o.meetLink as string) || '',
                     });
                 }
             } catch {
@@ -88,6 +98,11 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
                 price: Number(data.price),
                 priceOld: num(data.priceOld),
                 maxStudents: num(data.maxStudents),
+                deliveryMode: data.deliveryMode,
+                // Sent as null, not "", when the batch is in person: the backend
+                // drops the stored link on that transition, so a stale classroom
+                // cannot come back if the mode is flipped to ONLINE later.
+                meetLink: data.deliveryMode === 'ONLINE' ? (data.meetLink.trim() || null) : null,
             };
 
             let resultId: string;
@@ -190,6 +205,36 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
                                 <label className="block text-sm font-bold text-gray-300 mb-1">{t('opening.name_en')}</label>
                                 <input {...register('nameEn')} className={inputCls} placeholder="e.g. September batch" />
                             </div>
+                        </div>
+                    </section>
+
+                    <section className="border-t border-white/10 pt-8 mt-8">
+                        <h3 className="text-xl font-black text-white mb-1">{t('opening.section_delivery')}</h3>
+                        <p className="text-sm text-gray-400 mb-4">{t('opening.delivery_hint')}</p>
+                        <div className="grid md:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-300 mb-1">{t('opening.delivery_mode')}</label>
+                                <select {...register('deliveryMode')} className={inputCls}>
+                                    <option value="IN_PERSON">{t('opening.delivery_in_person')}</option>
+                                    <option value="ONLINE">{t('opening.delivery_online')}</option>
+                                </select>
+                            </div>
+                            {deliveryMode === 'ONLINE' && (
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-300 mb-1">{t('opening.meet_link')}</label>
+                                    <input
+                                        type="url"
+                                        dir="ltr"
+                                        {...register('meetLink', {
+                                            validate: (v) => !v || /^https:\/\//i.test(v) || t('opening.meet_link_invalid'),
+                                        })}
+                                        className={inputCls}
+                                        placeholder="https://meet.google.com/abc-defg-hij"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">{t('opening.meet_link_hint')}</p>
+                                    {errors.meetLink && <p className="text-red-500 text-xs mt-1">{errors.meetLink.message}</p>}
+                                </div>
+                            )}
                         </div>
                     </section>
 

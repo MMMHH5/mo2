@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag, Award, X, BookOpen, FileText } from 'lucide-react';
+import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag, Award, X, BookOpen, FileText, Video } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, type Tone } from '../components';
 import CertificateApprovalModal from '@/components/CertificateApprovalModal';
 import OpeningRosterModal from '@/components/admin/OpeningRosterModal';
@@ -24,6 +24,8 @@ interface Opening {
     price: string;
     priceOld?: string | null;
     maxStudents?: number | null;
+    deliveryMode?: string | null;
+    meetLink?: string | null;
     courseId: string;
     instructor?: { email: string } | null;
     _count?: { enrollments?: number };
@@ -302,6 +304,15 @@ export default function AdminOpeningsPage() {
                                         <td className="p-4 font-bold text-brand-navy dark:text-gray-200 min-w-[150px]">
                                             {pick(o, 'name') || t('manageCourses.opening_default')}
                                             {o.priceOld && <span className="block text-xs text-gray-500 dark:text-gray-400 line-through font-normal mt-0.5">${o.priceOld}</span>}
+                                            {/* An online batch is the only kind that hands students a
+                                                classroom link, so the admin needs to see at a glance
+                                                which ones are online and whether the room is set yet. */}
+                                            {o.deliveryMode === 'ONLINE' && (
+                                                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-black rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                    <Video size={10} />
+                                                    {o.meetLink ? t('opening.delivery_online') : `${t('opening.delivery_online')} — ${t('opening.meet_link_missing')}`}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{pick(o.course, 'title') || o.courseId.slice(0, 8)}</td>
                                         <td className="p-4 text-sm text-gray-500 dark:text-gray-400">

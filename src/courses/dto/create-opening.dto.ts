@@ -1,6 +1,7 @@
-import { IsString, IsOptional, IsNumber, Min, IsInt, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min, IsInt, IsDateString, IsEnum } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { DeliveryMode } from '@prisma/client';
 
 export class CreateOpeningDto {
     @ApiPropertyOptional({ description: 'Optional Arabic label for this opening (e.g. "دفعة سبتمبر")' })
@@ -66,4 +67,24 @@ export class CreateOpeningDto {
     @IsDateString()
     @Transform(({ value }) => (value ? new Date(value).toISOString() : value))
     announcementEndAt?: string;
+
+    @ApiPropertyOptional({
+        description: 'ONLINE when the batch is taught remotely, IN_PERSON otherwise',
+        enum: DeliveryMode,
+        default: DeliveryMode.IN_PERSON,
+    })
+    @IsOptional()
+    @IsEnum(DeliveryMode, { message: 'deliveryMode must be IN_PERSON or ONLINE' })
+    deliveryMode?: DeliveryMode;
+
+    @ApiPropertyOptional({
+        description:
+            'Classroom link for an ONLINE batch (Google Meet / Zoom / Teams, https only). ' +
+            'Stored as typed but only served to students with an APPROVED enrollment. ' +
+            'Cleared automatically when the batch is switched back to IN_PERSON.',
+        example: 'https://meet.google.com/abc-defg-hij',
+    })
+    @IsOptional()
+    @IsString()
+    meetLink?: string;
 }

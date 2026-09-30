@@ -11,7 +11,7 @@ import {
     PlayCircle, FileText, ClipboardList, Link2, Clock, CheckCircle, Play, Pause,
     RotateCcw, Volume2, VolumeX, Maximize, ZoomIn, ZoomOut, Maximize2, Download,
     UploadCloud, StickyNote, MessagesSquare, Send, X, Gift, BookMarked, MessageCircle, ArrowRight,
-    Bell, Megaphone, Calendar, User, AlertTriangle,
+    Bell, Megaphone, Calendar, User, AlertTriangle, Video,
 } from 'lucide-react';
 import CourseChat from '@/components/CourseChat';
 import DiscussionForum from '@/components/DiscussionForum';
@@ -67,6 +67,9 @@ interface ProgressData {
     total: number;
     completed: number;
     modules: ProgressModule[];
+    /** Set only for an approved student in an ONLINE batch. */
+    deliveryMode?: string | null;
+    meetLink?: string | null;
 }
 interface NoteRow {
     moduleId: string;
@@ -768,6 +771,18 @@ export default function CoursePlayer({ courseId }: Props) {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 relative">
+                    {progress?.meetLink && (
+                        <a
+                            href={progress.meetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={t('player.join_live_title')}
+                            className="inline-flex items-center gap-1.5 h-10 px-3 sm:px-4 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-emerald-200 border border-emerald-500/25 text-xs sm:text-sm font-bold transition-all duration-200 whitespace-nowrap"
+                        >
+                            <Video size={16} />
+                            <span className="hidden sm:inline">{t('player.join_live')}</span>
+                        </a>
+                    )}
                     {announcements.length > 0 && (
                         <div className="relative">
                             <button

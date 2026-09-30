@@ -1,4 +1,5 @@
 import { Injectable, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { DeliveryMode, EnrollmentStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GamificationService } from '../gamification/gamification.service';
 
@@ -112,6 +113,11 @@ export class LessonsService {
     });
     if (!enrollment) throw new ForbiddenException('You are not enrolled in this course');
 
+    // The classroom link follows the same rule as /enrollments/my: an approved
+    // student in an online batch gets the room, a PENDING applicant or a
+    // REVOKED one does not. Read only, never selected into the module list.
+    const classroom = await this.classroomFor(enrollment);
+
     const modules = await this.listCourseModules(courseId);
     const progress = await this.prisma.lessonProgress.findMany({
       where: { enrollmentId: enrollment.id },
@@ -148,7 +154,37 @@ export class LessonsService {
 
     const completedCount = list.filter((m) => m.completed).length;
     const percent = modules.length === 0 ? 0 : Math.round((completedCount / modules.length) * 100);
-    return { enrollmentId: enrollment.id, openingId: enrollment.openingId, total: modules.length, completed: completedCount, percent, modules: list };
+    return {
+      enrollmentId: enrollment.id,
+      openingId: enrollment.openingId,
+      total: modules.length,
+      completed: completedCount,
+      percent,
+      modules: list,
+      ...classroom,
+    };
+  }
+
+  /**
+   * Online-classroom details for the player. Null unless the enrollment is
+   * APPROVED and its batch is ONLINE, so the join button cannot appear to
+   * somebody who has not been admitted or whose batch is in person.
+   */
+  private async classroomFor(enrollment: {
+    status: string;
+    openingId: string | null;
+  }): Promise<{ deliveryMode: DeliveryMode | null; meetLink: string | null }> {
+    if (enrollment.status !== EnrollmentStatus.APPROVED || !enrollment.openingId) {
+      return { deliveryMode: null, meetLink: null };
+    }
+    const opening = await this.prisma.courseOpening.findUnique({
+      where: { id: enrollment.openingId },
+      select: { deliveryMode: true, meetLink: true },
+    });
+    if (!opening || opening.deliveryMode !== DeliveryMode.ONLINE) {
+      return { deliveryMode: null, meetLink: null };
+    }
+    return { deliveryMode: opening.deliveryMode, meetLink: opening.meetLink ?? null };
   }
 
   async myNotes(courseId: string, studentId: string) {

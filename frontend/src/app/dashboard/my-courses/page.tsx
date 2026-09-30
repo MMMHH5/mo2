@@ -3,7 +3,7 @@
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
-import { BookOpen, Clock, CheckCircle, XCircle, GraduationCap, Award, CreditCard, ChevronRight } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, XCircle, GraduationCap, Award, CreditCard, ChevronRight, Video } from 'lucide-react';
 import Link from 'next/link';
 
 interface Enrollment {
@@ -26,7 +26,10 @@ interface Enrollment {
         price: string;
         startDate?: string | null;
         endDate?: string | null;
+        deliveryMode?: string | null;
     } | null;
+    /** Only present when the batch is ONLINE and this enrollment is APPROVED. */
+    meetLink?: string | null;
 }
 
 interface GradeRow {
@@ -168,6 +171,21 @@ export default function MyCoursesPage() {
                                 </p>
 
                                 <div className="pt-4 border-t border-white/5">
+                                    {enrollment.meetLink && (
+                                        <a
+                                            href={enrollment.meetLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mb-3 flex items-center justify-between bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 rounded-xl px-4 py-3 transition group"
+                                        >
+                                            <span className="flex items-center gap-2 text-sm font-bold text-emerald-300">
+                                                <Video size={16} /> {t('myCourses.join_live')}
+                                            </span>
+                                            <span className="text-xs text-emerald-400/80 group-hover:text-emerald-300">
+                                                {t('myCourses.online_batch')}
+                                            </span>
+                                        </a>
+                                    )}
                                     {enrollment.status === 'APPROVED' && courseProgress(enrollment.course.id) != null && (
                                         <div className="mb-3">
                                             <div className="flex items-center justify-between text-xs font-bold mb-1.5">

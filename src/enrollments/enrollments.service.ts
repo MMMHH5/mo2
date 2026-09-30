@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EnrollmentStatus, CourseOpeningStatus, Role, PaymentStatus, Prisma } from '@prisma/client';
+import { EnrollmentStatus, CourseOpeningStatus, DeliveryMode, Role, PaymentStatus, Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ChatService } from '../chat/chat.service';
@@ -210,6 +210,8 @@ export class EnrollmentsService {
                         endDate: true,
                         enrollmentDeadline: true,
                         isPublished: true,
+                        deliveryMode: true,
+                        meetLink: true,
                         instructor: { select: { id: true, email: true, role: true } },
                     },
                 },
@@ -221,13 +223,37 @@ export class EnrollmentsService {
         return enrollments.map((e) => {
             const total = e.course?._count.modules ?? 0;
             const done = e._count.lessonProgress;
+            const classroom = this.classroomFor(e);
+            // `meetLink` is selected only so the gate above can read it; the
+            // nested opening object is rebuilt without it so the raw column can
+            // never ride along on `...e`.
+            const { meetLink: _rawLink, ...opening } = e.opening ?? {};
             return {
                 ...e,
+                opening: e.opening ? opening : e.opening,
+                meetLink: classroom.meetLink,
                 progressPercent: total === 0
                     ? null
                     : Math.min(100, Math.round((done / total) * 100)),
             };
         });
+    }
+
+    /**
+     * The join link for one enrollment, or null when it must not be shown.
+     *
+     * Only an APPROVED enrollment in an ONLINE batch carries the room. A
+     * REJECTED / REVOKED student keeps their history row but loses the link, and
+     * so does a batch taught in person.
+     */
+    private classroomFor(enrollment: {
+        status: EnrollmentStatus;
+        opening: { deliveryMode: DeliveryMode; meetLink: string | null } | null;
+    }): { meetLink: string | null } {
+        if (enrollment.status !== EnrollmentStatus.APPROVED) return { meetLink: null };
+        const opening = enrollment.opening;
+        if (!opening || opening.deliveryMode !== DeliveryMode.ONLINE) return { meetLink: null };
+        return { meetLink: opening.meetLink ?? null };
     }
 
     async getMyGrades(studentId: string) {

@@ -37,6 +37,14 @@ enum CertificateStatus {
   EXPIRED
 }
 
+// How a batch is actually taught. A batch that meets online carries the
+// classroom link (`meetLink`) that enrolled students join from, so the two are
+// one fact: a link on an IN_PERSON batch would be a dead or misleading button.
+enum DeliveryMode {
+  IN_PERSON
+  ONLINE
+}
+
 enum ApplicationStatus {
   PENDING
   APPROVED
@@ -221,6 +229,12 @@ model CourseOpening {
   seatsTaken    Int      @default(0)
   isPublished   Boolean  @default(false)
   status        CourseOpeningStatus @default(DRAFT)
+  // Whether this batch is taught in person or online, plus the classroom link
+  // for the online case. `meetLink` is staff-entered (there is no Meet API
+  // integration) and is served ONLY to students whose enrollment is APPROVED —
+  // `/courses` and `/courses/:id` are public and must never carry it.
+  deliveryMode  DeliveryMode @default(IN_PERSON)
+  meetLink      String?
   // The announcement/banner window that shows the course before it is open for enrollment.
   announcementStartAt DateTime?
   announcementEndAt   DateTime?
