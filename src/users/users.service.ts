@@ -463,23 +463,48 @@ export class UsersService {
         } catch (err) {
             // Several relations deliberately Restrict — a student's enrollments
             // and payments, an instructor's courses and openings — so refusing to
-            // delete is correct. Letting Prisma's constraint error escape answered
-            // an opaque 500, which reads like a server fault and leaves an admin
+            // delete is correct. Letting the driver's error escape answered an
+            // opaque 500, which reads like a server fault and leaves an admin
             // with nothing to act on.
-            if (err instanceof Prisma.PrismaClientKnownRequestError) {
-                if (err.code === 'P2025') throw new NotFoundException('User not found');
-                if (err.code === 'P2003') {
-                    const fields = (err.meta?.field_name ? [String(err.meta.field_name)] : []) as string[];
-                    throw new ConflictException({
-                        message:
-                            'This user cannot be deleted because other records still reference them.',
-                        code: 'USER_HAS_REFERENCING_RECORDS',
-                        references: fields,
-                        hint: 'Deactivate the account instead, or remove the referenced records first.',
-                    });
-                }
+            const refusal = this.describeDanglingReferences(err);
+            if (refusal) throw new ConflictException(refusal);
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                throw new NotFoundException('User not found');
             }
             throw err;
         }
+    }
+
+    /**
+     * Postgres reports `RESTRICT` violations as SQLSTATE 23001, which the Prisma
+     * engine surfaces as an *unknown* request error carrying the constraint name
+     * in its message rather than as the documented `P2003`. Both spellings mean
+     * the same thing, so both are translated here; catching only `P2003` left the
+     * production 500 in place.
+     */
+    private describeDanglingReferences(err: unknown): object | null {
+        const message = err instanceof Error ? err.message : String(err ?? '');
+        const constraint =
+            (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003'
+                ? (err.meta as any)?.field_name
+                : undefined) ??
+            message.match(/foreign key constraint "([A-Za-z0-9_]+)"/)?.[1];
+
+        const isRestrictViolation =
+            err instanceof Prisma.PrismaClientKnownRequestError
+                ? err.code === 'P2003'
+                : err instanceof Prisma.PrismaClientUnknownRequestError &&
+                  /RESTRICT setting of foreign key|violates foreign key constraint/i.test(message);
+        if (!isRestrictViolation) return null;
+
+        const table = constraint?.split('_')[0];
+        return {
+            message: table
+                ? `This user cannot be deleted because ${table} records still reference them.`
+                : 'This user cannot be deleted because other records still reference them.',
+            code: 'USER_HAS_REFERENCING_RECORDS',
+            references: constraint ? [constraint] : [],
+            hint: 'Deactivate the account instead, or remove the referenced records first.',
+        };
     }
 }

@@ -22,6 +22,19 @@ const P2003 = (field = 'Enrollment_studentId_fkey (required)') =>
         meta: { field_name: field },
     });
 
+/** What Postgres 23001 actually looks like once it reaches the service. */
+const RESTRICT = (table = 'Enrollment', constraint = 'Enrollment_studentId_fkey') =>
+    new Prisma.PrismaClientUnknownRequestError(
+        'Invalid `prisma.user.delete()` invocation:\n\n' +
+            'Error occurred during query execution:\n' +
+            'ConnectorError(ConnectorError { kind: QueryError(PostgresError { code: "23001", ' +
+            `message: "update or delete on table "User" violates RESTRICT setting of foreign key ` +
+            `constraint "${constraint}" on table "${table}"", severity: "ERROR", ` +
+            `detail: Some("Key (id)=(abc) is referenced from table "${table}"."), ` +
+            'column: None, hint: None }), transient: false })',
+        { clientVersion: '5.0.0' },
+    );
+
 const build = (impl: (args: any) => Promise<any>) => {
     const prisma = { user: { delete: impl } };
     const audit = { logAction: async () => {} };
@@ -94,6 +107,84 @@ describe('admin user deletion explains a relational-integrity refusal', () => {
 
     test('an unrelated failure is not swallowed into a 409', async () => {
         const svc = build(async () => { throw new Error('connection reset'); });
+        await assert.rejects(
+            () => svc.remove('u1', 'admin-1'),
+            (err: any) => !(err.getStatus?.() === 409),
+        );
+    });
+});
+
+/**
+ * The production shape of the failure, captured from the deployment log:
+ *
+ *   PostgresError { code: "23001", message: "update or delete on table "User"
+ *   violates RESTRICT setting of foreign key constraint
+ *   "Enrollment_studentId_fkey" on table "Enrollment"" }
+ *   → PrismaClientUnknownRequestError
+ *
+ * Not `PrismaClientKnownRequestError`, and therefore not `P2003`. A handler that
+ * only watches for `P2003` compiles, passes a test written against a synthetic
+ * P2003, and still returns 500 against the real database.
+ */
+describe('the refusal survives the spelling Postgres actually uses', () => {
+    test('a RESTRICT violation answers 409, not 500', async () => {
+        const svc = build(async () => { throw RESTRICT(); });
+        await assert.rejects(
+            () => svc.remove('u1', 'admin-1'),
+            (err: any) => {
+                assert.equal(err.getStatus?.(), 409);
+                assert.equal(err.response?.code, 'USER_HAS_REFERENCING_RECORDS');
+                return true;
+            },
+        );
+    });
+
+    test('the message names the table that is holding the row', async () => {
+        const svc = build(async () => { throw RESTRICT(); });
+        await assert.rejects(
+            () => svc.remove('u1', 'admin-1'),
+            (err: any) => {
+                assert.match(err.response?.message, /Enrollment records still reference/);
+                assert.deepEqual(err.response?.references, ['Enrollment_studentId_fkey']);
+                return true;
+            },
+        );
+    });
+
+    test('an instructor blocked by Course reads as Course, not Enrollment', async () => {
+        const svc = build(async () => {
+            throw RESTRICT('Course', 'Course_instructorId_fkey');
+        });
+        await assert.rejects(
+            () => svc.remove('u1', 'admin-1'),
+            (err: any) => {
+                assert.match(err.response?.message, /Course records still reference/);
+                return true;
+            },
+        );
+    });
+
+    test('a plain foreign-key violation with no constraint name still answers 409', async () => {
+        const svc = build(async () => {
+            throw new Prisma.PrismaClientUnknownRequestError(
+                'Error occurred during query execution:\nupdate or delete on table "User" violates foreign key constraint',
+                { clientVersion: '5.0.0' },
+            );
+        });
+        await assert.rejects(
+            () => svc.remove('u1', 'admin-1'),
+            (err: any) => {
+                assert.equal(err.getStatus?.(), 409);
+                assert.deepEqual(err.response?.references, []);
+                return true;
+            },
+        );
+    });
+
+    test('an unknown-request error that is not a key violation is not translated', async () => {
+        const svc = build(async () => {
+            throw new Prisma.PrismaClientUnknownRequestError('division by zero', { clientVersion: '5.0.0' });
+        });
         await assert.rejects(
             () => svc.remove('u1', 'admin-1'),
             (err: any) => !(err.getStatus?.() === 409),
