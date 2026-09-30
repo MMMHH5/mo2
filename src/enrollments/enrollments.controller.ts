@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Patch, UseGuards, Request, Ip, UseInterceptors, UploadedFile, BadRequestException, Get, Query, Res } from '@nestjs/common';
+import { Controller, Post, Body, Param, Patch, UseGuards, Request, Ip, UseInterceptors, UploadedFile, BadRequestException, Get, Query, Res, Delete } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -171,6 +171,19 @@ export class EnrollmentsController {
         @Ip() ip: string,
     ) {
         return this.enrollmentsService.review(enrollmentId, dto.status, req.user.userId, ip, dto.notes);
+    }
+
+    @ApiOperation({ summary: 'Withdraw an enrollment (the owning student, or FINANCE/ADMIN/COURSE_MANAGER)' })
+    @ApiResponse({ status: 200, description: 'Enrollment marked REVOKED and the seat returned to the opening.' })
+    @ApiResponse({ status: 409, description: 'Already approved and paid — only staff may unwind it.' })
+    @Roles(Role.STUDENT, Role.FINANCE, Role.ADMIN, Role.COURSE_MANAGER)
+    @Delete(':id')
+    withdraw(
+        @Param('id') enrollmentId: string,
+        @Request() req: any,
+        @Ip() ip: string,
+    ) {
+        return this.enrollmentsService.withdraw(enrollmentId, req.user.userId || req.user.id, req.user.role, ip);
     }
 
     @ApiOperation({ summary: 'Download the payment receipt of an enrollment (owner student, FINANCE, or ADMIN)' })

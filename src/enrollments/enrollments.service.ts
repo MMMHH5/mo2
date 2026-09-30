@@ -6,6 +6,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { ChatService } from '../chat/chat.service';
 import { resolvePrivateUpload } from '../common/private-uploads';
 import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
+import { unlink } from 'fs';
 
 /**
  * One roster row shape, shared by the per-course and per-opening views. Both
@@ -597,5 +598,109 @@ export class EnrollmentsService {
 
         if (!enrollment.receiptFileUrl) throw new NotFoundException('No receipt on file');
         return resolvePrivateUpload(enrollment.receiptFileUrl, ['receipts']);
+    }
+
+    /**
+     * Withdraw an enrollment.
+     *
+     * There was no way to undo one: no route, no service method. A student who
+     * registered against the wrong course kept the seat and the pending payment,
+     * and FINANCE could not clear a mistaken row either. Because the seat is an
+     * atomic counter and `Payment.enrollmentId` is `SetNull`, the row and its
+     * ledger entry are kept deliberately — deleting an enrollment would orphan
+     * the payment trail, which is exactly what the `Restrict` on
+     * `Enrollment.student` exists to prevent.
+     *
+     * So a withdrawal is a status change, not a delete: the student may abandon
+     * their own application while it is still undecided, and staff may cancel
+     * any row. Either way the seat goes back to the opening so the next applicant
+     * can take it, the receipt file is removed, the cohort chat membership is
+     * re-synced, and the student is told.
+     */
+    async withdraw(
+        enrollmentId: string,
+        actorId: string,
+        actorRole: Role,
+        ipAddress?: string,
+    ) {
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { id: enrollmentId },
+            include: {
+                course: { select: { id: true, titleAr: true, titleEn: true } },
+                opening: { select: { id: true, nameAr: true } },
+            },
+        });
+        if (!enrollment) throw new NotFoundException('Enrollment not found');
+
+        const isStaff = actorRole === Role.ADMIN || actorRole === Role.FINANCE || actorRole === Role.COURSE_MANAGER;
+        if (!isStaff && enrollment.studentId !== actorId) {
+            throw new ForbiddenException('You can only withdraw your own enrollment');
+        }
+
+        // Once money has been approved the ledger is the record of truth and only
+        // FINANCE/ADMIN may unwind it; the student has to ask.
+        if (enrollment.status === EnrollmentStatus.APPROVED && !isStaff) {
+            throw new ConflictException({
+                message:
+                    'This enrollment was approved, so it cannot be withdrawn here. Contact support to request a refund.',
+                code: 'ENROLLMENT_ALREADY_APPROVED',
+            });
+        }
+        if (enrollment.status === EnrollmentStatus.REVOKED || enrollment.status === EnrollmentStatus.REJECTED) {
+            throw new ConflictException(`Enrollment is already "${enrollment.status}"`);
+        }
+
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const row = await tx.enrollment.update({
+                where: { id: enrollmentId },
+                data: {
+                    status: EnrollmentStatus.REVOKED,
+                    financeOfficerNotes: isStaff
+                        ? `Cancelled by ${actorRole} ${actorId}`
+                        : 'Withdrawn by the student',
+                },
+            });
+            // Only a seat that was actually held comes back. REVIEW/REJECTED rows
+            // never incremented it, and releasing twice would free a seat that
+            // belongs to somebody else.
+            if (enrollment.openingId && enrollment.status !== EnrollmentStatus.REJECTED) {
+                await releaseSeat(tx, enrollment.openingId);
+            }
+            return row;
+        });
+
+        if (enrollment.receiptFileUrl) {
+            try {
+                const path = resolvePrivateUpload(enrollment.receiptFileUrl, ['receipts']);
+                unlink(path, () => {});
+            } catch { /* the row is gone either way; a stray file is not worth failing over */ }
+        }
+
+        if (enrollment.openingId) {
+            try {
+                const room = await this.chatService.getOrCreateRoomForOpening(enrollment.openingId);
+                await this.chatService.syncRoomMembers(room.id);
+            } catch { /* don't fail a withdrawal because chat re-sync failed */ }
+        }
+
+        if (isStaff && enrollment.studentId !== actorId) {
+            await this.notifications.notify({
+                userId: enrollment.studentId,
+                type: 'enrollment.rejected',
+                titleAr: 'تم إلغاء تسجيلك',
+                titleEn: 'Your enrollment was cancelled',
+                bodyAr: `أُلغي تسجيلك في دورة: ${enrollment.course.titleEn || enrollment.course.titleAr}`,
+                bodyEn: `Your enrollment in "${enrollment.course.titleEn || enrollment.course.titleAr}" was cancelled.`,
+                data: { courseId: enrollment.courseId, enrollmentId },
+            }).catch(() => {});
+        }
+
+        await this.audit.logAction(
+            `${actorRole} ${actorId} withdrew Enrollment ${enrollmentId}`,
+            ipAddress,
+            actorId,
+        );
+
+        return updated;
     }
 }
