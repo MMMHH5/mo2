@@ -484,11 +484,14 @@ export class UsersService {
      */
     private describeDanglingReferences(err: unknown): object | null {
         const message = err instanceof Error ? err.message : String(err ?? '');
+        // The engine prints the Postgres error with Rust's `Debug`, so the inner
+        // quotes arrive escaped as `\"Enrollment_studentId_fkey\"`. Match both the
+        // escaped and the plain spelling.
         const constraint =
             (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003'
                 ? (err.meta as any)?.field_name
                 : undefined) ??
-            message.match(/foreign key constraint "([A-Za-z0-9_]+)"/)?.[1];
+            message.match(/foreign key constraint \\?"([A-Za-z0-9_]+)\\?"/)?.[1];
 
         const isRestrictViolation =
             err instanceof Prisma.PrismaClientKnownRequestError

@@ -22,15 +22,21 @@ const P2003 = (field = 'Enrollment_studentId_fkey (required)') =>
         meta: { field_name: field },
     });
 
-/** What Postgres 23001 actually looks like once it reaches the service. */
+/**
+ * What Postgres 23001 actually looks like once it reaches the service, copied
+ * from the deployment log. Note the `\"` around the constraint name: the engine
+ * renders the Postgres error with Rust's `Debug`, so the inner quotes come back
+ * escaped. A regex that assumes plain `"` matches nothing here and silently
+ * degrades the message to the generic one.
+ */
 const RESTRICT = (table = 'Enrollment', constraint = 'Enrollment_studentId_fkey') =>
     new Prisma.PrismaClientUnknownRequestError(
         'Invalid `prisma.user.delete()` invocation:\n\n' +
             'Error occurred during query execution:\n' +
             'ConnectorError(ConnectorError { kind: QueryError(PostgresError { code: "23001", ' +
-            `message: "update or delete on table "User" violates RESTRICT setting of foreign key ` +
-            `constraint "${constraint}" on table "${table}"", severity: "ERROR", ` +
-            `detail: Some("Key (id)=(abc) is referenced from table "${table}"."), ` +
+            `message: "update or delete on table \\"User\\" violates RESTRICT setting of foreign key ` +
+            `constraint \\"${constraint}\\" on table \\"${table}\\"", severity: "ERROR", ` +
+            `detail: Some("Key (id)=(abc) is referenced from table \\"${table}\\"."), ` +
             'column: None, hint: None }), transient: false })',
         { clientVersion: '5.0.0' },
     );
@@ -188,6 +194,23 @@ describe('the refusal survives the spelling Postgres actually uses', () => {
         await assert.rejects(
             () => svc.remove('u1', 'admin-1'),
             (err: any) => !(err.getStatus?.() === 409),
+        );
+    });
+
+    test('an unescaped constraint name is read too', async () => {
+        const svc = build(async () => {
+            throw new Prisma.PrismaClientUnknownRequestError(
+                'violates RESTRICT setting of foreign key constraint "Course_instructorId_fkey" on table "Course"',
+                { clientVersion: '5.0.0' },
+            );
+        });
+        await assert.rejects(
+            () => svc.remove('u1', 'admin-1'),
+            (err: any) => {
+                assert.deepEqual(err.response?.references, ['Course_instructorId_fkey']);
+                assert.match(err.response?.message, /Course records still reference/);
+                return true;
+            },
         );
     });
 });
