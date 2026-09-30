@@ -114,10 +114,13 @@ export class UsersService {
      * `avatarUrl` is restricted to a path under our own uploads directory.
      */
     private sanitizeProfileMetadata(input: Record<string, unknown>): Record<string, unknown> {
-        // Every key the register form collects, so that saving the profile
-        // cannot silently delete a student's own academic record. Leaving one
-        // of these out means PATCH /users/me erases it, because the merge at
-        // the call site spreads the *sanitised* result over the stored value.
+        // Every key the register form collects. An omitted key is preserved and
+        // an empty one clears, which is what PATCH means and what lets the
+        // dedicated instructor CV page save only its own fields. The sanitiser
+        // used to drop empty strings, which meant a stored value fell back into
+        // the merge and could never be deleted: a teacher who erased a wrong job
+        // title saved the change and watched the text return. `key in input` is
+        // what separates "not mentioned" from "mentioned and emptied".
         const LIMITS: Record<string, number> = {
             fullName: 120,
             nameAr: 120,
@@ -142,17 +145,26 @@ export class UsersService {
         const out: Record<string, unknown> = {};
 
         for (const [key, max] of Object.entries(LIMITS)) {
+            // Absent means "leave it alone", so a partial PATCH is safe.
+            if (!(key in input)) continue;
             const v = input[key];
+            // Explicit null, or a string that trims away to nothing, is a clear.
+            if (v === null || (typeof v === 'string' && !v.trim())) {
+                out[key] = null;
+                continue;
+            }
             if (typeof v !== 'string') continue;
-            const trimmed = v.trim().slice(0, max);
-            if (trimmed) out[key] = trimmed;
+            out[key] = v.trim().slice(0, max);
         }
 
         // Years of experience is a count, not prose. Accept a number or a
         // numeric string (form inputs hand back strings) and clamp it to a
         // believable range, so nobody renders "9999 years of experience".
         const yearsRaw = input.experienceYears;
-        if (yearsRaw !== undefined && yearsRaw !== null && yearsRaw !== '') {
+        if (yearsRaw === '' || yearsRaw === null) {
+            // Same absent/empty split, so a teacher can drop the number again.
+            out.experienceYears = null;
+        } else if (yearsRaw !== undefined) {
             const parsed = typeof yearsRaw === 'number' ? yearsRaw : Number(String(yearsRaw).trim());
             if (Number.isFinite(parsed) && parsed >= 0) {
                 out.experienceYears = Math.min(Math.round(parsed), 80);

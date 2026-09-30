@@ -16,6 +16,7 @@ import {
     MessagesSquare,
     CalendarClock,
     Info,
+    BadgeCheck,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -43,6 +44,10 @@ export function buildNavLinks(t: (key: string) => string): NavLink[] {
         { name: t('sidebar.manage_courses'), href: '/dashboard/admin/courses', icon: BookOpen, roles: ['COURSE_MANAGER', 'ADMIN'] },
         { name: t('sidebar.openings'), href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['COURSE_MANAGER', 'ADMIN'] },
         { name: t('sidebar.teach_hub'), href: '/dashboard/teaching', icon: GraduationCap, roles: ['INSTRUCTOR'] },
+        // The public CV used to be reachable only through the generic profile
+        // edit modal, so nobody found it and every instructor stayed
+        // `isProfileIncomplete`. Its own entry is what makes it discoverable.
+        { name: t('sidebar.instructor_profile'), href: '/dashboard/instructor-profile', icon: BadgeCheck, roles: ['INSTRUCTOR', 'COURSE_MANAGER'] },
         { name: t('sidebar.submissions'), href: '/dashboard/submissions', icon: ClipboardCheck, roles: ['INSTRUCTOR'] },
         { name: t('sidebar.instructors_hr'), href: '/dashboard/admin/instructors', icon: Users, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('sidebar.audit_logs'), href: '/dashboard/admin/audit', icon: ShieldAlert, roles: ['ADMIN'] },

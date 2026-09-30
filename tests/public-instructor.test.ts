@@ -1,6 +1,11 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { toPublicInstructor, mapPublicCourse, publicInstructorSelect } from '../src/common/public-instructor';
+import {
+    toPublicInstructor,
+    mapPublicCourse,
+    publicInstructorSelect,
+    publicInstructorWhere,
+} from '../src/common/public-instructor';
 
 /**
  * Regression tests for the public instructor card.
@@ -119,5 +124,50 @@ describe('public instructor identity', () => {
 
     test('the shared select never asks for the email column', () => {
         assert.ok(!Object.keys(publicInstructorSelect).includes('email'));
+    });
+});
+
+/**
+ * The predicate behind every public instructor route.
+ *
+ * It used to be `role IN (INSTRUCTOR, COURSE_MANAGER)`, which describes the
+ * *account* rather than the *teaching*. `Course.instructorId` and
+ * `CourseOpening.instructorId` both point at `User`, so an admin can be the
+ * recorded teacher of a course while holding neither role. Production hit
+ * exactly that: `GET /public/instructors/:id` answered 404 for the very id the
+ * public course payload had just embedded and linked, so a teacher with a
+ * complete CV was one click from a "not found" page.
+ */
+describe('public instructor visibility predicate', () => {
+    /** The three ways a user can be publicly an instructor. */
+    const clauses = (publishedOnly: boolean) => {
+        const w = publicInstructorWhere(publishedOnly);
+        assert.equal(w.isActive, true, 'an inactive account is never public');
+        const or = (w as { OR: unknown[] }).OR;
+        assert.equal(or.length, 3, 'role, owned course, or taught opening');
+        return or;
+    };
+
+    test('keeps the dedicated instructor roles', () => {
+        const [role] = clauses(true);
+        assert.deepEqual(role, { role: { in: ['INSTRUCTOR', 'COURSE_MANAGER'] } });
+    });
+
+    test('also admits a user who owns a course, whatever their role', () => {
+        const [, courseLink] = clauses(false);
+        // The old predicate had no course clause at all, which is the 404.
+        assert.deepEqual(courseLink, { coursesTaught: { some: {} } });
+    });
+
+    test('also admits a user who runs an opening, whatever their role', () => {
+        const [, , openingLink] = clauses(false);
+        assert.deepEqual(openingLink, { openingsTaught: { some: {} } });
+    });
+
+    test('the browse list only counts published teaching', () => {
+        const [, courseLink, openingLink] = clauses(true);
+        // Otherwise staff who only ever touched a draft are enumerated publicly.
+        assert.deepEqual(courseLink, { coursesTaught: { some: { openings: { some: { isPublished: true } } } } });
+        assert.deepEqual(openingLink, { openingsTaught: { some: { isPublished: true } } });
     });
 });

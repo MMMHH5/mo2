@@ -4,8 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
-import { Role } from '@prisma/client';
-import { publicInstructorSelect, toPublicInstructor } from '../common/public-instructor';
+import { publicInstructorSelect, publicInstructorWhere, toPublicInstructor } from '../common/public-instructor';
 
 /**
  * Fields of a lesson that are safe to expose in the public catalogue: enough to
@@ -36,7 +35,7 @@ export class PublicController {
             this.prisma.course.count({
                 where: { openings: { some: { isPublished: true, status: { in: ['OPEN', 'ANNOUNCEMENT'] } } } },
             }),
-            this.prisma.user.count({ where: { role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] }, isActive: true } }),
+            this.prisma.user.count({ where: publicInstructorWhere(true) }),
             this.prisma.enrollment.count({ where: { status: 'APPROVED' } }),
             this.prisma.certificate.count({ where: { verificationStatus: 'VALID' } }),
         ]);
@@ -47,7 +46,7 @@ export class PublicController {
     @Get('instructors')
     async instructors() {
         const users = await this.prisma.user.findMany({
-            where: { role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] }, isActive: true },
+            where: publicInstructorWhere(true),
             select: {
                 ...publicInstructorSelect,
                 _count: { select: { coursesTaught: true, openingsTaught: true } },
@@ -65,7 +64,7 @@ export class PublicController {
     @Get('instructors/:id')
     async instructor(@Param('id') id: string) {
         const user = await this.prisma.user.findFirst({
-            where: { id, role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] }, isActive: true },
+            where: { AND: [{ id }, publicInstructorWhere(false)] },
             select: {
                 ...publicInstructorSelect,
                 coursesTaught: {
@@ -88,14 +87,47 @@ export class PublicController {
                     },
                     orderBy: { createdAt: 'desc' },
                 },
+                // A teacher who only ever runs batches owns no Course row, so the
+                // profile rendered "0 courses" and an empty list next to a CV
+                // they had filled in. Count the batches too.
+                openingsTaught: {
+                    where: { status: { in: ['OPEN', 'ANNOUNCEMENT'] } },
+                    select: {
+                        id: true,
+                        nameAr: true,
+                        nameEn: true,
+                        startDate: true,
+                        endDate: true,
+                        price: true,
+                        priceOld: true,
+                        status: true,
+                        course: {
+                            select: {
+                                id: true,
+                                titleAr: true,
+                                titleEn: true,
+                                coverImageUrl: true,
+                                excerptAr: true,
+                                excerptEn: true,
+                                categoryAr: true,
+                                categoryEn: true,
+                                level: true,
+                            },
+                        },
+                        _count: { select: { enrollments: true } },
+                    },
+                    orderBy: { startDate: 'desc' },
+                },
             },
         });
         if (!user) throw new NotFoundException('Instructor not found');
-        const { coursesTaught, ...rest } = user;
+        const { coursesTaught, openingsTaught, ...rest } = user;
         return {
             ...toPublicInstructor(user),
             courseCount: coursesTaught.length,
+            openingCount: openingsTaught.length,
             courses: coursesTaught,
+            openings: openingsTaught,
         };
     }
 

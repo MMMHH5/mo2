@@ -225,7 +225,7 @@ describe('profile metadata sanitiser', () => {
         assert.equal(clean({ experienceYears: 9999 }).experienceYears, 80, 'capped');
         assert.equal(clean({ experienceYears: -5 }).experienceYears, undefined, 'negative is nonsense');
         assert.equal(clean({ experienceYears: 'many' }).experienceYears, undefined);
-        assert.equal(clean({ experienceYears: '' }).experienceYears, undefined, 'blank clears it');
+        assert.equal(clean({ experienceYears: '' }).experienceYears, null, 'blank clears it');
     });
 
     test('caps the length of the CV text fields', () => {

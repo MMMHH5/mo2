@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 /** A user row carrying the minimum needed to build a public instructor card. */
 type PublicUserSource = {
@@ -100,6 +101,47 @@ export const publicInstructorSelect = {
     createdAt: true,
     metadata: true,
 } satisfies Prisma.UserSelect;
+
+/**
+ * Who counts as an instructor on a public route.
+ *
+ * This used to be `role IN (INSTRUCTOR, COURSE_MANAGER)`, which is a statement
+ * about the *account* and not about the *teaching*. `Course.instructorId` and
+ * `CourseOpening.instructorId` are both nullable-free FKs to `User`, so an
+ * admin or a course manager can be the recorded teacher of a course while
+ * holding neither of those two roles -- and then every public instructor route
+ * hid them. The symptom was a 404 rather than an empty field: the course page
+ * embeds `instructor: { id }` from `mapPublicCourse`, links that id to
+ * `/public/instructors/:id`, and that route rejected the very user the course
+ * page had just linked to. An instructor who filled in a full CV was one click
+ * away from a "not found" page.
+ *
+ * So the predicate is now "teaches something, publicly", which is what the
+ * routes actually mean. It cannot leak anything new: the email is still absent
+ * from `PublicInstructor`, and these same users are already embedded, by id
+ * and public fields only, in the public course payloads.
+ *
+ * `publishedOnly` is for the browse list, so a member of staff who only ever
+ * touched an unpublished course is not enumerated. The detail route passes
+ * `false`: a link that exists on a public page has to resolve.
+ */
+export function publicInstructorWhere(publishedOnly = false): Prisma.UserWhereInput {
+    const courseLink = publishedOnly
+        ? { coursesTaught: { some: { openings: { some: { isPublished: true } } } } }
+        : { coursesTaught: { some: {} } };
+    const openingLink = publishedOnly
+        ? { openingsTaught: { some: { isPublished: true } } }
+        : { openingsTaught: { some: {} } };
+
+    return {
+        isActive: true,
+        OR: [
+            { role: { in: [Role.INSTRUCTOR, Role.COURSE_MANAGER] } },
+            courseLink,
+            openingLink,
+        ],
+    };
+}
 
 /**
  * Rebuild the public instructor on a course and each of its openings.
