@@ -6,6 +6,8 @@ import { RubricsService } from '../src/rubrics/rubrics.service';
 import { QuizzesService } from '../src/lms/quizzes.service';
 import { CoursesService } from '../src/courses/courses.service';
 import { AuthService } from '../src/auth/auth.service';
+import { GamificationService } from '../src/gamification/gamification.service';
+import { EnrollmentsService } from '../src/enrollments/enrollments.service';
 
 /**
  * Regression tests for authorization holes that let one user act on another
@@ -330,5 +332,77 @@ describe('SECURITY: login does not disclose that an account exists', () => {
             (err: unknown) =>
                 err instanceof UnauthorizedException && /invalid credentials/i.test(err.message),
         );
+    });
+});
+
+describe('SECURITY: gamification lookup is limited to the owner or an admin', () => {
+    const build = (points: Record<string, unknown> | null) => {
+        const prisma = {
+            userPoints: {
+                findUnique: async () => points,
+                create: async () => points ?? { id: 'p0', userId: 'u0', points: 0, level: 1, streak: 0 },
+            },
+            userBadge: { findMany: async () => [] },
+        };
+        return new GamificationService(prisma as never);
+    };
+
+    test('a user may read their own gamification', async () => {
+        const svc = build({ id: 'p1', userId: 'u1', points: 10, level: 1, streak: 0 });
+        const out = await svc.getUserGamificationForViewer('u1', 'u1', Role.STUDENT);
+        assert.equal(out.points, 10);
+    });
+
+    test('an admin may read another user gamification', async () => {
+        const svc = build({ id: 'p2', userId: 'u2', points: 55, level: 1, streak: 3 });
+        const out = await svc.getUserGamificationForViewer('u2', 'admin', Role.ADMIN);
+        assert.equal(out.points, 55);
+    });
+
+    test('another student cannot read a stranger gamification', async () => {
+        const svc = build(null);
+        await assert.rejects(
+            () => svc.getUserGamificationForViewer('u2', 'u1', Role.STUDENT),
+            (err: unknown) => err instanceof ForbiddenException && /access denied/i.test(err.message),
+        );
+    });
+
+    test('the lookup exposes no badge until one is actually earned', async () => {
+        const svc = build({ id: 'p3', userId: 'u3', points: 0, level: 1, streak: 0 });
+        const out = await svc.getUserGamificationForViewer('u3', 'u3', Role.STUDENT);
+        assert.ok(Array.isArray(out.allBadges));
+        assert.equal(out.allBadges.every((b: { earned: boolean }) => b.earned === false), true);
+    });
+});
+
+describe('SECURITY: /enrollments/all can be narrowed to one student', () => {
+    test('a studentId filter is passed through to the query', async () => {
+        let where: unknown;
+        const prisma = {
+            enrollment: {
+                findMany: async (args: any) => {
+                    where = args.where;
+                    return [];
+                },
+            },
+        };
+        const svc = new EnrollmentsService(prisma as never, { logAction: async () => {} } as never, { notify: async () => {} } as never, {} as never);
+        await svc.getAllEnrollments('student-9');
+        assert.deepEqual(where, { studentId: 'student-9' });
+    });
+
+    test('omitting the filter keeps listing every enrollment', async () => {
+        let where: unknown = 'unset';
+        const prisma = {
+            enrollment: {
+                findMany: async (args: any) => {
+                    where = args.where;
+                    return [];
+                },
+            },
+        };
+        const svc = new EnrollmentsService(prisma as never, { logAction: async () => {} } as never, { notify: async () => {} } as never, {} as never);
+        await svc.getAllEnrollments();
+        assert.equal(where, undefined);
     });
 });

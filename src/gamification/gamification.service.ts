@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class GamificationService {
@@ -101,6 +102,13 @@ export class GamificationService {
 
         const reviews = await this.prisma.peerReview.count({ where: { reviewerId: userId } });
         if (reviews >= 5) await this.awardBadge(userId, 'helpful_peer');
+    }
+
+    async getUserGamificationForViewer(userId: string, requesterId: string, requesterRole: Role) {
+        if (requesterId !== userId && requesterRole !== Role.ADMIN) {
+            throw new ForbiddenException('Access denied');
+        }
+        return this.getUserGamification(userId);
     }
 
     async getUserGamification(userId: string) {

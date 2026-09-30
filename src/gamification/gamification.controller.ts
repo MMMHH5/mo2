@@ -31,6 +31,12 @@ export class GamificationController {
         return this.svc.getLeaderboard(limit ? parseInt(limit, 10) : 10);
     }
 
+    @ApiOperation({ summary: "Get gamification data for one user (admin, or the user themselves)" })
+    @Get(':userId')
+    getByUser(@Param('userId') userId: string, @Request() req: any) {
+        return this.svc.getUserGamificationForViewer(userId, req.user.userId, req.user.role);
+    }
+
     @ApiOperation({ summary: 'Add points (internal)' })
     @Roles(Role.ADMIN)
     @Post('add-points')

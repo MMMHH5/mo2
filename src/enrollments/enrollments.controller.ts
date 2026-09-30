@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Patch, UseGuards, Request, Ip, UseInterceptors, UploadedFile, BadRequestException, Get, Res } from '@nestjs/common';
+import { Controller, Post, Body, Param, Patch, UseGuards, Request, Ip, UseInterceptors, UploadedFile, BadRequestException, Get, Query, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -138,8 +138,8 @@ export class EnrollmentsController {
     @ApiOperation({ summary: 'Get all enrollments history for finance review' })
     @Roles(Role.FINANCE, Role.ADMIN)
     @Get('all')
-    getAllEnrollments() {
-        return this.enrollmentsService.getAllEnrollments();
+    getAllEnrollments(@Query('studentId') studentId?: string) {
+        return this.enrollmentsService.getAllEnrollments(studentId);
     }
 
     @ApiOperation({ summary: 'Get every enrollment for one course, grouped by status (course managers)' })

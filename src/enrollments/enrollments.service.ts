@@ -279,8 +279,9 @@ export class EnrollmentsService {
         }));
     }
 
-    async getAllEnrollments() {
+    async getAllEnrollments(studentId?: string) {
         return this.prisma.enrollment.findMany({
+            where: studentId ? { studentId } : undefined,
             include: {
                 student: { select: { id: true, email: true } },
                 course: { select: { id: true, titleAr: true, titleEn: true } },

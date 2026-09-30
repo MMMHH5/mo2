@@ -34,16 +34,18 @@ interface Payment {
 }
 
 interface BadgeData {
-    id: string;
-    badgeType: string;
-    earnedAt?: string;
+    type: string;
+    nameAr?: string | null;
+    nameEn?: string | null;
+    threshold: number;
+    earned: boolean;
 }
 
 interface GamificationData {
     points?: number;
     level?: number;
     streak?: number;
-    badges?: BadgeData[];
+    allBadges?: BadgeData[];
 }
 
 const roleTone: Record<string, Tone> = {
@@ -66,7 +68,7 @@ export default function AdminUserDetailPage() {
     const { t, locale, pick } = useI18n();
 
     const { data: user, loading, error } = useFetchData<UserDetail>(`/users/${id}`);
-    const { data: enrollments, loading: enrollmentsLoading } = useFetchData<Enrollment[]>(`/enrollments?studentId=${id}`);
+    const { data: enrollments, loading: enrollmentsLoading } = useFetchData<Enrollment[]>(`/enrollments/all?studentId=${id}`);
     const { data: payments, loading: paymentsLoading } = useFetchData<Payment[]>(`/payments?userId=${id}`);
     const { data: gamification } = useFetchData<GamificationData>(`/gamification/${id}`);
 
@@ -77,7 +79,7 @@ export default function AdminUserDetailPage() {
     const points = Number(gamification?.points ?? 0);
     const level = Math.max(1, Number(gamification?.level ?? 1));
     const streak = Number(gamification?.streak ?? 0);
-    const badges = gamification?.badges || [];
+    const badges = (gamification?.allBadges || []).filter(b => b.earned);
 
     const infoRows: { label: string; value: ReactNode }[] = [
         { label: t('profile.email'), value: <span className="text-brand-navy dark:text-gray-200">{user?.email || '—'}</span> },
@@ -183,12 +185,12 @@ export default function AdminUserDetailPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                 {badges.map(b => (
                                     <div
-                                        key={b.id}
-                                        title={b.badgeType}
+                                        key={b.type}
+                                        title={pick(b, 'name') || b.type}
                                         className="rounded-xl border border-brand-gold/30 bg-brand-gold/5 p-3 flex flex-col items-center gap-1.5 text-center"
                                     >
                                         <Trophy size={20} className="text-brand-gold-dark dark:text-brand-gold-light" />
-                                        <span className="text-[10px] font-bold text-brand-navy dark:text-gray-200 leading-tight break-all">{b.badgeType}</span>
+                                        <span className="text-[10px] font-bold text-brand-navy dark:text-gray-200 leading-tight break-all">{pick(b, 'name') || b.type}</span>
                                     </div>
                                 ))}
                             </div>
