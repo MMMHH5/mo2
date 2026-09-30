@@ -153,6 +153,19 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const { user } = useAuth();
     const { t, locale, pick } = useI18n();
     const { dark } = useTheme();
+    // Stat-card captions. The Latin treatment is small, bold, capped and
+    // tracked-out. None of that transfers to Arabic: the script is cursive, so
+    // letter-spacing opens gaps between joined glyphs and breaks the word
+    // shape, and `uppercase` is a no-op on a script with no case. Arabic also
+    // needs the larger size -- at sm and up the Latin size is 10px, too small
+    // to read in either script, and the muted ink holds 6.18:1 on the sunken
+    // card against the gold's 6.5:1 without the low-chroma brown look.
+    const statCaption = locale === 'ar'
+        ? 'text-xs font-bold text-ink-muted'
+        : 'text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider';
+    // Same reasoning for the filled gold pill, which carries Arabic course
+    // duration ("20 يوم") rather than a Latin code.
+    const pillCaption = locale === 'ar' ? 'font-black text-xs' : 'font-black text-xs uppercase tracking-wider';
     const [course, setCourse] = useState<Course | null>(initialCourse ?? null);
     const [loading, setLoading] = useState(!initialCourse);
     const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -475,7 +488,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
                         <div className="flex flex-wrap items-center gap-2 mb-5">
                             {pick(course, 'duration') && (
-                                <span className="bg-brand-gold text-ink-on-gold font-black text-xs px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
+                                <span className={`bg-brand-gold text-ink-on-gold px-3 py-1.5 rounded-full shadow-sm ${pillCaption}`}>
                                     {pick(course, 'duration')}
                                 </span>
                             )}
@@ -494,7 +507,16 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             )}
                         </div>
 
-                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-ink mb-5 sm:mb-6 leading-[1.15] sm:leading-[1.08] tracking-tight break-words" style={{ textShadow: '0 2px 24px rgba(0,0,0,0.5)' }}>{pick(course, 'title')}</h1>
+                        {/* The glow belongs to the old dark hero. On the light
+                            theme it put a 24px, 50%-black halo behind #1b2434 on
+                            white, which smears the largest text on the page --
+                            it was the only textShadow left anywhere in the app. */}
+                        <h1
+                            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-ink mb-5 sm:mb-6 leading-[1.15] sm:leading-[1.08] tracking-tight break-words"
+                            style={dark ? { textShadow: '0 2px 24px rgba(0,0,0,0.5)' } : undefined}
+                        >
+                            {pick(course, 'title')}
+                        </h1>
                         {(pick(course, 'excerpt') || pick(course, 'description')) && (
                             <p className="text-base sm:text-lg md:text-xl text-ink-muted max-w-2xl mb-6 sm:mb-8 font-medium leading-relaxed break-words">
                                 {pick(course, 'excerpt') || pick(course, 'description')}
@@ -508,7 +530,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <Clock size={17} />
                                 </div>
                                 <div>
-                                    <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('explore.duration')}</div>
+                                    <div className={statCaption}>{t('explore.duration')}</div>
                                     <div className="text-sm font-black text-ink">{pick(course, 'duration') || t('courseDetail.self_paced')}</div>
                                 </div>
                             </div>
@@ -518,7 +540,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         <PlayCircle size={17} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('courseDetail.hours_label')}</div>
+                                        <div className={statCaption}>{t('courseDetail.hours_label')}</div>
                                         <div className="text-sm font-black text-gold-ink">{course.hoursOfContent}</div>
                                     </div>
                                 </div>
@@ -529,7 +551,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         <Users size={17} />
                                     </div>
                                     <div>
-                                        <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('explore.students')}</div>
+                                        <div className={statCaption}>{t('explore.students')}</div>
                                         <div className="text-sm font-black text-gold-ink">{enrolledCount}</div>
                                     </div>
                                 </div>
@@ -539,7 +561,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     <User size={17} />
                                 </div>
                                 <div>
-                                    <div className="text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider">{t('courseDetail.expert_instructor')}</div>
+                                    <div className={statCaption}>{t('courseDetail.expert_instructor')}</div>
                                     <div className="text-sm font-black text-ink max-w-[55vw] sm:max-w-[160px] truncate">{instructorName || t('courseDetail.expert_instructor')}</div>
                                     {courseInstructor?.id && (
                                         <InstructorRating
