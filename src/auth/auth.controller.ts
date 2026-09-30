@@ -8,6 +8,9 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { getFrontendUrl } from '../common/frontend-url';
 
@@ -57,8 +60,8 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Throttle({ default: { limit: 3, ttl: 900000 } }) // 3 requests per 15 minutes
     @Post('forgot-password')
-    async forgotPassword(@Body('email') email: string) {
-        return this.authService.forgotPassword(email);
+    async forgotPassword(@Body() dto: ForgotPasswordDto) {
+        return this.authService.forgotPassword(dto.email);
     }
 
     @ApiOperation({ summary: 'Reset the password using a reset token' })
@@ -72,15 +75,15 @@ export class AuthController {
     @ApiOperation({ summary: 'Verify an email address using a token' })
     @HttpCode(HttpStatus.OK)
     @Post('verify-email')
-    async verifyEmail(@Body('token') token: string) {
-        return this.authService.verifyEmail(token);
+    async verifyEmail(@Body() dto: VerifyEmailDto) {
+        return this.authService.verifyEmail(dto.token);
     }
 
     @ApiOperation({ summary: 'Rotate a refresh token and issue a new access token' })
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
-    async refresh(@Body('refreshToken') refreshToken: string) {
-        return this.authService.refresh(refreshToken);
+    async refresh(@Body() dto: RefreshTokenDto) {
+        return this.authService.refresh(dto.refreshToken);
     }
 
     @ApiOperation({ summary: 'Revoke a refresh token (sign out)' })
