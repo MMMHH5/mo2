@@ -458,6 +458,28 @@ export class UsersService {
 
     async remove(id: string, adminId: string, ip?: string) {
         await this.audit.logAction(`ADMIN ${adminId} deleted user ${id}`, ip, adminId);
-        return this.prisma.user.delete({ where: { id } });
+        try {
+            return await this.prisma.user.delete({ where: { id } });
+        } catch (err) {
+            // Several relations deliberately Restrict — a student's enrollments
+            // and payments, an instructor's courses and openings — so refusing to
+            // delete is correct. Letting Prisma's constraint error escape answered
+            // an opaque 500, which reads like a server fault and leaves an admin
+            // with nothing to act on.
+            if (err instanceof Prisma.PrismaClientKnownRequestError) {
+                if (err.code === 'P2025') throw new NotFoundException('User not found');
+                if (err.code === 'P2003') {
+                    const fields = (err.meta?.field_name ? [String(err.meta.field_name)] : []) as string[];
+                    throw new ConflictException({
+                        message:
+                            'This user cannot be deleted because other records still reference them.',
+                        code: 'USER_HAS_REFERENCING_RECORDS',
+                        references: fields,
+                        hint: 'Deactivate the account instead, or remove the referenced records first.',
+                    });
+                }
+            }
+            throw err;
+        }
     }
 }
