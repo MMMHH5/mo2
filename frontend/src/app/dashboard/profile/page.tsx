@@ -167,7 +167,14 @@ function ProfileContent() {
     const { data: enrollments } = useFetchData<MyEnrollment[]>(
         profile?.role === 'STUDENT' ? '/enrollments/my' : null,
     );
-    const { data: certificates } = useFetchData<MyCertificate[]>('/certificates/my');
+    // Certificates are a student resource too, and the route is @Roles(STUDENT),
+    // so this needs the same gate as its two siblings. Unconditionally it put a
+    // guaranteed 403 in the console of every instructor and admin who opened
+    // their own profile. Staff get undefined, and the tab falls through to the
+    // empty state.
+    const { data: certificates } = useFetchData<MyCertificate[]>(
+        profile?.role === 'STUDENT' ? '/certificates/my' : null,
+    );
 
     const searchParams = useSearchParams();
     const router = useRouter();
