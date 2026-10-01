@@ -1,4 +1,5 @@
 import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage } from '@nestjs/websockets';
+import { OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ChatService } from './chat.service';
@@ -6,7 +7,7 @@ import { UserCacheService } from '../common/user-cache.service';
 import { getFrontendUrl } from '../common/frontend-url';
 
 @WebSocketGateway({ cors: { origin: getFrontendUrl() } })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
     constructor(
         private readonly jwtService: JwtService,
         private readonly chatService: ChatService,
@@ -15,6 +16,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 @WebSocketServer()
 server!: Server;
+
+    /**
+     * How often every open socket is re-checked against the account row.
+     *
+     * A socket is authenticated once, at connect, and then lives for as long as
+     * the browser keeps it open -- hours, over a weekend. HTTP requests re-check
+     * the account on every call, so a suspension takes effect immediately there;
+     * without a sweep the same suspension would never reach an idle socket.
+     * A minute bounds that window without turning the check into a hot path.
+     */
+    private static readonly SWEEP_INTERVAL_MS = 60_000;
+    private sweeper: NodeJS.Timeout | null = null;
 
     /**
      * Authenticate the socket.
@@ -60,6 +73,12 @@ server!: Server;
             // From the database, not the token.
             (client as any).userId = user.id;
             (client as any).userRole = user.role;
+            // Remember which token version opened this socket, so a later
+            // logout/password change is detectable even though the socket never
+            // re-authenticates on its own.
+            (client as any).tokenVersion = typeof payload.tv === 'number' ? payload.tv : 0;
+
+            this.ensureSweeper();
         } catch (err) {
             client.disconnect();
         }
@@ -69,12 +88,99 @@ server!: Server;
         // optional: leave all rooms on disconnect
     }
 
+    onModuleDestroy() {
+        if (this.sweeper) {
+            clearInterval(this.sweeper);
+            this.sweeper = null;
+        }
+    }
+
+    /**
+     * Resolve the socket's *current* identity, or drop it.
+     *
+     * Called before every privileged action so a role change or a revocation
+     * that lands between sweeps is still honoured at the moment it matters. The
+     * role returned here is what authorization uses -- never the copy stored at
+     * connect time.
+     */
+    private async liveIdentity(client: Socket): Promise<{ id: string; role: string } | null> {
+        const userId = (client as any).userId;
+        if (!userId) return null;
+
+        const user = await this.userCache.findActiveUser(userId);
+        if (!user) {
+            // Suspended or deleted since connecting.
+            client.disconnect(true);
+            return null;
+        }
+        if (((client as any).tokenVersion ?? 0) !== user.tokenVersion) {
+            // Logged out, password changed, or a refresh token was replayed.
+            client.disconnect(true);
+            return null;
+        }
+
+        // Keep the cached copy in step so a sweep and an event agree.
+        (client as any).userRole = user.role;
+        return { id: user.id, role: user.role };
+    }
+
+    /** Start the sweep once, on the first successful connection (this.server is
+     *  guaranteed to exist by then, which is not true in onModuleInit). */
+    private ensureSweeper(): void {
+        if (this.sweeper) return;
+        this.sweeper = setInterval(() => {
+            void this.sweepSessions();
+        }, ChatGateway.SWEEP_INTERVAL_MS);
+        // Never let the sweeper alone keep the process alive.
+        if (typeof this.sweeper.unref === 'function') this.sweeper.unref();
+    }
+
+    private async sweepSessions(): Promise<void> {
+        try {
+            const sockets = this.server?.sockets?.sockets;
+            if (!sockets) return;
+
+            // Group by user: several tabs are one account to re-check, not
+            // several, so a user with ten tabs costs one lookup, not ten.
+            const byUser = new Map<string, Socket[]>();
+            for (const client of sockets.values()) {
+                const userId = (client as any).userId;
+                if (!userId) continue;
+                const list = byUser.get(userId) ?? [];
+                list.push(client);
+                byUser.set(userId, list);
+            }
+
+            await Promise.all(
+                [...byUser.entries()].map(async ([userId, clients]) => {
+                    const user = await this.userCache.findActiveUser(userId);
+                    if (!user) {
+                        for (const client of clients) client.disconnect(true);
+                        return;
+                    }
+                    for (const client of clients) {
+                        if (((client as any).tokenVersion ?? 0) !== user.tokenVersion) {
+                            client.disconnect(true);
+                            continue;
+                        }
+                        // A demotion takes effect on the open socket too, so
+                        // direct-chat access is re-evaluated with the new role.
+                        (client as any).userRole = user.role;
+                    }
+                }),
+            );
+        } catch {
+            // A sweep failure must never take the gateway down; the next tick
+            // retries, and per-event liveIdentity still guards every action.
+        }
+    }
+
     @SubscribeMessage('chat:join')
     async handleJoin(client: Socket, payload: { roomId: string }) {
         try {
-            const userId = (client as any).userId;
-            if (!userId || !payload?.roomId) return;
-            const hasAccess = await this.chatService.userHasRoomAccess(payload.roomId, userId);
+            const identity = await this.liveIdentity(client);
+            if (!identity || !payload?.roomId) return;
+            const hasAccess = await this.chatService.userHasRoomAccess(payload.roomId, identity.id);
             if (hasAccess) {
                 await client.join(payload.roomId);
             }
@@ -86,10 +192,9 @@ server!: Server;
     @SubscribeMessage('direct:join')
     async handleDirectJoin(client: Socket, payload: { chatId: string }) {
         try {
-            const userId = (client as any).userId;
-            const role = (client as any).userRole;
-            if (!userId || !payload?.chatId) return;
-            const hasAccess = await this.chatService.userHasDirectAccess(payload.chatId, userId, role);
+            const identity = await this.liveIdentity(client);
+            if (!identity || !payload?.chatId) return;
+            const hasAccess = await this.chatService.userHasDirectAccess(payload.chatId, identity.id, identity.role as any);
             if (hasAccess) {
                 await client.join(`direct:${payload.chatId}`);
             }

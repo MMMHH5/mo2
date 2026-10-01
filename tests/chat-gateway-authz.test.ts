@@ -155,3 +155,106 @@ test('a cache outage does not disconnect a legitimate user', async () => {
 
     assert.equal(client.disconnected, true, 'fail closed, never open on an unknown account');
 });
+
+// ---------------------------------------------------------------------------
+// Revalidation: a socket opened before a revocation must not outlive it
+// ---------------------------------------------------------------------------
+
+/** Gateway whose cache answer can be changed mid-test, plus a chat service that
+ *  records the role it was asked to authorize with. */
+function liveGateway(initial: any, opts: { roomAccess?: boolean } = {}) {
+    let current: any = initial;
+    const roles: string[] = [];
+    const cache = { findActiveUser: async () => current };
+    const chatService = {
+        userHasRoomAccess: async () => opts.roomAccess ?? false,
+        userHasDirectAccess: async (_chatId: string, _userId: string, role: string) => { roles.push(role); return opts.roomAccess ?? false; },
+    };
+    const gw = new ChatGateway(jwt, chatService as never, cache as unknown as UserCacheService);
+    return { gw, roles, became: (u: any) => { current = u; } };
+}
+
+const withVersion = (u: any, tv: number) => ({ ...u, tokenVersion: tv });
+
+test('SECURITY: direct:join authorizes with the live role, not the connect-time copy', async () => {
+    const token = jwt.sign({ sub: 'u1', role: Role.ADMIN, tv: 0 });
+    const { gw, roles, became } = liveGateway(withVersion(ADMIN, 0));
+    const client = fakeSocket(token);
+    await gw.handleConnection(client);
+    assert.equal(client.userRole, Role.ADMIN);
+
+    // Demoted while the socket stays open. tokenVersion is unchanged: a demotion
+    // does not revoke sessions, it only changes the role.
+    became(withVersion({ ...ADMIN, role: Role.STUDENT }, 0));
+
+    await gw.handleDirectJoin(client, { chatId: 'c1' });
+
+    assert.deepEqual(roles, [Role.STUDENT], 'the demotion must reach the open socket');
+    assert.equal(client.disconnected, false, 'a demotion is not a disconnect');
+});
+
+test('SECURITY: a socket is dropped once its account is suspended', async () => {
+    const token = jwt.sign({ sub: 'u1', role: Role.ADMIN, tv: 0 });
+    const { gw, roles, became } = liveGateway(withVersion(ADMIN, 0));
+    const client = fakeSocket(token);
+    await gw.handleConnection(client);
+
+    became(null); // suspended / deleted
+
+    await gw.handleDirectJoin(client, { chatId: 'c1' });
+
+    assert.equal(client.disconnected, true, 'an idle socket must not survive a suspension');
+    assert.deepEqual(roles, [], 'nothing is authorized for a suspended account');
+});
+
+test('SECURITY: a logout (tokenVersion bump) closes an already-open socket', async () => {
+    const token = jwt.sign({ sub: 'u1', role: Role.ADMIN, tv: 0 });
+    const { gw, roles, became } = liveGateway(withVersion(ADMIN, 0));
+    const client = fakeSocket(token);
+    await gw.handleConnection(client);
+    assert.equal(client.tokenVersion, 0);
+
+    became(withVersion(ADMIN, 1)); // logout bumped the row
+
+    await gw.handleDirectJoin(client, { chatId: 'c1' });
+
+    assert.equal(client.disconnected, true, 'a revoked session cannot keep chatting');
+    assert.deepEqual(roles, []);
+});
+
+test('SECURITY: the sweep disconnects suspended sockets and refreshes demoted ones', async () => {
+    const token = jwt.sign({ sub: 'u1', role: Role.ADMIN, tv: 0 });
+    const { gw, became } = liveGateway(withVersion(ADMIN, 0));
+    const client = fakeSocket(token);
+    await gw.handleConnection(client);
+
+    const sockets = new Map<string, any>([['s1', client]]);
+    (gw as any).server = { sockets: { sockets } };
+
+    // Demotion: the sweep adopts the new role without disconnecting.
+    became(withVersion({ ...ADMIN, role: Role.STUDENT }, 0));
+    await (gw as any).sweepSessions();
+    assert.equal(client.userRole, Role.STUDENT);
+    assert.equal(client.disconnected, false);
+
+    // Suspension: the sweep drops it.
+    became(null);
+    await (gw as any).sweepSessions();
+    assert.equal(client.disconnected, true);
+});
+
+test('the sweep is a no-op when there is no server yet', async () => {
+    const { gw } = liveGateway(withVersion(ADMIN, 0));
+    await assert.doesNotReject(() => (gw as any).sweepSessions());
+});
+
+test('a token carrying tv is remembered on the socket', async () => {
+    const token = jwt.sign({ sub: 'u1', role: Role.ADMIN, tv: 7 });
+    const { gw } = liveGateway(withVersion(ADMIN, 7));
+    const client = fakeSocket(token);
+
+    await gw.handleConnection(client);
+
+    assert.equal(client.tokenVersion, 7);
+    assert.equal(client.disconnected, false);
+});
