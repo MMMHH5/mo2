@@ -7,6 +7,7 @@ import { API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { formatDate } from '@/lib/format';
+import BackHomeButton from '@/components/BackHomeButton';
 import { Search, ShieldCheck, ShieldAlert, ExternalLink, Award } from 'lucide-react';
 
 interface CertificateInfo {
@@ -65,6 +66,7 @@ export default function VerifyCertificateForm() {
 
     return (
         <div className={`min-h-screen flex flex-col ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
+            <BackHomeButton />
             {/* Header */}
             <header className={`px-6 py-5 flex items-center justify-between border-b backdrop-blur-xl sticky top-0 z-50 ${dark ? 'border-white/5 bg-brand-navy-dark/80' : 'border-gray-200 bg-white/80'}`}>
                 <Link href="/" className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth, Role } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
+import BackHomeButton from '@/components/BackHomeButton';
 
 function SuccessHandler() {
     const router = useRouter();
@@ -52,6 +53,7 @@ function SuccessHandler() {
 
     return (
         <div className={`flex h-screen w-full items-center justify-center ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
+            <BackHomeButton />
             <div className="animate-pulse flex flex-col items-center">
                 <div className="h-12 w-12 rounded-full border-4 border-brand-gold border-t-transparent animate-spin mb-4"></div>
                 <p className={`font-bold ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}>{t('authSuccess.completing')}</p>

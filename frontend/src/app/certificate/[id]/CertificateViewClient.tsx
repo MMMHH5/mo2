@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import CertificateBilingual from '@/components/CertificateBilingual';
+import BackHomeButton from '@/components/BackHomeButton';
 import { API_BASE_URL } from '@/lib/api';
 
 interface CertData {
@@ -57,6 +58,7 @@ function CertificateViewInner({ id }: { id: string }) {
     if (error || !cert) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-brand-navy-dark flex items-center justify-center px-4">
+                <BackHomeButton />
                 <div className="text-center max-w-md">
                     <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
                         <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -128,6 +130,10 @@ function CertificateViewInner({ id }: { id: string }) {
 
     return (
         <div>
+            {/* Home link — no-print, so it never lands on a saved or printed
+                copy of the certificate */}
+            <BackHomeButton className="no-print" />
+
             {/* Language toggle — no-print */}
             <div className="no-print fixed bottom-6 right-6 z-50 flex gap-2">
                 <button
