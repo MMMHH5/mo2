@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard, ThrottlerStorage } from '@nestjs/throttler';
 
 import { RedisThrottlerStorage } from './common/redis-throttler.storage';
+import { UserCacheModule } from './common/user-cache.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -47,6 +48,7 @@ import { AnnouncementBoardModule } from './announcement-board/announcement-board
             blockDuration: 60000,
         }]),
         PrismaModule,
+        UserCacheModule,
         AuthModule,
         UsersModule,
         CoursesModule,

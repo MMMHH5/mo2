@@ -55,7 +55,7 @@ describe('PATCH /users/me metadata merge', () => {
                 },
             },
         };
-        const service = new UsersService(prisma as never, { logAction: async () => {} } as never);
+        const service = new UsersService(prisma as never, { logAction: async () => {} } as never, { invalidate: async () => {} } as never);
         await service.updateMe('u1', { metadata } as never);
         return written as Record<string, unknown>;
     };

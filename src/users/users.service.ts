@@ -8,6 +8,7 @@ import { unlink } from 'fs';
 import { basename, join } from 'path';
 import { hasValidSignature } from '../common/file-signatures';
 import { PROFILE_KEY, sanitizeInstructorProfile } from '../common/instructor-profile';
+import { UserCacheService } from '../common/user-cache.service';
 import { CreateUserDto, UpdateUserDto, UpdateMeDto } from './dto/user.dto';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class UsersService {
     constructor(
         private prisma: PrismaService,
         private audit: AuditService,
+        private userCache: UserCacheService,
     ) { }
 
     async findAll() {
@@ -319,6 +321,13 @@ export class UsersService {
         });
 
         await this.audit.logAction(`User ${userId} updated their profile${data.email ? ' (email changed)' : ''}${data.passwordHash ? ' (password changed)' : ''}`);
+
+        // Email is part of the cached identity and is what the token carries, so
+        // a change here has to be visible on the next request rather than after
+        // the cache TTL.
+        if (data.email) {
+            await this.userCache.invalidate(userId);
+        }
         return updated;
     }
 
@@ -453,21 +462,38 @@ export class UsersService {
             await this.prisma.refreshToken.updateMany({ where: { userId: id }, data: { revokedAt: new Date() } });
         }
 
+        // This is the important one. An admin can suspend an account or demote it
+        // from ADMIN here, and until now the very next request would have been
+        // authorized from a cached copy of the old record -- so a suspension would
+        // not have taken effect until the cache expired, and a demotion would
+        // have left admin powers live for that long. Delete the entry after the
+        // write, so the next request re-reads the truth.
+        if (dto.role || typeof dto.isActive === 'boolean' || dto.password) {
+            await this.userCache.invalidate(id);
+        }
+
         await this.audit.logAction(`ADMIN ${adminId} updated user ${id} (${user.email})`, ip, adminId);
         return user;
     }
 
     async updateRole(id: string, newRole: Role, adminId: string, ip?: string) {
         await this.audit.logAction(`ADMIN ${adminId} changed user ${id} role to ${newRole}`, ip, adminId);
-        return this.prisma.user.update({
+        const updated = await this.prisma.user.update({
             where: { id },
             data: { role: newRole },
             select: { id: true, email: true, role: true, isActive: true, createdAt: true },
         });
+        // The dedicated PATCH /users/:id/role endpoint. A demotion from ADMIN has
+        // to bite immediately, not when the cache happens to expire.
+        await this.userCache.invalidate(id);
+        return updated;
     }
 
     async remove(id: string, adminId: string, ip?: string) {
         await this.audit.logAction(`ADMIN ${adminId} deleted user ${id}`, ip, adminId);
+        // Drop any cached identity. Without this a deleted account would keep
+        // authenticating from cache until the TTL ran out.
+        await this.userCache.invalidate(id);
         try {
             return await this.prisma.user.delete({ where: { id } });
         } catch (err) {

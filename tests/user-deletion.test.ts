@@ -44,12 +44,14 @@ const RESTRICT = (table = 'Enrollment', constraint = 'Enrollment_studentId_fkey'
 const build = (impl: (args: any) => Promise<any>) => {
     const prisma = { user: { delete: impl } };
     const audit = { logAction: async () => {} };
-    return new UsersService(prisma as never, audit as never);
+    const invalidated: string[] = [];
+    const cache = { invalidate: async (id: string) => { invalidated.push(id); } };
+    return { service: new UsersService(prisma as never, audit as never, cache as never), invalidated };
 };
 
 describe('admin user deletion explains a relational-integrity refusal', () => {
     test('a referenced user answers 409, never 500', async () => {
-        const svc = build(async () => { throw P2003(); });
+        const { service: svc } = build(async () => { throw P2003(); });
         await assert.rejects(
             () => svc.remove('u1', 'admin-1'),
             (err: any) => {
@@ -62,7 +64,7 @@ describe('admin user deletion explains a relational-integrity refusal', () => {
     });
 
     test('the refusal names the table that is holding the row', async () => {
-        const svc = build(async () => { throw P2003('Enrollment_studentId_fkey (required)'); });
+        const { service: svc } = build(async () => { throw P2003('Enrollment_studentId_fkey (required)'); });
         await assert.rejects(
             () => svc.remove('u1', 'admin-1'),
             (err: any) => {
@@ -73,7 +75,7 @@ describe('admin user deletion explains a relational-integrity refusal', () => {
     });
 
     test('the refusal survives a constraint that reports no field name', async () => {
-        const svc = build(async () => {
+        const { service: svc } = build(async () => {
             throw new Prisma.PrismaClientKnownRequestError('Foreign key constraint failed', {
                 code: 'P2003',
                 clientVersion: '5.0.0',
@@ -91,7 +93,7 @@ describe('admin user deletion explains a relational-integrity refusal', () => {
     });
 
     test('an unknown id answers 404 instead of 500', async () => {
-        const svc = build(async () => {
+        const { service: svc } = build(async () => {
             throw new Prisma.PrismaClientKnownRequestError('Record to delete does not exist', {
                 code: 'P2025',
                 clientVersion: '5.0.0',
@@ -105,14 +107,14 @@ describe('admin user deletion explains a relational-integrity refusal', () => {
 
     test('a deletable user is still deleted', async () => {
         let deleted = false;
-        const svc = build(async () => { deleted = true; return { id: 'u1' }; });
+        const { service: svc } = build(async () => { deleted = true; return { id: 'u1' }; });
         const row = await svc.remove('u1', 'admin-1');
         assert.equal(deleted, true);
         assert.equal(row.id, 'u1');
     });
 
     test('an unrelated failure is not swallowed into a 409', async () => {
-        const svc = build(async () => { throw new Error('connection reset'); });
+        const { service: svc } = build(async () => { throw new Error('connection reset'); });
         await assert.rejects(
             () => svc.remove('u1', 'admin-1'),
             (err: any) => !(err.getStatus?.() === 409),
@@ -134,7 +136,7 @@ describe('admin user deletion explains a relational-integrity refusal', () => {
  */
 describe('the refusal survives the spelling Postgres actually uses', () => {
     test('a RESTRICT violation answers 409, not 500', async () => {
-        const svc = build(async () => { throw RESTRICT(); });
+        const { service: svc } = build(async () => { throw RESTRICT(); });
         await assert.rejects(
             () => svc.remove('u1', 'admin-1'),
             (err: any) => {
@@ -146,7 +148,7 @@ describe('the refusal survives the spelling Postgres actually uses', () => {
     });
 
     test('the message names the table that is holding the row', async () => {
-        const svc = build(async () => { throw RESTRICT(); });
+        const { service: svc } = build(async () => { throw RESTRICT(); });
         await assert.rejects(
             () => svc.remove('u1', 'admin-1'),
             (err: any) => {
@@ -158,7 +160,7 @@ describe('the refusal survives the spelling Postgres actually uses', () => {
     });
 
     test('an instructor blocked by Course reads as Course, not Enrollment', async () => {
-        const svc = build(async () => {
+        const { service: svc } = build(async () => {
             throw RESTRICT('Course', 'Course_instructorId_fkey');
         });
         await assert.rejects(
@@ -171,7 +173,7 @@ describe('the refusal survives the spelling Postgres actually uses', () => {
     });
 
     test('a plain foreign-key violation with no constraint name still answers 409', async () => {
-        const svc = build(async () => {
+        const { service: svc } = build(async () => {
             throw new Prisma.PrismaClientUnknownRequestError(
                 'Error occurred during query execution:\nupdate or delete on table "User" violates foreign key constraint',
                 { clientVersion: '5.0.0' },
@@ -188,7 +190,7 @@ describe('the refusal survives the spelling Postgres actually uses', () => {
     });
 
     test('an unknown-request error that is not a key violation is not translated', async () => {
-        const svc = build(async () => {
+        const { service: svc } = build(async () => {
             throw new Prisma.PrismaClientUnknownRequestError('division by zero', { clientVersion: '5.0.0' });
         });
         await assert.rejects(
@@ -198,7 +200,7 @@ describe('the refusal survives the spelling Postgres actually uses', () => {
     });
 
     test('an unescaped constraint name is read too', async () => {
-        const svc = build(async () => {
+        const { service: svc } = build(async () => {
             throw new Prisma.PrismaClientUnknownRequestError(
                 'violates RESTRICT setting of foreign key constraint "Course_instructorId_fkey" on table "Course"',
                 { clientVersion: '5.0.0' },

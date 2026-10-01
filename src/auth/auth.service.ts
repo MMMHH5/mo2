@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { getFrontendUrl } from '../common/frontend-url';
+import { UserCacheService } from '../common/user-cache.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { generateSecret, verify as verifyOtp } from 'otplib';
@@ -41,6 +42,7 @@ export class AuthService {
         private jwtService: JwtService,
         private email: EmailService,
         private encryption: EncryptionService,
+        private userCache: UserCacheService,
     ) {}
 
     private hashToken(token: string): string {
@@ -160,6 +162,7 @@ export class AuthService {
             this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: hashed, mustChangePassword: false } }),
             this.prisma.refreshToken.updateMany({ where: { userId: user.id }, data: { revokedAt: new Date() } }),
         ]);
+        await this.userCache.invalidate(user.id);
 
         return { ok: true };
     }
@@ -210,6 +213,10 @@ export class AuthService {
                 data: { revokedAt: new Date() },
             });
         }
+        // Drop the cached identity as well. Revoking the refresh token alone does
+        // not stop the access token that is already in flight from working, so
+        // logout also has to force the next request to re-read the account.
+        await this.userCache.invalidate(userId);
         return { ok: true };
     }
 
@@ -240,6 +247,7 @@ export class AuthService {
             this.prisma.user.update({ where: { id: record.userId }, data: { passwordHash: hashed, mustChangePassword: false } }),
             this.prisma.refreshToken.updateMany({ where: { userId: record.userId }, data: { revokedAt: new Date() } }),
         ]);
+        await this.userCache.invalidate(record.userId);
 
         return { ok: true };
     }

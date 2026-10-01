@@ -116,7 +116,7 @@ describe('certificate holder identity', () => {
 
 describe('profile metadata sanitiser', () => {
     const clean = (input: Record<string, unknown>) =>
-        (new UsersService({} as any, noopService) as any).sanitizeProfileMetadata(input);
+        (new UsersService({} as any, noopService, {} as any) as any).sanitizeProfileMetadata(input);
 
     test('keeps the profile fields the form writes, trimmed', () => {
         const out = clean({ nameEn: '  Mohammed  ', country: 'Saudi Arabia', phone: '+966500000000' });
@@ -326,7 +326,7 @@ describe('avatar upload', () => {
         };
         return {
             written,
-            service: new UsersService(prisma as any, noopService),
+            service: new UsersService(prisma as any, noopService, {} as any),
         };
     };
     const png = () => ({ path: realPng, filename: 'avatar-1.png', mimetype: 'image/png' });

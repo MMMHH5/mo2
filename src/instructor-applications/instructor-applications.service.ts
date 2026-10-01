@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { resolvePrivateUpload } from '../common/private-uploads';
+import { UserCacheService } from '../common/user-cache.service';
 
 @Injectable()
 export class InstructorApplicationsService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly auditService: AuditService
+        private readonly auditService: AuditService,
+        private readonly userCache: UserCacheService
     ) { }
 
     async getApplications() {
@@ -79,6 +81,11 @@ export class InstructorApplicationsService {
                 where: { id: app.userId },
                 data: { role: 'INSTRUCTOR', metadata: seeded as any },
             });
+            // Promotion happens here rather than through updateRole, so it needs
+            // its own invalidation: otherwise the applicant's existing session
+            // would keep the STUDENT role cached and lose instructor access until
+            // the TTL ran out.
+            await this.userCache.invalidate(app.userId);
             await this.auditService.logAction(`UPDATE_ROLE_INSTRUCTOR`, undefined, adminId);
         }
 

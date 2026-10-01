@@ -309,6 +309,7 @@ describe('SECURITY: login does not disclose that an account exists', () => {
             { sign: () => 'tok' } as never,
             { sendPasswordReset: async () => {} } as never,
             { } as never,
+            { invalidate: async () => {} } as never,
         );
         return svc;
     };
