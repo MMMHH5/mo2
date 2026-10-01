@@ -34,6 +34,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         if (!user) {
             throw new UnauthorizedException('Account is not available');
         }
+
+        // Revocation. `tv` is stamped into every access token at sign time; a
+        // logout, a password change, or a detected refresh-token replay bumps
+        // the row's tokenVersion, so already-issued tokens stop matching. A
+        // token minted before this claim existed has no `tv`, which reads as 0
+        // -- the same default the column starts at -- so nothing is logged out
+        // by deploying this.
+        const tokenVersion = typeof payload.tv === 'number' ? payload.tv : 0;
+        if (tokenVersion !== user.tokenVersion) {
+            throw new UnauthorizedException('Session has been revoked');
+        }
+
         return { userId: user.id, email: user.email, role: user.role };
     }
 }

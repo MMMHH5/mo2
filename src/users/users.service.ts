@@ -236,16 +236,25 @@ export class UsersService {
 
         // Goes through the same sanitiser as PATCH /users/me, so an avatar can
         // only ever be a path inside our own uploads directory.
-        const updated = await this.prisma.user.update({
-            where: { id: userId },
-            data: {
-                metadata: this.sanitizeProfileMetadata({
-                    ...((user.metadata as Record<string, unknown>) ?? {}),
-                    avatarUrl: publicPath,
-                }) as unknown as Prisma.InputJsonObject,
-            },
-            select: { id: true, metadata: true },
-        });
+        let updated;
+        try {
+            updated = await this.prisma.user.update({
+                where: { id: userId },
+                data: {
+                    metadata: this.sanitizeProfileMetadata({
+                        ...((user.metadata as Record<string, unknown>) ?? {}),
+                        avatarUrl: publicPath,
+                    }) as unknown as Prisma.InputJsonObject,
+                },
+                select: { id: true, metadata: true },
+            });
+        } catch (err) {
+            // The file is already on disk but now referenced by nothing. multer
+            // only cleans up its own aborts, and this is a write failure after
+            // multer finished -- so without this the upload is an orphan.
+            unlink(file.path, () => undefined);
+            throw err;
+        }
 
         if (typeof previous === 'string' && previous.startsWith('/uploads/avatars/')) {
             // basename() so a crafted stored value cannot escape the folder.
@@ -279,6 +288,7 @@ export class UsersService {
             metadata?: Prisma.InputJsonObject;
             language?: string;
             mustChangePassword?: boolean;
+            tokenVersion?: { increment: number };
         } = {};
 
         if (dto.email && dto.email !== user.email) {
@@ -293,6 +303,11 @@ export class UsersService {
             data.passwordHash = await bcrypt.hash(dto.password, 12);
             // A voluntary change satisfies any forced-change requirement.
             data.mustChangePassword = false;
+            // Changing the password ends every other session. Without this an
+            // access token minted under the old password kept working until it
+            // expired, which is exactly the moment a user changes their password
+            // because someone else may have it.
+            data.tokenVersion = { increment: 1 };
         }
 
         if (dto.language) {
@@ -320,12 +335,22 @@ export class UsersService {
             select: { id: true, email: true, role: true, isActive: true, metadata: true, createdAt: true, updatedAt: true, language: true, emailVerifiedAt: true, twoFactorEnabled: true },
         });
 
+        // Revoke every refresh token as well: the tokenVersion bump stops the
+        // access tokens, but without this the holder of a stolen refresh token
+        // would simply mint a new one under the new password.
+        if (dto.password) {
+            await this.prisma.refreshToken.updateMany({
+                where: { userId },
+                data: { revokedAt: new Date() },
+            });
+        }
+
         await this.audit.logAction(`User ${userId} updated their profile${data.email ? ' (email changed)' : ''}${data.passwordHash ? ' (password changed)' : ''}`);
 
-        // Email is part of the cached identity and is what the token carries, so
-        // a change here has to be visible on the next request rather than after
-        // the cache TTL.
-        if (data.email) {
+        // Email is part of the cached identity and is what the token carries, and
+        // a password change bumps tokenVersion, so both have to be visible on the
+        // next request rather than after the cache TTL.
+        if (data.email || dto.password) {
             await this.userCache.invalidate(userId);
         }
         return updated;

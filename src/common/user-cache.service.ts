@@ -24,10 +24,13 @@ import { PrismaService } from '../prisma/prisma.service';
  * a stale role could be served is measured in milliseconds, not minutes.
  *
  * WHAT IS CACHED, AND WHAT DELIBERELY IS NOT
- * Only { id, email, role, isActive }. Never passwordHash, never tokens, never
- * twoFactorSecret. Putting a password hash in a shared cache would widen the
- * blast radius of a Redis compromise from "list of ids and roles" to "every
- * password in the system", for no benefit -- nothing here reads it.
+ * Only { id, email, role, isActive, tokenVersion }. Never passwordHash, never
+ * tokens, never twoFactorSecret. Putting a password hash in a shared cache
+ * would widen the blast radius of a Redis compromise from "list of ids and
+ * roles" to "every password in the system", for no benefit -- nothing here
+ * reads it. tokenVersion is a small integer the JWT strategy compares against
+ * the token's `tv` claim, so a logout has to bite immediately even on a cache
+ * hit.
  *
  * A cache hit for a user who does not exist is stored as the literal "0" rather
  * than as a missing key, so that a flood of requests against unknown ids hits
@@ -89,7 +92,7 @@ export class UserCacheService implements OnModuleDestroy {
      * Returns null when the user does not exist OR is deactivated, so the
      * caller cannot accidentally treat "not found" and "suspended" differently.
      */
-    async findActiveUser(userId: string): Promise<{ id: string; email: string; role: string; isActive: boolean } | null> {
+    async findActiveUser(userId: string): Promise<{ id: string; email: string; role: string; isActive: boolean; tokenVersion: number } | null> {
         const key = this.key(userId);
 
         if (this.client && this.redisHealthy) {
@@ -98,7 +101,7 @@ export class UserCacheService implements OnModuleDestroy {
                 if (raw !== null) {
                     this.redisHealthy = true;
                     if (raw === '0') return null; // cached "no such active user"
-                    const parsed = JSON.parse(raw) as { id: string; email: string; role: string; isActive: boolean };
+                    const parsed = JSON.parse(raw) as { id: string; email: string; role: string; isActive: boolean; tokenVersion: number };
                     // This rejects an entry cached from an already-inactive user.
                     // It does NOT defend against a user who was cached while active
                     // and suspended since: `parsed` IS the cached snapshot, so
@@ -117,7 +120,7 @@ export class UserCacheService implements OnModuleDestroy {
 
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, email: true, role: true, isActive: true },
+            select: { id: true, email: true, role: true, isActive: true, tokenVersion: true },
         });
 
         if (this.client && this.redisHealthy) {

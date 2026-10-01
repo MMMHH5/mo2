@@ -61,7 +61,7 @@ class FakeRedis {
     }
 }
 
-const activeUser = { id: 'u1', email: 'a@b.test', role: Role.STUDENT, isActive: true };
+const activeUser = { id: 'u1', email: 'a@b.test', role: Role.STUDENT, isActive: true, tokenVersion: 0 };
 
 /** Build the cache with a fake Redis already attached, bypassing the constructor. */
 function buildCache(redis: FakeRedis, dbUser: any = activeUser) {
@@ -249,7 +249,7 @@ test('only identity fields are cached -- never the password hash', async () => {
     const raw = await redis.get(KEY);
 
     assert.ok(raw && !raw.includes('password'), 'a shared cache must not hold password hashes');
-    assert.deepEqual(Object.keys(JSON.parse(raw!)).sort(), ['email', 'id', 'isActive', 'role']);
+    assert.deepEqual(Object.keys(JSON.parse(raw!)).sort(), ['email', 'id', 'isActive', 'role', 'tokenVersion']);
 });
 
 // ---------------------------------------------------------------------------
@@ -359,12 +359,18 @@ test('SECURITY: logout evicts the cached identity', async () => {
     const { svc: cache } = buildCache(redis);
     await cache.findActiveUser('u1');
 
-    const prisma = { refreshToken: { updateMany: async () => ({}) } };
+    // logout now also bumps tokenVersion, so the user table is written too.
+    let versionBumped = false;
+    const prisma = {
+        refreshToken: { updateMany: async () => ({}) },
+        user: { update: async () => { versionBumped = true; return {}; } },
+    };
     const auth = new AuthService(prisma as never, {} as never, {} as never, {} as never, cache as never);
 
     await auth.logout('u1');
 
     assert.deepEqual(redis.delCalls, [KEY]);
+    assert.equal(versionBumped, true, 'logout must invalidate live access tokens');
 });
 
 test('SECURITY: completing a forced password change evicts', async () => {

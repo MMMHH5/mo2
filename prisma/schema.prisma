@@ -102,6 +102,12 @@ model User {
   emailVerifiedAt DateTime?
   twoFactorSecret String?
   twoFactorEnabled Boolean @default(false)
+  // Bumped whenever every access token for this user must stop working at once:
+  // logout, password change, and a detected refresh-token replay. Access tokens
+  // carry this value as `tv`; the JWT strategy rejects a token whose `tv` no
+  // longer matches the row. Without it a stateless access token stayed valid
+  // until it expired, so "logout" only ever killed the refresh token.
+  tokenVersion Int      @default(0)
   metadata     Json?    // Storing extensible metadata
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -785,9 +791,15 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   revokedAt DateTime?
+  // Every rotation keeps the same family, so a token that is presented after it
+  // was already rotated identifies a replay: we can then revoke the whole
+  // family instead of just rejecting one token. Null on rows minted before this
+  // column existed; those fall back to revoking every token the user owns.
+  familyId  String?
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([familyId])
 }
 
 model PasswordResetToken {

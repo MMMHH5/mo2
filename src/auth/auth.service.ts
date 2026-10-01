@@ -85,7 +85,7 @@ export class AuthService {
 
         await this.issueVerificationEmail(user.id, user.email);
 
-        const tokens = await this.issueTokens(user.id, user.email, user.role);
+        const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
         return { ...tokens, user: this.publicUser(user) };
     }
 
@@ -119,7 +119,7 @@ export class AuthService {
             return { requiresTwoFactor: true, tempToken };
         }
 
-        const tokens = await this.issueTokens(user.id, user.email, user.role);
+        const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
         return { ...tokens, requiresTwoFactor: false, user: this.publicUser(user) };
     }
 
@@ -139,7 +139,7 @@ export class AuthService {
         const valid = await verifyOtp({ token: code, secret: this.encryption.decrypt(user.twoFactorSecret) });
         if (!valid) throw new UnauthorizedException('Incorrect verification code');
 
-        const tokens = await this.issueTokens(user.id, user.email, user.role);
+        const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
         return { ...tokens, user: this.publicUser(user) };
     }
 
@@ -159,7 +159,10 @@ export class AuthService {
         const hashed = await bcrypt.hash(newPassword, 12);
 
         await this.prisma.$transaction([
-            this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: hashed, mustChangePassword: false } }),
+            this.prisma.user.update({
+                where: { id: user.id },
+                data: { passwordHash: hashed, mustChangePassword: false, tokenVersion: { increment: 1 } },
+            }),
             this.prisma.refreshToken.updateMany({ where: { userId: user.id }, data: { revokedAt: new Date() } }),
         ]);
         await this.userCache.invalidate(user.id);
@@ -171,38 +174,79 @@ export class AuthService {
         return { id: user.id, email: user.email, role: user.role, emailVerifiedAt: user.emailVerifiedAt, twoFactorEnabled: user.twoFactorEnabled, language: user.language, isActive: user.isActive, createdAt: user.createdAt };
     }
 
-    private async issueTokens(userId: string, email: string, role: string) {
-        const access_token = this.jwtService.sign({ sub: userId, email, role });
+    private async issueTokens(userId: string, email: string, role: string, tokenVersion: number) {
+        const access_token = this.jwtService.sign({ sub: userId, email, role, tv: tokenVersion });
         const refresh = this.generateToken();
         await this.prisma.refreshToken.create({
             data: {
                 tokenHash: refresh.hash,
                 userId,
+                // A fresh lineage per login. Rotations below keep this id, so a
+                // replayed token can be traced to the family it belongs to.
+                familyId: crypto.randomUUID(),
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
             },
         });
         return { access_token, refresh_token: refresh.raw };
     }
 
+    /**
+     * Kill a refresh-token lineage and every access token alongside it.
+     *
+     * Called when a token that was already rotated comes back: the only way to
+     * see one is that someone kept a copy, and we cannot tell whether it is the
+     * attacker or the legitimate client, so both are sent back to the login
+     * screen. Access tokens are covered by the tokenVersion bump; refresh tokens
+     * by the family update. A row predating familyId has no family to scope to,
+     * so the whole user is revoked rather than leaving the replay usable.
+     */
+    private async revokeFamily(familyId: string | null, userId: string): Promise<void> {
+        await this.prisma.$transaction([
+            this.prisma.refreshToken.updateMany({
+                where: familyId ? { familyId } : { userId },
+                data: { revokedAt: new Date() },
+            }),
+            this.prisma.user.update({
+                where: { id: userId },
+                data: { tokenVersion: { increment: 1 } },
+            }),
+        ]);
+        await this.userCache.invalidate(userId);
+    }
+
     async refresh(refreshToken: string) {
         const token = await this.prisma.refreshToken.findUnique({ where: { tokenHash: this.hashToken(refreshToken) } });
-        if (!token || token.revokedAt || token.expiresAt < new Date()) {
+
+        // A row that exists but is already revoked is a replay: rotation revokes
+        // the old row the moment it hands out the new one, so no legitimate
+        // flow presents it again. Treat it as a compromise.
+        if (token && token.revokedAt) {
+            await this.revokeFamily(token.familyId, token.userId);
+            throw new UnauthorizedException('Refresh token has already been used');
+        }
+
+        if (!token || token.expiresAt < new Date()) {
             throw new UnauthorizedException('Invalid or expired refresh token');
         }
 
         const user = await this.prisma.user.findUnique({ where: { id: token.userId } });
         if (!user || !user.isActive) throw new UnauthorizedException('Account not available');
 
-        // Rotate the refresh token
+        // Rotate the refresh token, keeping the family lineage intact.
         const newRefresh = this.generateToken();
         await this.prisma.$transaction([
             this.prisma.refreshToken.update({ where: { id: token.id }, data: { revokedAt: new Date() } }),
             this.prisma.refreshToken.create({
-                data: { tokenHash: newRefresh.hash, userId: user.id, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+                data: {
+                    tokenHash: newRefresh.hash,
+                    userId: user.id,
+                    familyId: token.familyId,
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                },
             }),
         ]);
 
-        const access_token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+        const access_token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role, tv: user.tokenVersion });
         return { access_token, refresh_token: newRefresh.raw };
     }
 
@@ -213,9 +257,19 @@ export class AuthService {
                 data: { revokedAt: new Date() },
             });
         }
-        // Drop the cached identity as well. Revoking the refresh token alone does
-        // not stop the access token that is already in flight from working, so
-        // logout also has to force the next request to re-read the account.
+        // Revoking the refresh token alone left the access token that is already
+        // in flight usable until it expired. Bumping tokenVersion invalidates
+        // every access token for this user at once, and the cache invalidation
+        // makes the new value visible on the very next request rather than after
+        // the TTL.
+        //
+        // The scope is the user, not the device: other sessions lose their
+        // access token too, but keep their refresh token, so they recover on the
+        // next refresh rather than showing a login screen.
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { tokenVersion: { increment: 1 } },
+        });
         await this.userCache.invalidate(userId);
         return { ok: true };
     }
@@ -244,7 +298,10 @@ export class AuthService {
 
         await this.prisma.$transaction([
             this.prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
-            this.prisma.user.update({ where: { id: record.userId }, data: { passwordHash: hashed, mustChangePassword: false } }),
+            this.prisma.user.update({
+                where: { id: record.userId },
+                data: { passwordHash: hashed, mustChangePassword: false, tokenVersion: { increment: 1 } },
+            }),
             this.prisma.refreshToken.updateMany({ where: { userId: record.userId }, data: { revokedAt: new Date() } }),
         ]);
         await this.userCache.invalidate(record.userId);
@@ -349,7 +406,7 @@ export class AuthService {
             return { requiresTwoFactor: true, tempToken };
         }
 
-        const tokens = await this.issueTokens(user.id, user.email, user.role);
+        const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
         return { ...tokens, requiresTwoFactor: false, user: this.publicUser(user) };
     }
 }
