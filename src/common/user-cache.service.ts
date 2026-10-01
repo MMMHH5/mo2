@@ -1,6 +1,10 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
-import type { PrismaService } from '../prisma/prisma.service';
+// NOT `import type`: a type-only import is erased at compile time, which strips
+// the constructor parameter metadata Nest relies on to resolve PrismaService.
+// The result is "argument Object at index [0]" and a backend that will not
+// boot, while unit tests with hand-written mocks stay green.
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Short-lived cache of the identity fields the JWT strategy needs.
