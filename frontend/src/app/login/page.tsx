@@ -1,12 +1,14 @@
 "use client";
 
 import { Suspense, useState } from 'react';
+import Link from 'next/link';
 import { useAuth, Role } from '@/lib/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { Home } from 'lucide-react';
 
 export default function LoginPage() {
     return (
@@ -78,6 +80,13 @@ function LoginForm() {
             <div className={`absolute top-6 right-6 rtl:left-6 rtl:right-auto z-50 rounded-full shadow-sm border p-1 ${dark ? 'bg-white/5 backdrop-blur-md border-white/10' : 'bg-white border-gray-200'}`}>
                 <LanguageSwitcher />
             </div>
+            <Link
+                href="/"
+                className={`absolute top-6 left-6 rtl:right-6 rtl:left-auto z-50 inline-flex items-center gap-2 rounded-full shadow-sm border px-4 py-2.5 text-sm font-bold transition-colors ${dark ? 'bg-white/5 backdrop-blur-md border-white/10 text-gray-300 hover:text-brand-gold-light hover:border-white/20' : 'bg-white border-gray-200 text-brand-navy hover:text-brand-gold-dark hover:border-gray-300'}`}
+            >
+                <Home size={15} />
+                {t('landing.home')}
+            </Link>
             <div className={`w-full max-w-md backdrop-blur-2xl p-6 sm:p-10 rounded-[2rem] relative z-10 transition-all duration-500 ${dark ? 'bg-brand-navy-dark/90 shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 hover:border-white/20' : 'bg-white shadow-xl border border-gray-200 hover:shadow-2xl'}`}>
                 <div className="text-center mb-8">
                     <img
