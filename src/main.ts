@@ -8,6 +8,7 @@ import * as express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { getFrontendUrl } from './common/frontend-url';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 
 function validateEnvVars() {
     const requiredVars = ['DATABASE_URL', 'JWT_SECRET'];
@@ -122,6 +123,13 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true, // Automatically transform payloads to be objects typed according to their DTO classes
     }));
+
+    // Every uncaught error is shaped here, so library internals (V8's JSON
+    // parser text, body-parser's 413 wording, multer's disk errors) never reach
+    // an anonymous caller. Deliberate HttpExceptions keep their message --
+    // including validation arrays the frontend depends on -- and 500s get a
+    // request id instead of a stack trace.
+    app.useGlobalFilters(new AllExceptionsFilter());
 
     // Setup Swagger Documentation — only in non-production
     if (process.env.NODE_ENV !== 'production') {
