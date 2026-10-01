@@ -76,6 +76,7 @@ export class CoursesController {
             fileSize: 100 * 1024 * 1024, // 100MB
             files: 1,
             fields: 20,
+            fieldSize: 1 * 1024 * 1024,
             parts: 30,
         }
     }))

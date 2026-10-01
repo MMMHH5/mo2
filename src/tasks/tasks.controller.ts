@@ -116,6 +116,7 @@ export class TasksController {
             fileSize: 50 * 1024 * 1024,
             files: 1,
             fields: 10,
+            fieldSize: 1 * 1024 * 1024,
             parts: 15,
         },
     }))

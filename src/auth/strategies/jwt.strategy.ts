@@ -10,6 +10,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: process.env.JWT_SECRET!,
+            // Pin the algorithm instead of letting the token's own header pick it.
+            // jsonwebtoken already rejects "none", but an allow-list means no
+            // future header value can talk us into a different verification path
+            // without someone editing this file on purpose.
+            algorithms: ['HS256'],
         });
     }
 

@@ -66,7 +66,7 @@ export class InstructorApplicationsController {
                 cb(new BadRequestException('Only PDF, DOC, DOCX, and TXT files are allowed.'), false);
             }
         },
-        limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 20, parts: 30 } // 10MB
+        limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 20, fieldSize: 1 * 1024 * 1024, parts: 30 } // 10MB
     }))
     async createApplication(
         @UploadedFile() file: any,

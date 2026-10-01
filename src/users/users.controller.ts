@@ -73,7 +73,17 @@ export class UsersController {
                 cb(null, `avatar-${uniqueSuffix}${mimeToExt[file.mimetype] || '.bin'}`);
             },
         }),
-        limits: { fileSize: AVATAR_MAX_BYTES },
+        limits: {
+            fileSize: AVATAR_MAX_BYTES,
+            files: 1,
+            // fieldSize caps each non-file form field. Without it a "multipart"
+            // field can carry megabytes, which lands in memory rather than on
+            // the 500MB volume -- the cheapest way to turn an upload endpoint
+            // into a memory DoS.
+            fields: 10,
+            fieldSize: 1 * 1024 * 1024,
+            parts: 15,
+        },
         fileFilter: (req, file, cb) => {
             if (ALLOWED_AVATAR_MIMES.includes(file.mimetype)) {
                 cb(null, true);

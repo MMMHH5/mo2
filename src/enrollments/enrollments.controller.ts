@@ -70,6 +70,7 @@ export class EnrollmentsController {
             fileSize: 5 * 1024 * 1024, // 5MB
             files: 1,
             fields: 20,
+            fieldSize: 1 * 1024 * 1024,
             parts: 30,
         }
     }))

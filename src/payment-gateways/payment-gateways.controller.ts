@@ -81,7 +81,7 @@ export class PaymentGatewaysController {
             if (allowed) cb(null, true);
             else cb(new BadRequestException('Only JPEG, PNG, WEBP, GIF images and MP4/WEBM/MOV videos are allowed.'), false);
         },
-        limits: { fileSize: 100 * 1024 * 1024, files: 1, fields: 10, parts: 20 },
+        limits: { fileSize: 100 * 1024 * 1024, files: 1, fields: 10, fieldSize: 1 * 1024 * 1024, parts: 20 },
     }))
     async uploadGuideMedia(@UploadedFile() file: any, @Req() req: any) {
         if (!file) throw new BadRequestException('File is required.');

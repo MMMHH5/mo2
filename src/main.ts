@@ -9,6 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { getFrontendUrl } from './common/frontend-url';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { bodyParserErrorHandler } from './common/body-parser-error.middleware';
 
 function validateEnvVars() {
     const requiredVars = ['DATABASE_URL', 'JWT_SECRET'];
@@ -116,6 +117,12 @@ async function bootstrap() {
       },
     }));
     app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+    // Must sit directly after the parsers. Express only reaches an error
+    // middleware when something above it failed, so this is the only place that
+    // can still tell "the body was unparseable" apart from "the app said no" --
+    // and it stops V8's parser text from reaching a caller.
+    app.use(bodyParserErrorHandler);
 
     // Set up global ValidationPipe for DTOs
     app.useGlobalPipes(new ValidationPipe({

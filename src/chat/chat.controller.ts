@@ -153,6 +153,7 @@ export class ChatController {
             fileSize: 25 * 1024 * 1024, // Reduced from 100MB to 25MB
             files: 1,
             fields: 20,
+            fieldSize: 1 * 1024 * 1024,
             parts: 30,
         },
     }))
