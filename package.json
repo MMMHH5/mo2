@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Laxalab backend API",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build --path tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "dev": "nest start --watch",
