@@ -48,6 +48,20 @@ async function bootstrap() {
     validateEnvVars();
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+    // Railway terminates TLS and forwards every request from its own edge, so
+    // without this `req.ip` is the proxy's address and every visitor on earth
+    // shares one identity. Two things depend on that value:
+    //
+    //   - ThrottlerGuard tracks by req.ip, so the 300 req/min limit was applied
+    //     to the edge as a whole instead of to each caller.
+    //   - Express logs it as the client, which made every access log useless.
+    //
+    // `1` trusts exactly one hop (Railway) and takes the next entry in
+    // X-Forwarded-For as the client. It is NOT `true`: that would let a client
+    // send its own X-Forwarded-For and spoof its identity, which here would let
+    // anyone bypass the rate limit and forge the audit trail.
+    app.set('trust proxy', 1);
+
     // Security headers via Helmet
     app.use(helmet({
         contentSecurityPolicy: false, // Disabled for now; enable after auditing all inline scripts/styles

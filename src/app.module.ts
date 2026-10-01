@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard, ThrottlerStorage } from '@nestjs/throttler';
 
+import { RedisThrottlerStorage } from './common/redis-throttler.storage';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -43,6 +44,7 @@ import { AnnouncementBoardModule } from './announcement-board/announcement-board
         ThrottlerModule.forRoot([{
             ttl: 60000,
             limit: 300, // Increased to 300 requests per minute to support SPA navigation
+            blockDuration: 60000,
         }]),
         PrismaModule,
         AuthModule,
@@ -81,6 +83,10 @@ import { AnnouncementBoardModule } from './announcement-board/announcement-board
         AnnouncementBoardModule,
     ],
     providers: [
+        // Replaces the default in-process counter store. Without this the limit
+        // configured above is enforced separately by each replica, so the
+        // effective ceiling is 300 x replicaCount rather than 300.
+        { provide: ThrottlerStorage, useClass: RedisThrottlerStorage },
         {
             provide: APP_GUARD,
             useClass: ThrottlerGuard,
