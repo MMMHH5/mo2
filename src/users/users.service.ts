@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import { unlink } from 'fs';
 import { basename, join } from 'path';
 import { hasValidSignature } from '../common/file-signatures';
+import { PROFILE_KEY, sanitizeInstructorProfile } from '../common/instructor-profile';
 import { CreateUserDto, UpdateUserDto, UpdateMeDto } from './dto/user.dto';
 
 @Injectable()
@@ -190,6 +191,15 @@ export class UsersService {
             } else if (trimmed === '') {
                 out.avatarUrl = null;
             }
+        }
+
+        // The instructor's public profile is namespaced and validated by its own
+        // module, because it is a different thing from the account details above
+        // and has different rules (structured lists, per-field caps, https-only
+        // links). An absent key means "leave the stored profile alone", so the
+        // ordinary profile PATCH cannot wipe a CV it knows nothing about.
+        if (PROFILE_KEY in input) {
+            out[PROFILE_KEY] = sanitizeInstructorProfile(input[PROFILE_KEY]);
         }
 
         return out;

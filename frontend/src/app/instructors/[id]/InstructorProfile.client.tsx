@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { BookOpen, Users, Eye, ArrowLeft, Briefcase, GraduationCap, Clock, UserRound } from 'lucide-react';
+import { BookOpen, Users, Eye, ArrowLeft, Briefcase, GraduationCap, Clock, UserRound, Award, Languages, Link2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import MarketingShell from '@/components/MarketingShell';
@@ -95,6 +95,46 @@ export default function InstructorProfileContent({ id }: { id: string }) {
     const specialty = pick(profile, 'specialty');
     const initial = (name || '?').trim().charAt(0).toUpperCase();
 
+    /**
+     * The structured sections are bilingual as a whole, not per field: an
+     * experience reads as `role`/`organisation` in whichever language it was
+     * written in, so the list is filtered by what actually has content rather
+     * than re-keyed on read.
+     */
+    const bilingualOf = (value: { ar?: string | null; en?: string | null } | null | undefined): string | undefined => {
+        if (!value) return undefined;
+        const text = (locale === 'en' ? value.en || value.ar : value.ar || value.en) || '';
+        return text.trim() || undefined;
+    };
+
+    const subjectBadges = (profile.specialties ?? [])
+        .map(bilingualOf)
+        .filter((s): s is string => Boolean(s));
+
+    const experiences = profile.experiences ?? [];
+    const qualifications = profile.qualifications ?? [];
+    const languages = profile.languages ?? [];
+    const certificates = profile.certificates ?? [];
+    // The backend already guarantees https and strips credentials, but the value
+    // is rendered into an `href`, so the check is repeated here: this component
+    // must never be the reason a `javascript:` URL reaches a student.
+    const links = (profile.links ?? []).filter((l) => {
+        try {
+            return new URL(l.url).protocol === 'https:' && !/^https?:\/\/[^/@]*@/i.test(l.url);
+        } catch {
+            return false;
+        }
+    });
+
+    const hasDetails =
+        Boolean(bio || jobTitle || specialty) ||
+        subjectBadges.length > 0 ||
+        experiences.length > 0 ||
+        qualifications.length > 0 ||
+        languages.length > 0 ||
+        certificates.length > 0 ||
+        links.length > 0;
+
     return (
         <MarketingShell title={name || t('instructorProfile.heading')}>
             <div className="space-y-10">
@@ -126,6 +166,24 @@ export default function InstructorProfileContent({ id }: { id: string }) {
                                 {t('profile.member_since')} {formatDate(profile.joinedAt, { locale })}
                             </p>
 
+                            {subjectBadges.length > 0 && (
+                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
+                                    {subjectBadges.map((subject, i) => (
+                                        <span
+                                            key={i}
+                                            className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${
+                                                dark
+                                                    ? 'text-brand-gold-light bg-brand-gold/10'
+                                                    : 'text-brand-gold-dark bg-brand-gold/10'
+                                            }`}
+                                            dir="auto"
+                                        >
+                                            <GraduationCap size={13} /> {subject}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
                             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-5">
                                 <div className={`rounded-2xl py-3 px-6 text-center ${dark ? 'bg-white/5' : 'bg-brand-mist/60'}`}>
                                     <p className={`text-xl font-black ${title(dark)}`}>{formatNumber(profile.courseCount, locale)}</p>
@@ -147,13 +205,13 @@ export default function InstructorProfileContent({ id }: { id: string }) {
                 </div>
 
                 {/* CV */}
-                {bio || jobTitle || specialty ? (
+                {hasDetails ? (
                     <div className={`rounded-3xl border shadow-sm p-8 ${card(dark)}`}>
                         <h2 className={`text-xl font-black mb-4 flex items-center gap-2 ${title(dark)}`}>
                             <Briefcase size={20} className="text-brand-gold" />
                             {t('instructorProfile.cv_heading')}
                         </h2>
-                        {specialty ? (
+                        {subjectBadges.length === 0 && specialty ? (
                             <p className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light bg-brand-gold/10 px-3 py-1.5 rounded-full mb-4" dir="auto">
                                 <GraduationCap size={14} /> {specialty}
                             </p>
@@ -170,6 +228,140 @@ export default function InstructorProfileContent({ id }: { id: string }) {
                         {t('instructorProfile.not_filled')}
                     </div>
                 ) : null}
+
+                {/* Experience */}
+                {experiences.length > 0 && (
+                    <section className={`rounded-3xl border shadow-sm p-8 ${card(dark)}`}>
+                        <h2 className={`text-xl font-black mb-6 flex items-center gap-2 ${title(dark)}`}>
+                            <Briefcase size={20} className="text-brand-gold" />
+                            {t('instructorProfile.sections_experience')}
+                        </h2>
+                        <ol className="relative space-y-6 ps-6 border-s-2 border-brand-gold/20">
+                            {experiences.map((item, i) => (
+                                <li key={i} className="relative">
+                                    <span className="absolute -start-[1.65rem] top-1.5 w-3 h-3 rounded-full bg-brand-gold border-2 border-brand-navy dark:border-brand-navy-dark" />
+                                    <div className="flex flex-wrap items-baseline gap-x-2">
+                                        <h3 className={`font-bold ${title(dark)}`} dir="auto">{item.role}</h3>
+                                        {item.organisation ? (
+                                            <span className={`text-sm font-semibold ${muted(dark)}`} dir="auto">{item.organisation}</span>
+                                        ) : null}
+                                    </div>
+                                    {(item.from || item.to) && (
+                                        <p className={`text-xs font-bold mt-1 ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`} dir="ltr">
+                                            {[item.from, item.to].filter(Boolean).join(' – ')}
+                                        </p>
+                                    )}
+                                    {item.description ? (
+                                        <p className={`text-sm leading-relaxed mt-2 whitespace-pre-line ${muted(dark)}`} dir="auto">
+                                            {item.description}
+                                        </p>
+                                    ) : null}
+                                </li>
+                            ))}
+                        </ol>
+                    </section>
+                )}
+
+                {/* Qualifications + certificates */}
+                {qualifications.length > 0 && (
+                    <section className={`rounded-3xl border shadow-sm p-8 ${card(dark)}`}>
+                        <h2 className={`text-xl font-black mb-6 flex items-center gap-2 ${title(dark)}`}>
+                            <GraduationCap size={20} className="text-brand-gold" />
+                            {t('instructorProfile.sections_qualifications')}
+                        </h2>
+                        <ul className="grid sm:grid-cols-2 gap-4">
+                            {qualifications.map((item, i) => (
+                                <li key={i} className={`rounded-2xl p-5 ${dark ? 'bg-white/5' : 'bg-brand-mist/50'}`}>
+                                    <p className={`font-bold ${title(dark)}`} dir="auto">{item.degree}</p>
+                                    {item.field ? (
+                                        <p className={`text-sm font-semibold mt-1 ${muted(dark)}`} dir="auto">{item.field}</p>
+                                    ) : null}
+                                    {(item.institution || item.year) && (
+                                        <p className={`text-xs mt-2 ${dark ? 'text-gray-500' : 'text-gray-500'}`} dir="auto">
+                                            {[item.institution, item.year].filter(Boolean).join(' · ')}
+                                        </p>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {certificates.length > 0 && (
+                    <section className={`rounded-3xl border shadow-sm p-8 ${card(dark)}`}>
+                        <h2 className={`text-xl font-black mb-6 flex items-center gap-2 ${title(dark)}`}>
+                            <Award size={20} className="text-brand-gold" />
+                            {t('instructorProfile.sections_certificates')}
+                        </h2>
+                        <ul className="space-y-3">
+                            {certificates.map((item, i) => (
+                                <li
+                                    key={i}
+                                    className={`flex flex-wrap items-baseline gap-x-2 rounded-2xl px-5 py-4 ${dark ? 'bg-white/5' : 'bg-brand-mist/50'}`}
+                                >
+                                    <span className={`font-bold ${title(dark)}`} dir="auto">{item.title}</span>
+                                    {[item.issuer, item.year].filter(Boolean).length > 0 && (
+                                        <span className={`text-xs ${muted(dark)}`} dir="auto">
+                                            {[item.issuer, item.year].filter(Boolean).join(' · ')}
+                                        </span>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {/* Languages */}
+                {languages.length > 0 && (
+                    <section className={`rounded-3xl border shadow-sm p-8 ${card(dark)}`}>
+                        <h2 className={`text-xl font-black mb-6 flex items-center gap-2 ${title(dark)}`}>
+                            <Languages size={20} className="text-brand-gold" />
+                            {t('instructorProfile.sections_languages')}
+                        </h2>
+                        <div className="flex flex-wrap gap-2.5">
+                            {languages.map((item, i) => (
+                                <span
+                                    key={i}
+                                    className={`text-sm font-bold px-3.5 py-2 rounded-full ${dark ? 'bg-white/5 text-gray-300' : 'bg-gray-100 text-brand-navy'}`}
+                                    dir="auto"
+                                >
+                                    {item.name}
+                                    {item.proficiency ? <span className={`ms-1.5 font-semibold ${muted(dark)}`}>· {item.proficiency}</span> : null}
+                                </span>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Links */}
+                {links.length > 0 && (
+                    <section className={`rounded-3xl border shadow-sm p-8 ${card(dark)}`}>
+                        <h2 className={`text-xl font-black mb-6 flex items-center gap-2 ${title(dark)}`}>
+                            <Link2 size={20} className="text-brand-gold" />
+                            {t('instructorProfile.sections_links')}
+                        </h2>
+                        <ul className="grid sm:grid-cols-2 gap-3">
+                            {links.map((item, i) => (
+                                <li key={i}>
+                                    <a
+                                        href={item.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer nofollow"
+                                        className={`flex items-center gap-2 rounded-2xl px-5 py-4 font-bold text-sm transition ${
+                                            dark
+                                                ? 'bg-white/5 text-gray-200 hover:bg-brand-gold hover:text-black'
+                                                : 'bg-gray-50 text-brand-navy hover:bg-brand-gold hover:text-black'
+                                        }`}
+                                        dir="auto"
+                                    >
+                                        <Link2 size={15} className="shrink-0 opacity-70" />
+                                        <span className="truncate">{item.label}</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
                 {/* Courses */}
                 <div>

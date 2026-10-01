@@ -1,5 +1,16 @@
 import type { Prisma } from '@prisma/client';
 import { Role } from '@prisma/client';
+import {
+    PROFILE_KEY,
+    readInstructorProfile,
+    type InstructorProfile,
+    type ProfileCertificate,
+    type ProfileExperience,
+    type ProfileLanguage,
+    type ProfileLink,
+    type ProfileQualification,
+    type BilingualText,
+} from './instructor-profile';
 
 /** A user row carrying the minimum needed to build a public instructor card. */
 type PublicUserSource = {
@@ -21,13 +32,21 @@ function str(value: unknown): string | null {
  * The public shape of an instructor.
  *
  * There is no `Instructor` table: an instructor is a `User` with
- * `role = INSTRUCTOR`. Before the CV fields existed, every instructor surface
- * fell back to the account email, and the public endpoints withheld the email
- * while the frontend read it — so both instructor pages threw on first render.
+ * `role = INSTRUCTOR`.
  *
  * `metadata` is parsed here and never echoed wholesale, so private profile
  * data (phone, birth date, university) cannot leak through a public route.
  * `email` is deliberately absent from the return type.
+ *
+ * The bilingual fields are read through the legacy top-level keys first
+ * (`nameAr`, `jobTitleAr`, `bio`, ...) because that is where the CV lived before
+ * it was namespaced under `publicProfile`, and a teacher who filled it in
+ * before the change must not lose it. `publicProfile` is authoritative when
+ * present, so an old field can be cleared rather than permanently shadowed.
+ *
+ * The frontend reads `nameAr/nameEn`, `jobTitleAr/jobTitleEn`, `bioAr/bioEn`
+ * and `specialtyAr/specialtyEn` with its existing `pick()` helper, exactly like
+ * `Course.titleAr/titleEn` — so those pairs are kept.
  */
 export interface PublicInstructor {
     id: string;
@@ -49,24 +68,62 @@ export interface PublicInstructor {
     experienceYears: number | null;
     joinedAt: Date | null;
     /** True when the instructor has not filled in a CV yet. */
-    isProfileIncomplete: boolean;}
+    isProfileIncomplete: boolean;
+    /** Subjects taught, as a list. May be empty while `specialty*` is set. */
+    specialties: BilingualText[];
+    /** Professional experience timeline. */
+    experiences: ProfileExperience[];
+    /** Academic credentials. */
+    qualifications: ProfileQualification[];
+    /** Teaching / working languages. */
+    languages: ProfileLanguage[];
+    /** Professional certificates. */
+    certificates: ProfileCertificate[];
+    /** https-only professional links. */
+    links: ProfileLink[];
+}
+
+/** Reads a bilingual pair, preferring the namespaced value over the legacy one. */
+function bilingualField(
+    profile: InstructorProfile,
+    key: keyof Pick<InstructorProfile, 'name' | 'jobTitle' | 'bio'>,
+    legacyAr: unknown,
+    legacyEn: unknown,
+): BilingualText {
+    const current = profile[key];
+    if (current.ar || current.en) return current;
+    // `bioEn` and `jobTitleEn` were separate legacy keys; `name` falls back to the
+    // registration name, which `fullName` below already resolves.
+    const ar = str(legacyAr);
+    const en = str(legacyEn);
+    return { ar, en };
+}
 
 export function toPublicInstructor(user: PublicUserSource): PublicInstructor {
     const md = asRecord(user.metadata);
+    const profile = readInstructorProfile(md[PROFILE_KEY]);
 
     const fullName = str(md.fullName);
-    const nameAr = str(md.nameAr) ?? fullName;
-    const nameEn = str(md.nameEn) ?? fullName;
+    const name = bilingualField(profile, 'name', md.nameAr ?? fullName, md.nameEn ?? fullName);
+    const nameAr = str(name.ar) ?? fullName;
+    const nameEn = str(name.en) ?? fullName;
 
-    const jobTitleAr = str(md.jobTitleAr);
-    const jobTitleEn = str(md.jobTitleEn);
-    const bio = str(md.bio);
-    const bioAr = bio;
-    const bioEn = str(md.bioEn) || bio;
-    const specialty = str(md.specialty);
+    const jobTitle = bilingualField(profile, 'jobTitle', md.jobTitleAr, md.jobTitleEn);
+    const bioLegacy = str(md.bio);
+    const bio = bilingualField(profile, 'bio', bioLegacy, str(md.bioEn) || bioLegacy);
+
+    // Legacy single `specialty` becomes a one-item list so the profile page can
+    // render a list without caring whether the teacher used the old field.
+    const legacySpecialty = str(md.specialty);
+    const specialties = profile.specialties.length > 0
+        ? profile.specialties
+        : legacySpecialty ? [{ ar: legacySpecialty, en: legacySpecialty }] : [];
+    const firstSpecialty = specialties[0] ?? null;
+    const specialtyAr = str(firstSpecialty?.ar) ?? legacySpecialty;
+    const specialtyEn = str(firstSpecialty?.en) ?? legacySpecialty;
 
     const yearsRaw = md.experienceYears;
-    const years =
+    const legacyYears =
         typeof yearsRaw === 'number' && Number.isFinite(yearsRaw) && yearsRaw > 0 ? yearsRaw : null;
 
     // Same rule the sanitiser applies on write: our own uploads path only, with
@@ -81,17 +138,23 @@ export function toPublicInstructor(user: PublicUserSource): PublicInstructor {
         nameAr,
         nameEn,
         avatarUrl: safeAvatar,
-        jobTitleAr,
-        jobTitleEn,
-        bioAr,
-        bioEn,
-        specialtyAr: specialty,
-        specialtyEn: specialty,
-        experienceYears: years,
+        jobTitleAr: str(jobTitle.ar),
+        jobTitleEn: str(jobTitle.en),
+        bioAr: str(bio.ar),
+        bioEn: str(bio.en),
+        specialtyAr,
+        specialtyEn,
+        experienceYears: profile.experienceYears ?? legacyYears,
         joinedAt: user.createdAt ?? null,
         // Mirrors the copy shown to the teacher ("complete your job title"):
         // a card is incomplete until it has both an identity and a headline.
-        isProfileIncomplete: (!nameAr && !nameEn) || (!jobTitleAr && !jobTitleEn),
+        isProfileIncomplete: (!nameAr && !nameEn) || (!str(jobTitle.ar) && !str(jobTitle.en)),
+        specialties,
+        experiences: profile.experiences,
+        qualifications: profile.qualifications,
+        languages: profile.languages,
+        certificates: profile.certificates,
+        links: profile.links,
     };
 }
 
