@@ -4,6 +4,7 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ChatService } from './chat.service';
 import { UserCacheService } from '../common/user-cache.service';
+import { InMemoryRateLimiter } from '../common/in-memory-rate-limiter';
 import { getFrontendUrl } from '../common/frontend-url';
 
 @WebSocketGateway({ cors: { origin: getFrontendUrl() } })
@@ -30,6 +31,16 @@ server!: Server;
     private sweeper: NodeJS.Timeout | null = null;
 
     /**
+     * WebSocket frames bypass the HTTP throttler entirely, so `chat:join` in a
+     * tight loop is uncounted. These two limiters cover the two reachable
+     * floods: opening handshakes, and events on an established socket. Both are
+     * in-process and therefore per replica -- see InMemoryRateLimiter -- which
+     * is weaker than Redis but strictly stronger than no limit at all.
+     */
+    private readonly connectionLimiter = new InMemoryRateLimiter(30, 60_000); // per IP
+    private readonly eventLimiter = new InMemoryRateLimiter(120, 60_000); // per user
+
+    /**
      * Authenticate the socket.
      *
      * A token signature proves the token was issued by us and has not expired.
@@ -48,6 +59,13 @@ server!: Server;
      */
     async handleConnection(client: Socket) {
         try {
+            // Counted before the token is even looked at, so a handshake flood
+            // costs a map lookup rather than a JWT verify and a database read.
+            if (!this.connectionLimiter.allow(this.clientIp(client))) {
+                client.disconnect(true);
+                return;
+            }
+
             const token = client.handshake.auth?.token;
             if (!token) {
                 client.disconnect();
@@ -124,6 +142,16 @@ server!: Server;
         return { id: user.id, role: user.role };
     }
 
+    /** The caller's address, preferring the proxy's forwarded value. Behind
+     *  Railway the socket address is the proxy, so every user would share one
+     *  bucket if we did not read the header. */
+    private clientIp(client: Socket): string {
+        const forwarded = client.handshake.headers?.['x-forwarded-for'];
+        const first = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+        if (first) return String(first).split(',')[0].trim();
+        return client.handshake.address || 'unknown';
+    }
+
     /** Start the sweep once, on the first successful connection (this.server is
      *  guaranteed to exist by then, which is not true in onModuleInit). */
     private ensureSweeper(): void {
@@ -137,6 +165,11 @@ server!: Server;
 
     private async sweepSessions(): Promise<void> {
         try {
+            // The interval is also a good time to shed elapsed rate-limit keys,
+            // so an idle caller's bucket does not sit in memory forever.
+            this.connectionLimiter.prune();
+            this.eventLimiter.prune();
+
             const sockets = this.server?.sockets?.sockets;
             if (!sockets) return;
 
@@ -178,6 +211,11 @@ server!: Server;
     @SubscribeMessage('chat:join')
     async handleJoin(client: Socket, payload: { roomId: string }) {
         try {
+            // Rate-limit on the known userId before liveIdentity(), so a flood is
+            // stopped before it turns into a database read per frame.
+            const userId = (client as any).userId;
+            if (!userId || !this.eventLimiter.allow(userId)) return;
+
             const identity = await this.liveIdentity(client);
             if (!identity || !payload?.roomId) return;
             const hasAccess = await this.chatService.userHasRoomAccess(payload.roomId, identity.id);
@@ -192,6 +230,9 @@ server!: Server;
     @SubscribeMessage('direct:join')
     async handleDirectJoin(client: Socket, payload: { chatId: string }) {
         try {
+            const userId = (client as any).userId;
+            if (!userId || !this.eventLimiter.allow(userId)) return;
+
             const identity = await this.liveIdentity(client);
             if (!identity || !payload?.chatId) return;
             const hasAccess = await this.chatService.userHasDirectAccess(payload.chatId, identity.id, identity.role as any);
