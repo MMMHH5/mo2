@@ -324,6 +324,9 @@ describe('classroom link reach', () => {
         function lessonsPrisma(enrollment: any, opening: any) {
             return {
                 enrollment: { findUnique: () => Promise.resolve(enrollment) },
+                // The teaching format is read alongside the room so the player
+                // knows which surface to lead with; it is not part of the gate.
+                course: { findUnique: () => Promise.resolve({ contentType: 'LIVE' }) },
                 courseOpening: { findUnique: () => Promise.resolve(opening) },
                 module: { findMany: () => Promise.resolve([]) },
                 lessonProgress: { findMany: () => Promise.resolve([]) },

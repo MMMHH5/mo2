@@ -58,6 +58,14 @@ enum CourseLevel {
   ALL_LEVELS
 }
 
+/// Whether a course is taught live (Meet sessions on a schedule) or delivered
+/// as pre-recorded videos. Set once when the course is created; the platform
+/// presents each of the two differently, so the two are not interchangeable.
+enum CourseContentType {
+  LIVE
+  RECORDED
+}
+
 enum TicketStatus {
   OPEN
   IN_PROGRESS
@@ -202,6 +210,14 @@ model Course {
   introVideoUrl     String?
   videoFileUrl      String?
   certificateIssued Boolean     @default(false)
+
+  // What the student actually receives: live meetings on Meet, or pre-recorded
+  // videos. This is the teaching format of the course itself and it decides
+  // which of the two surfaces the course is presented through -- a LIVE course
+  // has a meeting schedule and no lesson videos, a RECORDED one the reverse.
+  // It is separate from CourseOpening.deliveryMode, which only answers where the
+  // batch meets (online or in person).
+  contentType CourseContentType @default(LIVE)
 
   // Feature flags (shown as badges / included-items on the course page)
   quizzesIncluded       Boolean @default(false)

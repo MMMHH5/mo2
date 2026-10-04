@@ -20,7 +20,7 @@ interface MyOpening {
     nameAr?: string | null;
     nameEn?: string | null;
     status: string;
-    course: { id: string; titleAr?: string | null; titleEn?: string | null };
+    course: { id: string; titleAr?: string | null; titleEn?: string | null; contentType?: string | null };
 }
 
 interface RosterData {
@@ -76,7 +76,7 @@ export default function TeachingWorkspacePage() {
 
     const urlTab = searchParams?.get('tab') as Tab | null;
     const [lastTab, setLastTab] = useState<Tab>(urlTab && VALID_TABS.includes(urlTab) ? urlTab : 'roster');
-    const tab: Tab = urlTab && VALID_TABS.includes(urlTab) ? urlTab : lastTab;
+    const requestedTab: Tab = urlTab && VALID_TABS.includes(urlTab) ? urlTab : lastTab;
 
     const setTab = (key: Tab) => {
         setLastTab(key);
@@ -89,6 +89,11 @@ export default function TeachingWorkspacePage() {
     const { data: modulesData } = useFetchData<ModuleData[]>(`/openings/${openingId}/modules`);
 
     const opening = (openings || []).find((o) => o.id === openingId);
+    // A recorded course has no meeting schedule to manage: the tab is hidden, and
+    // a direct ?tab=sessions link must not resurrect what the button cannot open.
+    const isRecorded = opening?.course.contentType === 'RECORDED';
+    const tab: Tab = isRecorded && requestedTab === 'sessions' ? 'roster' : requestedTab;
+
     const { data: syllabusData } = useFetchData<SyllabusData>(opening ? `/lms/courses/${opening.course.id}/syllabus` : null);
 
     const studentCount = rosterData?.enrollments?.length;
@@ -169,7 +174,9 @@ export default function TeachingWorkspacePage() {
                     {tabBtn('tasks', <ClipboardList size={16} />, t('tasks.tasks_title'))}
                     {tabBtn('announcements', <Megaphone size={16} />, isAr ? 'الإعلانات' : 'Announcements')}
                     {tabBtn('calendar', <Calendar size={16} />, isAr ? 'التقويم' : 'Calendar')}
-                    {tabBtn('sessions', <Video size={16} />, isAr ? 'الجلسات' : 'Sessions')}
+                    {/* A pre-recorded course has no meetings to schedule, so the
+                        tab is not offered at all rather than shown empty. */}
+                    {!isRecorded && tabBtn('sessions', <Video size={16} />, isAr ? 'الجلسات' : 'Sessions')}
                     {tabBtn('content', <BookOpen size={16} />, isAr ? 'المحتوى' : 'Content')}
                     {tabBtn('chat', <MessagesSquare size={16} />, isAr ? 'الدردشة' : 'Chat')}
                     {tabBtn('analytics', <BarChart3 size={16} />, isAr ? 'الإحصائيات' : 'Analytics')}
@@ -183,7 +190,7 @@ export default function TeachingWorkspacePage() {
                         <AcademicCalendar openingId={String(openingId)} />
                     </div>
                 )}
-                {tab === 'sessions' && !!openingId && (
+                {tab === 'sessions' && !isRecorded && !!openingId && (
                     <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                         <LiveSessionManager openingId={String(openingId)} />
                     </div>

@@ -40,6 +40,7 @@ interface CourseInitial {
     descriptionAr?: string | null; descriptionEn?: string | null;
     categoryAr?: string | null; categoryEn?: string | null;
     level?: string | null; language?: string | null;
+    contentType?: string | null;
     hoursOfContent?: number | null;
     syllabusAr?: string | null; syllabusEn?: string | null;
     durationAr?: string | null; durationEn?: string | null;
@@ -63,6 +64,7 @@ interface FormValues {
     descriptionAr: string; descriptionEn: string;
     categoryAr: string; categoryEn: string;
     level: string; language: string;
+    contentType: string;
     hoursOfContent: string;
     syllabusAr: string; syllabusEn: string;
     durationAr: string; durationEn: string;
@@ -73,6 +75,8 @@ interface FormValues {
 }
 
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'ALL_LEVELS'] as const;
+
+const CONTENT_TYPES = ['LIVE', 'RECORDED'] as const;
 
 const STEPS = [
     { key: 'basic', labelKey: 'createCourse.step_basic' },
@@ -97,6 +101,9 @@ function buildValues(src?: CourseInitial): FormValues {
         categoryAr: strVal(src?.categoryAr),
         categoryEn: strVal(src?.categoryEn),
         level: src?.level || 'BEGINNER',
+        // Existing courses were all taught live, so an edit that predates the
+        // type lands on LIVE rather than blank.
+        contentType: src?.contentType || 'LIVE',
         language: strVal(src?.language),
         hoursOfContent: src?.hoursOfContent?.toString() ?? '',
         syllabusAr: strVal(src?.syllabusAr),
@@ -272,6 +279,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
         setIsSubmitting(true);
         try {
             const num = (v: string) => (v !== '' && v !== null && v !== undefined ? Number(v) : null);
+            const isLive = data.contentType !== 'RECORDED';
             const payload: Record<string, unknown> = {
                 titleAr: data.titleAr,
                 titleEn: data.titleEn,
@@ -282,6 +290,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                 categoryAr: data.categoryAr || null,
                 categoryEn: data.categoryEn || null,
                 level: data.level || 'BEGINNER',
+                contentType: data.contentType || 'LIVE',
                 language: data.language || null,
                 hoursOfContent: num(data.hoursOfContent),
                 syllabusAr: data.syllabusAr || null,
@@ -313,7 +322,9 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                         titleEn: m.titleEn,
                         descriptionAr: m.descriptionAr || null,
                         descriptionEn: m.descriptionEn || null,
-                        videoUrl: m.videoUrl || null,
+                        // A live course's lessons ARE the meetings, so the video is
+                        // dropped here rather than sent and rejected by the API.
+                        videoUrl: isLive ? null : (m.videoUrl || null),
                         orderIndex: i,
                         isFree: !!m.isFree,
                         durationMinutes: m.durationMinutes !== '' ? Number(m.durationMinutes) : null,
@@ -440,6 +451,17 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                                         <option key={l} value={l}>{t(`course.level_${l.toLowerCase()}`)}</option>
                                     ))}
                                 </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">
+                                    {t('createCourse.content_type_label')} <span className="text-red-500">*</span>
+                                </label>
+                                <select {...register('contentType')} className={inputCls}>
+                                    {CONTENT_TYPES.map(c => (
+                                        <option key={c} value={c}>{t(`createCourse.content_type_${c.toLowerCase()}`)}</option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-gray-400 mt-1">{t(`createCourse.content_type_hint_${(watchAll.contentType || 'LIVE').toLowerCase()}`)}</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">{t('createCourse.language_label')}</label>
@@ -693,10 +715,14 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                                                     <textarea value={m.descriptionEn} rows={2} onChange={e => updateChapterModule(ci, mi, { descriptionEn: e.target.value })} className={inputCls} placeholder={t('createCourse.module_desc_en_placeholder')} />
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-600 mb-1 flex items-center gap-1"><Film size={14} /> {t('courseDetail.video_lesson')}</label>
-                                                <input value={m.videoUrl} dir="ltr" onChange={e => updateChapterModule(ci, mi, { videoUrl: e.target.value })} className={inputCls} placeholder={t('createCourse.module_video_placeholder')} />
-                                            </div>
+                                            {/* A live course's lessons happen at the meeting,
+                                                so there is no video to attach. */}
+                                            {watchAll.contentType !== 'LIVE' && (
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-600 mb-1 flex items-center gap-1"><Film size={14} /> {t('courseDetail.video_lesson')}</label>
+                                                    <input value={m.videoUrl} dir="ltr" onChange={e => updateChapterModule(ci, mi, { videoUrl: e.target.value })} className={inputCls} placeholder={t('createCourse.module_video_placeholder')} />
+                                                </div>
+                                            )}
                                             <div className="grid md:grid-cols-2 gap-3 items-end">
                                                 <label className="flex items-center gap-3 cursor-pointer bg-brand-mist/30 border border-brand-mist rounded-xl px-4 py-3 hover:bg-brand-mist/60 transition">
                                                     <input type="checkbox" checked={m.isFree} onChange={e => updateChapterModule(ci, mi, { isFree: e.target.checked })} className="w-5 h-5 accent-brand-navy" />
@@ -882,6 +908,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                             <ReviewRow label={t('createCourse.category_label') + ' (Ar)'} value={watchAll.categoryAr} />
                             <ReviewRow label={t('createCourse.category_label') + ' (En)'} value={watchAll.categoryEn} />
                             <ReviewRow label={t('createCourse.level_label')} value={watchAll.level} />
+                            <ReviewRow label={t('createCourse.content_type_label')} value={t(`createCourse.content_type_${(watchAll.contentType || 'LIVE').toLowerCase()}`)} />
                             <ReviewRow label={t('createCourse.language_label')} value={watchAll.language} />
                         </ReviewCard>
                         <ReviewCard title={t('createCourse.section_media')}>

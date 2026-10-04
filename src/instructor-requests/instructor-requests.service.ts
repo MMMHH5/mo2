@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CoursesService } from '../courses/courses.service';
-import { Role, CourseOpeningStatus, ApplicationStatus } from '@prisma/client';
+import { Role, CourseContentType, CourseOpeningStatus, ApplicationStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -241,6 +241,10 @@ export class InstructorRequestsService {
                     categoryEn: existing.categoryEn ?? undefined,
                     excerptAr: existing.description ?? undefined,
                     excerptEn: existing.description ?? undefined,
+                    // A suggestion carries no lessons yet, so the draft starts as
+                    // live -- the academy's default -- and the instructor sets the
+                    // real type when they fill the course in.
+                    contentType: CourseContentType.LIVE,
                 },
                 existing.instructorId,
             );

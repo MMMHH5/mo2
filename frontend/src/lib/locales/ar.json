@@ -384,6 +384,7 @@
         "search_placeholder": "ابحث بالعنوان أو الكلمة المفتاحية...",
         "all_categories": "كل التصنيفات",
         "all_levels": "كل المستويات",
+        "all_types": "كل الأنواع",
         "no_results": "لا توجد دورات مطابقة لبحثك. جرّب كلمات أو فلاتر مختلفة.",
         "upload_receipt_required": "يرجى رفع إيصال للمتابعة.",
         "review_success": "طلبك قيد المراجعة وسيتم التحقق منه خلال 12 ساعة.",
@@ -403,6 +404,8 @@
         "rating_title": "تقييم الدورة"
     },
     "course": {
+        "content_type_live": "مباشر",
+        "content_type_recorded": "مسجّل",
         "level_beginner": "مبتدئ",
         "level_intermediate": "متوسط",
         "level_advanced": "متقدم",
@@ -615,6 +618,11 @@
         "category_label": "التصنيف",
         "category_placeholder": "مثال: إدارة الأعمال، البرمجة، التصميم...",
         "level_label": "مستوى الدورة",
+        "content_type_label": "نوع المحتوى",
+        "content_type_live": "دروس مباشرة (Meet)",
+        "content_type_recorded": "فيديوهات مسجّلة",
+        "content_type_hint_live": "الدروس تُعقد في مواعيد ثابتة عبر Google Meet، ولا تُرفق فيديوهات للدروس.",
+        "content_type_hint_recorded": "الدروس فيديوهات جاهزة يشاهدها الطالب وقتما يريد، ولا يوجد جدول جلسات.",
         "language_label": "لغة الدورة",
         "language_placeholder": "مثال: العربية، الإنجليزية، ثنائية اللغة",
         "syllabus_label": "المنهج / المخطط",

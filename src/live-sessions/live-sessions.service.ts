@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CoursesService } from '../courses/courses.service';
 import { AuditService } from '../audit/audit.service';
 import { normalizeMeetLink } from '../common/meeting-links';
+import { assertLiveSessionsAllowed } from '../common/course-content-type';
 import { CreateLiveSessionDto } from './dto/live-session.dto';
 import { UpdateLiveSessionDto } from './dto/update-live-session.dto';
 
@@ -43,7 +44,8 @@ export class LiveSessionsService {
     }
 
     async create(openingId: string, dto: CreateLiveSessionDto, actorId: string, actorRole: any) {
-        await this.courses.assertCanManageOpening(openingId, actorId, actorRole);
+        const opening = await this.courses.assertCanManageOpening(openingId, actorId, actorRole);
+        await this.assertCourseIsLive(opening.courseId);
 
         const scheduledAt = new Date(dto.scheduledAt);
         const created = await this.prisma.liveSession.create({
@@ -102,6 +104,19 @@ export class LiveSessionsService {
         await this.prisma.liveSession.delete({ where: { id: existing.id } });
         await this.audit.logAction(`Live session ${existing.id} removed`, undefined, actorId);
         return { id: existing.id };
+    }
+
+    /**
+     * A meeting schedule only makes sense for a course taught live; a
+     * pre-recorded one has no sessions to schedule. Checked on create (and on
+     * the course type change) so the two never drift apart.
+     */
+    private async assertCourseIsLive(courseId: string) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            select: { contentType: true },
+        });
+        assertLiveSessionsAllowed(course?.contentType);
     }
 
     /**

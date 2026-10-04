@@ -48,6 +48,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const [query, setQuery] = useState('');
     const [category, setCategory] = useState('');
     const [level, setLevel] = useState('');
+    const [contentType, setContentType] = useState('');
     const [showFilters, setShowFilters] = useState(false);
 
     const levelLabel = (lvl?: string | null) => t(`course.level_${String(lvl || 'BEGINNER').toLowerCase()}`);
@@ -69,6 +70,11 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
         const q = query.trim().toLowerCase();
         return courses.filter((course) => {
             if (level && (course.level ?? 'BEGINNER') !== level) return false;
+            // Live vs pre-recorded is not a nice-to-have detail: it is the first
+            // question a student has ("when do we meet?" / "can I watch now?").
+            // A course with no type yet is left out of both buckets rather than
+            // filed under a guess.
+            if (contentType && (course.contentType ?? '') !== contentType) return false;
             if (category) {
                 const cat = pick(course, 'category') ?? '';
                 if (!cat || cat !== category) return false;
@@ -83,11 +89,11 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             }
             return true;
         });
-    }, [courses, query, category, level, pick]);
+    }, [courses, query, category, level, contentType, pick]);
 
-    const hasFilters = !!query.trim() || !!category || !!level;
+    const hasFilters = !!query.trim() || !!category || !!level || !!contentType;
 
-    const clearFilters = () => { setQuery(''); setCategory(''); setLevel(''); };
+    const clearFilters = () => { setQuery(''); setCategory(''); setLevel(''); setContentType(''); };
 
     const handleEnrollClick = (course: Course) => {
         const opening = currentOpening(course);
@@ -239,6 +245,11 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                             {['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].map((lvl) => (
                                 <option key={lvl} value={lvl}>{levelLabel(lvl)}</option>
                             ))}
+                        </select>
+                        <select value={contentType} onChange={(e) => setContentType(e.target.value)} className={selectCls}>
+                            <option value="">{t('explore.all_types')}</option>
+                            <option value="LIVE">{t('course.content_type_live')}</option>
+                            <option value="RECORDED">{t('course.content_type_recorded')}</option>
                         </select>
                     </div>
                 </div>

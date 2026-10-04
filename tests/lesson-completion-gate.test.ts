@@ -21,6 +21,7 @@ function makeHarness(h: {
     tasks?: { moduleId: string | null; submissions: any[] }[];
     quizzes?: { moduleId: string | null; attempts: { passed: boolean }[] }[];
     enrolled?: boolean;
+    contentType?: string;
     progress?: { moduleId: string; completedAt: Date | null }[];
 }) {
     const calls: Rec[] = [];
@@ -28,6 +29,12 @@ function makeHarness(h: {
     let upserted: any = null;
 
     const prisma: any = {
+        course: {
+            findUnique: async (args: any) => {
+                calls.push({ model: 'course', op: 'findUnique', args });
+                return { contentType: h.contentType ?? 'LIVE' };
+            },
+        },
         enrollment: {
             findUnique: async (args: any) => {
                 calls.push({ model: 'enrollment', op: 'findUnique', args });

@@ -384,6 +384,7 @@
         "search_placeholder": "Search by title or keyword...",
         "all_categories": "All Categories",
         "all_levels": "All Levels",
+        "all_types": "All Types",
         "no_results": "No courses match your search. Try different keywords or filters.",
         "upload_receipt_required": "Please upload a receipt to proceed.",
         "review_success": "Your request is under review and will be verified within 12 hours.",
@@ -403,6 +404,8 @@
         "rating_title": "Course rating"
     },
     "course": {
+        "content_type_live": "Live",
+        "content_type_recorded": "Pre-recorded",
         "level_beginner": "Beginner",
         "level_intermediate": "Intermediate",
         "level_advanced": "Advanced",
@@ -615,6 +618,11 @@
         "category_label": "Category",
         "category_placeholder": "e.g. Business, Programming, Design...",
         "level_label": "Course Level",
+        "content_type_label": "Content Type",
+        "content_type_live": "Live sessions (Meet)",
+        "content_type_recorded": "Pre-recorded videos",
+        "content_type_hint_live": "Lessons are held at fixed times on Google Meet, and no lesson videos are attached.",
+        "content_type_hint_recorded": "Lessons are ready-made videos the student watches any time, with no session schedule.",
         "language_label": "Course Language",
         "language_placeholder": "e.g. Arabic, English, Bilingual",
         "syllabus_label": "Syllabus / Outline",

@@ -11,7 +11,7 @@ import {
     PlayCircle, FileText, ClipboardList, Link2, Clock, CheckCircle, Play, Pause,
     RotateCcw, Volume2, VolumeX, Maximize, ZoomIn, ZoomOut, Maximize2, Download,
     UploadCloud, StickyNote, MessagesSquare, Send, X, Gift, BookMarked, MessageCircle, ArrowRight,
-    Bell, Megaphone, Calendar, User, AlertTriangle, Video, CalendarDays,
+    Bell, Megaphone, Calendar, User, AlertTriangle, Video, CalendarDays, Radio,
 } from 'lucide-react';
 import CourseChat from '@/components/CourseChat';
 import DiscussionForum from '@/components/DiscussionForum';
@@ -64,6 +64,8 @@ interface ProgressModule extends CourseModule {
 interface ProgressData {
     enrollmentId: string;
     openingId: string | null;
+    /** LIVE: the lessons are the meetings. RECORDED: the lessons are videos. */
+    contentType?: string | null;
     percent: number;
     total: number;
     completed: number;
@@ -222,6 +224,12 @@ export default function CoursePlayer({ courseId }: Props) {
                 if (!active) return;
                 setCourse(c.data as CourseData);
                 setProgress(p.data as ProgressData);
+                // A live course opens on its schedule: the meeting times are what
+                // the student came for, and the lesson list below has no video.
+                const incoming = p.data as ProgressData | undefined;
+                if (incoming && (incoming.contentType ?? 'LIVE') !== 'RECORDED' && (incoming.liveSessions?.length ?? 0) > 0) {
+                    setDeckTab('sessions');
+                }
                 setNotesData(n.data as NotesData);
                 // Course-scoped: the server resolves the student's batch, so an
                 // enrollment that never recorded an opening still sees the work
@@ -317,6 +325,14 @@ export default function CoursePlayer({ courseId }: Props) {
             .sort((a, b) => a.at - b.at)[0];
         return next?.s.meetLink || progress?.meetLink || null;
     }, [progress]);
+
+    /**
+     * Whether this course is taught live. Its lessons happen at the meeting, so
+     * the player leads with the schedule and never shows an empty video frame.
+     * A course with no type (created before the field) is treated as live, which
+     * is how the academy teaches today.
+     */
+    const isLive = (progress?.contentType ?? 'LIVE') !== 'RECORDED';
 
     // Why the server would refuse to mark this lesson complete. The refusal is
     // enforced server-side (POST /lms/progress); showing the reason here is what
@@ -515,7 +531,10 @@ export default function CoursePlayer({ courseId }: Props) {
             );
         }
 
-        const vid = getVideoUrl(selected.videoUrl);
+        // A live course has no lesson videos, so the frame below stays empty and
+        // the schedule is the lesson's real content. Showing a black player with
+        // "no video" is the confusing thing the content type exists to prevent.
+        const vid = isLive ? null : getVideoUrl(selected.videoUrl);
         const pdfFile = (selected.files || []).find(f => /\.pdf$/i.test(f.url));
         const done = completedSet.has(selected.id);
 
@@ -571,6 +590,15 @@ export default function CoursePlayer({ courseId }: Props) {
                         transition={{ duration: 0.25 }}
                     >
                         {selectedKind === 'video' && vid && renderVideoPlayer(selected, vid)}
+                        {isLive && (
+                            <div className="rounded-2xl border border-line bg-surface-sunken p-8 text-center">
+                                <Radio size={40} className="mx-auto mb-3 text-red-600" />
+                                <p className="font-black text-ink mb-1">{t('liveSessions.heading')}</p>
+                                <p className="text-sm text-ink-subtle">
+                                    {joinLink ? t('liveSessions.next_session') : t('liveSessions.none_scheduled')}
+                                </p>
+                            </div>
+                        )}
                         {selectedKind === 'pdf' && pdfFile && <PdfViewer url={pdfFile.url} m={selected} />}
                         {selectedKind === 'task' && (
                             <TaskStage

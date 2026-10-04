@@ -168,7 +168,13 @@ describe('resolveClassroom applies the schedule rules', () => {
 describe('LiveSessionsService', () => {
     const noop = { logAction: () => Promise.resolve() };
 
-    function service(prisma: any, manage: (id: string, actorId: string, role: any) => any = () => Promise.resolve({ id: 'o1' })) {
+    function service(prisma: any, manage: (id: string, actorId: string, role: any) => any = () => Promise.resolve({ id: 'o1', courseId: 'c1' })) {
+        // A course lookup is part of writing a session: a pre-recorded course has
+        // no meetings to schedule. Default it to live so the tests below stay
+        // about the schedule itself.
+        prisma.course = prisma.course ?? {
+            findUnique: () => Promise.resolve({ contentType: 'LIVE' }),
+        };
         return new LiveSessionsService(prisma, { assertCanManageOpening: manage } as any, noop as any);
     }
 

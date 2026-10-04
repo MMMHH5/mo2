@@ -10,6 +10,8 @@ import {
     Eye,
     Layers,
     Lock,
+    PlayCircle,
+    Radio,
     Sparkles,
     Star,
     Unlock,
@@ -46,6 +48,7 @@ export interface OutlineChapter {
 export interface PublicCourse {
     id: string;
     level?: string | null;
+    contentType?: string | null;
     language?: string | null;
     coverImageUrl?: string | null;
     excerptAr?: string | null;
@@ -101,6 +104,13 @@ export default function CourseCard({
     const announced = !isOpen && !!announcedOpening;
 
     const levelLabel = t(`course.level_${String(course.level || 'BEGINNER').toLowerCase()}`);
+    // A course created before the content type existed has none, so the badge is
+    // skipped rather than guessed at -- the two are not interchangeable and a
+    // wrong badge on the sales page is worse than no badge.
+    const contentType = course.contentType;
+    const isLive = contentType === undefined || contentType === null
+        ? undefined
+        : contentType === 'LIVE';
     const price = current
         ? (Number(current.price) === 0 ? t('course.free') : formatPrice(current.price, { locale }))
         : t('courseDetail.not_open_yet');
@@ -156,6 +166,14 @@ export default function CourseCard({
                     <span className={`rounded-full px-3 py-1 text-xs font-black shadow-sm backdrop-blur-sm ${isDark ? 'border border-line bg-black/40 text-ink' : 'bg-surface-raised text-ink'}`}>
                         {levelLabel}
                     </span>
+                    {isLive !== undefined && (
+                        <span className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black shadow-sm backdrop-blur-sm ${isLive
+                            ? 'bg-red-700 text-ink-inverse'
+                            : 'bg-brand-navy text-ink-inverse'}`}>
+                            {isLive ? <Radio size={12} /> : <PlayCircle size={12} />}
+                            {isLive ? t('course.content_type_live') : t('course.content_type_recorded')}
+                        </span>
+                    )}
                     {isOpen && (
                         <span className="flex items-center gap-1 rounded-full bg-green-700 px-3 py-1 text-xs font-black text-ink-inverse shadow-sm">
                             <CheckCircle2 size={12} /> {t('statuses.open')}

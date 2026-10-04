@@ -4,7 +4,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CourseLevel } from '@prisma/client';
+import { CourseContentType, CourseLevel } from '@prisma/client';
 import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateLearningOutcomeDto {
@@ -253,6 +253,16 @@ export class CreateCourseDto {
     @IsOptional()
     @IsEnum(CourseLevel)
     level?: CourseLevel;
+
+    @ApiProperty({
+        enum: CourseContentType,
+        default: CourseContentType.LIVE,
+        description:
+            'LIVE: lessons are held as Meet sessions on a schedule (no lesson videos). ' +
+            'RECORDED: lessons are pre-recorded videos (no live sessions).',
+    })
+    @IsEnum(CourseContentType)
+    contentType!: CourseContentType;
 
     @ApiPropertyOptional({ description: 'Course language, e.g. Arabic, English, Bilingual' })
     @IsOptional()

@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { Prisma, CourseOpeningStatus, DeliveryMode, Role } from '@prisma/client';
+import { Prisma, CourseContentType, CourseOpeningStatus, DeliveryMode, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { mapPublicCourse, publicInstructorSelect } from '../common/public-instructor';
+import { assertLessonVideosAllowed } from '../common/course-content-type';
 import { normalizeMeetLink } from '../common/meeting-links';
 import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
@@ -32,6 +33,13 @@ export class CoursesService {
 
     async create(data: CreateCourseDto, instructorId: string) {
         const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, ...rest } = data;
+
+        assertLessonVideosAllowed(data.contentType, [
+            ...(modules ?? []).map((m) => ({ videoUrl: m.videoUrl })),
+            ...(chapters ?? []).flatMap((ch, chapterIndex) =>
+                (ch.modules ?? []).map((m) => ({ videoUrl: m.videoUrl, chapterIndex })),
+            ),
+        ]);
 
         // The course id is generated up front because lessons nested under a
         // chapter are two levels deep: Prisma links the chapter automatically but
@@ -61,6 +69,25 @@ export class CoursesService {
 
         const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, ...rest } = data;
 
+        // The lesson videos and the meeting schedule are two sides of the same
+        // promise, so a type change has to respect what is already stored: a
+        // recorded course cannot keep the meetings it already has, and a live one
+        // cannot keep lesson videos. Reject with the reason instead of silently
+        // dropping a schedule the instructor set up.
+        const contentType = data.contentType ?? existing.contentType;
+        if (data.contentType !== undefined && data.contentType !== existing.contentType) {
+            await this.assertTypeChangeAllowed(id, data.contentType, {
+                flatLessonsReplaced: modules !== undefined,
+                chapterLessonsReplaced: chapters !== undefined,
+            });
+        }
+        assertLessonVideosAllowed(contentType, [
+            ...(modules ?? []).map((m) => ({ videoUrl: m.videoUrl })),
+            ...(chapters ?? []).flatMap((ch, chapterIndex) =>
+                (ch.modules ?? []).map((m) => ({ videoUrl: m.videoUrl, chapterIndex })),
+            ),
+        ]);
+
         // PATCH / PATCH semantics: only replace a nested collection when that
         // field was EXPLICITLY submitted. Editing only { titleAr } or { price }
         // must never wipe modules, chapters, objectives, etc. (or, transitively,
@@ -79,6 +106,45 @@ export class CoursesService {
         await this.prisma.course.update({ where: { id }, data: patch });
 
         return this.findOne(id, true, viewer);
+    }
+
+    private async assertTypeChangeAllowed(
+        courseId: string,
+        next: CourseContentType,
+        replaced: { flatLessonsReplaced: boolean; chapterLessonsReplaced: boolean },
+    ) {
+        if (next === CourseContentType.RECORDED) {
+            const sessions = await this.prisma.liveSession.count({
+                where: { opening: { courseId } },
+            });
+            if (sessions > 0) {
+                throw new BadRequestException(
+                    `This course already has ${sessions} live session(s). Delete the schedule before ` +
+                    'switching it to pre-recorded.',
+                );
+            }
+            return;
+        }
+
+        // The other direction. Only the lessons this request does NOT resubmit can
+        // survive the update, so only those can leave a live course holding
+        // videos: an untouched `modules` keeps the chapter-less lessons, an
+        // untouched `chapters` keeps the ones grouped under a chapter (Prisma
+        // detaches them rather than deleting them).
+        const survivors: Prisma.ModuleWhereInput[] = [];
+        if (!replaced.flatLessonsReplaced) survivors.push({ chapterId: null });
+        if (!replaced.chapterLessonsReplaced) survivors.push({ chapter: { isNot: null } });
+        if (survivors.length === 0) return;
+
+        const videos = await this.prisma.module.count({
+            where: { courseId, videoUrl: { not: null }, OR: survivors },
+        });
+        if (videos > 0) {
+            throw new BadRequestException(
+                `This course still has ${videos} lesson video(s). Remove the lesson videos (or resend ` +
+                'the lessons without them) before switching it to live.',
+            );
+        }
     }
 
     // An explicitly submitted non-empty collection REPLACES the existing rows
@@ -505,7 +571,10 @@ export class CoursesService {
             where: isStaff ? undefined : { instructorId: userId },
             orderBy: { createdAt: 'desc' },
             include: {
-                course: { select: { id: true, titleAr: true, titleEn: true } },
+                // contentType rides along so the teaching page can hide the live
+                // sessions tab for a pre-recorded course instead of offering an
+                // empty schedule.
+                course: { select: { id: true, titleAr: true, titleEn: true, contentType: true } },
                 instructor: { select: { id: true, email: true, role: true } },
                 _count: { select: { enrollments: true, tasks: true } },
             },

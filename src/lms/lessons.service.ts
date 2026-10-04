@@ -1,5 +1,5 @@
 import { Injectable, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { DeliveryMode, EnrollmentStatus } from '@prisma/client';
+import { CourseContentType, DeliveryMode, EnrollmentStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { Classroom, resolveClassroom } from '../common/classroom';
@@ -116,6 +116,8 @@ export class LessonsService {
     // The classroom link follows the same rule as /enrollments/my: an approved
     // student in an online batch gets the room, a PENDING applicant or a
     // REVOKED one does not. Read only, never selected into the module list.
+    // The content type travels with it so the player can lead with the meeting
+    // schedule on a live course instead of an empty video area.
     const classroom = await this.classroomFor(enrollment);
 
     const modules = await this.listCourseModules(courseId);
@@ -170,19 +172,33 @@ export class LessonsService {
    * of live sessions. Empty unless the enrollment is APPROVED and the batch is
    * ONLINE, so neither the join button nor a session link can appear to
    * somebody who has not been admitted. See `resolveClassroom` for the rule.
+   *
+   * The course's content type rides along on the same query. It is NOT part of
+   * the gate -- it only tells the player which surface to lead with -- and it
+   * defaults to LIVE, which is what a course created before the field was.
    */
   private async classroomFor(enrollment: {
     status: string;
     openingId: string | null;
-  }): Promise<Classroom> {
+    courseId: string;
+  }): Promise<Classroom & { contentType: CourseContentType }> {
     if (enrollment.status !== EnrollmentStatus.APPROVED || !enrollment.openingId) {
-      return { deliveryMode: null, meetLink: null, liveSessions: [] };
+      // No room and no schedule for somebody who is not admitted, but the format
+      // is still read: a pending applicant opening a pre-recorded course should
+      // see that it is videos rather than an empty "meeting schedule".
+      return {
+        deliveryMode: null,
+        meetLink: null,
+        liveSessions: [],
+        contentType: await this.contentTypeOf(enrollment.courseId),
+      };
     }
     const opening = await this.prisma.courseOpening.findUnique({
       where: { id: enrollment.openingId },
       select: {
         deliveryMode: true,
         meetLink: true,
+        course: { select: { contentType: true } },
         liveSessions: {
           orderBy: { scheduledAt: 'asc' },
           select: {
@@ -196,9 +212,28 @@ export class LessonsService {
         },
       },
     });
-    if (!opening) return { deliveryMode: null, meetLink: null, liveSessions: [] };
+    if (!opening) {
+      return {
+        deliveryMode: null,
+        meetLink: null,
+        liveSessions: [],
+        contentType: await this.contentTypeOf(enrollment.courseId),
+      };
+    }
 
-    return resolveClassroom(enrollment.status, opening, opening.liveSessions);
+    return {
+      ...resolveClassroom(enrollment.status, opening, opening.liveSessions),
+      contentType: opening.course?.contentType ?? CourseContentType.LIVE,
+    };
+  }
+
+  /** The teaching format, defaulting to LIVE for a course row that predates it. */
+  private async contentTypeOf(courseId: string): Promise<CourseContentType> {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { contentType: true },
+    });
+    return course?.contentType ?? CourseContentType.LIVE;
   }
 
   async myNotes(courseId: string, studentId: string) {
