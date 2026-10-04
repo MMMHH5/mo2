@@ -9,6 +9,7 @@ import { mapPublicCourse, publicInstructorSelect } from '../common/public-instru
 import { normalizeMeetLink } from '../common/meeting-links';
 import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
+import { UpdateOpeningDto } from './dto/update-opening.dto';
 
 type CourseViewer = { userId?: string; role?: Role };
 
@@ -522,7 +523,7 @@ export class CoursesService {
         });
     }
 
-    async updateOpening(openingId: string, dto: Partial<CreateOpeningDto>, actorId: string, actorRole: Role) {
+    async updateOpening(openingId: string, dto: UpdateOpeningDto, actorId: string, actorRole: Role) {
         const existing = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
         if (!existing) throw new NotFoundException('Opening not found');
         // Without this, any INSTRUCTOR could rewrite another instructor's batch:
@@ -584,7 +585,7 @@ export class CoursesService {
      * - Validation/normalisation of the URL itself lives in normalizeMeetLink.
      */
     private resolveDelivery(
-        dto: Partial<CreateOpeningDto>,
+        dto: Partial<UpdateOpeningDto>,
         currentMode: DeliveryMode,
     ): { mode: DeliveryMode; link?: string | null } {
         const mode = dto.deliveryMode ?? currentMode;

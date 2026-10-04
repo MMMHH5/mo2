@@ -5,7 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { CreateOpeningDto } from './dto/create-opening.dto';
+import { UpdateOpeningDto } from './dto/update-opening.dto';
 
 const STAFF_ROLES = [Role.ADMIN, Role.COURSE_MANAGER, Role.INSTRUCTOR];
 
@@ -34,7 +34,7 @@ export class CourseOpeningsController {
     @ApiResponse({ status: 200, description: 'Opening updated.' })
     @Roles(...STAFF_ROLES)
     @Patch(':id')
-    update(@Param('id') id: string, @Body() dto: Partial<CreateOpeningDto>, @Request() req: any) {
+    update(@Param('id') id: string, @Body() dto: UpdateOpeningDto, @Request() req: any) {
         return this.coursesService.updateOpening(id, dto, req.user.userId, req.user.role);
     }
 
