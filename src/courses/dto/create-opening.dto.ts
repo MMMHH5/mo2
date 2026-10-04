@@ -2,22 +2,7 @@ import { IsString, IsOptional, IsNumber, Min, Max, IsInt, IsDateString, IsEnum }
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DeliveryMode } from '@prisma/client';
-
-/**
- * Normalises whatever the admin form sends into a full ISO string, because
- * Prisma rejects the date-only value `<input type="date">` produces
- * ("premature end of input. Expected ISO-8601 DateTime").
- *
- * An unparsable value is passed through untouched on purpose: transforms run
- * BEFORE the validators, so calling toISOString() on garbage threw a RangeError
- * here and turned a bad request into a 500. Handing the raw value to
- * @IsDateString() instead reports it as the 400 it is.
- */
-const toIsoDate = ({ value }: { value: unknown }) => {
-    if (!value) return value;
-    const parsed = new Date(value as string);
-    return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString();
-};
+import { toIsoDate } from '../../common/date-transform';
 
 export class CreateOpeningDto {
     @ApiPropertyOptional({ description: 'Optional Arabic label for this opening (e.g. "دفعة سبتمبر")' })

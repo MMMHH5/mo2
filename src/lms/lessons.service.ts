@@ -2,6 +2,7 @@ import { Injectable, ConflictException, ForbiddenException, NotFoundException } 
 import { DeliveryMode, EnrollmentStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GamificationService } from '../gamification/gamification.service';
+import { Classroom, resolveClassroom } from '../common/classroom';
 
 @Injectable()
 export class LessonsService {
@@ -38,8 +39,7 @@ export class LessonsService {
             },
           },
         },
-        liveSessions: { orderBy: { scheduledAt: 'asc' } },
-      },
+        },
     });
     if (!course) throw new NotFoundException('Course not found');
     return course;
@@ -166,25 +166,39 @@ export class LessonsService {
   }
 
   /**
-   * Online-classroom details for the player. Null unless the enrollment is
-   * APPROVED and its batch is ONLINE, so the join button cannot appear to
-   * somebody who has not been admitted or whose batch is in person.
+   * Online-classroom details for the player: the batch's room plus its schedule
+   * of live sessions. Empty unless the enrollment is APPROVED and the batch is
+   * ONLINE, so neither the join button nor a session link can appear to
+   * somebody who has not been admitted. See `resolveClassroom` for the rule.
    */
   private async classroomFor(enrollment: {
     status: string;
     openingId: string | null;
-  }): Promise<{ deliveryMode: DeliveryMode | null; meetLink: string | null }> {
+  }): Promise<Classroom> {
     if (enrollment.status !== EnrollmentStatus.APPROVED || !enrollment.openingId) {
-      return { deliveryMode: null, meetLink: null };
+      return { deliveryMode: null, meetLink: null, liveSessions: [] };
     }
     const opening = await this.prisma.courseOpening.findUnique({
       where: { id: enrollment.openingId },
-      select: { deliveryMode: true, meetLink: true },
+      select: {
+        deliveryMode: true,
+        meetLink: true,
+        liveSessions: {
+          orderBy: { scheduledAt: 'asc' },
+          select: {
+            id: true,
+            titleAr: true,
+            titleEn: true,
+            scheduledAt: true,
+            durationMinutes: true,
+            meetLink: true,
+          },
+        },
+      },
     });
-    if (!opening || opening.deliveryMode !== DeliveryMode.ONLINE) {
-      return { deliveryMode: null, meetLink: null };
-    }
-    return { deliveryMode: opening.deliveryMode, meetLink: opening.meetLink ?? null };
+    if (!opening) return { deliveryMode: null, meetLink: null, liveSessions: [] };
+
+    return resolveClassroom(enrollment.status, opening, opening.liveSessions);
   }
 
   async myNotes(courseId: string, studentId: string) {

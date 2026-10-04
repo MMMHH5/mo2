@@ -12,7 +12,8 @@ import CourseChat from '@/components/CourseChat';
 import LessonExplorer from '@/components/LessonExplorer';
 import InstructorAnnouncements from '@/components/InstructorAnnouncements';
 import AcademicCalendar from '@/components/AcademicCalendar';
-import { Settings2, ClipboardList, MessagesSquare, BarChart3, Flag, Users, BookOpen, Hash, ArrowLeft, Megaphone, Calendar } from 'lucide-react';
+import LiveSessionManager from '@/components/LiveSessionManager';
+import { Settings2, ClipboardList, MessagesSquare, BarChart3, Flag, Users, BookOpen, Hash, ArrowLeft, Megaphone, Calendar, Video } from 'lucide-react';
 
 interface MyOpening {
     id: string;
@@ -48,9 +49,9 @@ interface SyllabusData {
     chapters?: { titleAr?: string | null; titleEn?: string | null; modules?: ModuleData[] | null }[] | null;
 }
 
-type Tab = 'roster' | 'tasks' | 'announcements' | 'calendar' | 'content' | 'chat' | 'analytics';
+type Tab = 'roster' | 'tasks' | 'announcements' | 'calendar' | 'sessions' | 'content' | 'chat' | 'analytics';
 
-const VALID_TABS: Tab[] = ['roster', 'tasks', 'announcements', 'calendar', 'content', 'chat', 'analytics'];
+const VALID_TABS: Tab[] = ['roster', 'tasks', 'announcements', 'calendar', 'sessions', 'content', 'chat', 'analytics'];
 
 const statusColors: Record<string, string> = {
     DRAFT: 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
@@ -168,6 +169,7 @@ export default function TeachingWorkspacePage() {
                     {tabBtn('tasks', <ClipboardList size={16} />, t('tasks.tasks_title'))}
                     {tabBtn('announcements', <Megaphone size={16} />, isAr ? 'الإعلانات' : 'Announcements')}
                     {tabBtn('calendar', <Calendar size={16} />, isAr ? 'التقويم' : 'Calendar')}
+                    {tabBtn('sessions', <Video size={16} />, isAr ? 'الجلسات' : 'Sessions')}
                     {tabBtn('content', <BookOpen size={16} />, isAr ? 'المحتوى' : 'Content')}
                     {tabBtn('chat', <MessagesSquare size={16} />, isAr ? 'الدردشة' : 'Chat')}
                     {tabBtn('analytics', <BarChart3 size={16} />, isAr ? 'الإحصائيات' : 'Analytics')}
@@ -179,6 +181,11 @@ export default function TeachingWorkspacePage() {
                 {tab === 'calendar' && !!openingId && (
                     <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
                         <AcademicCalendar openingId={String(openingId)} />
+                    </div>
+                )}
+                {tab === 'sessions' && !!openingId && (
+                    <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">
+                        <LiveSessionManager openingId={String(openingId)} />
                     </div>
                 )}
                 {tab === 'content' && opening && !!openingId && (

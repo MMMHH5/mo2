@@ -11,11 +11,12 @@ import {
     PlayCircle, FileText, ClipboardList, Link2, Clock, CheckCircle, Play, Pause,
     RotateCcw, Volume2, VolumeX, Maximize, ZoomIn, ZoomOut, Maximize2, Download,
     UploadCloud, StickyNote, MessagesSquare, Send, X, Gift, BookMarked, MessageCircle, ArrowRight,
-    Bell, Megaphone, Calendar, User, AlertTriangle, Video,
+    Bell, Megaphone, Calendar, User, AlertTriangle, Video, CalendarDays,
 } from 'lucide-react';
 import CourseChat from '@/components/CourseChat';
 import DiscussionForum from '@/components/DiscussionForum';
 import InteractiveQuiz from '@/components/InteractiveQuiz';
+import StudentSessionList, { StudentLiveSession } from '@/components/StudentSessionList';
 
 // ---------- Types ----------
 
@@ -70,6 +71,8 @@ interface ProgressData {
     /** Set only for an approved student in an ONLINE batch. */
     deliveryMode?: string | null;
     meetLink?: string | null;
+    /** The batch's meeting schedule; gated on the same rule as meetLink. */
+    liveSessions?: StudentLiveSession[];
 }
 interface NoteRow {
     moduleId: string;
@@ -111,7 +114,7 @@ interface CourseData {
 }
 
 type LessonKind = 'video' | 'pdf' | 'task' | 'resource';
-type DeckTab = 'overview' | 'notes' | 'discussions' | 'quizzes' | 'batch' | 'direct';
+type DeckTab = 'overview' | 'notes' | 'sessions' | 'discussions' | 'quizzes' | 'batch' | 'direct';
 
 interface Announcement {
     id: string;
@@ -297,6 +300,23 @@ export default function CoursePlayer({ courseId }: Props) {
     const selected = useMemo(() => allModules.find(m => m.id === selectedId) ?? allModules[0] ?? null, [allModules, selectedId]);
     const selectedTasks = useMemo(() => tasks.filter(tk => tk.moduleId === selected?.id), [tasks, selected]);
     const selectedKind = useMemo(() => (selected ? kindOf(selected, selectedTasks) : null), [selected, selectedTasks]);
+
+    /**
+     * Where the header's "join" button points.
+     *
+     * A session with its own room overrides the batch room, and only for a
+     * session that has not finished -- so the button opens the class the student
+     * is actually about to attend, and still falls back to the batch room on a
+     * week with no session of its own.
+     */
+    const joinLink = useMemo(() => {
+        const now = Date.now();
+        const next = (progress?.liveSessions || [])
+            .map((s) => ({ s, at: new Date(s.scheduledAt).getTime() }))
+            .filter((r) => !Number.isNaN(r.at) && r.at + (r.s.durationMinutes ?? 0) * 60000 >= now)
+            .sort((a, b) => a.at - b.at)[0];
+        return next?.s.meetLink || progress?.meetLink || null;
+    }, [progress]);
 
     // Why the server would refuse to mark this lesson complete. The refusal is
     // enforced server-side (POST /lms/progress); showing the reason here is what
@@ -598,6 +618,11 @@ export default function CoursePlayer({ courseId }: Props) {
         const tabs: { key: DeckTab; label: string; icon: typeof BookMarked }[] = [
             { key: 'overview', label: t('player.tab_overview'), icon: BookMarked },
             { key: 'notes', label: t('player.tab_notes'), icon: StickyNote },
+            // Only offered when the batch actually has a schedule, so a student
+            // in a self-paced course is not shown an empty Sessions tab.
+            ...((progress?.liveSessions?.length ?? 0) > 0
+                ? [{ key: 'sessions' as DeckTab, label: t('liveSessions.heading'), icon: CalendarDays }]
+                : []),
             { key: 'discussions', label: isAr ? 'النقاش' : 'Discuss', icon: MessageCircle },
             { key: 'quizzes', label: isAr ? 'اختبار' : 'Quiz', icon: ClipboardList },
             { key: 'batch', label: t('player.tab_batch'), icon: MessagesSquare },
@@ -683,6 +708,16 @@ export default function CoursePlayer({ courseId }: Props) {
                             moduleId={selected.id}
                             onSave={saveNote}
                         />
+                    )}
+                    {deckTab === 'sessions' && (
+                        <div className="space-y-3">
+                            <StudentSessionList
+                                sessions={progress?.liveSessions}
+                                emptyHint={progress?.deliveryMode === 'ONLINE'
+                                    ? t('liveSessions.none_scheduled')
+                                    : t('liveSessions.in_person_no_room')}
+                            />
+                        </div>
                     )}
                     {deckTab === 'discussions' && selected && (
                         <DiscussionForum moduleId={selected.id} courseId={courseId} />
@@ -771,9 +806,9 @@ export default function CoursePlayer({ courseId }: Props) {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 relative">
-                    {progress?.meetLink && (
+                    {joinLink && (
                         <a
-                            href={progress.meetLink}
+                            href={joinLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             title={t('player.join_live_title')}

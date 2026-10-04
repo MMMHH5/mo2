@@ -412,6 +412,21 @@
         "free": "Free",
         "by": "by"
     },
+    "liveSessions": {
+        "heading": "Session schedule",
+        "next_session": "Next session",
+        "upcoming_sessions": "Upcoming sessions",
+        "all_sessions": "All sessions",
+        "join": "Join",
+        "uses_batch_link": "Uses the batch link",
+        "no_link_yet": "No room added yet",
+        "minutes": "{n} min",
+        "live_now": "Live now",
+        "ended": "Ended",
+        "none_scheduled": "No sessions have been scheduled for this batch yet.",
+        "in_person_no_room": "This batch is in person, so there is no room to join.",
+        "manage_hint": "Session schedules are set from the instructor workspace."
+    },
     "myCourses": {
         "heading": "My Learning Journey",
         "subtitle": "Track your course enrollments and access your active sessions.",

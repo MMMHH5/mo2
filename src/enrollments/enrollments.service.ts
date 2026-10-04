@@ -7,6 +7,7 @@ import { ChatService } from '../chat/chat.service';
 import { FinanceService } from '../finance/finance.service';
 import { resolvePrivateUpload } from '../common/private-uploads';
 import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
+import { Classroom, ClassroomBatch, ClassroomSessionRow, resolveClassroom } from '../common/classroom';
 import { unlink } from 'fs';
 
 /**
@@ -205,7 +206,7 @@ export class EnrollmentsService {
      * 100 so a stale progress row can never render as 233%.
      */
     async getMyEnrollments(studentId: string) {
-        const enrollments = await this.prisma.enrollment.findMany({
+        const rows = await this.prisma.enrollment.findMany({
             where: { studentId },
             include: {
                 course: {
@@ -233,6 +234,20 @@ export class EnrollmentsService {
                         isPublished: true,
                         deliveryMode: true,
                         meetLink: true,
+                        // Read for the gate below, then stripped from the payload
+                        // along with meetLink so neither raw column can ride out
+                        // on `...e`.
+                        liveSessions: {
+                            orderBy: { scheduledAt: 'asc' },
+                            select: {
+                                id: true,
+                                titleAr: true,
+                                titleEn: true,
+                                scheduledAt: true,
+                                durationMinutes: true,
+                                meetLink: true,
+                            },
+                        },
                         instructor: { select: { id: true, email: true, role: true } },
                     },
                 },
@@ -241,18 +256,16 @@ export class EnrollmentsService {
             orderBy: { createdAt: 'desc' },
         });
 
-        return enrollments.map((e) => {
+        return rows.map((e) => {
             const total = e.course?._count.modules ?? 0;
             const done = e._count.lessonProgress;
             const classroom = this.classroomFor(e);
-            // `meetLink` is selected only so the gate above can read it; the
-            // nested opening object is rebuilt without it so the raw column can
-            // never ride along on `...e`.
-            const { meetLink: _rawLink, ...opening } = e.opening ?? {};
+            const { meetLink: _rawLink, liveSessions: _rawSessions, ...opening } = e.opening ?? {};
             return {
                 ...e,
                 opening: e.opening ? opening : e.opening,
                 meetLink: classroom.meetLink,
+                liveSessions: classroom.liveSessions,
                 progressPercent: total === 0
                     ? null
                     : Math.min(100, Math.round((done / total) * 100)),
@@ -265,16 +278,18 @@ export class EnrollmentsService {
      *
      * Only an APPROVED enrollment in an ONLINE batch carries the room. A
      * REJECTED / REVOKED student keeps their history row but loses the link, and
-     * so does a batch taught in person.
+     * so does a batch taught in person. The schedule rides the same gate -- see
+     * `resolveClassroom`.
      */
     private classroomFor(enrollment: {
         status: EnrollmentStatus;
-        opening: { deliveryMode: DeliveryMode; meetLink: string | null } | null;
-    }): { meetLink: string | null } {
-        if (enrollment.status !== EnrollmentStatus.APPROVED) return { meetLink: null };
-        const opening = enrollment.opening;
-        if (!opening || opening.deliveryMode !== DeliveryMode.ONLINE) return { meetLink: null };
-        return { meetLink: opening.meetLink ?? null };
+        opening?: (ClassroomBatch & { liveSessions?: ClassroomSessionRow[] }) | null;
+    }): Classroom {
+        return resolveClassroom(
+            enrollment.status,
+            enrollment.opening ?? null,
+            enrollment.opening?.liveSessions ?? [],
+        );
     }
 
     async getMyGrades(studentId: string) {

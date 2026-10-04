@@ -44,7 +44,9 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
         defaultValues: {
             nameAr: '', nameEn: '', instructorId: '', startDate: '', endDate: '',
             enrollmentDeadline: '', price: '', priceOld: '', maxStudents: '',
-            refundWindowDays: '', deliveryMode: 'IN_PERSON', meetLink: '',
+            // New batches are online by default: it is what the academy sells,
+            // and the link field appears with the mode so nothing else changes.
+            refundWindowDays: '', deliveryMode: 'ONLINE', meetLink: '',
         },
     });
     // The link only means anything for an online batch, so the field appears

@@ -222,7 +222,6 @@ model Course {
   modules             Module[]
   chapters            Chapter[]
   enrollments         Enrollment[]
-  liveSessions        LiveSession[]
   certificates        Certificate[]
   objectives          CourseObjective[]
   prerequisites       CoursePrerequisite[]
@@ -294,6 +293,7 @@ model CourseOpening {
   announcements  Announcement[]
   calendarEvents CalendarEvent[]
   refundRequests RefundRequest[]
+  liveSessions   LiveSession[]
 }
 
 model CourseObjective {
@@ -451,17 +451,31 @@ model Enrollment {
   @@unique([studentId, courseId])
 }
 
+// A scheduled live meeting inside one batch.
+//
+// Scoped to the OPENING, not the course: the same course runs several batches,
+// and each batch has its own schedule and its own classroom link. This table
+// used to hang off `Course` with no write path at all, so it was unreachable.
 model LiveSession {
-  id             String   @id @default(uuid())
-  title          String
-  scheduledAt    DateTime
-  meetLink       String?
-  googleMeetData Json? // Storing Google Meet API metadata
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(uuid())
+  titleAr         String
+  titleEn         String
+  // When the session starts.
+  scheduledAt     DateTime
+  // Minutes rather than an end timestamp, so the UI can render "19:00 - 20:30"
+  // without storing a second date the author has to keep in sync.
+  durationMinutes Int?
+  // A one-off session may use its own room. When NULL the student falls back to
+  // the opening's meetLink, which is how a recurring weekly Meet is handled.
+  meetLink        String?
+  googleMeetData  Json? // reserved for a future Google Meet API integration
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  openingId String
+  opening   CourseOpening @relation(fields: [openingId], references: [id], onDelete: Cascade)
+
+  @@index([openingId, scheduledAt])
 }
 
 model Certificate {

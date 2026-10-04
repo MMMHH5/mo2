@@ -606,6 +606,20 @@ export class CoursesService {
         throw new ForbiddenException('You are not allowed to manage this opening');
     }
 
+    /**
+     * Loads an opening and applies the management rule to it.
+     *
+     * The public face of `assertCanManage` for modules that own a sub-resource
+     * of an opening (its live sessions), so "who may change this batch" stays
+     * defined in one place instead of being restated per resource.
+     */
+    async assertCanManageOpening(openingId: string, actorId: string, actorRole: Role) {
+        const opening = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
+        if (!opening) throw new NotFoundException('Opening not found');
+        this.assertCanManage(opening, actorId, actorRole);
+        return opening;
+    }
+
     private async setStatus(openingId: string, status: CourseOpeningStatus) {
         return this.prisma.courseOpening.update({
             where: { id: openingId },

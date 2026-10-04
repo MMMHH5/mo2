@@ -4,6 +4,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import { BookOpen, Clock, CheckCircle, XCircle, GraduationCap, Award, CreditCard, ChevronRight, Video } from 'lucide-react';
+import StudentSessionList, { StudentLiveSession } from '@/components/StudentSessionList';
 import Link from 'next/link';
 
 interface Enrollment {
@@ -30,6 +31,12 @@ interface Enrollment {
     } | null;
     /** Only present when the batch is ONLINE and this enrollment is APPROVED. */
     meetLink?: string | null;
+    /**
+     * The batch's meeting schedule, already gated on the same rule as
+     * `meetLink`: an empty array for anyone who is not APPROVED, and for a
+     * student whose batch has no sessions yet.
+     */
+    liveSessions?: StudentLiveSession[];
 }
 
 interface GradeRow {
@@ -171,7 +178,18 @@ export default function MyCoursesPage() {
                                 </p>
 
                                 <div className="pt-4 border-t border-white/5">
-                                    {enrollment.meetLink && (
+                                    {enrollment.liveSessions?.length ? (
+                                        // A published schedule beats a bare "join"
+                                        // button: the student can see what the next
+                                        // session is and when it starts.
+                                        <div className="mb-3">
+                                            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                                                <Video size={14} className="text-brand-gold-light" />
+                                                {t('liveSessions.next_session')}
+                                            </p>
+                                            <StudentSessionList sessions={enrollment.liveSessions} limit={1} />
+                                        </div>
+                                    ) : enrollment.meetLink ? (
                                         <a
                                             href={enrollment.meetLink}
                                             target="_blank"
@@ -185,7 +203,7 @@ export default function MyCoursesPage() {
                                                 {t('myCourses.online_batch')}
                                             </span>
                                         </a>
-                                    )}
+                                    ) : null}
                                     {enrollment.status === 'APPROVED' && courseProgress(enrollment.course.id) != null && (
                                         <div className="mb-3">
                                             <div className="flex items-center justify-between text-xs font-bold mb-1.5">
