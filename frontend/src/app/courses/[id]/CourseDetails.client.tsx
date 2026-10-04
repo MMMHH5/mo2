@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import {
     BookOpen, Clock, User, CheckCircle, Loader, Award, Star, Users,
     CalendarDays, Globe, ChevronDown, GraduationCap, PlayCircle, MessagesSquare, ListChecks, Target,
-    AlertTriangle, ClipboardList, Settings2
+    AlertTriangle, ClipboardList, Settings2, Radio
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
@@ -106,6 +106,12 @@ export interface Course {
     introVideoUrl?: string | null;
     videoFileUrl?: string | null;
     hoursOfContent?: number | null;
+    /**
+     * LIVE: the lessons are Meet sessions on a schedule. RECORDED: the lessons
+     * are videos. Missing on a payload from before the field existed, which is
+     * read as live -- that is what the column defaults to.
+     */
+    contentType?: 'LIVE' | 'RECORDED' | null;
     certificateIssued?: boolean | null;
     quizzesIncluded?: boolean | null;
     projectsIncluded?: boolean | null;
@@ -210,6 +216,18 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     // Prefer the server's verdict; fall back to `mode` for a payload that
     // predates the flag so a signed-in user is never left without the tab.
     const chatAvailable = access ? access.chatEnabled : mode !== 'guest';
+
+    // The sales page has to answer "will I be watching a video or sitting in a
+    // meeting?" before the visitor enrols, so the whole page is dressed for the
+    // format: a live course never shows hours of content, a play button over its
+    // cover, or a per-lesson running time -- those all read as "pre-recorded"
+    // even when the badge in the corner says otherwise.
+    const isLiveCourse = course?.contentType !== 'RECORDED';
+    const deliveryLabel = isLiveCourse
+        ? t('createCourse.content_type_live')
+        : t('createCourse.content_type_recorded');
+    const durationText = pick(course, 'duration')
+        || (isLiveCourse ? deliveryLabel : t('courseDetail.self_paced'));
 
     // A tab can stop being available while it is open — a signed-in viewer
     // whose own copy arrives without cohort access, for instance. Deriving the
@@ -543,11 +561,22 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             white, which smears the largest text on the page --
                             it was the only textShadow left anywhere in the app. */}
                         <h1
-                            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-ink mb-5 sm:mb-6 leading-[1.15] sm:leading-[1.08] tracking-tight break-words"
+                            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-ink mb-4 sm:mb-5 leading-[1.15] sm:leading-[1.08] tracking-tight break-words"
                             style={dark ? { textShadow: '0 2px 24px rgba(0,0,0,0.5)' } : undefined}
                         >
                             {pick(course, 'title')}
                         </h1>
+                        {/* Said once, in the largest type on the page: a visitor
+                            who came for a live cohort should not have to infer it
+                            from a small badge next to the cover. */}
+                        <div className="mb-5 sm:mb-6">
+                            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black shadow-sm ${isLiveCourse
+                                ? 'bg-red-700 text-ink-inverse'
+                                : 'bg-brand-navy text-ink-inverse'}`}>
+                                {isLiveCourse ? <Radio size={15} /> : <PlayCircle size={15} />}
+                                {deliveryLabel}
+                            </span>
+                        </div>
                         {(pick(course, 'excerpt') || pick(course, 'description')) && (
                             <p className="text-base sm:text-lg md:text-xl text-ink-muted max-w-2xl mb-6 sm:mb-8 font-medium leading-relaxed break-words">
                                 {pick(course, 'excerpt') || pick(course, 'description')}
@@ -562,10 +591,23 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </div>
                                 <div>
                                     <div className={statCaption}>{t('explore.duration')}</div>
-                                    <div className="text-sm font-black text-ink">{pick(course, 'duration') || t('courseDetail.self_paced')}</div>
+                                    <div className="text-sm font-black text-ink">{durationText}</div>
                                 </div>
                             </div>
-                            {course.hoursOfContent ? (
+                            {/* "Hours of content" with a play icon is the strongest
+                                video signal on the page, so a live course trades it
+                                for the one thing it can actually promise. */}
+                            {isLiveCourse ? (
+                                <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
+                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
+                                        <Radio size={17} />
+                                    </div>
+                                    <div>
+                                        <div className={statCaption}>{t('courseDetail.delivery_label')}</div>
+                                        <div className="text-sm font-black text-gold-ink">{deliveryLabel}</div>
+                                    </div>
+                                </div>
+                            ) : course.hoursOfContent ? (
                                 <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
                                     <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
                                         <PlayCircle size={17} />
@@ -741,7 +783,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     {/* Lesson explorer */}
                     {course.modules && course.modules.length > 0 && (
                         <div className="mb-12">
-                            <LessonExplorer courseId={course.id} modules={course.modules || []} chapters={course.chapters} openingId={instructorOpeningId} mode={mode} />
+                            <LessonExplorer courseId={course.id} modules={course.modules || []} chapters={course.chapters} openingId={instructorOpeningId} mode={mode} contentType={course.contentType} />
                         </div>
                     )}
 
@@ -953,12 +995,14 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </div>
                                 <div className="p-4 sm:p-6 space-y-1">
                                     {[
-                                        { icon: <Clock size={16} />, label: pick(course, 'duration') || t('courseDetail.self_paced') },
+                                        { icon: isLiveCourse ? <Radio size={16} /> : <Clock size={16} />, label: durationText },
                                         { icon: <User size={16} />, label: instructorName || t('courseDetail.expert_instructor') },
                                         course.categoryAr ? { icon: <ListChecks size={16} />, label: `${t('courseDetail.category_label')}: ${pick(course, 'category')}` } : null,
                                         { icon: <GraduationCap size={16} />, label: `${t('courseDetail.level_label')}: ${levelLabel(course.level)}` },
                                         course.language ? { icon: <Globe size={16} />, label: `${t('courseDetail.language_label')}: ${course.language}` } : null,
-                                        course.hoursOfContent ? { icon: <PlayCircle size={16} />, label: `${t('courseDetail.hours_label')}: ${course.hoursOfContent}` } : null,
+                                        isLiveCourse
+                                            ? { icon: <Radio size={16} />, label: `${t('courseDetail.delivery_label')}: ${deliveryLabel}` }
+                                            : course.hoursOfContent ? { icon: <PlayCircle size={16} />, label: `${t('courseDetail.hours_label')}: ${course.hoursOfContent}` } : null,
                                         enrolledCount ? { icon: <Users size={16} />, label: `${enrolledCount} ${t('courseDetail.student_label')}` } : null,
                                         metaOpening?.maxStudents ? { icon: <Users size={16} />, label: `${t('createCourse.max_students_label')}: ${metaOpening.maxStudents}` } : null,
                                         fmtDate(metaOpening?.startDate) ? { icon: <CalendarDays size={16} />, label: `${t('courseDetail.starts_label')}: ${fmtDate(metaOpening?.startDate)}` } : null,

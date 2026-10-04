@@ -446,6 +446,9 @@ export default function CoursePlayer({ courseId }: Props) {
         if (kind === 'video') return <PlayCircle size={16} />;
         if (kind === 'pdf') return <FileText size={16} />;
         if (kind === 'task') return <ClipboardList size={16} />;
+        // On a live course the lesson is the meeting, so the icon says so
+        // instead of falling back to the generic "somewhere else" link.
+        if (isLive) return <Radio size={16} />;
         return <Link2 size={16} />;
     };
 
@@ -477,7 +480,7 @@ export default function CoursePlayer({ courseId }: Props) {
                     {done ? <CheckCircle size={14} /> : renderIcon(m)}
                 </span>
                 <span className={`flex-1 min-w-0 truncate text-sm font-bold ${active ? 'text-ink' : ''}`}>{pick(m, 'title')}</span>
-                {!!m.durationMinutes && (
+                {!isLive && !!m.durationMinutes && (
                     <span className="flex items-center gap-1 text-[10px] font-bold shrink-0 text-ink-subtle">
                         <Clock size={11} /> {m.durationMinutes}
                     </span>
@@ -559,12 +562,19 @@ export default function CoursePlayer({ courseId }: Props) {
                                 </div>
                             )}
                             <h2 className="text-2xl font-black text-ink leading-tight truncate">{pick(selected, 'title')}</h2>
-                            {!!selected.durationMinutes && (
+                            {/* The running time belongs to a recording, so it goes
+                                for a live lesson -- but the free-preview badge has
+                                to stay either way. */}
+                            {(!isLive && !!selected.durationMinutes) || selected.isFree ? (
                                 <p className="text-[11px] font-bold text-ink-subtle flex items-center gap-1 mt-0.5">
-                                    <Clock size={11} /> {selected.durationMinutes} {t('lessons.minutes_short')}
+                                    {!isLive && !!selected.durationMinutes && (
+                                        <span className="flex items-center gap-1">
+                                            <Clock size={11} /> {selected.durationMinutes} {t('lessons.minutes_short')}
+                                        </span>
+                                    )}
                                     {!!selected.isFree && <span className="flex items-center gap-1 text-emerald-800 dark:text-emerald-300 bg-emerald-500/20 rounded-full px-2 py-0.5"><Gift size={10} /> {t('lessons.free_badge')}</span>}
                                 </p>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                     <button
@@ -957,7 +967,7 @@ export default function CoursePlayer({ courseId }: Props) {
                                                         {pick(ch, 'title') || t('player.lessons')}
                                                     </span>
                                                     <span className="flex items-center gap-2 text-[10px] font-bold shrink-0 text-ink-subtle">
-                                                        {chDur > 0 && <span className="flex items-center gap-0.5"><Clock size={11} /> {chDur} {t('lessons.minutes_short')}</span>}
+                                                        {!isLive && chDur > 0 && <span className="flex items-center gap-0.5"><Clock size={11} /> {chDur} {t('lessons.minutes_short')}</span>}
                                                         <span className="bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-full px-2 py-0.5">
                                                             {chDone}/{chMods.length}
                                                         </span>

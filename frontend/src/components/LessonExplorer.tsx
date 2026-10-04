@@ -5,7 +5,7 @@ import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import toast from 'react-hot-toast';
 import {
-    Loader, CheckCircle, FileText, Link2, Download, ClipboardList, Send, Clock, Film, ListChecks, Lock, ChevronDown, Gift,
+    Loader, CheckCircle, FileText, Link2, Download, ClipboardList, Send, Clock, Film, ListChecks, Lock, ChevronDown, Gift, Radio,
 } from 'lucide-react';
 import { EmptyPanel } from '@/app/dashboard/admin/components';
 
@@ -66,10 +66,16 @@ interface Props {
     chapters?: LessonChapter[] | null;
     openingId?: string | null;
     mode: 'guest' | 'student' | 'instructor';
+    /** LIVE: the lessons are the meetings. RECORDED: the lessons are videos. */
+    contentType?: 'LIVE' | 'RECORDED' | null;
 }
 
-export default function LessonExplorer({ courseId, modules, chapters = null, openingId = null, mode }: Props) {
+export default function LessonExplorer({ courseId, modules, chapters = null, openingId = null, mode, contentType = null }: Props) {
     const { t, pick } = useI18n();
+    // A live lesson has no running time of its own -- the meeting does -- so the
+    // outline stops advertising a video length it does not have. Missing means a
+    // payload from before the field existed, which is live by the column default.
+    const isLive = contentType !== 'RECORDED';
     const grouped: LessonChapter[] = chapters && chapters.length ? chapters : [{ titleAr: '', titleEn: '', modules }];
     const allModules = grouped.flatMap((c) => c.modules || []);
     const [selectedId, setSelectedId] = useState<string | null>(() => {
@@ -239,7 +245,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                             <span className="font-black text-ink text-sm truncate">{pick(ch, 'title') || t('lessons.lesson_label')}</span>
                                         </span>
                                         <span className="flex items-center gap-2 text-xs font-bold text-ink-subtle shrink-0">
-                                            {chDuration > 0 && <span className="flex items-center gap-1"><Clock size={12} /> {chDuration} {t('lessons.minutes_short')}</span>}
+                                            {!isLive && chDuration > 0 && <span className="flex items-center gap-1"><Clock size={12} /> {chDuration} {t('lessons.minutes_short')}</span>}
                                             <span className="bg-surface-sunken rounded-full px-2 py-0.5">{chModules.length}</span>
                                         </span>
                                     </button>
@@ -268,7 +274,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                                         </span>
                                                         <span className="flex-1 min-w-0 truncate text-sm font-bold">{pick(m, 'title')}</span>
                                                         <span className="flex items-center gap-1 text-xs shrink-0">
-                                                            {!!m.durationMinutes && <span className="flex items-center gap-1 font-bold opacity-80"><Clock size={12} /> {m.durationMinutes} {t('lessons.minutes_short')}</span>}
+                                                            {!isLive && !!m.durationMinutes && <span className="flex items-center gap-1 font-bold opacity-80"><Clock size={12} /> {m.durationMinutes} {t('lessons.minutes_short')}</span>}
                                                             {m.videoUrl && <Film size={13} className={active ? 'text-accent' : 'text-accent'} />}
                                                             {fileCount > 0 && <FileText size={13} className={active ? 'text-accent' : 'text-accent'} />}
                                                             {taskCount > 0 && <span className={`px-1.5 rounded-full font-black ${active ? 'bg-brand-gold text-ink-on-gold' : 'bg-brand-gold/20 text-gold-ink'}`}>{taskCount}</span>}
@@ -339,7 +345,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                             <Gift size={12} /> {t('lessons.free_badge')}
                                         </span>
                                     )}
-                                    {!!selected.durationMinutes && (
+                                    {!isLive && !!selected.durationMinutes && (
                                         <span className="inline-flex items-center gap-1 text-xs font-bold text-ink-muted bg-ink/[0.06] rounded-full px-2.5 py-0.5">
                                             <Clock size={12} /> {selected.durationMinutes} {t('lessons.minutes_short')}
                                         </span>
@@ -350,6 +356,14 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                         </div>
 
                         <div className="p-5 space-y-6">
+                            {/* What the lesson actually is, so a live course does not
+                                read as a video course with the video missing. */}
+                            {isLive && (
+                                <div className="flex items-center gap-2 rounded-xl border border-line bg-ink/[0.03] px-4 py-3 text-sm font-bold text-ink-muted">
+                                    <Radio size={15} className="text-red-600 dark:text-red-400 shrink-0" />
+                                    {t('lessons.live_note')}
+                                </div>
+                            )}
                             {(
                                 (getVideoUrl(selected.videoUrl))
                                 || (selected.files && selected.files.length > 0)
