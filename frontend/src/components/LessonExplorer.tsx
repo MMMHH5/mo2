@@ -364,11 +364,15 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                     {t('lessons.live_note')}
                                 </div>
                             )}
+                            {/* The lesson description counts as content even though
+                                it is not a file: without this a lesson whose only
+                                body is prose was reported as having none. */}
                             {(
                                 (getVideoUrl(selected.videoUrl))
                                 || (selected.files && selected.files.length > 0)
                                 || (selected.links && selected.links.length > 0)
                                 || selectedTasks.length > 0
+                                || (selected.descriptionAr || selected.descriptionEn)
                             ) ? (
                                 <>
                                     {(() => {
@@ -416,7 +420,11 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                         </div>
                                     )}
                                 </>
-                            ) : (
+                            ) : isLive ? null : (
+                                /* A live lesson is not an unfinished one: it is
+                                 * delivered in the session named above, so telling
+                                 * the visitor there is "no content yet" is both
+                                 * false and the reason the page read as broken. */
                                 <p className="text-sm text-ink-subtle font-bold text-center py-4">{t('lessons.empty_hint')}</p>
                             )}
 

@@ -600,7 +600,11 @@ export default function CoursePlayer({ courseId }: Props) {
                         transition={{ duration: 0.25 }}
                     >
                         {selectedKind === 'video' && vid && renderVideoPlayer(selected, vid)}
-                        {isLive && (
+                        {/* On a live course the session card replaces the video
+                            surface AND the materials stage: a lesson with no
+                            uploaded file must not read as a broken one when the
+                            meeting it belongs to is what the student needs. */}
+                        {isLive ? (
                             <div className="rounded-2xl border border-line bg-surface-sunken p-8 text-center">
                                 <Radio size={40} className="mx-auto mb-3 text-red-600" />
                                 <p className="font-black text-ink mb-1">{t('liveSessions.heading')}</p>
@@ -608,23 +612,26 @@ export default function CoursePlayer({ courseId }: Props) {
                                     {joinLink ? t('liveSessions.next_session') : t('liveSessions.none_scheduled')}
                                 </p>
                             </div>
+                        ) : (
+                            <>
+                                {selectedKind === 'pdf' && pdfFile && <PdfViewer url={pdfFile.url} m={selected} />}
+                                {selectedKind === 'task' && (
+                                    <TaskStage
+                                        tasks={selectedTasks}
+                                        taskDraft={taskDraft}
+                                        setTaskDraft={setTaskDraft}
+                                        taskFile={taskFile}
+                                        setTaskFile={setTaskFile}
+                                        submitting={submitting}
+                                        onSubmit={submitTask}
+                                        dragOver={dragOver}
+                                        setDragOver={setDragOver}
+                                        fileInputRef={taskInputRef}
+                                    />
+                                )}
+                                {selectedKind === 'resource' && <ResourceStage m={selected} />}
+                            </>
                         )}
-                        {selectedKind === 'pdf' && pdfFile && <PdfViewer url={pdfFile.url} m={selected} />}
-                        {selectedKind === 'task' && (
-                            <TaskStage
-                                tasks={selectedTasks}
-                                taskDraft={taskDraft}
-                                setTaskDraft={setTaskDraft}
-                                taskFile={taskFile}
-                                setTaskFile={setTaskFile}
-                                submitting={submitting}
-                                onSubmit={submitTask}
-                                dragOver={dragOver}
-                                setDragOver={setDragOver}
-                                fileInputRef={taskInputRef}
-                            />
-                        )}
-                        {selectedKind === 'resource' && <ResourceStage m={selected} />}
                     </motion.div>
                 </AnimatePresence>
 
