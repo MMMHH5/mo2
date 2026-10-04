@@ -52,6 +52,7 @@ function makeEnrollmentsService() {
     { logAction: async () => undefined } as any,
     { notify: async () => ({ id: 'n1' }) } as any,
     { getOrCreateRoomForOpening: async () => ({ id: 'room' }), syncRoomMembers: async () => undefined } as any,
+    {} as any,
   );
 }
 

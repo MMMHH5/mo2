@@ -49,15 +49,16 @@ async function main() {
 
         const notifications = { notify: async () => ({ id: 'n1' }) };
         const email = {};
-        const coupons = {};
+        const finance = {} as any;
 
         const enrollments = new EnrollmentsService(
           scopedPrisma,
           { logAction: async (action: string, ip?: string, userId?: string) => { await tx.auditLog.create({ data: { action, ipAddress: ip, userId } }); } } as any,
           notifications as any,
           { getOrCreateRoomForOpening: async () => ({ id: 'room' }), syncRoomMembers: async () => undefined } as any,
+          finance,
         );
-        const payments = new PaymentsService(scopedPrisma, notifications as any, email as any, { logAction: async (action: string, ip?: string, userId?: string) => { await tx.auditLog.create({ data: { action, ipAddress: ip, userId } }); } } as any, { getOrCreateRoomForOpening: async () => ({ id: 'room' }), syncRoomMembers: async () => undefined } as any, coupons as any);
+        const payments = new PaymentsService(scopedPrisma, notifications as any, email as any, { logAction: async (action: string, ip?: string, userId?: string) => { await tx.auditLog.create({ data: { action, ipAddress: ip, userId } }); } } as any, { getOrCreateRoomForOpening: async () => ({ id: 'room' }), syncRoomMembers: async () => undefined } as any, finance);
 
         const suffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
         const instructor = await tx.user.create({

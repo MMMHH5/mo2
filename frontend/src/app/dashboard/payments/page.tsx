@@ -5,7 +5,7 @@ import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import { api, getErrorMessage, downloadProtectedFile } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Wallet, CheckCircle, Clock, XCircle, AlertTriangle, X, CalendarCheck, Eye } from 'lucide-react';
 import Link from 'next/link';
 import PaymentMethods, { type PaymentGateway } from '@/components/payment/PaymentMethods';
@@ -63,13 +63,16 @@ export default function PaymentsPage() {
     const [gatewayId, setGatewayId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [couponCode, setCouponCode] = useState('');
+    const [coupon, setCoupon] = useState<{ name: string; amountOff: number; finalAmount: number } | null>(null);
+    const [couponChecking, setCouponChecking] = useState(false);
 
     const statusLabel = (status: string) => t('statuses.' + (status || '').toLowerCase()) || status;
 
     const announcedCourses = (courses || []).filter(c => c.openings?.some(o => o.status === 'ANNOUNCEMENT'));
     const enrolledCourseIds = new Set((enrollments || []).map(e => e.course.id));
 
-    const closeModal = () => { setPayable(null); setOpeningId(''); setReceiptFile(null); setGatewayId(null); };
+    const closeModal = () => { setPayable(null); setOpeningId(''); setReceiptFile(null); setGatewayId(null); setCouponCode(''); setCoupon(null); };
 
     const openPayModal = (enrollment: Enrollment) => {
         const defaultOpeningId = enrollment.opening?.id || enrollment.course && (courses || [])
@@ -78,6 +81,8 @@ export default function PaymentsPage() {
         setOpeningId(defaultOpeningId);
         setReceiptFile(null);
         setGatewayId(null);
+        setCouponCode('');
+        setCoupon(null);
     };
 
     const handleReserveClick = async (courseId: string) => {
@@ -122,6 +127,7 @@ export default function PaymentsPage() {
             formData.append('openingId', openingId);
             formData.append('gatewayId', gatewayId);
             formData.append('receipt', receiptFile);
+            if (couponCode.trim()) formData.append('couponCode', couponCode.trim());
             await api.post('/enrollments', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             toast.success(t('payments.receipt_uploaded'));
             closeModal();
@@ -136,6 +142,34 @@ export default function PaymentsPage() {
     const availableOpenings = payable
         ? ((courses || []).find(c => c.id === payable.enrollment.course.id)?.openings || []).filter(o => o.status === 'OPEN' || o.status === 'ANNOUNCEMENT')
         : [];
+
+    const selectedOpening = payable
+        ? availableOpenings.find(o => o.id === openingId) || (payable.enrollment.opening?.id === openingId ? payable.enrollment.opening : null)
+        : null;
+    const basePrice = selectedOpening ? Number(selectedOpening.price) : null;
+
+    const applyCoupon = async () => {
+        if (!payable || !couponCode.trim()) return;
+        setCouponChecking(true);
+        try {
+            const res = await api.post('/finance/coupons/validate', {
+                code: couponCode.trim(),
+                courseId: payable.enrollment.course.id,
+                price: basePrice ?? undefined,
+            });
+            setCoupon({
+                name: res.data.name,
+                amountOff: Number(res.data.amountOff || 0),
+                finalAmount: Number(res.data.finalAmount ?? basePrice ?? 0),
+            });
+            toast.success(t('payments.coupon_applied'));
+        } catch (err) {
+            setCoupon(null);
+            toast.error(getErrorMessage(err) || t('payments.coupon_invalid'));
+        } finally {
+            setCouponChecking(false);
+        }
+    };
 
     const statusBadge = (status: string) => {
         const cls = status === 'APPROVED' ? 'bg-green-500/10 text-green-400 border-green-500/20'
@@ -282,7 +316,7 @@ export default function PaymentsPage() {
                                 </label>
                                 <select
                                     value={openingId}
-                                    onChange={(e) => setOpeningId(e.target.value)}
+                                    onChange={(e) => { setOpeningId(e.target.value); setCoupon(null); }}
                                     className="w-full border border-white/10 rounded-xl px-4 py-3 bg-brand-navy-dark font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-gold"
                                 >
                                     {payable.enrollment.opening?.id && (
@@ -300,6 +334,47 @@ export default function PaymentsPage() {
                                 {t('payments.no_open_opening')}
                             </div>
                         )}
+
+                        <div className="mb-5">
+                            <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">
+                                {t('payments.coupon_label')}
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    value={couponCode}
+                                    onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCoupon(null); }}
+                                    placeholder={t('payments.coupon_placeholder')}
+                                    className="flex-1 border border-white/10 rounded-xl px-4 py-3 bg-brand-navy-dark font-mono font-semibold text-white uppercase placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                                />
+                                <button
+                                    onClick={applyCoupon}
+                                    disabled={couponChecking || !couponCode.trim()}
+                                    className="bg-white/5 hover:bg-white/10 text-white font-bold px-4 py-3 rounded-xl border border-white/10 transition disabled:opacity-50 whitespace-nowrap"
+                                >
+                                    {couponChecking ? t('common.processing') : t('payments.coupon_apply')}
+                                </button>
+                            </div>
+                            {coupon && (
+                                <div className="mt-3 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-sm">
+                                    <div className="flex items-center justify-between text-green-400 font-bold">
+                                        <span>{coupon.name}</span>
+                                        <button onClick={() => { setCoupon(null); setCouponCode(''); }} className="text-xs font-bold underline">
+                                            {t('payments.coupon_remove')}
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center justify-between mt-1 text-gray-300">
+                                        <span>{t('payments.coupon_discount')}</span>
+                                        <span className="font-bold text-green-400">-${coupon.amountOff}</span>
+                                    </div>
+                                    {basePrice != null && (
+                                        <div className="flex items-center justify-between mt-1 text-gray-300">
+                                            <span>{t('payments.coupon_total')}</span>
+                                            <span className="font-black text-white">${coupon.finalAmount}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         <div className="mb-5">
                             <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">

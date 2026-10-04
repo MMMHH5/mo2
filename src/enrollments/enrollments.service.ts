@@ -4,6 +4,7 @@ import { EnrollmentStatus, CourseOpeningStatus, DeliveryMode, Role, PaymentStatu
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ChatService } from '../chat/chat.service';
+import { FinanceService } from '../finance/finance.service';
 import { resolvePrivateUpload } from '../common/private-uploads';
 import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
 import { unlink } from 'fs';
@@ -43,6 +44,9 @@ const ROSTER_SELECT = {
             gatewayId: true,
             paidAt: true,
             createdAt: true,
+            couponCode: true,
+            couponId: true,
+            coupon: { select: { id: true, name: true, sourceName: true, channel: true, type: true, value: true } },
         },
     },
 } as const;
@@ -54,6 +58,7 @@ export class EnrollmentsService {
         private audit: AuditService,
         private notifications: NotificationsService,
         private chatService: ChatService,
+        private finance: FinanceService,
     ) { }
 
     private async resolveOpening(courseId: string, openingId?: string) {
@@ -167,6 +172,22 @@ export class EnrollmentsService {
                         endDate: true,
                         enrollmentDeadline: true,
                         isPublished: true,
+                    },
+                },
+                // The receipt + coupon the student submitted, so finance sees the
+                // discount and its attribution right next to the request.
+                payments: {
+                    orderBy: { createdAt: 'desc' as const },
+                    take: 1,
+                    select: {
+                        id: true,
+                        status: true,
+                        amount: true,
+                        method: true,
+                        gatewayId: true,
+                        couponCode: true,
+                        couponId: true,
+                        coupon: { select: { id: true, name: true, sourceName: true, channel: true, type: true, value: true } },
                     },
                 },
             },
@@ -322,6 +343,20 @@ export class EnrollmentsService {
                         isPublished: true,
                     },
                 },
+                payments: {
+                    orderBy: { createdAt: 'desc' as const },
+                    take: 1,
+                    select: {
+                        id: true,
+                        status: true,
+                        amount: true,
+                        method: true,
+                        gatewayId: true,
+                        couponCode: true,
+                        couponId: true,
+                        coupon: { select: { id: true, name: true, sourceName: true, channel: true, type: true, value: true } },
+                    },
+                },
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -410,7 +445,7 @@ export class EnrollmentsService {
         };
     }
 
-    async enrollWithReceipt(openingId: string, receiptUrl: string, studentId: string, ipAddress?: string, gatewayId?: string) {
+    async enrollWithReceipt(openingId: string, receiptUrl: string, studentId: string, ipAddress?: string, gatewayId?: string, couponCode?: string) {
         const opening = await this.prisma.courseOpening.findUnique({
             where: { id: openingId },
             include: { course: { select: { id: true, titleEn: true, titleAr: true } } },
@@ -419,6 +454,20 @@ export class EnrollmentsService {
         assertOpeningEligible(opening, { requirePublished: true, enforceDeadline: true });
 
         const courseId = opening.courseId;
+
+        // Price the seat server-side. The coupon check here is only a preview:
+        // the authoritative one-use/limit enforcement happens at finance
+        // approval, inside the review transaction via finance.redeemCoupon.
+        const basePrice = Number(opening.price) || 0;
+        let amount = basePrice;
+        let normalizedCoupon: string | undefined;
+        let couponId: string | undefined;
+        if (couponCode && couponCode.trim()) {
+            normalizedCoupon = couponCode.trim().toUpperCase();
+            const result = await this.finance.validateCoupon(normalizedCoupon, courseId, basePrice);
+            amount = result.finalAmount ?? basePrice;
+            couponId = result.id;
+        }
 
         return this.prisma.$transaction(async (tx) => {
             let existing = await tx.enrollment.findUnique({
@@ -456,11 +505,15 @@ export class EnrollmentsService {
                     where: { studentId, openingId },
                     orderBy: { createdAt: 'desc' },
                 });
-                const amount = Number(opening.price) || 0;
+                // Preserve any coupon already attached to the pending payment
+                // (e.g. chosen at checkout) unless this submission supplies one.
+                const couponData = normalizedCoupon
+                    ? { amount, couponCode: normalizedCoupon, couponId: couponId ?? null }
+                    : {};
                 if (payment && payment.status === PaymentStatus.PENDING && payment.provider === 'MANUAL') {
                     await tx.payment.update({
                         where: { id: payment.id },
-                        data: { receiptFileUrl: receiptUrl, enrollmentId: existing.id, ...(gatewayId ? { gatewayId } : {}) },
+                        data: { receiptFileUrl: receiptUrl, enrollmentId: existing.id, ...(gatewayId ? { gatewayId } : {}), ...couponData },
                     });
                 } else {
                     await tx.payment.create({
@@ -472,6 +525,8 @@ export class EnrollmentsService {
                             currency: opening.currency,
                             provider: 'MANUAL',
                             method: 'RECEIPT',
+                            couponCode: normalizedCoupon ?? null,
+                            couponId: couponId ?? null,
                             ...(gatewayId ? { gatewayId } : {}),
                             description: `Receipt enrollment in ${opening.course.titleEn}`,
                             receiptFileUrl: receiptUrl,
@@ -534,7 +589,7 @@ export class EnrollmentsService {
                 student: true,
                 course: { select: { id: true, titleAr: true, titleEn: true } },
                 payments: { orderBy: { createdAt: 'desc' } },
-                opening: { select: { id: true } },
+                opening: { select: { id: true, price: true } },
             },
         });
         if (!enrollment) throw new NotFoundException('Enrollment not found');
@@ -563,6 +618,21 @@ export class EnrollmentsService {
                         ? { status: PaymentStatus.PAID, paidAt: new Date(), reviewedAt: new Date() }
                         : { status: PaymentStatus.REJECTED, reviewedAt: new Date() },
                 });
+                // Approving the money is what actually consumes the coupon. This
+                // is the single authoritative redemption point for manual
+                // payments: it enforces the cap and one-use-per-course atomically
+                // and rolls the whole review back if the coupon is exhausted.
+                if (status === EnrollmentStatus.APPROVED && (pendingPayment.couponId || pendingPayment.couponCode)) {
+                    const originalPrice = Number(enrollment.opening?.price ?? pendingPayment.amount) || Number(pendingPayment.amount);
+                    await this.finance.redeemCoupon(tx, {
+                        couponId: pendingPayment.couponId,
+                        couponCode: pendingPayment.couponCode,
+                        studentId: enrollment.studentId,
+                        courseId: enrollment.courseId,
+                        paymentId: pendingPayment.id,
+                        amountOff: Math.max(0, originalPrice - Number(pendingPayment.amount)),
+                    });
+                }
             }
             // A rejected enrollment must give its seat back so the opening can
             // fill it with the next applicant (atomic counter).

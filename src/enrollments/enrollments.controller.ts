@@ -77,6 +77,7 @@ export class EnrollmentsController {
     enrollWithReceipt(
         @Body('openingId') openingId: string,
         @Body('gatewayId') gatewayId: string | undefined,
+        @Body('couponCode') couponCode: string | undefined,
         @UploadedFile() file: any,
         @Request() req: any,
         @Ip() ip: string
@@ -100,6 +101,8 @@ export class EnrollmentsController {
             // Which payment method the student says they used, so finance can
             // reconcile the transfer. Optional: older clients omit it.
             gatewayId || undefined,
+            // Optional student-typed coupon code, priced server-side.
+            couponCode || undefined,
         );
     }
 

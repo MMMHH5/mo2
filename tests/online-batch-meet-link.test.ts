@@ -23,7 +23,7 @@ import { LessonsService } from '../src/lms/lessons.service';
 const noop = { logAction: () => Promise.resolve(), notify: () => Promise.resolve() };
 
 function enrollmentsService(prisma: any) {
-    return new EnrollmentsService(prisma, noop as any, noop as any, noop as any);
+    return new EnrollmentsService(prisma, noop as any, noop as any, noop as any, noop as any);
 }
 
 describe('normalizeMeetLink', () => {

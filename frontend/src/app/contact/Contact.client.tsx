@@ -143,8 +143,8 @@ export default function ContactContent() {
                         <h3 className={`font-bold mb-1 ${dark ? 'text-white' : 'text-brand-navy'}`}>{isAr ? 'ساعات العمل' : 'Working Hours'}</h3>
                         <p className={`text-sm leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                             {isAr
-                                ? 'السبت – الخميس، من 9 صباحاً حتى 6 مساءً (بتوقيت مكة المكرمة).'
-                                : 'Saturday – Thursday, 9:00 AM to 6:00 PM (Makkah time).'}
+                                ? 'طوال أيام الأسبوع، 24 ساعة (بتوقيت مكة المكرمة).'
+                                : 'Open 24 hours a day, 7 days a week (Makkah time).'}
                         </p>
                     </div>
                     <div className={`rounded-3xl border shadow-sm p-7 ${dark ? 'bg-brand-navy-dark border-white/10' : 'bg-white border-gray-200'}`}>

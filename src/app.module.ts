@@ -39,6 +39,7 @@ import { RubricsModule } from './rubrics/rubrics.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { FinanceModule } from './finance/finance.module';
 import { AnnouncementBoardModule } from './announcement-board/announcement-board.module';
+import { RefundsModule } from './refunds/refunds.module';
 
 @Module({
     imports: [
@@ -83,6 +84,7 @@ import { AnnouncementBoardModule } from './announcement-board/announcement-board
         AnalyticsModule,
         FinanceModule,
         AnnouncementBoardModule,
+        RefundsModule,
     ],
     providers: [
         // Replaces the default in-process counter store. Without this the limit

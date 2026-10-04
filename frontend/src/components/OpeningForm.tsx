@@ -24,6 +24,7 @@ interface FormValues {
     price: string;
     priceOld: string;
     maxStudents: string;
+    refundWindowDays: string;
     deliveryMode: DeliveryMode;
     meetLink: string;
 }
@@ -43,7 +44,7 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
         defaultValues: {
             nameAr: '', nameEn: '', instructorId: '', startDate: '', endDate: '',
             enrollmentDeadline: '', price: '', priceOld: '', maxStudents: '',
-            deliveryMode: 'IN_PERSON', meetLink: '',
+            refundWindowDays: '', deliveryMode: 'IN_PERSON', meetLink: '',
         },
     });
     // The link only means anything for an online batch, so the field appears
@@ -71,6 +72,7 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
                         price: o.price ? Number(o.price).toString() : '',
                         priceOld: o.priceOld ? Number(o.priceOld).toString() : '',
                         maxStudents: o.maxStudents ? Number(o.maxStudents).toString() : '',
+                        refundWindowDays: o.refundWindowDays != null ? String(o.refundWindowDays) : '',
                         deliveryMode: (o.deliveryMode as DeliveryMode) || 'IN_PERSON',
                         meetLink: (o.meetLink as string) || '',
                     });
@@ -98,6 +100,7 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
                 price: Number(data.price),
                 priceOld: num(data.priceOld),
                 maxStudents: num(data.maxStudents),
+                refundWindowDays: data.refundWindowDays !== '' ? Number(data.refundWindowDays) : null,
                 deliveryMode: data.deliveryMode,
                 // Sent as null, not "", when the batch is in person: the backend
                 // drops the stored link on that transition, so a stale classroom
@@ -176,6 +179,11 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
                                 <label className="block text-sm font-bold text-gray-300 mb-1">{t('opening.max_students')}</label>
                                 <input type="number" min={1} {...register('maxStudents')} className={inputCls} placeholder={t('opening.max_students_placeholder')} />
                             </div>
+                        </div>
+                        <div className="mt-3">
+                            <label className="block text-sm font-bold text-gray-300 mb-1">{t('opening.refund_window')}</label>
+                            <input type="number" min={0} {...register('refundWindowDays')} className={inputCls} placeholder={t('opening.refund_window_placeholder')} />
+                            <p className="text-xs text-gray-500 mt-1">{t('opening.refund_window_hint')}</p>
                         </div>
                     </section>
 

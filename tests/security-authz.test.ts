@@ -387,7 +387,7 @@ describe('SECURITY: /enrollments/all can be narrowed to one student', () => {
                 },
             },
         };
-        const svc = new EnrollmentsService(prisma as never, { logAction: async () => {} } as never, { notify: async () => {} } as never, {} as never);
+        const svc = new EnrollmentsService(prisma as never, { logAction: async () => {} } as never, { notify: async () => {} } as never, {} as never, {} as never);
         await svc.getAllEnrollments('student-9');
         assert.deepEqual(where, { studentId: 'student-9' });
     });
@@ -402,7 +402,7 @@ describe('SECURITY: /enrollments/all can be narrowed to one student', () => {
                 },
             },
         };
-        const svc = new EnrollmentsService(prisma as never, { logAction: async () => {} } as never, { notify: async () => {} } as never, {} as never);
+        const svc = new EnrollmentsService(prisma as never, { logAction: async () => {} } as never, { notify: async () => {} } as never, {} as never, {} as never);
         await svc.getAllEnrollments();
         assert.equal(where, undefined);
     });

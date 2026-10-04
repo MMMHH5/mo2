@@ -41,6 +41,9 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [gatewayId, setGatewayId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [couponCode, setCouponCode] = useState('');
+    const [coupon, setCoupon] = useState<{ name: string; amountOff: number; finalAmount: number } | null>(null);
+    const [couponChecking, setCouponChecking] = useState(false);
 
     const [query, setQuery] = useState('');
     const [category, setCategory] = useState('');
@@ -97,6 +100,8 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
         setSelectedCourse(course);
         setReceiptFile(null);
         setGatewayId(null);
+        setCouponCode('');
+        setCoupon(null);
     };
 
     const handleReserveClick = async (course: Course) => {
@@ -133,6 +138,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             formData.append('openingId', opening.id);
             formData.append('gatewayId', gatewayId);
             formData.append('receipt', receiptFile);
+            if (couponCode.trim()) formData.append('couponCode', couponCode.trim());
 
             await api.post('/enrollments', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -142,10 +148,36 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             setSelectedCourse(null);
             setReceiptFile(null);
             setGatewayId(null);
+            setCouponCode('');
+            setCoupon(null);
         } catch (err) {
             toast.error(getErrorMessage(err) || t('explore.submit_failed'));
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const applyCoupon = async () => {
+        if (!selectedCourse || !couponCode.trim()) return;
+        const opening = currentOpening(selectedCourse);
+        setCouponChecking(true);
+        try {
+            const res = await api.post('/finance/coupons/validate', {
+                code: couponCode.trim(),
+                courseId: selectedCourse.id,
+                price: opening ? Number(opening.price) : undefined,
+            });
+            setCoupon({
+                name: res.data.name,
+                amountOff: Number(res.data.amountOff || 0),
+                finalAmount: Number(res.data.finalAmount ?? opening?.price ?? 0),
+            });
+            toast.success(t('payments.coupon_applied'));
+        } catch (err) {
+            setCoupon(null);
+            toast.error(getErrorMessage(err) || t('payments.coupon_invalid'));
+        } finally {
+            setCouponChecking(false);
         }
     };
 
@@ -279,7 +311,46 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                             <BookOpen size={24} />
                         </div>
                         <h2 className={`text-2xl font-black mb-2 ${isDark ? 'text-white' : 'text-brand-navy'}`}>{t('explore.enroll_in')} {pick(selectedCourse, 'title')}</h2>
-                        <p className={`mb-6 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>{t('explore.transfer_part1')} <strong className={isDark ? 'text-brand-gold-light' : 'text-brand-navy'}>{formatPrice(currentOpening(selectedCourse)?.price, { locale })}</strong> {t('explore.transfer_part2')}</p>
+                        <p className={`mb-4 ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>{t('explore.transfer_part1')} <strong className={isDark ? 'text-brand-gold-light' : 'text-brand-navy'}>{formatPrice(currentOpening(selectedCourse)?.price, { locale })}</strong> {t('explore.transfer_part2')}</p>
+
+                        <div className="mb-6">
+                            <label className={`block text-sm font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-300' : 'text-brand-charcoal'}`}>
+                                {t('payments.coupon_label')}
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    value={couponCode}
+                                    onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCoupon(null); }}
+                                    placeholder={t('payments.coupon_placeholder')}
+                                    className={`flex-1 px-4 py-3 rounded-xl font-mono font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition ${isDark ? 'bg-white/5 border border-white/10 text-white placeholder:text-gray-600' : 'bg-white border border-brand-mist text-brand-charcoal placeholder:text-gray-500'}`}
+                                />
+                                <button
+                                    onClick={applyCoupon}
+                                    disabled={couponChecking || !couponCode.trim()}
+                                    className={`px-4 py-3 rounded-xl font-bold transition disabled:opacity-50 whitespace-nowrap cursor-pointer ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-brand-mist text-brand-charcoal hover:bg-gray-200'}`}
+                                >
+                                    {couponChecking ? t('common.processing') : t('payments.coupon_apply')}
+                                </button>
+                            </div>
+                            {coupon && (
+                                <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-sm">
+                                    <div className="flex items-center justify-between text-emerald-500 font-bold">
+                                        <span>{coupon.name}</span>
+                                        <button onClick={() => { setCoupon(null); setCouponCode(''); }} className="text-xs font-bold underline">
+                                            {t('payments.coupon_remove')}
+                                        </button>
+                                    </div>
+                                    <div className={`flex items-center justify-between mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        <span>{t('payments.coupon_discount')}</span>
+                                        <span className="font-bold text-emerald-500">-{formatPrice(coupon.amountOff, { locale })}</span>
+                                    </div>
+                                    <div className={`flex items-center justify-between mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                        <span>{t('payments.coupon_total')}</span>
+                                        <span className={`font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>{formatPrice(coupon.finalAmount, { locale })}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         <EnrollSteps step={gatewayId ? 2 : 1} dark={isDark} />
 

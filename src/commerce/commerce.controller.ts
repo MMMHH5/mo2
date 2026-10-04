@@ -2,12 +2,11 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Request, UseGuards }
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CurrenciesService } from './currencies.service';
-import { CouponsService } from './coupons.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { CheckoutDto, RefundPaymentDto, CreateCouponDto, UpdateCouponDto } from './dto/commerce.dto';
+import { CheckoutDto, RefundPaymentDto } from './dto/commerce.dto';
 
 const ALL_ROLES = ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'];
 
@@ -19,7 +18,6 @@ export class CommerceController {
   constructor(
     private payments: PaymentsService,
     private currencies: CurrenciesService,
-    private coupons: CouponsService,
   ) {}
 
   // ---------- Payments ----------
@@ -94,39 +92,4 @@ export class CommerceController {
     return this.currencies.delete(code);
   }
 
-  // ---------- Coupons ----------
-
-  @ApiOperation({ summary: 'Validate a coupon for a course' })
-  @Get('coupons/validate')
-  validateCoupon(@Body('code') code: string, @Body('courseId') courseId: string, @Body('price') price: number) {
-    return this.coupons.validate(code, courseId, price);
-  }
-
-  @ApiOperation({ summary: 'List all coupons (admin)' })
-  @Roles(Role.ADMIN, Role.COURSE_MANAGER)
-  @Get('coupons')
-  listCoupons() {
-    return this.coupons.list();
-  }
-
-  @ApiOperation({ summary: 'Create a coupon (admin)' })
-  @Roles(Role.ADMIN)
-  @Post('coupons')
-  createCoupon(@Body() dto: CreateCouponDto) {
-    return this.coupons.create(dto);
-  }
-
-  @ApiOperation({ summary: 'Update a coupon (admin)' })
-  @Roles(Role.ADMIN)
-  @Patch('coupons/:id')
-  updateCoupon(@Param('id') id: string, @Body() dto: UpdateCouponDto) {
-    return this.coupons.update(id, dto);
-  }
-
-  @ApiOperation({ summary: 'Delete a coupon (admin)' })
-  @Roles(Role.ADMIN)
-  @Delete('coupons/:id')
-  deleteCoupon(@Param('id') id: string) {
-    return this.coupons.remove(id);
-  }
 }

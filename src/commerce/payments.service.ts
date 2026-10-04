@@ -4,7 +4,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
 import { AuditService } from '../audit/audit.service';
 import { ChatService } from '../chat/chat.service';
-import { CouponsService } from './coupons.service';
+import { FinanceService } from '../finance/finance.service';
 import { Role, PaymentStatus, EnrollmentStatus } from '@prisma/client';
 import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
 import { Prisma } from '@prisma/client';
@@ -21,7 +21,7 @@ export class PaymentsService {
     private email: EmailService,
     private audit: AuditService,
     private chatService: ChatService,
-    private coupons: CouponsService,
+    private finance: FinanceService,
   ) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (key) {
@@ -81,9 +81,11 @@ export class PaymentsService {
 
     let amount = price;
     let couponCode: string | undefined = opts.couponCode?.trim().toUpperCase() || undefined;
+    let couponId: string | undefined;
     if (couponCode) {
-      const result = await this.coupons.validate(couponCode, opening.courseId, price);
-      amount = result.finalAmount;
+      const result = await this.finance.validateCoupon(couponCode, opening.courseId, price);
+      amount = result.finalAmount ?? price;
+      couponId = result.id;
     }
 
     const provider = (opts.provider || 'MANUAL').toUpperCase();
@@ -96,6 +98,7 @@ export class PaymentsService {
         currency: opening.currency,
         provider,
         couponCode,
+        couponId,
         description: `Enrollment in ${opening.course.titleEn}`,
       },
     });
@@ -171,10 +174,15 @@ export class PaymentsService {
                 where: { id: paymentId },
                 data: { status: PaymentStatus.PAID, paidAt: new Date(), enrollmentId: enrollment.id },
               });
-              if (payment.couponCode) {
-                await tx.coupon.update({
-                  where: { code: payment.couponCode },
-                  data: { usedCount: { increment: 1 } },
+              if (payment.couponId || payment.couponCode) {
+                const originalPrice = Number(payment.opening.price);
+                await this.finance.redeemCoupon(tx, {
+                  couponId: payment.couponId,
+                  couponCode: payment.couponCode,
+                  studentId: payment.studentId,
+                  courseId: payment.opening.courseId,
+                  paymentId,
+                  amountOff: Math.max(0, originalPrice - Number(payment.amount)),
                 });
               }
             });

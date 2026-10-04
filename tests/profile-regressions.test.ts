@@ -252,7 +252,7 @@ describe('course completion percentage', () => {
         const prisma = {
             enrollment: { findMany: () => Promise.resolve(rows) },
         };
-        return new EnrollmentsService(prisma as any, noopService, noopService as any, {} as any);
+        return new EnrollmentsService(prisma as any, noopService, noopService as any, {} as any, {} as any);
     };
     const row = (modules: number, done: number) => ({
         id: 'e1',

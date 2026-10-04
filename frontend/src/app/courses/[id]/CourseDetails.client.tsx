@@ -171,6 +171,9 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [selectedOpening, setSelectedOpening] = useState<Opening | null>(null);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+    const [couponCode, setCouponCode] = useState('');
+    const [coupon, setCoupon] = useState<{ name: string; amountOff: number; finalAmount: number } | null>(null);
+    const [couponChecking, setCouponChecking] = useState(false);
 
     // --- Mode detection ---
     // Entitlement comes from the API, not from `openings.length`. The old
@@ -318,6 +321,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             formData.append('openingId', selectedOpening.id);
             formData.append('gatewayId', gatewayId);
             formData.append('receipt', receiptFile);
+            if (couponCode.trim()) formData.append('couponCode', couponCode.trim());
             await api.post('/enrollments', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
@@ -325,6 +329,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             setSelectedOpening(null);
             setReceiptFile(null);
             setGatewayId(null);
+            setCouponCode('');
+            setCoupon(null);
         } catch (e) {
             // A guest that slipped past the CTA still gets a prompt, not "Unauthorized".
             if (isUnauthorized(e)) {
@@ -338,6 +344,29 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
         }
     };
 
+    const applyCoupon = async () => {
+        if (!selectedOpening || !couponCode.trim()) return;
+        setCouponChecking(true);
+        try {
+            const res = await api.post('/finance/coupons/validate', {
+                code: couponCode.trim(),
+                courseId: id,
+                price: Number(selectedOpening.price),
+            });
+            setCoupon({
+                name: res.data.name,
+                amountOff: Number(res.data.amountOff || 0),
+                finalAmount: Number(res.data.finalAmount ?? selectedOpening.price ?? 0),
+            });
+            toast.success(t('payments.coupon_applied'));
+        } catch (err) {
+            setCoupon(null);
+            toast.error(getErrorMessage(err) || t('payments.coupon_invalid'));
+        } finally {
+            setCouponChecking(false);
+        }
+    };
+
     const handleEnrollClick = (target: Opening) => {
         if (!user) {
             setShowLoginPrompt(true);
@@ -345,6 +374,8 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
         }
         setReceiptFile(null);
         setGatewayId(null);
+        setCouponCode('');
+        setCoupon(null);
         setSelectedOpening(target);
     };
 
@@ -1021,9 +1052,48 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                         <h2 className={`text-xl sm:text-2xl font-black mb-2 break-words 'text-ink'`}>
                             {t('explore.enroll_in')} {pick(course, 'title')}
                         </h2>
-                        <p className={`mb-6 ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>
+                        <p className={`mb-4 ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>
                             {t('explore.transfer_part1')} <strong className={'text-accent'}>{formatPrice(selectedOpening.price, { locale })}</strong> {t('explore.transfer_part2')}
                         </p>
+
+                        <div className="mb-6">
+                            <label className={`block text-sm font-bold uppercase tracking-wider mb-2 ${dark ? 'text-ink-muted' : 'text-ink'}`}>
+                                {t('payments.coupon_label')}
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    value={couponCode}
+                                    onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCoupon(null); }}
+                                    placeholder={t('payments.coupon_placeholder')}
+                                    className={`flex-1 px-4 py-3 rounded-xl font-mono font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-accent/50 transition ${dark ? 'bg-ink/[0.04] border border-line text-ink placeholder:text-ink-muted' : 'bg-surface-raised border border-line text-ink placeholder:text-ink-subtle'}`}
+                                />
+                                <button
+                                    onClick={applyCoupon}
+                                    disabled={couponChecking || !couponCode.trim()}
+                                    className={`px-4 py-3 rounded-xl font-bold transition disabled:opacity-50 whitespace-nowrap cursor-pointer ${dark ? 'bg-ink/[0.04] text-ink-muted hover:bg-ink/[0.08]' : 'bg-surface-sunken text-ink-muted hover:bg-ink/[0.08]'}`}
+                                >
+                                    {couponChecking ? t('common.processing') : t('payments.coupon_apply')}
+                                </button>
+                            </div>
+                            {coupon && (
+                                <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-sm">
+                                    <div className="flex items-center justify-between text-emerald-500 font-bold">
+                                        <span>{coupon.name}</span>
+                                        <button onClick={() => { setCoupon(null); setCouponCode(''); }} className="text-xs font-bold underline">
+                                            {t('payments.coupon_remove')}
+                                        </button>
+                                    </div>
+                                    <div className={`flex items-center justify-between mt-1 ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>
+                                        <span>{t('payments.coupon_discount')}</span>
+                                        <span className="font-bold text-emerald-500">-{formatPrice(coupon.amountOff, { locale })}</span>
+                                    </div>
+                                    <div className={`flex items-center justify-between mt-1 ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>
+                                        <span>{t('payments.coupon_total')}</span>
+                                        <span className="font-black text-ink">{formatPrice(coupon.finalAmount, { locale })}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         <EnrollSteps step={gatewayId ? 2 : 1} dark={dark} />
 

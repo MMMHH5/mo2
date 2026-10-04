@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, Min, IsInt, IsDateString, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min, Max, IsInt, IsDateString, IsEnum } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DeliveryMode } from '@prisma/client';
@@ -55,6 +55,17 @@ export class CreateOpeningDto {
     @IsInt()
     @Min(1)
     maxStudents?: number;
+
+    @ApiPropertyOptional({
+        description: 'Days after the start date during which a student may request a refund. Omit/null = refunds disabled.',
+        example: 3,
+    })
+    @Type(() => Number)
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    @Max(365)
+    refundWindowDays?: number | null;
 
     @ApiPropertyOptional({ description: 'Announcement banner start (ISO)' })
     @IsOptional()

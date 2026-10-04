@@ -314,10 +314,7 @@ export default function Home() {
               </div>
               <h4 className={`text-lg font-black mb-2 ${cardTitleCls}`}>{isAr ? 'ساعات العمل' : 'Working Hours'}</h4>
               <p className={`text-sm font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-                {isAr ? 'السبت - الخميس: 9 ص - 6 م' : 'Saturday - Thursday: 9 AM - 6 PM'}
-              </p>
-              <p className={`text-sm font-bold mt-1 ${dark ? 'text-gray-500' : 'text-gray-400'}`}>
-                {isAr ? 'الجمعة: مغلق' : 'Friday: Closed'}
+                {isAr ? 'طوال أيام الأسبوع: 24 ساعة' : 'Open 24 hours, 7 days a week'}
               </p>
             </div>
 

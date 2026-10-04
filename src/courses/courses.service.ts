@@ -469,6 +469,7 @@ export class CoursesService {
                 startDate: dto.startDate as unknown as Date | undefined,
                 endDate: dto.endDate as unknown as Date | undefined,
                 enrollmentDeadline: dto.enrollmentDeadline as unknown as Date | undefined,
+                refundWindowDays: dto.refundWindowDays ?? null,
                 price: new Prisma.Decimal(dto.price),
                 priceOld: dto.priceOld != null ? new Prisma.Decimal(dto.priceOld) : null,
                 maxStudents: dto.maxStudents ?? null,
@@ -541,6 +542,7 @@ export class CoursesService {
         if (dto.startDate !== undefined) data.startDate = dto.startDate as unknown as Date;
         if (dto.endDate !== undefined) data.endDate = dto.endDate as unknown as Date;
         if (dto.enrollmentDeadline !== undefined) data.enrollmentDeadline = dto.enrollmentDeadline as unknown as Date;
+        if (dto.refundWindowDays !== undefined) data.refundWindowDays = dto.refundWindowDays ?? null;
         if (dto.price !== undefined) data.price = new Prisma.Decimal(dto.price);
         if (dto.priceOld !== undefined) data.priceOld = dto.priceOld != null ? new Prisma.Decimal(dto.priceOld) : null;
         if (dto.maxStudents !== undefined) data.maxStudents = dto.maxStudents ?? null;
