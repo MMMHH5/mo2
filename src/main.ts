@@ -166,7 +166,11 @@ async function bootstrap() {
         origin: getFrontendUrl(),
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
-        allowedHeaders: 'Content-Type, Accept, Authorization',
+        // `X-Ops-Grant` carries the operations-center grant. Any custom header
+        // forces a CORS preflight, and a header missing from this list is
+        // rejected by the browser before the request is ever sent -- which is
+        // why the grant could not reach the API until it was named here.
+        allowedHeaders: 'Content-Type, Accept, Authorization, X-Ops-Grant',
     });
 
     await app.listen(process.env.PORT || 3001);

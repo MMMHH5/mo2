@@ -7,6 +7,8 @@ import { OperationsController } from '../src/operations/operations.controller';
 import { EventsQueryDto, SessionsQueryDto } from '../src/operations/dto/operations.dto';
 import { plainToInstance } from 'class-transformer';
 import { UnauthorizedException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Tests for the operations center.
@@ -477,5 +479,38 @@ describe('OPERATIONS: query-string booleans are not coerced the wrong way', () =
         assert.equal(parse(SessionsQueryDto, {}).authenticatedOnly, undefined);
         assert.equal(parse(SessionsQueryDto, { authenticatedOnly: '' }).authenticatedOnly, undefined);
         assert.equal(parse(EventsQueryDto, { authenticatedOnly: 'false' }).authenticatedOnly, false);
+    });
+});
+
+describe('PLATFORM: CORS permits the headers the frontend actually sends', () => {
+    /**
+     * A custom header forces a preflight, and the browser rejects the request
+     * outright when the header is missing from `Access-Control-Allow-Headers` --
+     * with no error the API can see or report. `X-Ops-Grant` carries the
+     * operations grant, so leaving it out locked the whole page.
+     *
+     * This reads the real `main.ts` source rather than restating the list, so a
+     * header added to the frontend without updating the API fails here.
+     */
+    function corsAllowedHeaders(): string[] {
+        const source = readFileSync(join(__dirname, '..', 'src', 'main.ts'), 'utf8');
+        const match = source.match(/allowedHeaders:\s*'([^']+)'/);
+        assert.ok(match, 'main.ts must configure enableCors with allowedHeaders');
+        return match[1].split(',').map(h => h.trim());
+    }
+
+    test('the operations grant header is allowed', () => {
+        const allowed = corsAllowedHeaders().map(h => h.toLowerCase());
+        assert.ok(
+            allowed.includes('x-ops-grant'),
+            `x-ops-grant missing from allowedHeaders: ${allowed.join(', ')}`,
+        );
+    });
+
+    test('the headers every authenticated request needs are still allowed', () => {
+        const allowed = corsAllowedHeaders().map(h => h.toLowerCase());
+        for (const header of ['content-type', 'authorization']) {
+            assert.ok(allowed.includes(header), `${header} missing from allowedHeaders`);
+        }
     });
 });
