@@ -6,9 +6,10 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { api, getErrorMessage, isUnauthorized } from '@/lib/api';
 import {
     Activity, AlertTriangle, ArrowRight, Bot, Cpu, Eye, Globe, KeyRound, LayoutGrid,
-    Loader2, Lock, Monitor, MousePointerClick, RefreshCw, Search, ShieldCheck, Smartphone,
+    Loader2, Lock, Monitor, MousePointerClick, RefreshCw, Search, Settings, ShieldCheck, Smartphone,
     Tablet, Tv, User, UserX, X, type LucideIcon,
 } from 'lucide-react';
+import OperationsSettingsPanel from '@/components/OperationsSettingsPanel';
 
 /* ------------------------------------------------------------------ types */
 
@@ -148,7 +149,7 @@ function OperationsCenterPage() {
     const [unlocking, setUnlocking] = useState(false);
     const [unlockError, setUnlockError] = useState<string | null>(null);
 
-    const [tab, setTab] = useState<'overview' | 'live' | 'devices'>('overview');
+    const [tab, setTab] = useState<'overview' | 'live' | 'devices' | 'settings'>('overview');
     const [hours, setHours] = useState(24);
     const [overview, setOverview] = useState<Overview | null>(null);
     const [timeline, setTimeline] = useState<TimelinePoint[]>([]);
@@ -393,6 +394,7 @@ function OperationsCenterPage() {
                         ['overview', LayoutGrid, 'ops.tab_overview'],
                         ['live', Activity, 'ops.tab_live'],
                         ['devices', Monitor, 'ops.tab_devices'],
+                        ['settings', Settings, 'ops.tab_settings'],
                     ] as const).map(([id, Icon, label]) => (
                         <button
                             key={id}
@@ -620,6 +622,9 @@ function OperationsCenterPage() {
                             t={t}
                         />
                     </Panel>
+                )}
+                {tab === 'settings' && (
+                    <OperationsSettingsPanel headers={headers} t={t} onGrantLost={lock} />
                 )}
             </main>
 

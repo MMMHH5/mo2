@@ -4,6 +4,7 @@ import { parseUserAgent, pickSafeMeta, clampText } from '../src/operations/opera
 import { OperationsService, readCookie } from '../src/operations/operations.service';
 import { OperationsKeyService, OperationsTrackerMiddleware } from '../src/operations/operations-tracker.middleware';
 import { OperationsController } from '../src/operations/operations.controller';
+import { OperationsSettingsService } from '../src/operations/operations-settings.service';
 import { EventsQueryDto, SessionsQueryDto } from '../src/operations/dto/operations.dto';
 import { plainToInstance } from 'class-transformer';
 import { UnauthorizedException, ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -159,34 +160,214 @@ describe('OPERATIONS: event metadata cannot become a credential store', () => {
     });
 });
 
+/**
+ * A minimal in-memory Prisma stand-in for the settings service.
+ *
+ * Only the operations models are modelled, and the allowlist is a real Set so the
+ * "cannot empty the list" rule is exercised against actual state changes rather
+ * than a stub that returns whatever the assertion expects.
+ */
+function buildSettings(over: {
+    keyHash?: string | null;
+    keyVersion?: number;
+    users?: Record<string, { role: string; isActive: boolean }>;
+    allowlist?: string[];
+} = {}) {
+    const state = {
+        keyHash: over.keyHash ?? null,
+        keyVersion: over.keyVersion ?? 1,
+        users: over.users ?? { 'admin-1': { role: 'ADMIN', isActive: true } } as Record<string, { role: string; isActive: boolean }>,
+        allowlist: new Set(over.allowlist ?? []),
+    };
+    const prisma: any = {
+        operationsSetting: {
+            findUnique: async () => (state.keyHash === null && state.keyVersion === 1 && !state.allowlist.size
+                ? null
+                : { id: 'singleton', keyHash: state.keyHash, keyVersion: state.keyVersion }),
+            create: async ({ data }: any) => {
+                state.keyHash = data.keyHash ?? null;
+                state.keyVersion = data.keyVersion ?? 1;
+                return { id: 'singleton', ...data };
+            },
+            upsert: async ({ create, update }: any) => {
+                if (state.keyHash === null && state.keyVersion === 1) {
+                    state.keyHash = create.keyHash;
+                    state.keyVersion = create.keyVersion;
+                } else {
+                    state.keyHash = update.keyHash;
+                    state.keyVersion += update.keyVersion.increment;
+                }
+                return { id: 'singleton', keyHash: state.keyHash, keyVersion: state.keyVersion };
+            },
+        },
+        operationsAllowlistEntry: {
+            count: async () => state.allowlist.size,
+            findUnique: async ({ where }: any) => (state.allowlist.has(where.userId) ? { id: 'e', userId: where.userId } : null),
+            findMany: async () => [...state.allowlist].map((userId) => ({
+                id: `e_${userId}`, userId, grantedById: null, createdAt: new Date(0),
+                user: { id: userId, email: `${userId}@example.com`, name: userId, role: 'ADMIN', isActive: true },
+            })),
+            create: async ({ data }: any) => {
+                state.allowlist.add(data.userId);
+                return { id: 'e', ...data };
+            },
+            deleteMany: async ({ where }: any) => {
+                const had = state.allowlist.delete(where.userId);
+                return { count: had ? 1 : 0 };
+            },
+        },
+        user: {
+            findUnique: async ({ where }: any) => state.users[where.id] ?? null,
+            findMany: async () => Object.entries(state.users)
+                .filter(([, u]) => u.role === 'ADMIN' && u.isActive)
+                .map(([id, u]) => ({ id, email: `${id}@example.com`, name: id, lastLoginAt: null })),
+        },
+    };
+    const svc = new OperationsSettingsService(prisma);
+    return { svc, state };
+}
+
 describe('OPERATIONS: the second password fails closed', () => {
     beforeEach(() => {
         process.env.OPERATIONS_KEY = 'correct-horse-battery-staple';
         process.env.JWT_SECRET = SECRET;
     });
 
-    test('rejects when OPERATIONS_KEY is unset', () => {
+    test('rejects when OPERATIONS_KEY is unset', async () => {
         delete process.env.OPERATIONS_KEY;
-        const svc = buildService();
+        const { svc } = buildSettings();
         // This is the load-bearing assertion of the whole feature: an unset
         // variable must LOCK the page. If it ever returns true, anyone with an
         // admin token can read the device log with no second factor.
-        assert.equal(svc.verifyOperationsKey('anything'), false);
-        assert.equal(svc.verifyOperationsKey(undefined), false);
+        assert.equal(await svc.verifyKey('anything'), false);
+        assert.equal(await svc.verifyKey(undefined), false);
     });
 
-    test('rejects wrong, right-length-wrong, and empty keys', () => {
-        const svc = buildService();
-        assert.equal(svc.verifyOperationsKey('wrong'), false);
-        assert.equal(svc.verifyOperationsKey('correct-horse-battery-stapl'), false, 'prefix must not pass');
-        assert.equal(svc.verifyOperationsKey('correct-horse-battery-staples'), false, 'extension must not pass');
-        assert.equal(svc.verifyOperationsKey(''), false);
-        assert.equal(svc.verifyOperationsKey(undefined), false);
+    test('rejects wrong, right-length-wrong, and empty keys', async () => {
+        const { svc } = buildSettings();
+        assert.equal(await svc.verifyKey('wrong'), false);
+        assert.equal(await svc.verifyKey('correct-horse-battery-stapl'), false, 'prefix must not pass');
+        assert.equal(await svc.verifyKey('correct-horse-battery-staples'), false, 'extension must not pass');
+        assert.equal(await svc.verifyKey(''), false);
+        assert.equal(await svc.verifyKey(undefined), false);
     });
 
-    test('accepts only the exact key', () => {
-        const svc = buildService();
-        assert.equal(svc.verifyOperationsKey('correct-horse-battery-staple'), true);
+    test('accepts only the exact key', async () => {
+        const { svc } = buildSettings();
+        assert.equal(await svc.verifyKey('correct-horse-battery-staple'), true);
+    });
+});
+
+describe('OPERATIONS: a stored password is a bcrypt hash and beats the env var', () => {
+    beforeEach(() => {
+        process.env.OPERATIONS_KEY = 'correct-horse-battery-staple';
+        process.env.JWT_SECRET = SECRET;
+    });
+
+    test('never stores the password in plain text', async () => {
+        const { svc, state } = buildSettings();
+        await svc.setKey('a-long-new-password', 'admin-1');
+        assert.ok(state.keyHash, 'a hash must exist after setting a password');
+        assert.notEqual(state.keyHash, 'a-long-new-password');
+        // $2a$/$2b$ prefix is what makes this a bcrypt digest rather than a
+        // reversible encoding.
+        assert.match(state.keyHash!, /^\$2[aby]\$\d{2}\$/);
+    });
+
+    test('the env var stops working once a password is set in-app', async () => {
+        const { svc } = buildSettings();
+        await svc.setKey('a-long-new-password', 'admin-1');
+        // The whole reason rotation has to touch the database: if OPERATIONS_KEY
+        // still opened the page, changing the password in the UI would be a lie.
+        assert.equal(await svc.verifyKey('correct-horse-battery-staple'), false, 'stale env key must stop working');
+        assert.equal(await svc.verifyKey('a-long-new-password'), true);
+    });
+
+    test('changing the password bumps the version so old grants die', async () => {
+        const { svc, state } = buildSettings();
+        await svc.setKey('a-long-new-password', 'admin-1');
+        const first = state.keyVersion;
+        await svc.setKey('another-long-password', 'admin-1');
+        assert.ok(state.keyVersion > first, 'keyVersion must increase on rotation');
+    });
+
+    test('refuses a password too short to be worth hashing', async () => {
+        const { svc } = buildSettings();
+        await assert.rejects(() => svc.setKey('short', 'admin-1'), /at least 12 characters/);
+    });
+});
+
+describe('OPERATIONS: the allowlist gates who may read', () => {
+    beforeEach(() => {
+        process.env.JWT_SECRET = SECRET;
+    });
+
+    test('an empty list means any active admin', async () => {
+        const { svc } = buildSettings();
+        assert.equal(await svc.isAllowed('admin-1'), true);
+    });
+
+    test('a non-empty list excludes admins who are not on it', async () => {
+        const {
+            svc,
+        } = buildSettings({
+            allowlist: ['admin-2'],
+            users: { 'admin-1': { role: 'ADMIN', isActive: true }, 'admin-2': { role: 'ADMIN', isActive: true } },
+        });
+        assert.equal(await svc.isAllowed('admin-2'), true);
+        assert.equal(await svc.isAllowed('admin-1'), false);
+        assert.equal(await svc.isAllowed('nobody'), false);
+    });
+
+    test('being on the list does not survive a role change or a suspension', async () => {
+        const { svc } = buildSettings({
+            allowlist: ['admin-1'],
+            users: { 'admin-1': { role: 'ADMIN', isActive: true } },
+        });
+        assert.equal(await svc.isAllowed('admin-1'), true);
+
+        // The JWT still says ADMIN. Only a database read catches this, which is
+        // why the controller re-checks on every request instead of trusting the
+        // role claim for the life of the grant.
+        const demoted = buildSettings({
+            allowlist: ['admin-1'],
+            users: { 'admin-1': { role: 'INSTRUCTOR', isActive: true } },
+        });
+        assert.equal(await demoted.svc.isAllowed('admin-1'), false);
+
+        const suspended = buildSettings({
+            allowlist: ['admin-1'],
+            users: { 'admin-1': { role: 'ADMIN', isActive: false } },
+        });
+        assert.equal(await suspended.svc.isAllowed('admin-1'), false);
+    });
+
+    test('the last entry cannot be removed', async () => {
+        const { svc } = buildSettings({ allowlist: ['admin-1'] });
+        // An empty list is the "any admin" fallback, so this would not actually
+        // lock anyone out -- but silently widening access via a "remove" click is
+        // never what the operator meant. Clearing the list is a separate,
+        // deliberate gesture.
+        await assert.rejects(() => svc.removeFromAllowlist('admin-1', 'admin-1'), /last allowed admin/i);
+    });
+
+    test('an admin may remove themselves while another remains', async () => {
+        const { svc, state } = buildSettings({
+            allowlist: ['admin-1', 'admin-2'],
+            users: { 'admin-1': { role: 'ADMIN', isActive: true }, 'admin-2': { role: 'ADMIN', isActive: true } },
+        });
+        const result = await svc.removeFromAllowlist('admin-1', 'admin-1');
+        assert.equal(result.removedSelf, true);
+        assert.equal(state.allowlist.has('admin-1'), false);
+        assert.equal(await svc.isAllowed('admin-1'), false);
+    });
+
+    test('refuses to list a non-admin, which would grant nothing', async () => {
+        const { svc } = buildSettings({
+            users: { 'admin-1': { role: 'ADMIN', isActive: true }, 'user-9': { role: 'INSTRUCTOR', isActive: true } },
+        });
+        await assert.rejects(() => svc.addToAllowlist('user-9', 'admin-1'), /Only ADMIN/);
+        await assert.rejects(() => svc.addToAllowlist('missing', 'admin-1'), /User not found/);
     });
 });
 
@@ -197,11 +378,11 @@ describe('OPERATIONS: a grant is not interchangeable with an access token', () =
 
     test('issues a grant that verifies for its own user only', () => {
         const keys = new OperationsKeyService(buildService());
-        const { grant } = keys.issueGrant('admin-1');
-        assert.equal(keys.verifyGrant(grant, 'admin-1'), true);
+        const { grant } = keys.issueGrant('admin-1', 3);
+        assert.equal(keys.verifyGrant(grant, 'admin-1', 3), true);
         // Bound to the subject: a grant lifted from one admin must not unlock
         // the page for another.
-        assert.equal(keys.verifyGrant(grant, 'admin-2'), false);
+        assert.equal(keys.verifyGrant(grant, 'admin-2', 3), false);
     });
 
     test('refuses a plain access token, which carries no opsGrant claim', () => {
@@ -211,27 +392,120 @@ describe('OPERATIONS: a grant is not interchangeable with an access token', () =
         const jwt = require('jsonwebtoken');
         const accessToken = jwt.sign({ sub: 'admin-1', email: 'a@b.c', role: 'ADMIN', tv: 0 }, SECRET, { algorithm: 'HS256' });
         const keys = new OperationsKeyService(buildService());
-        assert.equal(keys.verifyGrant(accessToken, 'admin-1'), false);
+        assert.equal(keys.verifyGrant(accessToken, 'admin-1', 3), false);
     });
 
     test('refuses garbage and a tampered grant', () => {
         const keys = new OperationsKeyService(buildService());
-        assert.equal(keys.verifyGrant('not-a-token', 'admin-1'), false);
-        assert.equal(keys.verifyGrant(undefined, 'admin-1'), false);
+        assert.equal(keys.verifyGrant('not-a-token', 'admin-1', 3), false);
+        assert.equal(keys.verifyGrant(undefined, 'admin-1', 3), false);
 
-        const { grant } = keys.issueGrant('admin-1');
+        const { grant } = keys.issueGrant('admin-1', 3);
         const jwt = require('jsonwebtoken');
         // Re-sign the same claims with the attacker's own key.
-        const forged = jwt.sign({ sub: 'admin-1', opsGrant: true }, 'attacker-secret', { algorithm: 'HS256' });
-        assert.equal(keys.verifyGrant(forged, 'admin-1'), false);
+        const forged = jwt.sign({ sub: 'admin-1', opsGrant: true, kv: 3 }, 'attacker-secret', { algorithm: 'HS256' });
+        assert.equal(keys.verifyGrant(forged, 'admin-1', 3), false);
         assert.notEqual(grant, forged);
     });
 
     test('an expired grant stops working', () => {
         const jwt = require('jsonwebtoken');
         const keys = new OperationsKeyService(buildService());
-        const expired = jwt.sign({ sub: 'admin-1', opsGrant: true }, SECRET, { algorithm: 'HS256', expiresIn: -10 });
-        assert.equal(keys.verifyGrant(expired, 'admin-1'), false);
+        const expired = jwt.sign({ sub: 'admin-1', opsGrant: true, kv: 3 }, SECRET, { algorithm: 'HS256', expiresIn: -10 });
+        assert.equal(keys.verifyGrant(expired, 'admin-1', 3), false);
+    });
+
+    test('a grant minted under an older password version stops working', () => {
+        const keys = new OperationsKeyService(buildService());
+        const { grant } = keys.issueGrant('admin-1', 3);
+        // Perfectly signed, perfectly unexpired, and worthless: the password it
+        // was issued under has since been rotated. This is what makes rotation
+        // actually revoke instead of merely suggest.
+        assert.equal(keys.verifyGrant(grant, 'admin-1', 4), false);
+    });
+
+    test('a grant predating versioning is refused rather than trusted', () => {
+        const jwt = require('jsonwebtoken');
+        const keys = new OperationsKeyService(buildService());
+        const legacy = jwt.sign({ sub: 'admin-1', opsGrant: true }, SECRET, { algorithm: 'HS256', expiresIn: 3600 });
+        // Accepting an unversioned grant would be the fail-open choice: after a
+        // deploy, an hour-old stolen grant would keep reading. Refusing it means
+        // everyone re-unlocks once, which is the correct cost.
+        assert.equal(keys.verifyGrant(legacy, 'admin-1', 1), false);
+    });
+});
+
+describe('OPERATIONS: changing the password needs more than a grant', () => {
+    beforeEach(() => {
+        process.env.JWT_SECRET = SECRET;
+    });
+
+    function buildController(over: { currentKeyOk?: boolean } = {}) {
+        const keys = { issueGrant: () => ({ grant: 'g', expiresAt: 'later' }), verifyGrant: () => true } as any;
+        const ops = {
+            verifyOperationsKey: () => true,
+            trackClientEvent: async () => {}, enrichSession: async () => {},
+            trackSecurity: async () => {}, hashIp: () => 'h',
+        } as any;
+        const queries = {} as any;
+        const securityEvents: string[] = [];
+        const settings = {
+            verifyKey: async () => over.currentKeyOk ?? true,
+            isAllowed: async () => true,
+            assertAllowed: async () => {},
+            currentKeyVersion: async () => 2,
+            state: async () => ({ hasPassword: true, keyVersion: 2, allowlistEmpty: true, allowlistSize: 0 }),
+            setKey: async () => 3,
+            listAllowlist: async () => [],
+            listEligibleAdmins: async () => [],
+        } as any;
+        const controller = new OperationsController(ops, queries, keys, settings);
+        return { controller, securityEvents };
+    }
+
+    test('rejects a password change when the current password is wrong', async () => {
+        const { controller } = buildController({ currentKeyOk: false });
+        const r = req();
+        r.user = { userId: 'admin-1' };
+        // A valid grant alone is not enough. It sits in sessionStorage for an
+        // hour, so trusting it to authorise a permanent credential change would
+        // let a single XSS take the door over forever.
+        await assert.rejects(
+            () => controller.setPassword(r, 'grant', { currentPassword: 'wrong', newPassword: 'a-long-enough-one', confirmPassword: 'a-long-enough-one' }),
+            UnauthorizedException,
+        );
+    });
+
+    test('rejects a mismatched confirmation', async () => {
+        const { controller } = buildController();
+        const r = req();
+        r.user = { userId: 'admin-1' };
+        await assert.rejects(
+            () => controller.setPassword(r, 'grant', { currentPassword: 'cur', newPassword: 'a-long-enough-one', confirmPassword: 'different-one-here' }),
+            /do not match/,
+        );
+    });
+
+    test('refuses to "rotate" into the password that is already set', async () => {
+        const { controller } = buildController();
+        const r = req();
+        r.user = { userId: 'admin-1' };
+        // A typo here would bump the version and sign every other unlocked tab
+        // out while the owner believes nothing changed.
+        await assert.rejects(
+            () => controller.setPassword(r, 'grant', { currentPassword: 'same-password-here', newPassword: 'same-password-here', confirmPassword: 'same-password-here' }),
+            /must be different/,
+        );
+    });
+
+    test('returns the new key version so other tabs know to re-unlock', async () => {
+        const { controller } = buildController();
+        const r = req();
+        r.user = { userId: 'admin-1' };
+        assert.deepEqual(
+            await controller.setPassword(r, 'grant', { currentPassword: 'cur', newPassword: 'a-long-enough-one', confirmPassword: 'a-long-enough-one' }),
+            { ok: true, keyVersion: 3 },
+        );
     });
 });
 
@@ -374,7 +648,16 @@ describe('OPERATIONS: the controller enforces the gates', () => {
             sessionDetail: async () => null,
             filterOptions: async () => ({}),
         } as any;
-        return new OperationsController(ops, queries, keys);
+        // The settings service is stubbed rather than the real one so the gate
+        // tests stay about the gate. The settings service's own allowlist rules
+        // are asserted separately, against real in-memory state.
+        const settings = {
+            verifyKey: async () => true,
+            isAllowed: async () => true,
+            assertAllowed: async () => {},
+            currentKeyVersion: async () => 1,
+        } as any;
+        return new OperationsController(ops, queries, keys, settings);
     }
 
     test('a locked page rejects every read endpoint', async () => {
@@ -384,9 +667,47 @@ describe('OPERATIONS: the controller enforces the gates', () => {
         // `overview` throws synchronously while the others reject, so both shapes
         // are wrapped: the assertion is that the gate fires, not how it surfaces.
         await assert.rejects(async () => controller.overview(r, undefined, {}), UnauthorizedException);
+        await assert.rejects(() => controller.timeline(r, undefined, {}), UnauthorizedException);
         await assert.rejects(() => controller.events(r, 'bad-grant', {}), UnauthorizedException);
         await assert.rejects(() => controller.sessions(r, undefined, {}), UnauthorizedException);
         await assert.rejects(() => controller.sessionDetail(r, undefined, 'x'), UnauthorizedException);
+        await assert.rejects(() => controller.filterOptions(r, undefined), UnauthorizedException);
+    });
+
+    test('a locked page rejects every settings endpoint', async () => {
+        const controller = buildController(false);
+        const r = req();
+        r.user = { userId: 'admin-1' };
+        // Settings must be behind exactly the same gate as the reads. A settings
+        // endpoint reachable without a grant would let anyone with an admin token
+        // rewrite the operations password.
+        await assert.rejects(() => controller.settingsState(r, undefined), UnauthorizedException);
+        await assert.rejects(
+            () => controller.setPassword(r, undefined, { currentPassword: 'a', newPassword: 'a-long-enough-one', confirmPassword: 'a-long-enough-one' }),
+            UnauthorizedException,
+        );
+        await assert.rejects(() => controller.addToAllowlist(r, undefined, { userId: 'admin-2' }), UnauthorizedException);
+        await assert.rejects(() => controller.removeFromAllowlist(r, undefined, 'admin-2'), UnauthorizedException);
+    });
+
+    test('an admin dropped from the allowlist is refused even with a valid grant', async () => {
+        // The stubbed grant still verifies; the account is no longer allowed.
+        // This is the revocation path: revoking access must take effect at once,
+        // not when the current hour-long grant happens to expire.
+        const { controller } = (() => {
+            const keys = { verifyGrant: () => true } as any;
+            const ops = { trackSecurity: async () => {} } as any;
+            const queries = { overview: async () => ({ leaked: true }) } as any;
+            const settings = {
+                verifyKey: async () => true,
+                assertAllowed: async () => { throw new ForbiddenException('not allowed'); },
+                currentKeyVersion: async () => 1,
+            } as any;
+            return { controller: new OperationsController(ops, queries, keys, settings) };
+        })();
+        const r = req();
+        r.user = { userId: 'admin-1' };
+        await assert.rejects(() => controller.overview(r, 'grant', {}), ForbiddenException);
     });
 
     test('an unlocked page reads', async () => {

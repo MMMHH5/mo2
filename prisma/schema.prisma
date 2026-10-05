@@ -153,6 +153,9 @@ model User {
   printedCertificates       Certificate[]            @relation("CertificatePrintedBy")
   auditLogs                 AuditLog[]
   visitSessions             VisitSession[]
+  operationsAccess          OperationsAllowlistEntry[] @relation("OperationsAllowlisted")
+  operationsGranted         OperationsAllowlistEntry[] @relation("OperationsGrantedBy")
+  operationsSettingsChanges OperationsSetting[]     @relation("OperationsChangedBy")
   applications              InstructorApplication[]
   tickets                   SupportTicket[]
   sentMessages              Message[]                @relation("SentMessages")
@@ -527,6 +530,50 @@ model AuditLog {
   // Note: we can keep userId optional or required. We make it optional in case of anonymous actions (e.g. brute force attempts logging)
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+/// The operations center's own credentials and settings, in a single row.
+///
+/// WHY A TABLE RATHER THAN MORE ENV VARS
+/// The owner asked to be able to change the password and to choose which admins
+/// may enter the page. Both are state that has to survive a restart and be
+/// editable at runtime, which an environment variable cannot do.
+///
+/// WHY THE KEY IS HASHED
+/// `keyHash` is a bcrypt digest, never the key itself. A leaked database dump
+/// or a read-only SQL mistake must not hand over the operations door. The
+/// original `OPERATIONS_KEY` variable is still honoured as a fallback so an
+/// existing deployment keeps working before anyone sets a password here.
+///
+/// `keyVersion` is what makes a stolen grant worthless. Every operations grant
+/// carries the version it was minted under; changing the password bumps it, and
+/// verification rejects any grant whose version is stale. That is what turns
+/// "log out everywhere" from a hope into a fact.
+model OperationsSetting {
+  id          String   @id @default("singleton")
+  keyHash     String?
+  keyVersion  Int      @default(1)
+  /// Set once the owner has created a password here. Drives the UI's warning
+  /// that the env var is still a second, weaker way in.
+  migratedAt  DateTime?
+  updatedAt   DateTime @updatedAt
+  changedById String?
+  changedBy   User?    @relation("OperationsChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+}
+
+/// Which admin accounts may open the operations page.
+///
+/// A separate table from `User` because this is not a role: every row is
+/// already an ADMIN, and the point is to narrow that set. Storing user ids
+/// rather than emails means a renamed account keeps its access and a deleted
+/// account loses it through the foreign key.
+model OperationsAllowlistEntry {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation("OperationsAllowlisted", fields: [userId], references: [id], onDelete: Cascade)
+  grantedById String?
+  grantedBy   User?    @relation("OperationsGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 }
 
 /// One row per browser (a "device" in the operations center's language).

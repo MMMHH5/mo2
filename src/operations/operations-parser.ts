@@ -95,7 +95,21 @@ function detectBrowser(s: string): string {
  * and payment bodies flow through the same request pipeline. Anything not named
  * here is dropped rather than sanitized later.
  */
-const SAFE_META_KEYS = new Set(['resourceId', 'resourceType', 'count', 'moduleId', 'courseId', 'reason']);
+/**
+ * `pickSafeMeta` is an allow-list, not a deny-list: anything not named here is
+ * dropped before it reaches the database. That is deliberate -- the tracking
+ * endpoints are unauthenticated, so an arbitrary client must not be able to
+ * write arbitrary columns into someone else's event row.
+ *
+ * `actorId`/`targetUserId`/`keyVersion` are here for the operations settings
+ * audit trail, which is exactly the kind of "who changed whose access" record
+ * that is worthless without them. User ids are not secrets, and these are only
+ * written by admin-authenticated endpoints.
+ */
+const SAFE_META_KEYS = new Set([
+    'resourceId', 'resourceType', 'count', 'moduleId', 'courseId', 'reason',
+    'actorId', 'targetUserId', 'keyVersion',
+]);
 
 export function pickSafeMeta(meta: unknown): Record<string, string | number> | undefined {
     if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return undefined;

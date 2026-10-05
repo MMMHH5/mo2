@@ -3,6 +3,7 @@ import { OperationsController } from './operations.controller';
 import { OperationsService } from './operations.service';
 import { OperationsKeyService, OperationsTrackerMiddleware } from './operations-tracker.middleware';
 import { OperationsQueriesService } from './operations-queries.service';
+import { OperationsSettingsService } from './operations-settings.service';
 
 /**
  * The tracker is registered as middleware rather than a global interceptor so it
@@ -16,9 +17,10 @@ import { OperationsQueriesService } from './operations-queries.service';
         OperationsService,
         OperationsKeyService,
         OperationsQueriesService,
+        OperationsSettingsService,
         OperationsTrackerMiddleware,
     ],
-    exports: [OperationsService],
+    exports: [OperationsService, OperationsSettingsService],
 })
 export class OperationsModule implements NestModule {
     configure(consumer: MiddlewareConsumer): void {

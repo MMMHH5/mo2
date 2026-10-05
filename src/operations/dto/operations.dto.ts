@@ -24,6 +24,39 @@ export class UnlockDto {
 
 const EVENT_TYPES = ['page_view', 'api_call', 'action', 'security'] as const;
 
+/**
+ * Changing the operations password.
+ *
+ * `currentPassword` is required even though the caller already holds a grant --
+ * see the controller for why. `newPassword` is never trimmed: a passphrase with
+ * meaningful leading or trailing spaces should still work, and silently
+ * stripping them would lock the owner out of their own password.
+ */
+export class SetPasswordDto {
+    @IsString()
+    @MinLength(1)
+    @MaxLength(200)
+    currentPassword!: string;
+
+    @IsString()
+    @MinLength(12)
+    @MaxLength(200)
+    newPassword!: string;
+
+    @IsString()
+    @MinLength(1)
+    @MaxLength(200)
+    confirmPassword!: string;
+}
+
+export class AddAllowlistDto {
+    /** A user id, not an email: ids are stable across a rename. */
+    @IsString()
+    @MinLength(1)
+    @MaxLength(64)
+    userId!: string;
+}
+
 export class TrackEventDto {
     @IsIn(EVENT_TYPES)
     type!: (typeof EVENT_TYPES)[number];

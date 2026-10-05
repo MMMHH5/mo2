@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { timingSafeEqual, createHash } from 'crypto';
+import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { parseUserAgent, pickSafeMeta, clampText } from './operations-parser';
 
@@ -423,23 +423,13 @@ export class OperationsService {
         return visitorId;
     }
 
-    /**
-     * Compare the second password against OPERATIONS_KEY without leaking its
-     * length or contents through timing.
-     */
-    verifyOperationsKey(candidate: string | undefined): boolean {
-        const expected = process.env.OPERATIONS_KEY;
-        // Fail closed. An unset key must lock the page, never open it.
-        if (!expected || !candidate) return false;
-        const a = Buffer.from(candidate);
-        const b = Buffer.from(expected);
-        if (a.length !== b.length) {
-            // Still burn a comparison so the early return is not a fast oracle.
-            timingSafeEqual(b, b);
-            return false;
-        }
-        return timingSafeEqual(a, b);
-    }
+    // NOTE: the operations password used to be verified here, directly against
+    // OPERATIONS_KEY. It now lives in OperationsSettingsService, because the
+    // password is only one of the things the settings page owns and keeping a
+    // second, env-only verifier here would be a way to reintroduce the "rotated
+    // the password but the env var still opens the door" bug the moment a
+    // caller reached for the old method. There is one verifier, and it checks
+    // the database hash first.
 
     /** A stable, non-reversible id for an IP, for grouping without storing more. */
     hashIp(ip: string | null | undefined): string {

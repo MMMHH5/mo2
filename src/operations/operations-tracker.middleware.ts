@@ -27,17 +27,29 @@ export class OperationsKeyService {
 
     constructor(private readonly ops: OperationsService) { }
 
-    /** Mint a grant after a correct second password. */
-    issueGrant(userId: string): { grant: string; expiresAt: string } {
-        const grant = jwt.sign({ sub: userId, opsGrant: true }, process.env.JWT_SECRET!, {
+    /**
+     * Mint a grant after a correct second password.
+     *
+     * `kv` pins the grant to the password version in force right now. Rotating
+     * the password bumps that version, so every grant issued under the old one
+     * stops verifying -- without any server-side session store to revoke from.
+     */
+    issueGrant(userId: string, keyVersion: number): { grant: string; expiresAt: string } {
+        const grant = jwt.sign({ sub: userId, opsGrant: true, kv: keyVersion }, process.env.JWT_SECRET!, {
             algorithm: 'HS256',
             expiresIn: OperationsKeyService.GRANT_TTL_SECONDS,
         });
         return { grant, expiresAt: new Date(Date.now() + OperationsKeyService.GRANT_TTL_SECONDS * 1000).toISOString() };
     }
 
-    /** True when the header holds a live grant for `userId`. */
-    verifyGrant(header: string | undefined, userId: string): boolean {
+    /**
+     * True when the header holds a live grant for `userId` at `keyVersion`.
+     *
+     * A grant whose `kv` does not match is rejected even though its signature
+     * and expiry are perfect. That is the difference between "the password was
+     * rotated" and "the password was rotated and the old session died with it".
+     */
+    verifyGrant(header: string | undefined, userId: string, keyVersion: number): boolean {
         if (!header) return false;
         const raw = header.startsWith('Bearer ') ? header.slice(7) : header;
         try {
@@ -45,7 +57,11 @@ export class OperationsKeyService {
             // The claim check is what separates this from an access token: the
             // JWT strategy signs `{sub, email, role, tv}` and never `opsGrant`,
             // so an admin's normal bearer token cannot open this API.
-            return payload.opsGrant === true && payload.sub === userId;
+            if (payload.opsGrant !== true || payload.sub !== userId) return false;
+            // A grant minted before versioning existed carries no `kv`. Refusing
+            // it is the safe reading: after a deploy everyone re-unlocks, which is
+            // the correct outcome for a credential that just changed.
+            return payload.kv === keyVersion;
         } catch {
             return false;
         }
