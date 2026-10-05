@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import CookieBanner from '@/components/CookieBanner';
 import JsonLd from '@/components/JsonLd';
 import GlobalBackButton from '@/components/GlobalBackButton';
+import OperationsTracker from '@/components/OperationsTracker';
 
 const tajawal = localFont({
   src: [
@@ -114,6 +115,9 @@ export default async function RootLayout({
             <AuthProvider>
               <Toaster position="top-right" />
               {children}
+              {/* Mounted app-wide: the operations center records every visitor,
+                  signed in or not, so this cannot live inside an admin tree. */}
+              <OperationsTracker />
               <GlobalBackButton />
               <CookieBanner />
             </AuthProvider>

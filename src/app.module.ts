@@ -41,6 +41,7 @@ import { FinanceModule } from './finance/finance.module';
 import { AnnouncementBoardModule } from './announcement-board/announcement-board.module';
 import { RefundsModule } from './refunds/refunds.module';
 import { LiveSessionsModule } from './live-sessions/live-sessions.module';
+import { OperationsModule } from './operations/operations.module';
 
 @Module({
     imports: [
@@ -87,6 +88,7 @@ import { LiveSessionsModule } from './live-sessions/live-sessions.module';
         AnnouncementBoardModule,
         RefundsModule,
         LiveSessionsModule,
+        OperationsModule,
     ],
     providers: [
         // Replaces the default in-process counter store. Without this the limit

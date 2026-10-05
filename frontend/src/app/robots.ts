@@ -25,6 +25,11 @@ export default function robots(): MetadataRoute.Robots {
         '/*/verify-email',
         '/unauthorized',
         '/*/unauthorized',
+        // The operations center is reachable only by typing its path and is
+        // meant to stay that way. Listing it here is a signal to crawlers and a
+        // guard against someone adding it to the sitemap later.
+        '/operations',
+        '/*/operations',
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,

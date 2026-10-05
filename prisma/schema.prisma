@@ -152,6 +152,7 @@ model User {
   // `certificates`, which is the student side of the same table.
   printedCertificates       Certificate[]            @relation("CertificatePrintedBy")
   auditLogs                 AuditLog[]
+  visitSessions             VisitSession[]
   applications              InstructorApplication[]
   tickets                   SupportTicket[]
   sentMessages              Message[]                @relation("SentMessages")
@@ -526,6 +527,76 @@ model AuditLog {
   // Note: we can keep userId optional or required. We make it optional in case of anonymous actions (e.g. brute force attempts logging)
   userId String?
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+/// One row per browser (a "device" in the operations center's language).
+///
+/// Identity is the `laxalab_vid` cookie the tracker middleware hands out, NOT
+/// the IP and NOT the user: a shared office IP is one row, and the same person
+/// on a phone and a laptop is deliberately two rows, because "which device
+/// signed in" is the question this table exists to answer. `userId` is filled in
+/// opportunistically -- it is null for anonymous traffic, which is most of it.
+model VisitSession {
+  id          String   @id @default(uuid())
+  visitorId   String   @unique
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  ipAddress   String?
+  userAgent   String?
+  deviceType  String   @default("desktop")
+  os          String?
+  browser     String?
+  referrer    String?
+  language    String?
+  screen      String?
+  timezone    String?
+
+  isBot        Boolean @default(false)
+  isAuthenticated Boolean @default(false)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  pageViews   Int      @default(0)
+
+  events VisitEvent[]
+
+  // No separate index on visitorId: the @unique above already builds one, and
+  // resolveSession's point read is served by it. A second index here would just
+  // be a duplicate to maintain on a table that grows with every new visitor.
+  @@index([lastSeenAt])
+  @@index([userId])
+  @@index([ipAddress])
+}
+
+/// One row per thing a visitor did: a page they opened, an API call they made,
+/// a named UI action, or a security event.
+///
+/// Deliberately NOT storing request or response bodies. A login body is
+/// `{email, password}` and a payment body carries card details, so writing
+/// bodies here would turn the operations log into the largest unencrypted
+/// credential store on the platform. `meta` exists for the few shapes that are
+/// safe to keep (a resource id, a count), not as a general escape hatch.
+model VisitEvent {
+  id         String       @id @default(uuid())
+  sessionId  String
+  session    VisitSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // page_view | api_call | action | security
+  type       String
+  method     String?
+  path       String?
+  statusCode Int?
+  durationMs Int?
+  label      String?
+  meta       Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([sessionId, createdAt])
+  @@index([type])
+  @@index([label])
 }
 
 model InstructorApplication {
