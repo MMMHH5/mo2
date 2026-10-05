@@ -36,7 +36,6 @@ export interface Module {
     descriptionAr?: string | null;
     descriptionEn?: string | null;
     videoUrl?: string | null;
-    isFree?: boolean | null;
     durationMinutes?: number | null;
     outcomes?: { descriptionAr?: string | null; descriptionEn?: string | null }[];
     files?: { url: string; nameAr?: string | null; nameEn?: string | null }[] | null;

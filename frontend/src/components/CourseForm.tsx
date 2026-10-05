@@ -21,7 +21,6 @@ interface ModuleDraft {
     descriptionAr: string;
     descriptionEn: string;
     videoUrl: string;
-    isFree: boolean;
     durationMinutes: string;
     outcomes: OutcomeDraft[];
     files: { url: string; nameAr: string; nameEn: string }[];
@@ -54,8 +53,8 @@ interface CourseInitial {
     audiences?: { audienceAr: string; audienceEn: string }[];
     faqs?: { questionAr: string; questionEn: string; answerAr: string; answerEn: string }[];
     gallery?: { url: string }[];
-    modules?: { titleAr: string; titleEn: string; descriptionAr?: string | null; descriptionEn?: string | null; videoUrl?: string | null; isFree?: boolean | null; durationMinutes?: number | null; outcomes?: { descriptionAr: string; descriptionEn: string }[]; files?: { url: string; nameAr?: string; nameEn?: string }[]; links?: { url: string; labelAr?: string; labelEn?: string }[] }[];
-    chapters?: { titleAr: string; titleEn: string; modules?: { titleAr: string; titleEn: string; descriptionAr?: string | null; descriptionEn?: string | null; videoUrl?: string | null; isFree?: boolean | null; durationMinutes?: number | null; outcomes?: { descriptionAr: string; descriptionEn: string }[]; files?: { url: string; nameAr?: string; nameEn?: string }[]; links?: { url: string; labelAr?: string; labelEn?: string }[] }[] }[];
+    modules?: { titleAr: string; titleEn: string; descriptionAr?: string | null; descriptionEn?: string | null; videoUrl?: string | null; durationMinutes?: number | null; outcomes?: { descriptionAr: string; descriptionEn: string }[]; files?: { url: string; nameAr?: string; nameEn?: string }[]; links?: { url: string; labelAr?: string; labelEn?: string }[] }[];
+    chapters?: { titleAr: string; titleEn: string; modules?: { titleAr: string; titleEn: string; descriptionAr?: string | null; descriptionEn?: string | null; videoUrl?: string | null; durationMinutes?: number | null; outcomes?: { descriptionAr: string; descriptionEn: string }[]; files?: { url: string; nameAr?: string; nameEn?: string }[]; links?: { url: string; labelAr?: string; labelEn?: string }[] }[] }[];
 }
 
 interface FormValues {
@@ -131,17 +130,16 @@ function removeByIndex<T>(setter: (updater: (p: T[]) => T[]) => void, idx: numbe
 
 const newModuleDraft = (): ModuleDraft => ({
     titleAr: '', titleEn: '', descriptionAr: '', descriptionEn: '', videoUrl: '',
-    isFree: false, durationMinutes: '',
+    durationMinutes: '',
     outcomes: [], files: [], links: [],
 });
 
-const toModuleDraft = (m: { titleAr?: string | null; titleEn?: string | null; descriptionAr?: string | null; descriptionEn?: string | null; videoUrl?: string | null; isFree?: boolean | null; durationMinutes?: number | null; outcomes?: { descriptionAr: string; descriptionEn: string }[]; files?: { url: string; nameAr?: string | null; nameEn?: string | null }[]; links?: { url: string; labelAr?: string | null; labelEn?: string | null }[] }): ModuleDraft => ({
+const toModuleDraft = (m: { titleAr?: string | null; titleEn?: string | null; descriptionAr?: string | null; descriptionEn?: string | null; videoUrl?: string | null; durationMinutes?: number | null; outcomes?: { descriptionAr: string; descriptionEn: string }[]; files?: { url: string; nameAr?: string | null; nameEn?: string | null }[]; links?: { url: string; labelAr?: string | null; labelEn?: string | null }[] }): ModuleDraft => ({
     titleAr: strVal(m.titleAr),
     titleEn: strVal(m.titleEn),
     descriptionAr: strVal(m.descriptionAr),
     descriptionEn: strVal(m.descriptionEn),
     videoUrl: strVal(m.videoUrl),
-    isFree: !!m.isFree,
     durationMinutes: m.durationMinutes != null ? String(m.durationMinutes) : '',
     outcomes: (m.outcomes || []).map(o => ({ descriptionAr: o.descriptionAr, descriptionEn: o.descriptionEn })),
     files: (m.files || []).map(f => ({ url: f.url, nameAr: strVal(f.nameAr), nameEn: strVal(f.nameEn) })),
@@ -326,7 +324,6 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                         // dropped here rather than sent and rejected by the API.
                         videoUrl: isLive ? null : (m.videoUrl || null),
                         orderIndex: i,
-                        isFree: !!m.isFree,
                         durationMinutes: m.durationMinutes !== '' ? Number(m.durationMinutes) : null,
                         files: m.files.map(f => ({ ...f })).filter(f => f.url),
                         links: m.links.map(l => ({ ...l })).filter(l => l.url),
@@ -723,15 +720,9 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                                                     <input value={m.videoUrl} dir="ltr" onChange={e => updateChapterModule(ci, mi, { videoUrl: e.target.value })} className={inputCls} placeholder={t('createCourse.module_video_placeholder')} />
                                                 </div>
                                             )}
-                                            <div className="grid md:grid-cols-2 gap-3 items-end">
-                                                <label className="flex items-center gap-3 cursor-pointer bg-brand-mist/30 border border-brand-mist rounded-xl px-4 py-3 hover:bg-brand-mist/60 transition">
-                                                    <input type="checkbox" checked={m.isFree} onChange={e => updateChapterModule(ci, mi, { isFree: e.target.checked })} className="w-5 h-5 accent-brand-navy" />
-                                                    <span className="text-sm font-bold text-brand-navy">{t('createCourse.module_is_free')}</span>
-                                                </label>
-                                                <div>
-                                                    <label className="block text-xs font-bold text-gray-600 mb-1">{t('createCourse.module_duration_label')}</label>
-                                                    <input value={m.durationMinutes} type="number" min={0} dir="ltr" onChange={e => updateChapterModule(ci, mi, { durationMinutes: e.target.value })} className={inputCls} placeholder={t('createCourse.module_duration_placeholder')} />
-                                                </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-600 mb-1">{t('createCourse.module_duration_label')}</label>
+                                                <input value={m.durationMinutes} type="number" min={0} dir="ltr" onChange={e => updateChapterModule(ci, mi, { durationMinutes: e.target.value })} className={inputCls} placeholder={t('createCourse.module_duration_placeholder')} />
                                             </div>
                                             <div>
                                                 <span className="block text-xs font-black text-brand-navy uppercase tracking-wider mb-2 flex items-center gap-1"><FileText size={14} /> {t('createCourse.module_files_heading')}</span>

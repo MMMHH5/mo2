@@ -51,11 +51,6 @@ export class CreateModuleDto {
     @Min(0)
     orderIndex?: number;
 
-    @ApiPropertyOptional({ description: 'Free preview lesson available to un-enrolled guests', default: false })
-    @IsOptional()
-    @IsBoolean()
-    isFree?: boolean;
-
     @ApiPropertyOptional({ description: 'Approximate lesson length in minutes', example: 15 })
     @IsOptional()
     @IsInt()

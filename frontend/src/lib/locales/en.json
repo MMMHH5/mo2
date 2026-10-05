@@ -398,8 +398,7 @@
         "outline_chapters_count": "{n} sections",
         "outline_lessons_count": "{n} lessons",
         "outline_more_lessons": "+{n} more",
-        "outline_free": "Free",
-        "outline_locked": "Locked lesson — unlocks after enrolling",
+        "outline_topics": "{n} topics",
         "announced_pill": "Announcement",
         "rating_title": "Course rating"
     },
@@ -720,7 +719,6 @@
         "add_chapter": "Add Chapter",
         "chapter_title_ar_placeholder": "Chapter title in Arabic",
         "chapter_title_en_placeholder": "Chapter title in English",
-        "module_is_free": "Free preview lesson (viewable before enrollment)",
         "module_duration_label": "Duration (minutes)",
         "module_duration_placeholder": "e.g. 15",
         "module_label": "Lesson",
@@ -1790,10 +1788,7 @@
         "no_tasks": "No assignments for this lesson.",
         "answer_placeholder": "Write your answer here...",
         "minutes_short": "min",
-        "free_badge": "Free",
-        "guest_hint": "Limited preview — free lessons are unlocked for guests.",
-        "locked_title": "This lesson is locked",
-        "locked_hint": "Enroll in this course to unlock all lessons."
+        "topics_heading": "What this lesson covers and what you take from it"
     },
     "player": {
         "back": "Back to Dashboard",

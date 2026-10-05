@@ -49,7 +49,7 @@ async function main() {
             excerptEn: 'excerpt',
             modules: [
               { titleAr: 'درس 1', titleEn: 'Lesson 1', orderIndex: 0, durationMinutes: 10, outcomes: [{ descriptionAr: 'مخرجات 1', descriptionEn: 'Outcome 1' }], files: [{ url: '/uploads/courses/general/x.png' }], links: [{ url: 'https://example.com', labelAr: 'رابط', labelEn: 'Link' }] },
-              { titleAr: 'درس 2', titleEn: 'Lesson 2', orderIndex: 1, isFree: true },
+              { titleAr: 'درس 2', titleEn: 'Lesson 2', orderIndex: 1 },
             ],
             chapters: [{ titleAr: 'فصل 1', titleEn: 'Chapter 1', orderIndex: 0 }],
             objectives: [{ objectiveAr: 'هدف 1', objectiveEn: 'Objective 1', orderIndex: 0 }],

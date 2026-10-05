@@ -8,15 +8,21 @@ import { publicInstructorSelect, publicInstructorWhere, toPublicInstructor } fro
 
 /**
  * Fields of a lesson that are safe to expose in the public catalogue: enough to
- * render a syllabus preview, nothing that reveals the locked content itself.
+ * render a syllabus preview -- the lesson's own description and the topics it
+ * covers -- and nothing that reveals the locked content itself.
  */
 const OUTLINE_LESSON_SELECT = {
     id: true,
     titleAr: true,
     titleEn: true,
+    descriptionAr: true,
+    descriptionEn: true,
     orderIndex: true,
     durationMinutes: true,
-    isFree: true,
+    outcomes: {
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, descriptionAr: true, descriptionEn: true },
+    },
 } as const;
 
 @ApiTags('Public')
@@ -214,7 +220,8 @@ export class PublicController {
             ...(ratingByCourse.get(course.id) ?? { averageRating: 0, reviewCount: 0 }),
             // Normalised syllabus preview for the public catalogue: one entry per
             // chapter, or a single untitled chapter for courses that keep their
-            // lessons flat. Only titles/timing are exposed — never the lesson
+            // lessons flat. Titles, descriptions and topics are exposed so a
+            // visitor can judge the course before enrolling -- never the lesson
             // body, files, links or the locked video URLs.
             outline: course.chapters.length > 0
                 ? course.chapters.map((chapter) => ({

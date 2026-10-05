@@ -5,7 +5,7 @@ import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import toast from 'react-hot-toast';
 import {
-    Loader, CheckCircle, FileText, Link2, Download, ClipboardList, Send, Clock, Film, ListChecks, Lock, ChevronDown, Gift, Radio,
+    Loader, CheckCircle, FileText, Link2, Download, ClipboardList, Send, Clock, Film, ListChecks, ChevronDown, Radio, Target,
 } from 'lucide-react';
 import { EmptyPanel } from '@/app/dashboard/admin/components';
 
@@ -47,7 +47,6 @@ interface LessonModule {
     descriptionAr?: string | null;
     descriptionEn?: string | null;
     videoUrl?: string | null;
-    isFree?: boolean | null;
     durationMinutes?: number | null;
     outcomes?: { descriptionAr?: string | null; descriptionEn?: string | null }[];
     files?: { url: string; nameAr?: string | null; nameEn?: string | null }[] | null;
@@ -78,12 +77,8 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
     const isLive = contentType !== 'RECORDED';
     const grouped: LessonChapter[] = chapters && chapters.length ? chapters : [{ titleAr: '', titleEn: '', modules }];
     const allModules = grouped.flatMap((c) => c.modules || []);
-    const [selectedId, setSelectedId] = useState<string | null>(() => {
-        const usable = mode === 'guest' ? allModules.find((m) => m.isFree) ?? allModules[0] : allModules[0];
-        return usable?.id ?? null;
-    });
+    const [selectedId, setSelectedId] = useState<string | null>(() => allModules[0]?.id ?? null);
     const [openChs, setOpenChs] = useState<Record<number, boolean>>({});
-    const [lockPrompt, setLockPrompt] = useState<LessonModule | null>(null);
     const [tasks, setTasks] = useState<LessonTask[] | null>(null);
     const [loadingTasks, setLoadingTasks] = useState(true);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -188,16 +183,6 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
     const selected = allModules.find((m) => m.id === selectedId) ?? allModules[0];
     const isOpen = (ci: number) => openChs[ci] ?? true;
     const toggleCh = (ci: number) => setOpenChs((p) => ({ ...p, [ci]: !(p[ci] ?? true) }));
-    const isLocked = (m: LessonModule) => mode === 'guest' && !m.isFree;
-    const handleSelect = (m: LessonModule) => {
-        if (isLocked(m)) {
-            setSelectedId(m.id);
-            setLockPrompt(m);
-            return;
-        }
-        setLockPrompt(null);
-        setSelectedId(m.id);
-    };
     const tasksByModule: Record<string, LessonTask[]> = {};
     (tasks || []).forEach((tk) => {
         if (tk.moduleId) {
@@ -206,7 +191,6 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
         }
     });
     const selectedTasks = selected ? (tasksByModule[selected.id] || []) : [];
-    const showLockPane = mode === 'guest' && (lockPrompt || (selected && !selected.isFree ? selected : null));
 
     if (allModules.length === 0) {
         return <EmptyPanel icon={ListChecks} title={t('lessons.no_modules')} />;
@@ -225,11 +209,9 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                         </h3>
                         <span className="text-xs font-bold text-ink-muted bg-ink/[0.06] rounded-full px-2.5 py-1">{allModules.length} {t('lessons.lesson_label')}</span>
                     </div>
-                    {mode === 'guest' && (
-                        <p className="mb-4 text-xs font-bold text-ink bg-ink/[0.06] rounded-xl px-3 py-2 flex items-center gap-1.5">
-                            <Lock size={13} className="text-accent" /> {t('lessons.guest_hint')}
-                        </p>
-                    )}
+                    {/* No locked-lesson teaser: a syllabus that only reveals itself once you pay
+                        cannot answer "what does this course teach me" before the
+                        decision, which is the question this outline is for. */}
                     <nav className="space-y-3">
                         {grouped.map((ch, ci) => {
                             const chModules = ch.modules || [];
@@ -255,22 +237,18 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                                 const fileCount = (m.files?.length || 0) + (m.links?.length || 0);
                                                 const taskCount = tasksByModule[m.id]?.length || 0;
                                                 const active = selected?.id === m.id;
-                                                const locked = isLocked(m);
-                                                const free = !!m.isFree;
                                                 return (
                                                     <button
                                                         key={m.id}
-                                                        onClick={() => handleSelect(m)}
+                                                        onClick={() => setSelectedId(m.id)}
                                                         className={`w-full flex items-center gap-3 text-left rtl:text-right px-3 py-2.5 rounded-xl border transition cursor-pointer ${
                                                             active
                                                                 ? 'bg-surface text-ink border-brand-navy shadow-md shadow-brand-navy/20'
                                                                 : 'bg-surface-raised text-ink-subtle border-brand-mist hover:border-brand-gold hover:text-ink'
                                                         }`}
                                                     >
-                                                        <span className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                                            active ? 'bg-brand-gold text-ink-on-gold' : locked ? 'bg-surface-sunken text-ink' : 'bg-surface-sunken text-ink'
-                                                        }`}>
-                                                            {locked ? <Lock size={14} /> : idx + 1}
+                                                        <span className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${active ? 'bg-brand-gold text-ink-on-gold' : 'bg-surface-sunken text-ink'}`}>
+                                                            {idx + 1}
                                                         </span>
                                                         <span className="flex-1 min-w-0 truncate text-sm font-bold">{pick(m, 'title')}</span>
                                                         <span className="flex items-center gap-1 text-xs shrink-0">
@@ -278,11 +256,6 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                                             {m.videoUrl && <Film size={13} className={active ? 'text-accent' : 'text-accent'} />}
                                                             {fileCount > 0 && <FileText size={13} className={active ? 'text-accent' : 'text-accent'} />}
                                                             {taskCount > 0 && <span className={`px-1.5 rounded-full font-black ${active ? 'bg-brand-gold text-ink-on-gold' : 'bg-brand-gold/20 text-gold-ink'}`}>{taskCount}</span>}
-                                                            {free && (
-                                                                <span className={`px-1.5 py-0.5 rounded-full font-black text-[10px] uppercase ${active ? 'bg-brand-gold text-ink-on-gold' : 'bg-success-soft text-success'}`}>
-                                                                    {t('lessons.free_badge')}
-                                                                </span>
-                                                            )}
                                                         </span>
                                                     </button>
                                                 );
@@ -300,17 +273,14 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
             <div className="lg:hidden">
                 <select
                     value={selected?.id ?? ''}
-                    onChange={(e) => {
-                        const found = allModules.find((m) => m.id === e.target.value);
-                        if (found) handleSelect(found);
-                    }}
+                    onChange={(e) => setSelectedId(e.target.value)}
                     className="w-full px-3 py-3 bg-surface-raised border border-brand-mist rounded-xl font-bold text-ink focus:ring-2 focus:ring-brand-gold outline-none"
                 >
                     {grouped.map((ch, ci) => (
                         <optgroup key={ci} label={pick(ch, 'title') || t('lessons.lesson_label')}>
                             {(ch.modules || []).map((m, mi) => (
                                 <option key={m.id} value={m.id}>
-                                    {isLocked(m) ? '🔒 ' : ''}{mi + 1}. {pick(m, 'title')}
+                                    {mi + 1}. {pick(m, 'title')}
                                 </option>
                             ))}
                         </optgroup>
@@ -320,18 +290,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
 
             {/* Lesson content */}
             <div className="min-w-0">
-                {showLockPane ? (
-                    <article className="border border-brand-mist rounded-[1.5rem] overflow-hidden bg-surface-raised shadow-lg shadow-brand-navy/5">
-                        <div className="px-5 py-10 flex flex-col items-center text-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-ink/[0.06] flex items-center justify-center text-accent">
-                                <Lock size={30} />
-                            </div>
-                            <h3 className="font-black text-ink text-lg">{pick(showLockPane, 'title')}</h3>
-                            <p className="font-black text-ink text-sm">{t('lessons.locked_title')}</p>
-                            <p className="text-sm text-ink-subtle max-w-md">{t('lessons.locked_hint')}</p>
-                        </div>
-                    </article>
-                ) : selected ? (
+                {selected ? (
                     <article className="border border-brand-mist rounded-[1.5rem] overflow-hidden bg-surface-raised shadow-lg shadow-brand-navy/5">
                         <div className="px-5 md:px-6 py-5 bg-gradient-to-r from-brand-gold/15 via-brand-mist/40 to-transparent border-b border-brand-mist/60 flex items-start gap-4">
                             <div className="bg-surface text-accent w-11 h-11 rounded-2xl flex items-center justify-center font-black flex-shrink-0 shadow-md shadow-brand-navy/20">
@@ -340,11 +299,6 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                             <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <h3 className="font-black text-ink text-xl">{pick(selected, 'title')}</h3>
-                                    {!!selected.isFree && (
-                                        <span className="inline-flex items-center gap-1 text-xs font-black text-success bg-success-soft rounded-full px-2.5 py-0.5">
-                                            <Gift size={12} /> {t('lessons.free_badge')}
-                                        </span>
-                                    )}
                                     {!isLive && !!selected.durationMinutes && (
                                         <span className="inline-flex items-center gap-1 text-xs font-bold text-ink-muted bg-ink/[0.06] rounded-full px-2.5 py-0.5">
                                             <Clock size={12} /> {selected.durationMinutes} {t('lessons.minutes_short')}
@@ -364,6 +318,26 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                     {t('lessons.live_note')}
                                 </div>
                             )}
+                            {/* The lesson's own agenda and payoff: what it covers and
+                                what the student walks away with. Public on purpose --
+                                it answers "what do I learn here", and an enrolment gate
+                                on that answer hides the syllabus from the people the
+                                course page exists for. */}
+                            {(selected.outcomes?.length ?? 0) > 0 && (
+                                <div className="rounded-xl border border-line bg-surface-sunken p-4">
+                                    <h4 className="text-xs font-black text-ink uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                                        <Target size={14} className="text-accent" /> {t('lessons.topics_heading')}
+                                    </h4>
+                                    <ul className="space-y-1.5">
+                                        {(selected.outcomes || []).map((o, oi) => (
+                                            <li key={oi} className="flex items-start gap-2 text-sm text-ink-muted">
+                                                <CheckCircle size={13} className="text-accent mt-0.5 shrink-0" />
+                                                <span>{pick(o, 'description')}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                             {/* The lesson description counts as content even though
                                 it is not a file: without this a lesson whose only
                                 body is prose was reported as having none. */}
@@ -372,6 +346,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                 || (selected.files && selected.files.length > 0)
                                 || (selected.links && selected.links.length > 0)
                                 || selectedTasks.length > 0
+                                || (selected.outcomes && selected.outcomes.length > 0)
                                 || (selected.descriptionAr || selected.descriptionEn)
                             ) ? (
                                 <>

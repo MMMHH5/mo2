@@ -41,7 +41,6 @@ interface CourseModule {
     descriptionAr?: string | null;
     descriptionEn?: string | null;
     videoUrl?: string | null;
-    isFree?: boolean | null;
     durationMinutes?: number | null;
     files?: LessonFile[] | null;
     links?: LessonLink[] | null;
@@ -341,7 +340,7 @@ export default function CoursePlayer({ courseId }: Props) {
     // is the authority on these numbers; this only explains them.
     const blockReason = useCallback((m: CourseModule): string | null => {
         const row = (progress?.modules || []).find(x => x.id === m.id);
-        if (!row || m.isFree) return null;
+        if (!row) return null;
         const tasks = row.pendingTasks ?? 0;
         const quizzes = row.failedQuizzes ?? 0;
         if (tasks > 0 && quizzes > 0) {
@@ -563,18 +562,12 @@ export default function CoursePlayer({ courseId }: Props) {
                             )}
                             <h2 className="text-2xl font-black text-ink leading-tight truncate">{pick(selected, 'title')}</h2>
                             {/* The running time belongs to a recording, so it goes
-                                for a live lesson -- but the free-preview badge has
-                                to stay either way. */}
-                            {(!isLive && !!selected.durationMinutes) || selected.isFree ? (
+                                for a live lesson. */}
+                            {!isLive && !!selected.durationMinutes && (
                                 <p className="text-[11px] font-bold text-ink-subtle flex items-center gap-1 mt-0.5">
-                                    {!isLive && !!selected.durationMinutes && (
-                                        <span className="flex items-center gap-1">
-                                            <Clock size={11} /> {selected.durationMinutes} {t('lessons.minutes_short')}
-                                        </span>
-                                    )}
-                                    {!!selected.isFree && <span className="flex items-center gap-1 text-emerald-800 dark:text-emerald-300 bg-emerald-500/20 rounded-full px-2 py-0.5"><Gift size={10} /> {t('lessons.free_badge')}</span>}
+                                    <Clock size={11} /> {selected.durationMinutes} {t('lessons.minutes_short')}
                                 </p>
-                            ) : null}
+                            )}
                         </div>
                     </div>
                     <button

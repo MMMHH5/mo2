@@ -398,8 +398,7 @@
         "outline_chapters_count": "{n} محاور",
         "outline_lessons_count": "{n} دروس",
         "outline_more_lessons": "+{n} دروس أخرى",
-        "outline_free": "معاينة",
-        "outline_locked": "درس مقفل — يفتح بعد التسجيل",
+        "outline_topics": "{n} محاور",
         "announced_pill": "إعلان قريب",
         "rating_title": "تقييم الدورة"
     },
@@ -720,7 +719,6 @@
         "add_chapter": "إضافة فصل",
         "chapter_title_ar_placeholder": "عنوان الفصل بالعربية",
         "chapter_title_en_placeholder": "Chapter title in English",
-        "module_is_free": "درس معاينة مجاني (يشاهد قبل التسجيل)",
         "module_duration_label": "المدة (بالدقائق)",
         "module_duration_placeholder": "مثال: 15",
         "module_label": "درس",
@@ -1790,10 +1788,7 @@
         "no_tasks": "لا توجد مهام لهذا الدرس.",
         "answer_placeholder": "اكتب إجابتك هنا...",
         "minutes_short": "د",
-        "free_badge": "مجاني",
-        "guest_hint": "معاينة محدودة — دروس المعاينة المجانية متاحة للزوار.",
-        "locked_title": "هذا الدرس مقفل",
-        "locked_hint": "سجّل في هذه الدورة لفتح جميع الدروس."
+        "topics_heading": "محاور هذا الدرس وماذا يخرج به الطالب"
     },
     "player": {
         "back": "العودة إلى لوحة التحكم",

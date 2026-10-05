@@ -35,7 +35,8 @@ export interface OutlineLesson {
     titleEn: string;
     orderIndex: number;
     durationMinutes?: number | null;
-    isFree: boolean;
+    /** Public syllabus: the topics the lesson covers, for the visitor. */
+    outcomes?: { descriptionAr?: string | null; descriptionEn?: string | null }[] | null;
 }
 
 export interface OutlineChapter {
@@ -295,12 +296,12 @@ export default function CourseCard({
                                                 <li key={lesson.id} className={`flex items-start gap-2 text-[12px] leading-snug 'text-ink-subtle'`}>
                                                     <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${isDark ? 'bg-gray-600' : 'bg-surface-sunken'}`} aria-hidden />
                                                     <span className="flex-1">{pick(lesson, 'title')}</span>
-                                                    {lesson.isFree ? (
-                                                        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black uppercase ${isDark ? 'bg-brand-gold/20 text-gold-ink' : 'bg-brand-gold/15 text-gold-ink'}`}>
-                                                            {t('explore.outline_free')}
-                                                        </span>
-                                                    ) : (
-                                                        <Lock size={11} className={`mt-0.5 shrink-0 'text-ink-subtle'`} aria-label={t('explore.outline_locked')} />
+                                                    {/* No preview/lock marks: the syllabus is the
+                                                        sales pitch, and a padlock next to every
+                                                        lesson taught visitors that the course was
+                                                        mostly closed to them. */}
+                                                    {(lesson.outcomes?.length ?? 0) > 0 && (
+                                                        <span className="shrink-0 text-[10px] font-bold opacity-70">{count('explore.outline_topics', lesson.outcomes!.length)}</span>
                                                     )}
                                                 </li>
                             ))}

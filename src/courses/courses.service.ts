@@ -16,7 +16,7 @@ type CourseViewer = { userId?: string; role?: Role };
 
 type ModuleDraft = {
     titleAr: string; titleEn: string; descriptionAr?: string; descriptionEn?: string; videoUrl?: string;
-    orderIndex?: number; isFree?: boolean; durationMinutes?: number;
+    orderIndex?: number; durationMinutes?: number;
     outcomes?: { descriptionAr: string; descriptionEn: string }[];
     files?: { url: string; nameAr?: string; nameEn?: string }[];
     links?: { url: string; labelAr?: string; labelEn?: string }[];
@@ -164,7 +164,6 @@ export class CoursesService {
             descriptionEn: m.descriptionEn,
             videoUrl: m.videoUrl,
             orderIndex: m.orderIndex ?? 0,
-            isFree: m.isFree ?? false,
             durationMinutes: m.durationMinutes,
             files: m.files?.length ? m.files as any : undefined,
             links: m.links?.length ? m.links as any : undefined,
@@ -501,10 +500,12 @@ export class CoursesService {
     }
 
     // Titles, descriptions and outcomes stay visible: that is the public
-    // syllabus. Only the actual assets (video, attachments, external links) are
-    // withheld, and only for modules that are not flagged free.
-    private redactModule<T extends { isFree?: boolean | null; videoUrl?: string | null; files?: unknown; links?: unknown }>(m: T): T {
-        if (m.isFree) return m;
+    // syllabus -- what the course covers and what the student takes away from
+    // each lesson. Only the actual assets (video, attachments, external links)
+    // wait for an enrollment. There is no per-lesson "free preview" tier any
+    // more: a lesson was either watchable by anyone or by nobody, and that
+    // split taught visitors to read a lock as the normal state of a course.
+    private redactModule<T extends { videoUrl?: string | null; files?: unknown; links?: unknown }>(m: T): T {
         return { ...m, videoUrl: null, files: [], links: [] };
     }
 
