@@ -24,6 +24,7 @@ test-*.sh
 
 # 19 MB of design source, referenced nowhere in the build.
 laxalab_academy_brand
+LaxaLab_Brand_Guidelines-1.pdf
 
 .git
 .gitignore
