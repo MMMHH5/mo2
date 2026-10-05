@@ -138,7 +138,6 @@ export interface Course {
 }
 
 const SectionTitle = ({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) => {
-    const { dark } = useTheme();
     return (
         <div className="flex flex-col gap-2 mb-5">
             <div className="flex items-center gap-3">
@@ -158,16 +157,21 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     const { user } = useAuth();
     const { t, locale, pick } = useI18n();
     const { dark } = useTheme();
-    // Stat-card captions. The Latin treatment is small, bold, capped and
-    // tracked-out. None of that transfers to Arabic: the script is cursive, so
-    // letter-spacing opens gaps between joined glyphs and breaks the word
-    // shape, and `uppercase` is a no-op on a script with no case. Arabic also
-    // needs the larger size -- at sm and up the Latin size is 10px, too small
-    // to read in either script, and the muted ink holds 6.18:1 on the sunken
-    // card against the gold's 6.5:1 without the low-chroma brown look.
+    // The hero is a navy panel that does not change with the theme, so its
+    // tiles cannot use the page's own ink tokens: --ink is #1b2434 in the light
+    // theme, which lands at roughly 1.2:1 on #0a1c35. White tints and the
+    // theme-independent on-navy inks instead.
+    const statCard = 'bg-white/[0.06] border border-white/15 rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/40 transition';
+    const statIcon = 'w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-brand-gold-light';
+    const statValue = 'text-sm font-black text-ink-on-navy';
+    // Caption above each value. The Latin treatment is small, bold, capped and
+    // tracked-out; none of that transfers to Arabic, where letter-spacing opens
+    // gaps between joined glyphs and `uppercase` is a no-op on a script with no
+    // case. Arabic also needs the larger size -- at sm and up the Latin size is
+    // 10px, too small to read in either script.
     const statCaption = locale === 'ar'
-        ? 'text-xs font-bold text-ink-muted'
-        : 'text-[11px] sm:text-[10px] font-bold text-gold-ink uppercase tracking-wider';
+        ? 'text-xs font-bold text-ink-on-navy-muted'
+        : 'text-[11px] sm:text-[10px] font-bold text-brand-gold-light uppercase tracking-wider';
     // Same reasoning for the filled gold pill, which carries Arabic course
     // duration ("20 يوم") rather than a Latin code.
     const pillCaption = locale === 'ar' ? 'font-black text-xs' : 'font-black text-xs uppercase tracking-wider';
@@ -464,8 +468,11 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                 .fade-in-section.visible { opacity: 1; transform: translateY(0); }
             `}</style>
 
-            {/* Header */}
-            <header className={`px-4 sm:px-6 md:px-8 h-16 sm:h-20 flex items-center justify-between border-b sticky top-0 z-50 ${dark ? 'border-line bg-surface-sunken' : 'border-line bg-ink/[0.45] backdrop-blur-md'}`}>
+            {/* Header. In the light theme this bar is a dark translucent strip
+                laid over the navy hero, so it needs the reverse mark and the
+                on-navy inks -- the primary mark and --ink-subtle links were dark
+                on dark. The dark theme's own surface already reads as navy. */}
+            <header className={`px-4 sm:px-6 md:px-8 h-16 sm:h-20 flex items-center justify-between border-b sticky top-0 z-50 ${dark ? 'border-white/10 bg-surface-sunken' : 'border-white/10 bg-ink/[0.45] backdrop-blur-md'}`}>
                 {/* Brand: this header used to draw a hand-rolled "L" tile plus
                     a typed `laxa|lab` wordmark, so the course page showed a
                     different identity from every other page. Use the real mark,
@@ -476,21 +483,24 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                     className="flex items-center cursor-pointer"
                 >
                     <img
-                        src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
+                        src="/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png"
                         alt="Laxalab Academy"
                         className="h-8 sm:h-10 md:h-12 w-auto max-w-[45vw] object-contain"
                     />
                 </button>
                 <nav className="hidden md:flex items-center gap-8">
-                    <button onClick={() => router.push('/courses')} className={`font-bold transition cursor-pointer ${dark ? 'text-ink-muted hover:text-ink' : 'text-ink-subtle hover:text-ink'}`}>
+                    <button onClick={() => router.push('/courses')} className="font-bold text-ink-on-navy-muted hover:text-ink-on-navy transition cursor-pointer">
                         {t('landing.explore_courses')}
                     </button>
-                    <button onClick={() => router.push('/join-as-instructor')} className={`font-bold transition cursor-pointer ${dark ? 'text-ink-muted hover:text-ink' : 'text-ink-subtle hover:text-ink'}`}>
+                    <button onClick={() => router.push('/join-as-instructor')} className="font-bold text-ink-on-navy-muted hover:text-ink-on-navy transition cursor-pointer">
                         {t('landing.join_as_instructor')}
                     </button>
                 </nav>
                 <div className="flex items-center gap-4">
-                    <PublicMobileMenu />
+                    {/* This header is dark in both themes, so the burger follows
+                        the bar rather than the page theme -- otherwise the light
+                        theme put a navy glyph on a navy strip. */}
+                    <PublicMobileMenu dark />
                     <div className="hidden sm:flex items-center gap-4">
                         {user ? (
                             <button onClick={() => router.push('/dashboard')} className="bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
@@ -498,7 +508,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             </button>
                         ) : (
                             <>
-                                <button onClick={() => router.push('/login')} className={`hover:text-accent font-bold transition cursor-pointer 'text-ink'`}>
+                                <button onClick={() => router.push('/login')} className="hover:text-white font-bold text-ink-on-navy transition cursor-pointer">
                                     {t('auth.login')}
                                 </button>
                                 <button onClick={() => router.push('/register')} className="bg-brand-gold text-ink-on-gold hover:bg-brand-gold-light px-6 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-md">
@@ -525,13 +535,19 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                 <div className="relative max-w-6xl mx-auto px-4 sm:px-6 md:px-10 pt-10 sm:pt-16 md:pt-20 pb-14 sm:pb-24 md:pb-28 grid lg:grid-cols-[1.2fr_1fr] gap-10 md:gap-12 items-center">
                     {/* Left */}
                     <div className="animate-fade-in-up">
-                        {/* Breadcrumb */}
-                        <nav className="flex items-center gap-2 text-xs font-bold text-gold-ink mb-6 flex-wrap">
-                            <button onClick={() => router.push('/')} className="hover:text-accent transition cursor-pointer">{t('landing.home')}</button>
-                            <span className="text-accent">/</span>
-                            <button onClick={() => router.push('/courses')} className="hover:text-accent transition cursor-pointer">{t('landing.explore_courses')}</button>
-                            <span className="text-accent">/</span>
-                            <span className="text-accent truncate max-w-[60vw] sm:max-w-[200px]">{pick(course, 'title')}</span>
+                        {/* The hero panel is a fixed navy gradient: it is the same
+                            colour in both themes, so its ink cannot be --ink the
+                            way the rest of the page is. In light mode --ink is
+                            #1b2434, which put the course title, the excerpt and
+                            the stat values at roughly 1.2:1 on #0a1c35. Every
+                            colour inside this block is therefore one of the
+                            theme-independent on-navy inks or a white tint. */}
+                        <nav className="flex items-center gap-2 text-xs font-bold text-brand-gold-light mb-6 flex-wrap">
+                            <button onClick={() => router.push('/')} className="hover:text-white transition cursor-pointer">{t('landing.home')}</button>
+                            <span className="text-white/40">/</span>
+                            <button onClick={() => router.push('/courses')} className="hover:text-white transition cursor-pointer">{t('landing.explore_courses')}</button>
+                            <span className="text-white/40">/</span>
+                            <span className="text-ink-on-navy truncate max-w-[60vw] sm:max-w-[200px]">{pick(course, 'title')}</span>
                         </nav>
 
                         <div className="flex flex-wrap items-center gap-2 mb-5">
@@ -541,27 +557,26 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </span>
                             )}
                             {pick(course, 'category') && (
-                                <span className="bg-ink/[0.08] border border-line-strong text-ink font-bold text-xs px-3 py-1.5 rounded-full">
+                                <span className="bg-white/10 border border-white/20 text-ink-on-navy font-bold text-xs px-3 py-1.5 rounded-full">
                                     {pick(course, 'category')}
                                 </span>
                             )}
-                            <span className="bg-ink/[0.08] border border-line-strong text-ink font-bold text-xs px-3 py-1.5 rounded-full">
+                            <span className="bg-white/10 border border-white/20 text-ink-on-navy font-bold text-xs px-3 py-1.5 rounded-full">
                                 {levelLabel(course.level)}
                             </span>
                             {course.language && (
-                                <span className="bg-ink/[0.08] border border-line-strong text-ink font-bold text-xs px-3 py-1.5 rounded-full">
+                                <span className="bg-white/10 border border-white/20 text-ink-on-navy font-bold text-xs px-3 py-1.5 rounded-full">
                                     <Globe size={11} className="inline me-1" />{course.language}
                                 </span>
                             )}
                         </div>
 
-                        {/* The glow belongs to the old dark hero. On the light
-                            theme it put a 24px, 50%-black halo behind #1b2434 on
-                            white, which smears the largest text on the page --
-                            it was the only textShadow left anywhere in the app. */}
+                        {/* The glow is unconditional: the panel behind this heading
+                            is navy in the light theme too, so the title needs the
+                            same lift it has in the dark one. */}
                         <h1
-                            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-ink mb-4 sm:mb-5 leading-[1.15] sm:leading-[1.08] tracking-tight break-words"
-                            style={dark ? { textShadow: '0 2px 24px rgba(0,0,0,0.5)' } : undefined}
+                            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-ink-on-navy mb-4 sm:mb-5 leading-[1.15] sm:leading-[1.08] tracking-tight break-words"
+                            style={{ textShadow: '0 2px 24px rgba(0,0,0,0.5)' }}
                         >
                             {pick(course, 'title')}
                         </h1>
@@ -577,64 +592,64 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                             </span>
                         </div>
                         {(pick(course, 'excerpt') || pick(course, 'description')) && (
-                            <p className="text-base sm:text-lg md:text-xl text-ink-muted max-w-2xl mb-6 sm:mb-8 font-medium leading-relaxed break-words">
+                            <p className="text-base sm:text-lg md:text-xl text-ink-on-navy-muted max-w-2xl mb-6 sm:mb-8 font-medium leading-relaxed break-words">
                                 {pick(course, 'excerpt') || pick(course, 'description')}
                             </p>
                         )}
 
                         {/* Stats */}
                         <div className="flex flex-wrap gap-3 mb-8">
-                            <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
+                            <div className={statCard}>
+                                <div className={statIcon}>
                                     <Clock size={17} />
                                 </div>
                                 <div>
                                     <div className={statCaption}>{t('explore.duration')}</div>
-                                    <div className="text-sm font-black text-ink">{durationText}</div>
+                                    <div className={statValue}>{durationText}</div>
                                 </div>
                             </div>
                             {/* "Hours of content" with a play icon is the strongest
                                 video signal on the page, so a live course trades it
                                 for the one thing it can actually promise. */}
                             {isLiveCourse ? (
-                                <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
+                                <div className={statCard}>
+                                    <div className={statIcon}>
                                         <Radio size={17} />
                                     </div>
                                     <div>
                                         <div className={statCaption}>{t('courseDetail.delivery_label')}</div>
-                                        <div className="text-sm font-black text-gold-ink">{deliveryLabel}</div>
+                                        <div className={`${statValue} text-brand-gold-light`}>{deliveryLabel}</div>
                                     </div>
                                 </div>
                             ) : course.hoursOfContent ? (
-                                <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
+                                <div className={statCard}>
+                                    <div className={statIcon}>
                                         <PlayCircle size={17} />
                                     </div>
                                     <div>
                                         <div className={statCaption}>{t('courseDetail.hours_label')}</div>
-                                        <div className="text-sm font-black text-gold-ink">{course.hoursOfContent}</div>
+                                        <div className={`${statValue} text-brand-gold-light`}>{course.hoursOfContent}</div>
                                     </div>
                                 </div>
                             ) : null}
                             {enrolledCount ? (
-                                <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                    <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
+                                <div className={statCard}>
+                                    <div className={statIcon}>
                                         <Users size={17} />
                                     </div>
                                     <div>
                                         <div className={statCaption}>{t('explore.students')}</div>
-                                        <div className="text-sm font-black text-gold-ink">{enrolledCount}</div>
+                                        <div className={`${statValue} text-brand-gold-light`}>{enrolledCount}</div>
                                     </div>
                                 </div>
                             ) : null}
-                            <div className="bg-ink/[0.04] border border-line rounded-2xl px-4 py-3 flex items-center gap-3 backdrop-blur-md hover:border-brand-gold/20 transition">
-                                <div className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-gold-ink">
+                            <div className={statCard}>
+                                <div className={statIcon}>
                                     <User size={17} />
                                 </div>
                                 <div>
                                     <div className={statCaption}>{t('courseDetail.expert_instructor')}</div>
-                                    <div className="text-sm font-black text-ink max-w-[55vw] sm:max-w-[160px] truncate">{instructorName || t('courseDetail.expert_instructor')}</div>
+                                    <div className={`${statValue} max-w-[55vw] sm:max-w-[160px] truncate`}>{instructorName || t('courseDetail.expert_instructor')}</div>
                                     {courseInstructor?.id && (
                                         <InstructorRating
                                             instructorId={courseInstructor.id}
@@ -655,12 +670,12 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         {Number(opening.price) === 0 ? t('course.free') : `${t('courseDetail.enroll_for')} ${formatPrice(opening.price, { locale })}`}
                                     </button>
                                     {opening.priceOld && Number(opening.priceOld) > Number(opening.price) && (
-                                        <span className="text-ink-muted text-sm font-semibold">
-                                            {t('courseDetail.was_price')} <s className="text-ink-muted">{formatPrice(opening.priceOld, { locale })}</s>
+                                        <span className="text-ink-on-navy-muted text-sm font-semibold">
+                                            {t('courseDetail.was_price')} <s className="text-ink-on-navy-muted">{formatPrice(opening.priceOld, { locale })}</s>
                                         </span>
                                     )}
                                     {announced && (
-                                        <button onClick={handleReserveClick} className="bg-ink/[0.08] hover:bg-ink/[0.12] border border-line-strong text-ink flex items-center gap-2 font-bold py-4 px-8 rounded-2xl transition transform hover:-translate-y-0.5 cursor-pointer">
+                                        <button onClick={handleReserveClick} className="bg-white/10 hover:bg-white/[0.16] border border-white/25 text-ink-on-navy flex items-center gap-2 font-bold py-4 px-8 rounded-2xl transition transform hover:-translate-y-0.5 cursor-pointer">
                                             {t('courseDetail.reserve_seat')}
                                         </button>
                                     )}
@@ -671,7 +686,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     {t('courseDetail.reserve_seat')}
                                 </button>
                             ) : (
-                                <div className="bg-ink/[0.04] border border-line text-ink-muted font-bold py-3 px-7 rounded-2xl">
+                                <div className="bg-white/[0.06] border border-white/15 text-ink-on-navy-muted font-bold py-3 px-7 rounded-2xl">
                                     {t('courseDetail.not_open_yet')}
                                 </div>
                             )}
@@ -703,7 +718,7 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                             <img src={`${API_BASE_URL}${course.coverImageUrl}`} alt={pick(course, 'title') || ''} className="w-full aspect-[4/3] object-cover" />
                                         ) : (
                                             <div className="w-full aspect-[4/3] bg-gradient-to-br from-brand-navy-light to-brand-navy-dark flex items-center justify-center">
-                                                <BookOpen size={72} className="text-accent" />
+                                                <BookOpen size={72} className="text-brand-gold-light" />
                                             </div>
                                         )}
                                         {introVideo && (
@@ -726,15 +741,15 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-navy-dark/95 to-transparent p-6 pt-16 pointer-events-none">
                                     <div className="flex items-center justify-between gap-4">
                                         <div>
-                                            <div className="text-[10px] font-bold text-accent uppercase tracking-[0.2em] mb-1">
+                                            <div className="text-[10px] font-bold text-brand-gold-light uppercase tracking-[0.2em] mb-1">
                                                 {opening ? (Number(opening.price) === 0 ? t('course.free') : formatPrice(opening.price, { locale })) : t('courseDetail.not_open_yet')}
                                             </div>
-                                            <div className="text-ink font-black text-2xl">{pick(course, 'title')}</div>
+                                            <div className="text-ink-on-navy font-black text-2xl">{pick(course, 'title')}</div>
                                         </div>
                                         {course._count?.modules ? (
-                                            <div className="bg-ink/[0.12] backdrop-blur-sm rounded-2xl px-4 py-3 text-center shrink-0">
-                                                <div className="text-xl font-black text-accent">{course._count.modules}</div>
-                                                <div className="text-[10px] font-bold text-ink">{t('course.modules')}</div>
+                                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 text-center shrink-0">
+                                                <div className="text-xl font-black text-brand-gold-light">{course._count.modules}</div>
+                                                <div className="text-[10px] font-bold text-ink-on-navy-muted">{t('course.modules')}</div>
                                             </div>
                                         ) : null}
                                     </div>
