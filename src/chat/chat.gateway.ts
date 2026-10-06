@@ -81,6 +81,16 @@ server!: Server;
                 client.disconnect();
                 return;
             }
+            // Same rule as the HTTP path (JwtStrategy): the 2FA challenge, the
+            // forced password change and the operations grant are signed with
+            // this secret for other purposes. They carry no `tv`, which reads
+            // as 0 and would match an account whose tokenVersion never moved,
+            // so without this check a challenge token could open a socket as
+            // the user it was issued to verify.
+            if (payload.purpose || payload.opsGrant === true) {
+                client.disconnect();
+                return;
+            }
 
             const user = await this.userCache.findActiveUser(payload.sub);
             if (!user) {
