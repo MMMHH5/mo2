@@ -3,7 +3,10 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 
 @ApiTags('LMS: Course Reviews')
@@ -27,8 +30,9 @@ export class ReviewsController {
   }
 
   @ApiOperation({ summary: 'Publish / unpublish a review (Admins/Course Managers)' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+  @RequirePermissions(PERMISSIONS.CONTENT_WRITE)
   @Patch(':id/moderation')
   moderate(@Param('id') id: string, @Body('isPublished') isPublished: boolean) {
     return this.reviews.setModeration(id, isPublished);

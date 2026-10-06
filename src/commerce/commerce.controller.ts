@@ -4,7 +4,10 @@ import { PaymentsService } from './payments.service';
 import { CurrenciesService } from './currencies.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 import { CheckoutDto, RefundPaymentDto } from './dto/commerce.dto';
 
@@ -12,7 +15,7 @@ const ALL_ROLES = ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'
 
 @ApiTags('Payments & Commerce (المدفوعات والتجارة)')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller()
 export class CommerceController {
   constructor(
@@ -37,15 +40,17 @@ export class CommerceController {
   }
 
   @ApiOperation({ summary: 'All payments (admin/finance)' })
-  @Roles(Role.ADMIN, Role.FINANCE)
-  @Get('payments')
+@Roles(Role.ADMIN, Role.FINANCE)
+    @RequirePermissions(PERMISSIONS.PAYMENTS_READ)
+    @Get('payments')
   allPayments() {
     return this.payments.listAll();
   }
 
   @ApiOperation({ summary: 'Refund a payment (admin/finance)' })
-  @Roles(Role.ADMIN, Role.FINANCE)
-  @Post('payments/:id/refund')
+@Roles(Role.ADMIN, Role.FINANCE)
+    @RequirePermissions(PERMISSIONS.PAYMENTS_REFUND)
+    @Post('payments/:id/refund')
   refund(@Param('id') id: string, @Body() dto: RefundPaymentDto, @Request() req: any) {
     return this.payments.refund(id, req.user.userId, req.user.role, dto.reason);
   }
@@ -73,6 +78,7 @@ export class CommerceController {
 
   @ApiOperation({ summary: 'Create a currency (admin)' })
   @Roles(Role.ADMIN)
+  @RequirePermissions(PERMISSIONS.PAYMENTS_SETTINGS)
   @Post('currencies')
   createCurrency(@Body('code') code: string, @Body('symbol') symbol: string, @Body('nameAr') nameAr: string, @Body('nameEn') nameEn: string, @Body('rate') rate: number) {
     return this.currencies.create(code, { symbol, nameAr, nameEn, rate });
@@ -80,6 +86,7 @@ export class CommerceController {
 
   @ApiOperation({ summary: 'Update a currency (admin)' })
   @Roles(Role.ADMIN)
+  @RequirePermissions(PERMISSIONS.PAYMENTS_SETTINGS)
   @Patch('currencies/:code')
   updateCurrency(@Param('code') code: string, @Body('symbol') symbol: string, @Body('nameAr') nameAr: string, @Body('nameEn') nameEn: string, @Body('rate') rate: number, @Body('isBase') isBase?: boolean) {
     return this.currencies.upsert(code, { symbol, nameAr, nameEn, rate, isBase });
@@ -87,6 +94,7 @@ export class CommerceController {
 
   @ApiOperation({ summary: 'Delete a currency (admin)' })
   @Roles(Role.ADMIN)
+  @RequirePermissions(PERMISSIONS.PAYMENTS_SETTINGS)
   @Delete('currencies/:code')
   deleteCurrency(@Param('code') code: string) {
     return this.currencies.delete(code);

@@ -3,14 +3,17 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { InstructorRequestsService } from './instructor-requests.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role, ApplicationStatus } from '@prisma/client';
 
 const REVIEW_ROLES = [Role.ADMIN, Role.COURSE_MANAGER];
 
 @ApiTags('Instructor Requests (طلبات المدرّس)')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('instructor-requests')
 export class InstructorRequestsController {
     constructor(private readonly service: InstructorRequestsService) { }
@@ -38,6 +41,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'All opening requests (admin/course manager)' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_READ)
     @Get('openings')
     allOpeningRequests() {
         return this.service.getAllOpeningRequests();
@@ -45,6 +49,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'Approve/reject an opening request' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_REVIEW)
     @Patch('openings/:id/status')
     reviewOpeningRequest(
         @Param('id') id: string,
@@ -59,6 +64,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'Delete an opening request' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_REVIEW)
     @Delete('openings/:id')
     deleteOpeningRequest(@Param('id') id: string) {
         return this.service.deleteOpeningRequest(id);
@@ -87,6 +93,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'All close requests (admin/course manager)' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_READ)
     @Get('closures')
     allCloseRequests() {
         return this.service.getAllCloseRequests();
@@ -94,6 +101,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'Approve/reject a close request (approve ends the course + issues certificates)' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_REVIEW)
     @Patch('closures/:id/status')
     reviewCloseRequest(
         @Param('id') id: string,
@@ -108,6 +116,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'Delete a close request' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_REVIEW)
     @Delete('closures/:id')
     deleteCloseRequest(@Param('id') id: string) {
         return this.service.deleteCloseRequest(id);
@@ -139,6 +148,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'All course suggestions (admin/course manager)' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_READ)
     @Get('suggestions')
     allSuggestions() {
         return this.service.getAllSuggestions();
@@ -146,6 +156,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'Approve/reject a course suggestion (approve creates the course)' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_REVIEW)
     @Patch('suggestions/:id/status')
     reviewSuggestion(
         @Param('id') id: string,
@@ -161,6 +172,7 @@ export class InstructorRequestsController {
 
     @ApiOperation({ summary: 'Delete a course suggestion' })
     @Roles(...REVIEW_ROLES)
+    @RequirePermissions(PERMISSIONS.INSTRUCTORS_REVIEW)
     @Delete('suggestions/:id')
     deleteSuggestion(@Param('id') id: string) {
         return this.service.deleteSuggestion(id);

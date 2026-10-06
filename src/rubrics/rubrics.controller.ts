@@ -3,7 +3,10 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RubricsService } from './rubrics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 import { SubmitReviewDto } from './dto/submit-review.dto';
 
@@ -11,13 +14,14 @@ const STAFF = [Role.ADMIN, Role.COURSE_MANAGER, Role.INSTRUCTOR];
 
 @ApiTags('Rubrics & Peer Review (تقييم الأقران)')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('rubrics')
 export class RubricsController {
     constructor(private readonly svc: RubricsService) {}
 
     @ApiOperation({ summary: 'Create rubric for a task' })
     @Roles(...STAFF)
+    @RequirePermissions(PERMISSIONS.CONTENT_WRITE)
     @Post('task/:taskId')
     create(@Param('taskId') taskId: string, @Body() dto: any, @Request() req: any) {
         return this.svc.createRubric(taskId, dto, req.user.userId, req.user.role);
@@ -53,6 +57,7 @@ export class RubricsController {
 
     @ApiOperation({ summary: 'Assign random peer reviews' })
     @Roles(...STAFF)
+    @RequirePermissions(PERMISSIONS.CONTENT_WRITE)
     @Post(':id/assign')
     assign(@Param('id') id: string, @Body('count') count: number) {
         return this.svc.assignRandomReviews(id, count || 2);

@@ -6,7 +6,10 @@ import { existsSync, mkdirSync } from 'fs';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 import { CreateUserDto, UpdateUserDto, UpdateMeDto } from './dto/user.dto';
 import { hasValidSignature } from '../common/file-signatures';
@@ -16,13 +19,14 @@ const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
 @ApiTags('Users & Roles')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
     @ApiResponse({ status: 200, description: 'Returns all users.' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.USERS_READ)
     @Get()
     findAll() {
         return this.usersService.findAll();
@@ -114,6 +118,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Create a new user (Admin only)' })
     @ApiResponse({ status: 201, description: 'User created.' })
     @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.USERS_WRITE)
     @Post()
     create(@Body() dto: CreateUserDto, @Request() req: any, @Ip() ip: string) {
         return this.usersService.create(dto, req.user.userId, ip);
@@ -122,6 +127,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Get full user details (profile, courses, certificates) (Admin / Course Manager)' })
     @ApiResponse({ status: 200, description: 'Returns user profile, enrollments and certificates.' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.USERS_READ)
     @Get(':id/details')
     getDetails(@Param('id') id: string) {
         return this.usersService.getDetails(id);
@@ -130,6 +136,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Get specific user profile' })
     @ApiResponse({ status: 200, description: 'Returns user profile and metadata.' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.USERS_READ)
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.usersService.findOne(id);
@@ -138,6 +145,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Update user account (email/password/role/activate-suspend) (Admin only)' })
     @ApiResponse({ status: 200, description: 'User updated.' })
     @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.USERS_WRITE)
     @Patch(':id')
     update(
         @Param('id') id: string,
@@ -151,6 +159,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Change user role (Admin only)' })
     @ApiResponse({ status: 200, description: 'User role updated.' })
     @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.USERS_ROLE)
     @Patch(':id/role')
     updateRole(
         @Param('id') id: string,
@@ -164,6 +173,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Delete user account (Admin only)' })
     @ApiResponse({ status: 200, description: 'User permanently deleted.' })
     @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.USERS_DELETE)
     @Delete(':id')
     remove(@Param('id') id: string, @Request() req: any, @Ip() ip: string) {
         return this.usersService.remove(id, req.user.userId, ip);

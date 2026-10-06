@@ -4,7 +4,10 @@ import { QuizzesService } from './quizzes.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 
 @ApiTags('LMS: Quizzes')
@@ -14,8 +17,9 @@ export class QuizzesController {
   constructor(private quizzes: QuizzesService) {}
 
   @ApiOperation({ summary: 'Create a quiz (Admins/Course Managers)' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+  @RequirePermissions(PERMISSIONS.COURSES_WRITE)
   @Post()
   create(@Body() dto: any) {
     if (!dto?.courseId || !dto?.titleAr || !dto?.titleEn) throw new BadRequestException('courseId, titleAr and titleEn are required');
@@ -23,16 +27,18 @@ export class QuizzesController {
   }
 
   @ApiOperation({ summary: 'Update a quiz (Admins/Course Managers)' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+  @RequirePermissions(PERMISSIONS.COURSES_WRITE)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: any) {
     return this.quizzes.update(id, dto);
   }
 
   @ApiOperation({ summary: 'Delete a quiz (Admins/Course Managers)' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+  @RequirePermissions(PERMISSIONS.COURSES_DELETE)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.quizzes.remove(id);

@@ -3,14 +3,17 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagg
 import { CertificatesService } from './certificates.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 
 const CERT_STAFF_ROLES = [Role.INSTRUCTOR, Role.ADMIN, Role.COURSE_MANAGER];
 
 @ApiTags('Certificates (الشهادات)')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('certificates')
 export class CertificatesController {
     constructor(private readonly certificatesService: CertificatesService) { }
@@ -31,6 +34,7 @@ export class CertificatesController {
 
     @ApiOperation({ summary: 'All certificates issued for a course, with their holders (admin / course manager)' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
     @Get('course/:courseId')
     listForCourse(@Param('courseId') courseId: string) {
         return this.certificatesService.listForCourse(courseId);
@@ -38,6 +42,7 @@ export class CertificatesController {
 
     @ApiOperation({ summary: 'Candidates (approved students) for manual certificate issuance on an opening' })
     @Roles(...CERT_STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_ISSUE)
     @Get('openings/:openingId/candidates')
     async candidates(@Param('openingId') openingId: string, @Request() req: any) {
         await this.certificatesService.assertCanManageOpening(openingId, req.user.userId, req.user.role);
@@ -46,6 +51,7 @@ export class CertificatesController {
 
     @ApiOperation({ summary: 'Manually issue certificates to selected approved students of an opening' })
     @Roles(...CERT_STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_ISSUE)
     @Post('openings/:openingId/issue')
     async issue(@Param('openingId') openingId: string, @Body('studentIds') studentIds: string[] | undefined, @Request() req: any) {
         if (!Array.isArray(studentIds) || studentIds.length === 0) {
@@ -57,6 +63,7 @@ export class CertificatesController {
 
     @ApiOperation({ summary: 'Revoke a certificate (admin / course manager only)' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
     @Post(':id/revoke')
     revoke(@Param('id') id: string, @Request() req: any) {
         return this.certificatesService.revoke(id, req.user.userId, req.user.role);
@@ -64,6 +71,7 @@ export class CertificatesController {
 
     @ApiOperation({ summary: 'Re-issue a revoked certificate (admin / course manager only)' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
     @Post(':id/reissue')
     reissue(@Param('id') id: string, @Request() req: any) {
         return this.certificatesService.reissue(id, req.user.userId, req.user.role);

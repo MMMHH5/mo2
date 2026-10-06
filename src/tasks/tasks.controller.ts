@@ -6,7 +6,10 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '
 import { TasksService } from './tasks.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 import { hasValidSignature } from '../common/file-signatures';
 
@@ -40,7 +43,7 @@ function safeStoredName(originalName: string | undefined, mimetype: string | und
 
 @ApiTags('Tasks (المهام الدراسية)')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('tasks')
 export class TasksController {
     constructor(private readonly tasksService: TasksService) { }
@@ -54,6 +57,7 @@ export class TasksController {
     @ApiOperation({ summary: 'Create a task for an opening (instructor of the opening or staff)' })
     @ApiResponse({ status: 201, description: 'Task created.' })
     @Roles(...STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.CONTENT_WRITE)
     @Post('opening/:openingId')
     create(
         @Param('openingId') openingId: string,
@@ -74,6 +78,7 @@ export class TasksController {
 
     @ApiOperation({ summary: 'Update a task' })
     @Roles(...STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.CONTENT_WRITE)
     @Patch(':id')
     update(
         @Param('id') id: string,
@@ -94,6 +99,7 @@ export class TasksController {
 
     @ApiOperation({ summary: 'Delete a task' })
     @Roles(...STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.CONTENT_DELETE)
     @Delete(':id')
     remove(@Param('id') id: string, @Request() req: any) {
         return this.tasksService.deleteTask(id, req.user.userId, req.user.role);
@@ -177,6 +183,7 @@ export class TasksController {
 
     @ApiOperation({ summary: 'Every student submission across all batches the actor teaches' })
     @Roles(...STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.GRADES_READ)
     @Get('submissions')
     inbox(
         @Query('courseId') courseId: string | undefined,
@@ -197,6 +204,7 @@ export class TasksController {
 
     @ApiOperation({ summary: 'List submissions for a task (staff/own openings)' })
     @Roles(...STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.GRADES_READ)
     @Get(':id/submissions')
     submissions(@Param('id') id: string, @Request() req: any) {
         return this.tasksService.getSubmissions(id, req.user.userId, req.user.role);
@@ -204,6 +212,7 @@ export class TasksController {
 
     @ApiOperation({ summary: 'Grade a student submission (score + notes)' })
     @Roles(...STAFF_ROLES)
+    @RequirePermissions(PERMISSIONS.GRADES_WRITE)
     @Patch('submissions/:submissionId/grade')
     grade(
         @Param('submissionId') submissionId: string,

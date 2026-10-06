@@ -5,7 +5,10 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { EnrollmentsService } from './enrollments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role, EnrollmentStatus } from '@prisma/client';
 import { existsSync, mkdirSync, unlink } from 'fs';
 import { basename } from 'path';
@@ -23,7 +26,7 @@ if (!existsSync(uploadDir)) {
 
 @ApiTags('Enrollments & Receipts')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('enrollments')
 export class EnrollmentsController {
     constructor(private readonly enrollmentsService: EnrollmentsService) { }
@@ -31,6 +34,7 @@ export class EnrollmentsController {
     @ApiOperation({ summary: 'Admin/Course Manager directly enroll a student into a course opening (APPROVED)' })
     @ApiResponse({ status: 201, description: 'Student enrolled into the course.' })
     @Roles(Role.COURSE_MANAGER, Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.ENROLLMENTS_WRITE)
     @Post('admin')
     enrollStudent(
         @Body() dto: AdminEnrollDto,
@@ -120,6 +124,7 @@ export class EnrollmentsController {
 
     @ApiOperation({ summary: 'Get pending enrollments for finance review' })
     @Roles(Role.FINANCE, Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.ENROLLMENTS_REVIEW)
     @Get('pending')
     getPendingRequests() {
         return this.enrollmentsService.getPending();
@@ -141,6 +146,7 @@ export class EnrollmentsController {
 
     @ApiOperation({ summary: 'Get all enrollments history for finance review' })
     @Roles(Role.FINANCE, Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.ENROLLMENTS_READ)
     @Get('all')
     getAllEnrollments(@Query('studentId') studentId?: string) {
         return this.enrollmentsService.getAllEnrollments(studentId);
@@ -150,6 +156,7 @@ export class EnrollmentsController {
     @ApiResponse({ status: 200, description: 'Roster for the course with per-status counts and latest payment.' })
     @ApiResponse({ status: 404, description: 'Course not found.' })
     @Roles(Role.COURSE_MANAGER, Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.ENROLLMENTS_READ)
     @Get('course/:courseId')
     getCourseEnrollments(@Param('courseId') courseId: string) {
         return this.enrollmentsService.getForCourse(courseId);
@@ -159,6 +166,7 @@ export class EnrollmentsController {
     @ApiResponse({ status: 200, description: 'Opening roster with per-status counts and latest payment.' })
     @ApiResponse({ status: 404, description: 'Opening not found.' })
     @Roles(Role.COURSE_MANAGER, Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.ENROLLMENTS_READ)
     @Get('opening/:openingId')
     getOpeningEnrollments(@Param('openingId') openingId: string) {
         return this.enrollmentsService.getForOpening(openingId);
@@ -167,6 +175,7 @@ export class EnrollmentsController {
     @ApiOperation({ summary: 'Finance/Admin review enrollment receipt' })
     @ApiResponse({ status: 200, description: 'Enrollment status updated (APPROVED/REJECTED).' })
     @Roles(Role.FINANCE, Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.ENROLLMENTS_REVIEW)
     @Patch(':id/review')
     review(
         @Param('id') enrollmentId: string,

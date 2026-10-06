@@ -3,14 +3,17 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 
 const STAFF = [Role.ADMIN, Role.COURSE_MANAGER, Role.INSTRUCTOR];
 
 @ApiTags('Analytics (إحصائيات التعلم)')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('analytics')
 export class AnalyticsController {
     constructor(private readonly svc: AnalyticsService) {}
@@ -45,6 +48,7 @@ export class AnalyticsController {
 
     @ApiOperation({ summary: 'Get course analytics (instructor / staff)' })
     @Roles(...STAFF)
+    @RequirePermissions(PERMISSIONS.ANALYTICS_READ)
     @Get('course/:courseId')
     getCourse(@Param('courseId') courseId: string, @Request() req: any) {
         return this.svc.getCourseAnalytics(courseId, req.user.userId, req.user.role);
