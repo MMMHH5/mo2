@@ -65,7 +65,7 @@ export default function AdminCoursesPage() {
         if (!window.confirm(`${t('manageCourses.delete_prefix')} ${pick(c, 'title') || c.id}?`)) return;
         setDeletingId(c.id);
         try {
-            await api.delete(`/courses/${c.id}`);
+            await api.delete(`/api/admin/courses/${c.id}`);
             toast.success(t('admin.course_deleted'));
             refetch();
         } catch (err) {

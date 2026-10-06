@@ -57,7 +57,7 @@ export default function AdminTicketsPage() {
         let active = true;
         const run = async () => {
             try {
-                const res = await api.get('/support-tickets');
+                const res = await api.get('/api/admin/support-tickets');
                 if (active) setTickets(res.data);
             } catch (err) {
                 if (active) toast.error(getErrorMessage(err) || t('support.submit_fail'));
@@ -72,7 +72,7 @@ export default function AdminTicketsPage() {
     const changeStatus = async (id: string, status: string) => {
         setProcessing(id);
         try {
-            await api.patch(`/support-tickets/${id}`, { status });
+            await api.patch(`/api/admin/support-tickets/${id}`, { status });
             toast.success(t('support.status_updated'));
             setRefreshKey((k) => k + 1);
         } catch {
@@ -84,7 +84,7 @@ export default function AdminTicketsPage() {
     const saveReply = async (id: string) => {
         setProcessing(id);
         try {
-            await api.patch(`/support-tickets/${id}`, { adminNotes: replies[id]?.trim() ?? '' });
+            await api.patch(`/api/admin/support-tickets/${id}`, { adminNotes: replies[id]?.trim() ?? '' });
             toast.success(t('support.reply_saved'));
             setRefreshKey((k) => k + 1);
         } catch {

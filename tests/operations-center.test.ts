@@ -4,6 +4,7 @@ import { parseUserAgent, pickSafeMeta, clampText } from '../src/operations/opera
 import { OperationsService, readCookie } from '../src/operations/operations.service';
 import { OperationsKeyService, OperationsTrackerMiddleware } from '../src/operations/operations-tracker.middleware';
 import { OperationsController } from '../src/operations/operations.controller';
+import { AdminOperationsController } from '../src/operations/admin-operations.controller';
 import { OperationsSettingsService } from '../src/operations/operations-settings.service';
 import { EventsQueryDto, SessionsQueryDto } from '../src/operations/dto/operations.dto';
 import { plainToInstance } from 'class-transformer';
@@ -459,7 +460,7 @@ describe('OPERATIONS: changing the password needs more than a grant', () => {
             listAllowlist: async () => [],
             listEligibleAdmins: async () => [],
         } as any;
-        const controller = new OperationsController(ops, queries, keys, settings);
+        const controller = new AdminOperationsController(ops, queries, keys, settings);
         return { controller, securityEvents };
     }
 
@@ -657,7 +658,18 @@ describe('OPERATIONS: the controller enforces the gates', () => {
             assertAllowed: async () => {},
             currentKeyVersion: async () => 1,
         } as any;
-        return new OperationsController(ops, queries, keys, settings);
+        return new AdminOperationsController(ops, queries, keys, settings);
+    }
+
+    // The public tracking endpoint stayed behind on `OperationsController`,
+    // whose constructor now takes only the operations service.
+    function buildTracker() {
+        const ops = {
+            trackClientEvent: async () => {},
+            enrichSession: async () => {},
+            trackSecurity: async () => {},
+        } as any;
+        return new OperationsController(ops);
     }
 
     test('a locked page rejects every read endpoint', async () => {
@@ -703,7 +715,7 @@ describe('OPERATIONS: the controller enforces the gates', () => {
                 assertAllowed: async () => { throw new ForbiddenException('not allowed'); },
                 currentKeyVersion: async () => 1,
             } as any;
-            return { controller: new OperationsController(ops, queries, keys, settings) };
+            return { controller: new AdminOperationsController(ops, queries, keys, settings) };
         })();
         const r = req();
         r.user = { userId: 'admin-1' };
@@ -718,7 +730,7 @@ describe('OPERATIONS: the controller enforces the gates', () => {
     });
 
     test('a browser cannot forge a server-authored event type', async () => {
-        const controller = buildController(true);
+        const controller = buildTracker();
         const r = req();
         r.opsSessionId = 'sess-1';
         // `api_call` and `security` are written by the server from the real
@@ -735,7 +747,7 @@ describe('OPERATIONS: the controller enforces the gates', () => {
     });
 
     test('a browser may record a page view or a named action', async () => {
-        const controller = buildController(true);
+        const controller = buildTracker();
         const r = req();
         r.opsSessionId = 'sess-1';
         assert.deepEqual(await controller.track(r, { type: 'page_view', path: '/courses' }), { ok: true });
@@ -743,7 +755,7 @@ describe('OPERATIONS: the controller enforces the gates', () => {
     });
 
     test('tracking without a session is a silent skip, not an error', async () => {
-        const controller = buildController(true);
+        const controller = buildTracker();
         const r = req();
         r.opsSessionId = null;
         assert.deepEqual(await controller.track(r, { type: 'page_view' }), { ok: true, skipped: true });

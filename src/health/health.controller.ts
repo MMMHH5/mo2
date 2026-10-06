@@ -4,7 +4,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 import { Response } from 'express';
 import { join } from 'path';
@@ -71,8 +74,9 @@ export class HealthController {
 
     @ApiOperation({ summary: 'Admin dashboard aggregate stats' })
     @ApiBearerAuth('JWT-auth')
-    @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.SYSTEM_READ)
     @Get('admin/stats')
     async adminStats() {
         const [

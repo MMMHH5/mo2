@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, readdirSync } from 'fs';
+import { join, relative } from 'path';
 import { bodyParserErrorHandler } from '../src/common/body-parser-error.middleware';
 
 /**
@@ -20,17 +20,30 @@ import { bodyParserErrorHandler } from '../src/common/body-parser-error.middlewa
 
 const SRC = join(__dirname, '..', 'src');
 
-const UPLOAD_CONTROLLERS = [
-    'users/users.controller.ts',
-    'payment-gateways/payment-gateways.controller.ts',
-    'instructor-applications/instructor-applications.controller.ts',
-    'chat/chat.controller.ts',
-    'tasks/tasks.controller.ts',
-    'courses/courses.controller.ts',
-    'enrollments/enrollments.controller.ts',
-];
+/**
+ * Every controller that mounts a FileInterceptor, discovered from the source
+ * rather than listed by hand: when an upload endpoint moves to a new file (as
+ * the Phase 3 admin split did), the guarantee has to follow it automatically.
+ */
+function uploadControllers(dir: string = SRC): string[] {
+    const found: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            found.push(...uploadControllers(full));
+        } else if (entry.name.endsWith('.controller.ts') && /FileInterceptor/.test(readFileSync(full, 'utf8'))) {
+            found.push(relative(SRC, full));
+        }
+    }
+    return found;
+}
+
+const UPLOAD_CONTROLLERS = uploadControllers();
 
 test('SECURITY: every upload endpoint caps fieldSize as well as fileSize', () => {
+    // The discovery itself must work: an empty list would make every assertion
+    // below vacuous.
+    assert.ok(UPLOAD_CONTROLLERS.length > 0, 'no controller with FileInterceptor was discovered under src/');
     const missing: string[] = [];
     for (const rel of UPLOAD_CONTROLLERS) {
         const src = readFileSync(join(SRC, rel), 'utf8');

@@ -1,14 +1,9 @@
-import { Controller, Post, Get, Patch, Param, Body, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException, Res } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { InstructorApplicationsService } from './instructor-applications.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { existsSync, mkdirSync, unlink } from 'fs';
-import { basename } from 'path';
-import { Response } from 'express';
-import { Role } from '@prisma/client';
 import { hasValidSignature } from '../common/file-signatures';
 
 // CVs are private: stored OUTSIDE the publicly-served uploads tree
@@ -21,13 +16,6 @@ if (!existsSync(uploadDir)) {
 @Controller('instructor-applications')
 export class InstructorApplicationsController {
     constructor(private readonly instructorApplicationsService: InstructorApplicationsService) { }
-
-    @Get()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
-    async getApplications() {
-        return this.instructorApplicationsService.getApplications();
-    }
 
     @Get('my')
     @UseGuards(JwtAuthGuard)
@@ -80,27 +68,5 @@ export class InstructorApplicationsController {
         }
         const cvFileUrl = `/uploads/private/cvs/${file.filename}`;
         return this.instructorApplicationsService.createApplication(req.user.id || req.user.userId, data, cvFileUrl);
-    }
-
-    @Patch(':id/status')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
-    async updateStatus(
-        @Param('id') id: string,
-        @Body('status') status: 'APPROVED' | 'REJECTED',
-        @Request() req: any
-    ) {
-        return this.instructorApplicationsService.updateApplicationStatus(id, status, req.user.id || req.user.userId);
-    }
-
-    @Get(':id/cv')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
-    async downloadCv(@Param('id') id: string, @Res() res: Response) {
-        const abs = await this.instructorApplicationsService.getCvPath(id);
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-        res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-        res.setHeader('Content-Disposition', `inline; filename="${basename(abs).replace(/["\\\r\n]/g, '')}"`);
-        return res.sendFile(abs);
     }
 }

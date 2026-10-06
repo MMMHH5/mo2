@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { OperationsController } from './operations.controller';
+import { AdminOperationsController } from './admin-operations.controller';
 import { OperationsService } from './operations.service';
 import { OperationsKeyService, OperationsTrackerMiddleware } from './operations-tracker.middleware';
 import { OperationsQueriesService } from './operations-queries.service';
@@ -12,7 +13,7 @@ import { OperationsSettingsService } from './operations-settings.service';
  * holes exactly where a scanner probes.
  */
 @Module({
-    controllers: [OperationsController],
+    controllers: [OperationsController, AdminOperationsController],
     providers: [
         OperationsService,
         OperationsKeyService,

@@ -3,8 +3,6 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { GamificationService } from './gamification.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@prisma/client';
 
 @ApiTags('Gamification (نظام النقاط)')
 @ApiBearerAuth('JWT-auth')
@@ -35,12 +33,5 @@ export class GamificationController {
     @Get(':userId')
     getByUser(@Param('userId') userId: string, @Request() req: any) {
         return this.svc.getUserGamificationForViewer(userId, req.user.userId, req.user.role);
-    }
-
-    @ApiOperation({ summary: 'Add points (internal)' })
-    @Roles(Role.ADMIN)
-    @Post('add-points')
-    addPoints(@Request() req: any, @Query('userId') userId: string, @Query('action') action: string) {
-        return this.svc.addPoints(userId || req.user.userId, action || 'daily_login');
     }
 }

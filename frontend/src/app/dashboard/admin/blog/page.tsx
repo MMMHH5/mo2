@@ -34,7 +34,7 @@ const EMPTY_FORM: PostForm = { titleEn: '', titleAr: '', contentEn: '', contentA
 export default function AdminBlogPage() {
     const { t, locale } = useI18n();
     const isAr = locale === 'ar';
-    const { data: posts, error: loadError, refetch } = useFetchData<Post[]>('/blog/admin/all');
+    const { data: posts, error: loadError, refetch } = useFetchData<Post[]>('/api/admin/blog');
     const [editing, setEditing] = useState<Post | null>(null);
     const [form, setForm] = useState<PostForm>(EMPTY_FORM);
     const [error, setError] = useState('');
@@ -65,10 +65,10 @@ export default function AdminBlogPage() {
         setError('');
         try {
             if (editing?.id) {
-                const res = await api.patch(`/blog/${editing.id}`, form);
+                const res = await api.patch(`/api/admin/blog/${editing.id}`, form);
                 setEditing(res.data);
             } else {
-                const res = await api.post('/blog', form);
+                const res = await api.post('/api/admin/blog', form);
                 setEditing(res.data);
             }
             await refetch();
@@ -81,7 +81,7 @@ export default function AdminBlogPage() {
 
     const publish = async (post: Post, makePublished: boolean) => {
         try {
-            await api.post(`/blog/${post.id}/${makePublished ? 'publish' : 'unpublish'}`);
+            await api.post(`/api/admin/blog/${post.id}/${makePublished ? 'publish' : 'unpublish'}`);
             await refetch();
         } catch (err) {
             setError(getErrorMessage(err) || t('common.error'));
@@ -91,7 +91,7 @@ export default function AdminBlogPage() {
     const remove = async (post: Post) => {
         if (!confirm(t('blog.confirmDelete'))) return;
         try {
-            await api.delete(`/blog/${post.id}`);
+            await api.delete(`/api/admin/blog/${post.id}`);
             if (editing?.id === post.id) startNew();
             await refetch();
         } catch (err) {

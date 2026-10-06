@@ -218,7 +218,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
     const uploadFile = async (file: File, kind: string) => {
         const fd = new FormData();
         fd.append('file', file);
-        const res = await api.post(`/courses/media?kind=${kind}`, fd, {
+        const res = await api.post(`/api/admin/courses/media?kind=${kind}`, fd, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
         return res.data.url as string;
@@ -333,10 +333,10 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
             };
 
             if (courseId) {
-                await api.patch(`/courses/${courseId}`, payload);
+                await api.patch(`/api/admin/courses/${courseId}`, payload);
                 toast.success(t('createCourse.updated'));
             } else {
-                await api.post('/courses', payload);
+                await api.post('/api/admin/courses', payload);
                 toast.success(t('createCourse.created'));
             }
             router.push('/dashboard/admin/courses');

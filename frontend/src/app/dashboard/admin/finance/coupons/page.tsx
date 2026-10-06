@@ -86,7 +86,7 @@ const emptyForm: CouponForm = {
 };
 
 export default function AdminCouponsPage() {
-    const { data: coupons, loading, error, refetch } = useFetchData<Coupon[]>('/finance/coupons');
+    const { data: coupons, loading, error, refetch } = useFetchData<Coupon[]>('/api/admin/finance/coupons');
     const { data: courses } = useFetchData<CourseOption[]>('/courses');
     const { t, pick, locale } = useI18n();
     const [showModal, setShowModal] = useState(false);
@@ -157,10 +157,10 @@ export default function AdminCouponsPage() {
         setSaving(true);
         try {
             if (editingId) {
-                await api.patch(`/finance/coupons/${editingId}`, payload);
+                await api.patch(`/api/admin/finance/coupons/${editingId}`, payload);
                 toast.success(t('finance.coupons.updated'));
             } else {
-                await api.post('/finance/coupons', payload);
+                await api.post('/api/admin/finance/coupons', payload);
                 toast.success(t('finance.coupons.created'));
             }
             setShowModal(false);
@@ -177,7 +177,7 @@ export default function AdminCouponsPage() {
         if (!window.confirm(t('finance.coupons.delete_confirm').replace('{code}', c.code))) return;
         setDeletingId(c.id);
         try {
-            await api.delete(`/finance/coupons/${c.id}`);
+            await api.delete(`/api/admin/finance/coupons/${c.id}`);
             toast.success(t('finance.coupons.deleted'));
             refetch();
         } catch (err) {
@@ -191,7 +191,7 @@ export default function AdminCouponsPage() {
         setStats(null);
         setStatsLoading(true);
         try {
-            const res = await api.get(`/finance/coupons/${c.id}/stats`);
+            const res = await api.get(`/api/admin/finance/coupons/${c.id}/stats`);
             setStats(res.data);
         } catch (err) {
             toast.error(getErrorMessage(err) || t('finance.coupons.stats_failed'));

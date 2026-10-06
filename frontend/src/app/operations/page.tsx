@@ -76,7 +76,7 @@ interface TimelinePoint {
 }
 
 /**
- * `GET /operations/sessions/:id` nests the event list inside `session`, so the
+ * `GET /api/admin/operations/sessions/:id` nests the event list inside `session`, so the
  * drawer reads it from there rather than from a top-level `events` key that the
  * endpoint never returns.
  */
@@ -193,7 +193,7 @@ function OperationsCenterPage() {
         setUnlocking(true);
         setUnlockError(null);
         try {
-            const res = await api.post('/operations/unlock', { key });
+            const res = await api.post('/api/admin/operations/unlock', { key });
             sessionStorage.setItem(GRANT_KEY, res.data.grant);
             localStorage.setItem(GRANT_USER_KEY, 'me');
             setGrant(res.data.grant);
@@ -231,8 +231,8 @@ function OperationsCenterPage() {
     const loadOverview = useCallback(async () => {
         try {
             const [o, tl] = await Promise.all([
-                api.get(`/operations/overview?hours=${hours}`, { headers }),
-                api.get(`/operations/timeline?hours=${hours}`, { headers }),
+                api.get(`/api/admin/operations/overview?hours=${hours}`, { headers }),
+                api.get(`/api/admin/operations/timeline?hours=${hours}`, { headers }),
             ]);
             setOverview(o.data);
             setTimeline(tl.data);
@@ -250,7 +250,7 @@ function OperationsCenterPage() {
             });
             if (typeFilter) params.set('type', typeFilter);
             if (search.trim()) params.set('search', search.trim());
-            const res = await api.get(`/operations/events?${params}`, { headers });
+            const res = await api.get(`/api/admin/operations/events?${params}`, { headers });
             setEvents(res.data.items);
             setEventTotal(res.data.total);
             setError(null);
@@ -267,7 +267,7 @@ function OperationsCenterPage() {
             });
             if (deviceTypeFilter) params.set('deviceType', deviceTypeFilter);
             if (search.trim()) params.set('search', search.trim());
-            const res = await api.get(`/operations/sessions?${params}`, { headers });
+            const res = await api.get(`/api/admin/operations/sessions?${params}`, { headers });
             setDevices(res.data.items);
             setDeviceTotal(res.data.total);
             setError(null);
@@ -279,7 +279,7 @@ function OperationsCenterPage() {
     const openDevice = useCallback(async (id: string) => {
         setLoadingDetail(true);
         try {
-            const res = await api.get(`/operations/sessions/${id}`, { headers });
+            const res = await api.get(`/api/admin/operations/sessions/${id}`, { headers });
             setSelected(res.data);
         } catch (err) {
             handleApiError(err);

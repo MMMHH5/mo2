@@ -23,7 +23,7 @@ const EMPTY_FORM: GatewayForm = { name: '', instructions: '', guideImages: [], g
 const MAX_IMAGES = 8;
 
 export default function AdminGatewaysPage() {
-    const { data: gateways, loading, error, refetch } = useFetchData<Gateway[]>('/payment-gateways/all');
+    const { data: gateways, loading, error, refetch } = useFetchData<Gateway[]>('/api/admin/payment-gateways/all');
     const { t } = useI18n();
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState<GatewayForm>(EMPTY_FORM);
@@ -55,7 +55,7 @@ export default function AdminGatewaysPage() {
     const uploadMedia = async (file: File) => {
         const fd = new FormData();
         fd.append('file', file);
-        const res = await api.post('/payment-gateways/media', fd, {
+        const res = await api.post('/api/admin/payment-gateways/media', fd, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
         return res.data.url as string;
@@ -112,10 +112,10 @@ export default function AdminGatewaysPage() {
                 isActive: form.isActive,
             };
             if (editingId) {
-                await api.patch(`/payment-gateways/${editingId}`, payload);
+                await api.patch(`/api/admin/payment-gateways/${editingId}`, payload);
                 toast.success(t('admin.gateway_updated'));
             } else {
-                await api.post('/payment-gateways', payload);
+                await api.post('/api/admin/payment-gateways', payload);
                 toast.success(t('admin.gateway_created'));
             }
             setShowForm(false);
@@ -132,7 +132,7 @@ export default function AdminGatewaysPage() {
         if (!window.confirm(t('admin.delete_gateway_confirm'))) return;
         setProcessingId(g.id);
         try {
-            await api.delete(`/payment-gateways/${g.id}`);
+            await api.delete(`/api/admin/payment-gateways/${g.id}`);
             toast.success(t('admin.gateway_deleted'));
             refetch();
         } catch (err) {
@@ -144,7 +144,7 @@ export default function AdminGatewaysPage() {
     const handleToggleActive = async (g: Gateway) => {
         setProcessingId(g.id);
         try {
-            await api.patch(`/payment-gateways/${g.id}`, { isActive: !g.isActive });
+            await api.patch(`/api/admin/payment-gateways/${g.id}`, { isActive: !g.isActive });
             toast.success(t('admin.gateway_updated'));
             refetch();
         } catch (err) {

@@ -115,7 +115,7 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
                 await api.patch(`/openings/${openingId}`, payload);
                 resultId = openingId;
             } else {
-                const res = await api.post(`/courses/${courseId}/openings`, payload);
+                const res = await api.post(`/api/admin/courses/${courseId}/openings`, payload);
                 resultId = (res.data as { id: string }).id;
             }
             toast.success(openingId ? t('opening.updated') : t('opening.created'));

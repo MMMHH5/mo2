@@ -34,7 +34,7 @@ const appTone: Record<string, Tone> = {
 };
 
 export default function AdminInstructorsPage() {
-    const { data: applications, loading: appsLoading, error: appsError, refetch: refetchApps } = useFetchData<Application[]>('/instructor-applications');
+    const { data: applications, loading: appsLoading, error: appsError, refetch: refetchApps } = useFetchData<Application[]>('/api/admin/instructor-applications');
     const { data: users, loading: usersLoading, error: usersError, refetch: refetchUsers } = useFetchData<User[]>('/users');
     const { t } = useI18n();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export default function AdminInstructorsPage() {
         if (!window.confirm(status === 'APPROVED' ? t('instructorsHr.confirm_approve') : t('instructorsHr.confirm_reject'))) return;
         setIsProcessing(id);
         try {
-            await api.patch(`/instructor-applications/${id}/status`, { status });
+            await api.patch(`/api/admin/instructor-applications/${id}/status`, { status });
             toast.success(status === 'APPROVED' ? t('instructorsHr.approved_msg') : t('instructorsHr.rejected_msg'));
             refetchApps();
             refetchUsers();
@@ -90,7 +90,7 @@ export default function AdminInstructorsPage() {
     const handleDownloadCv = async (appId: string) => {
         setDownloadingCv(appId);
         try {
-            await downloadProtectedFile(`/instructor-applications/${appId}/cv`);
+            await downloadProtectedFile(`/api/admin/instructor-applications/${appId}/cv`);
             toast.success(t('instructorsHr.cv_downloaded'));
         } catch (err) {
             toast.error(getErrorMessage(err) || t('instructorsHr.cv_download_failed'));

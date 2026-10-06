@@ -10,7 +10,7 @@ import type { LucideIcon } from 'lucide-react';
 /* ------------------------------------------------------------------ types */
 
 /**
- * Mirrors `GET /operations/settings`. Nothing here is a password or a hash: the
+ * Mirrors `GET /api/admin/operations/settings`. Nothing here is a password or a hash: the
  * API returns only whether a password EXISTS, never any material derived from it.
  */
 interface SettingsState {
@@ -73,7 +73,7 @@ export default function OperationsSettingsPanel({
 
     const load = useCallback(async () => {
         try {
-            const res = await api.get('/operations/settings', { headers });
+            const res = await api.get('/api/admin/operations/settings', { headers });
             setSettings(res.data);
             setLoadError(null);
         } catch (err) {
@@ -128,7 +128,7 @@ export default function OperationsSettingsPanel({
 
         setSaving(true);
         try {
-            await api.post('/operations/settings/password', { currentPassword: current, newPassword: next, confirmPassword: confirm }, { headers });
+            await api.post('/api/admin/operations/settings/password', { currentPassword: current, newPassword: next, confirmPassword: confirm }, { headers });
             clearFields();
             setShowFields(false);
             setNotice({ tone: 'good', text: t('ops.pw_changed') });
@@ -149,7 +149,7 @@ export default function OperationsSettingsPanel({
         setMutating(true);
         setNotice(null);
         try {
-            const res = await api.post('/operations/settings/allowlist', { userId: picker }, { headers });
+            const res = await api.post('/api/admin/operations/settings/allowlist', { userId: picker }, { headers });
             setPicker('');
             setNotice({ tone: 'good', text: res.data?.alreadyPresent ? t('ops.allow_already') : t('ops.allow_added') });
             await load();
@@ -166,7 +166,7 @@ export default function OperationsSettingsPanel({
         setMutating(true);
         setNotice(null);
         try {
-            await api.delete(`/operations/settings/allowlist/${userId}`, { headers });
+            await api.delete(`/api/admin/operations/settings/allowlist/${userId}`, { headers });
             setNotice({ tone: 'good', text: t('ops.allow_removed') });
             await load();
         } catch (err) {

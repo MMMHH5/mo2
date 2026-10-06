@@ -19,7 +19,7 @@ export default function AdminAuditPage() {
     const [limit, setLimit] = useState(50);
     const [actionSearch, setActionSearch] = useState('');
     const [userSearch, setUserSearch] = useState('');
-    const { data: logs, loading, error, refetch } = useFetchData<AuditLog[]>(`/audit?limit=${limit}`);
+    const { data: logs, loading, error, refetch } = useFetchData<AuditLog[]>(`/api/admin/audit?limit=${limit}`);
 
     const filtered = logs?.filter(log =>
         log.action.toLowerCase().includes(actionSearch.toLowerCase()) &&

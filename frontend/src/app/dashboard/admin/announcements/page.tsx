@@ -53,7 +53,7 @@ export default function AdminAnnouncementsPage() {
 
     const load = useCallback(async () => {
         try {
-            const res = await api.get('/announcement-board');
+            const res = await api.get('/api/admin/announcement-board');
             setItems(res.data);
         } catch {
             /* silent */
@@ -154,10 +154,10 @@ export default function AdminAnnouncementsPage() {
             };
 
             if (editing) {
-                await api.patch(`/announcement-board/${editing.id}`, payload);
+                await api.patch(`/api/admin/announcement-board/${editing.id}`, payload);
                 toast.success(t('adminAnnouncements.updated'));
             } else {
-                await api.post('/announcement-board', payload);
+                await api.post('/api/admin/announcement-board', payload);
                 toast.success(t('adminAnnouncements.created'));
             }
             setShowForm(false);
@@ -172,7 +172,7 @@ export default function AdminAnnouncementsPage() {
     const handleDelete = async (id: string) => {
         if (!window.confirm(t('adminAnnouncements.delete_confirm'))) return;
         try {
-            await api.delete(`/announcement-board/${id}`);
+            await api.delete(`/api/admin/announcement-board/${id}`);
             toast.success(t('adminAnnouncements.deleted'));
             load();
         } catch (e) {
@@ -182,7 +182,7 @@ export default function AdminAnnouncementsPage() {
 
     const toggleActive = async (item: Announcement) => {
         try {
-            await api.patch(`/announcement-board/${item.id}`, { isActive: !item.isActive });
+            await api.patch(`/api/admin/announcement-board/${item.id}`, { isActive: !item.isActive });
             load();
         } catch (e) {
             toast.error(getErrorMessage(e) || 'Failed');
