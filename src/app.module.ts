@@ -6,6 +6,7 @@ import { RedisThrottlerStorage } from './common/redis-throttler.storage';
 import { UserCacheModule } from './common/user-cache.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { AdminBoundaryGuard } from './auth/guards/admin-boundary.guard';
 import { UsersModule } from './users/users.module';
 import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
@@ -98,6 +99,15 @@ import { OperationsModule } from './operations/operations.module';
         {
             provide: APP_GUARD,
             useClass: ThrottlerGuard,
+        },
+        // Boundary enforcement: /admin-prefixed paths require an admin-audience
+        // token. Global by design (the boundary must not depend on a controller
+        // remembering to mount a guard) and additive today -- no /admin path
+        // exists yet, so it changes no current route. Registered after the
+        // throttler so rate limiting stays the first thing an attacker meets.
+        {
+            provide: APP_GUARD,
+            useClass: AdminBoundaryGuard,
         },
     ],
 })

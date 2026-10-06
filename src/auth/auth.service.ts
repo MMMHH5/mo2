@@ -11,6 +11,7 @@ import { EmailService } from '../email/email.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { getFrontendUrl } from '../common/frontend-url';
 import { UserCacheService } from '../common/user-cache.service';
+import { audienceForRole, permissionsForRole } from './permissions/permissions';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { generateSecret, verify as verifyOtp } from 'otplib';
@@ -175,7 +176,20 @@ export class AuthService {
     }
 
     private async issueTokens(userId: string, email: string, role: string, tokenVersion: number) {
-        const access_token = this.jwtService.sign({ sub: userId, email, role, tv: tokenVersion });
+        // `aud` places the token on one side of the learner/admin boundary and
+        // `permissions` mirrors the grant for the client's UI hints. Both are
+        // advisory for the server: JwtStrategy re-derives permissions from the
+        // CURRENT database role, so a token signed before a demotion or before
+        // the permission map changed cannot carry that stale privilege into a
+        // request. See docs/permission-map.md.
+        const access_token = this.jwtService.sign({
+            sub: userId,
+            email,
+            role,
+            tv: tokenVersion,
+            aud: audienceForRole(role),
+            permissions: permissionsForRole(role),
+        });
         const refresh = this.generateToken();
         await this.prisma.refreshToken.create({
             data: {
@@ -246,7 +260,16 @@ export class AuthService {
             }),
         ]);
 
-        const access_token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role, tv: user.tokenVersion });
+        // Same claims as issueTokens above -- refresh must not mint a weaker
+        // (or differently shaped) token than login did.
+        const access_token = this.jwtService.sign({
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+            tv: user.tokenVersion,
+            aud: audienceForRole(user.role),
+            permissions: permissionsForRole(user.role),
+        });
         return { access_token, refresh_token: newRefresh.raw };
     }
 
