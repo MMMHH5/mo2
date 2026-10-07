@@ -12,6 +12,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
 import { getFrontendUrl } from '../common/frontend-url';
 
 @ApiTags('Authentication')
@@ -99,18 +100,21 @@ export class AuthController {
     @ApiOperation({ summary: 'Begin 2FA setup (returns secret + QR code)' })
     @ApiBearerAuth('JWT-auth')
     @Post('2fa/setup')
-    @UseGuards(JwtAuthGuard)
-    async setup2FA(@Request() req: any) {
-        return this.authService.setup2FA(req.user.userId);
+    @UseGuards(OptionalJwtAuthGuard)
+    async setup2FA(@Request() req: any, @Body('tempToken') tempToken?: string) {
+        // Identity comes from the Bearer session when present, otherwise from a
+        // `2fa_setup` challenge so a privileged account that has not finished
+        // the enforced enrollment can set itself up without a full session.
+        return this.authService.setup2FA(req.user?.userId, tempToken);
     }
 
     @ApiOperation({ summary: 'Confirm and enable 2FA with a verification code' })
     @ApiBearerAuth('JWT-auth')
     @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
     @Post('2fa/confirm')
-    @UseGuards(JwtAuthGuard)
-    async confirm2FA(@Request() req: any, @Body('code') code: string) {
-        return this.authService.confirm2FA(req.user.userId, code);
+    @UseGuards(OptionalJwtAuthGuard)
+    async confirm2FA(@Request() req: any, @Body('code') code: string, @Body('tempToken') tempToken?: string) {
+        return this.authService.confirm2FA(req.user?.userId, code, tempToken);
     }
 
     @ApiOperation({ summary: 'Disable 2FA (requires password + current code)' })
@@ -151,6 +155,12 @@ export class AuthController {
         }
         if ('requiresTwoFactor' in result && result.requiresTwoFactor) {
             return res.redirect(`${frontendUrl}/auth/success#twoFactor=1&tempToken=${encodeURIComponent(result.tempToken)}`);
+        }
+        // Privileged roles must enroll in 2FA even when they arrive via Google.
+        if ('requiresTwoFactorSetup' in result && result.requiresTwoFactorSetup) {
+            return res.redirect(
+                `${frontendUrl}/auth/success#twoFactorSetup=1&tempToken=${encodeURIComponent(result.tempToken)}`
+            );
         }
         // Google-created accounts have no password, so a forced password change
         // never applies to them; fall back to sign-in just in case.

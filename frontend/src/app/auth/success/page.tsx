@@ -29,6 +29,11 @@ function SuccessHandler() {
             return;
         }
 
+        if (params.get('twoFactorSetup') === '1' && tempToken) {
+            router.push(`/auth/two-factor-setup?tempToken=${encodeURIComponent(tempToken)}`);
+            return;
+        }
+
         if (token) {
             try {
                 const base64Url = token.split('.')[1];

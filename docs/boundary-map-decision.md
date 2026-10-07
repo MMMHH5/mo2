@@ -95,9 +95,9 @@ Rationale: preserves backward compatibility, reduces blast radius, allows verifi
 | **Phase 2** | Permissions model (RBAC+Permissions), decorators (`@RequirePermissions`), policy layer, update guards to include audience | Low | **Done** — catalog + guards + `aud` claims shipped, pilot on `GET /audit`; see `docs/permission-map.md` |
 | **Phase 3** | Route segregation: introduce `/api/admin/*`, admin module scaffolding, boundary prefix guard (aud+path), CORS split | Low–Med | **Done** — eleven admin-pure controllers serve `/api/admin/*` with `@RequirePermissions` on every route, `GET /admin/stats` annotated in place, frontend call sites updated, segregation test added; see `docs/permission-map.md` §6. Origin/CORS split deferred to Phase 7 (single frontend origin today) |
 | **Phase 4** | Mixed controllers: annotate platform methods with `@RequirePermissions`, keep ownership routes on role + service ownership checks | Med | **Done** — 75 platform routes across the 17 mixed controllers annotated (`lessons`/`chat`/`discussions` are pure learner and got none), `PermissionsGuard` mounted on each, no catalog/service change; `tests/mixed-route-permissions.test.ts` pins the table via a fixture + no-privilege-cut + negative-mount checks; see `docs/permission-map.md` §7 |
-| **Phase 5** | Hardening: MFA for admin/finance, step-up for sensitive ops, audit protection, error hygiene | Low | Pending |
-| **Phase 6** | Security tests: boundary tests (learner cannot call admin), IDOR/BOLA, privilege escalation, token misuse | Low | Pending |
-| **Phase 7** | Frontend split prep (separate origins), docs, verify no functional regressions | Low | Pending |
+| **Phase 5** | Hardening: MFA for admin/finance, step-up for sensitive ops, audit protection, error hygiene | Low | **Done** — admins/finance must enable 2FA before getting tokens (login/refresh/google all gate it, `2fa/setup` + challenge `2fa/confirm`), `disable2FA` blocked for privileged roles, `StepUpGuard` on refund review/certificate revoke+reissue/payment-gateway mutations (fresh TOTP via `X-Step-Up-Code`), audit remains append-only (read-only controller, single `create`), error hygiene already pinned by `exception-filter` tests; frontend: `/auth/two-factor-setup` page, axios retry interceptor + `StepUpProvider` modal; see code + §10 |
+| **Phase 6** | Security tests: boundary tests (learner cannot call admin), IDOR/BOLA, privilege escalation, token misuse | Low | **Done** — `tests/hardening-security.test.ts` (26 tests): 2FA enforcement (login/refresh/google + challenge flow + disable blocked), step-up wrong/missing code, AdminBoundaryGuard overreach (learner-audience 403, purpose tokens 401, `opsGrant` 401), CORS allow-list behaviour |
+| **Phase 7** | Frontend split prep (separate origins), docs, verify no functional regressions | Low | **Done** — CORS now allow-list based (`cors-origins.ts` = `FRONTEND_URL` + `CORS_ORIGINS`, `X-Step-Up-Code` header allowed), full backend suite **497/497**, backend build, frontend build + ESLint clean (single pre-existing warning) |
 
 ## 9. Decision Required
 
@@ -129,6 +129,43 @@ and the no-privilege-cut invariant, and was mutation-checked in both
 directions.
 470 tests passing, build and boot smoke clean, frontend typecheck clean.
 
-Next: **Phase 5** (hardening: MFA/step-up for admin & finance, audit log
-protection, error hygiene) — same review step. Phase 7's CORS origin split
-remains deferred.
+**Phases 5–7 are implemented.**
+
+> **2FA enforcement.** `login`/`refresh`/`googleLogin` refuse to mint tokens for
+> `ADMIN`/`FINANCE` users with `twoFactorEnabled: false` and answer
+> `{ requiresTwoFactorSetup: true, tempToken }` (purpose `2fa_setup`, 10 min).
+> `POST /auth/2fa/setup` returns the otpauth QR + secret under that tempToken
+> (or a session); `POST /auth/2fa/confirm` verifies a challenge TOTP and mints
+> the real tokens. `disable2FA` is rejected for privileged roles once enrolled.
+> Non-privileged users keep the existing flow unchanged.
+
+> **TOTP verification.** otplib v13 `verify` returns a `VerifyResult` *object*
+> that is always truthy, so `if (!verify(...))` accepted ANY code anywhere it
+> was used (login/confirm/disable and the new step-up guard). All paths now go
+> through `src/common/totp.ts` (`verifyTotp`, checks `result?.valid === true`);
+> that function is the single otplib verify call in the codebase. Bug was
+> confirmed by the old tests passing wrong codes and now rejecting them.
+
+> **Step-up.** `StepUpGuard` (DI-free, uses Prisma + encryption) is mounted on
+> `PATCH /api/admin/refunds/:id/review`, `POST /api/admin/certificates/:id/revoke`
+> and `/:id/reissue`, and `POST`/`PATCH`/`DELETE /api/admin/payment-gateways`.
+> It reads the TOTP from `X-Step-Up-Code` or the `stepupCode` body field and
+> answers `403 { stepUpRequired: true }` when a code is missing/invalid. The
+> frontend api interceptor answers that shape by prompting the `StepUpProvider`
+> modal and retrying once with the header.
+
+> **CORS.** `corsOrigins()` builds the allow-list from `FRONTEND_URL` plus the
+> optional `CORS_ORIGINS` (comma-separated) variable, deduped; the old open
+> `/.*/` regex is gone. Set `CORS_ORIGINS` on the new backend when additional
+> origins are needed (e.g. a separate ops console unblocks Phase 7's origin
+> split).
+
+> **Verification.** Backend suite **497/497** (26 new security tests), backend
+> build clean, frontend build clean, ESLint clean (one pre-existing `<img>`
+> warning in login page).
+
+Next: wire the reviewer checklist for the privileged 2FA policy (bot a
+`twoFactorEnabled: false` FINANCE account before/after a lucky prod deploy),
+then open the separate ops-console origin + per-origin CORS when the team is
+ready for Phase 7's UI split. The deactivated Google OAuth and SMTP/Stripe
+variables on the new host remain outstanding migrations, not boundary work.

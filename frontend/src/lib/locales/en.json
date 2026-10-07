@@ -1427,6 +1427,23 @@
         "completing": "Completing authentication...",
         "loading": "Loading..."
     },
+    "twoFactorSetup": {
+        "title": "Enable Two-Factor Authentication",
+        "sub": "For the security of your account, two-factor authentication must be enabled before you continue.",
+        "scanHint": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.).",
+        "secretHint": "Or enter the secret key manually into the app:",
+        "code": "6-digit verification code",
+        "verifyCode": "Enable",
+        "fail": "The verification code is invalid. Please try again.",
+        "loading": "Preparing the setup page...",
+        "enabledTitle": "Two-Factor Authentication Enabled",
+        "enabledBody": "Two-factor authentication is now enabled on your account.",
+        "goToDashboard": "Go to Dashboard",
+        "needCodeTitle": "Verification Code Required",
+        "needCodeBody": "This action requires a code from your authenticator app.",
+        "cancel": "Cancel",
+        "submit": "Verify"
+    },
     "teaching": {
         "hub_title": "Teaching Hub",
         "hub_subtitle": "Manage the batches you teach, request new openings, and get course ideas approved.",

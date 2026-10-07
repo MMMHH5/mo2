@@ -44,6 +44,11 @@ function LoginForm() {
                 return;
             }
 
+            if (body.requiresTwoFactorSetup && body.tempToken) {
+                router.push(`/auth/two-factor-setup?tempToken=${encodeURIComponent(body.tempToken)}&redirect=${encodeURIComponent(redirect)}`);
+                return;
+            }
+
             if (body.requiresPasswordChange && body.tempToken) {
                 router.push(`/auth/change-password?tempToken=${encodeURIComponent(body.tempToken)}&redirect=${encodeURIComponent(redirect)}`);
                 return;

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { requestStepUpCode } from './stepup-bridge';
 
 // Base URL used for file preview URLs across the app.
 // The NestJS backend has NO global "/api" prefix, so strip a trailing "/api"
@@ -149,6 +150,27 @@ api.interceptors.response.use(
             return api(original);
         }
         return Promise.reject(error);
+    }
+);
+
+// --- Step-up authentication (sensitive admin/finance actions) ---------------
+// Privileged APIs (refund review, certificate revoke/reissue, payment-gateway
+// mutations) answer 403 with { stepUpRequired: true }. The user must supply a
+// fresh authenticator code; we ask through StepUpProvider, then retry the exact
+// request carrying X-Step-Up-Code. Any other 403 keeps flowing to the caller.
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const original = error?.config;
+        const body = error?.response?.data as { stepUpRequired?: boolean } | undefined;
+        if (error?.response?.status !== 403 || !body?.stepUpRequired || !original || original._stepUpRetried) {
+            return Promise.reject(error);
+        }
+        const code = await requestStepUpCode();
+        if (!code) return Promise.reject(error);
+        original._stepUpRetried = true;
+        original.headers = { ...(original.headers || {}), 'X-Step-Up-Code': code };
+        return api(original);
     }
 );
 

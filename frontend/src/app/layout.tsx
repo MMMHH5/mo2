@@ -10,6 +10,7 @@ import CookieBanner from '@/components/CookieBanner';
 import JsonLd from '@/components/JsonLd';
 import GlobalBackButton from '@/components/GlobalBackButton';
 import OperationsTracker from '@/components/OperationsTracker';
+import StepUpProvider from '@/components/StepUpProvider';
 
 const tajawal = localFont({
   src: [
@@ -114,6 +115,9 @@ export default async function RootLayout({
           <I18nProvider locale={locale}>
             <AuthProvider>
               <Toaster position="top-right" />
+              {/* Serves the 403 step-up challenge: a fresh authenticator code
+                  for refunds/certificates/payment-gateway actions. */}
+              <StepUpProvider />
               {children}
               {/* Mounted app-wide: the operations center records every visitor,
                   signed in or not, so this cannot live inside an admin tree. */}

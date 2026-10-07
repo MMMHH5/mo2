@@ -7,7 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
-import { getFrontendUrl } from './common/frontend-url';
+import { corsOrigins } from './common/cors-origins';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { bodyParserErrorHandler } from './common/body-parser-error.middleware';
 
@@ -161,16 +161,22 @@ async function bootstrap() {
         SwaggerModule.setup('api/docs', app, document);
     }
 
-    // Strict CORS Configuration
+    // Strict CORS Configuration.
+    // Phase 7: an explicit allow-list (FRONTEND_URL plus CORS_ORIGINS) instead
+    // of a single trusted origin, so the learner and admin surfaces can later
+    // live on separate origins without a deploy; a browser from outside the
+    // list is rejected here, before any handler sees the request.
     app.enableCors({
-        origin: getFrontendUrl(),
+        origin: corsOrigins(),
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
         // `X-Ops-Grant` carries the operations-center grant. Any custom header
         // forces a CORS preflight, and a header missing from this list is
         // rejected by the browser before the request is ever sent -- which is
         // why the grant could not reach the API until it was named here.
-        allowedHeaders: 'Content-Type, Accept, Authorization, X-Ops-Grant',
+        // `X-Step-Up-Code` is the Phase 5 step-up header (fresh TOTP for
+        // privileged mutations).
+        allowedHeaders: 'Content-Type, Accept, Authorization, X-Ops-Grant, X-Step-Up-Code',
     });
 
     await app.listen(process.env.PORT || 3001);

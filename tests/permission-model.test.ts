@@ -183,7 +183,7 @@ test('refresh issues the same claims login does', async () => {
             update: async () => ({}),
             create: async () => ({}),
         },
-        user: { findUnique: async () => ({ id: 'u1', email: 'a@b.test', role: Role.FINANCE, isActive: true, tokenVersion: 3 }) },
+        user: { findUnique: async () => ({ id: 'u1', email: 'a@b.test', role: Role.FINANCE, isActive: true, tokenVersion: 3, twoFactorEnabled: true }) },
         $transaction: async (ops: any[]) => Promise.all(ops),
     };
 

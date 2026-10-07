@@ -14,11 +14,12 @@ import { UserCacheService } from '../common/user-cache.service';
 import { audienceForRole, permissionsForRole } from './permissions/permissions';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { generateSecret, verify as verifyOtp } from 'otplib';
+import { generateSecret } from 'otplib';
+import { verifyTotp } from '../common/totp';
 import * as qrcode from 'qrcode';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 
 export interface PublicUser {
     id: string;
@@ -34,6 +35,7 @@ export interface PublicUser {
 export type LoginResult =
     | { requiresTwoFactor: true; tempToken: string }
     | { requiresPasswordChange: true; tempToken: string }
+    | { requiresTwoFactorSetup: true; tempToken: string }
     | { requiresTwoFactor: false; access_token: string; refresh_token: string; user: PublicUser };
 
 @Injectable()
@@ -53,6 +55,41 @@ export class AuthService {
     private generateToken(): { raw: string; hash: string } {
         const raw = crypto.randomBytes(32).toString('hex');
         return { raw, hash: this.hashToken(raw) };
+    }
+
+    /**
+     * Roles that sit on the privileged side of the learner/admin boundary.
+     * Their sign-in is required to be protected by 2FA (Phase 5): a login or
+     * refresh that would hand one of them a live session without it is refused.
+     */
+    private isPrivilegedRole(role: string): boolean {
+        return role === Role.ADMIN || role === Role.FINANCE;
+    }
+
+    /**
+     * Resolve who is configuring 2FA. Either an authenticated session supplies
+     * `userId`, or the caller proves one-time knowledge of a `2fa_setup`
+     * challenge minted by login/googleLogin for a privileged account that has
+     * no session yet. A challenge for any other purpose (2fa/pwd_change/ops) is
+     * rejected so a token cannot be re-purposed across flows.
+     */
+    private resolveSetupIdentity(userId: string | undefined, tempToken?: string): { userId: string; fromChallenge: boolean } {
+        if (tempToken) {
+            let payload: any;
+            try {
+                payload = this.jwtService.verify(tempToken);
+            } catch {
+                throw new UnauthorizedException('Setup session expired. Please sign in again.');
+            }
+            if (payload.purpose !== '2fa_setup' || !payload.sub) {
+                throw new UnauthorizedException('Invalid setup token');
+            }
+            return { userId: String(payload.sub), fromChallenge: true };
+        }
+        if (userId) {
+            return { userId, fromChallenge: false };
+        }
+        throw new UnauthorizedException('Authentication required');
     }
 
     private appUrl(): string {
@@ -120,6 +157,19 @@ export class AuthService {
             return { requiresTwoFactor: true, tempToken };
         }
 
+        // Admin and finance accounts are on the far side of the privileged
+        // boundary and must secure sign-in with 2FA. Refuse to mint full tokens
+        // for one of them without it, and hand back a short-lived setup
+        // challenge instead -- the 2FA setup endpoints accept it in place of a
+        // session, because a user who never completed the enforcement has none.
+        if (this.isPrivilegedRole(user.role) && !user.twoFactorEnabled) {
+            const tempToken = this.jwtService.sign(
+                { sub: user.id, email: user.email, role: user.role, purpose: '2fa_setup' },
+                { expiresIn: '10m' }
+            );
+            return { requiresTwoFactorSetup: true, tempToken };
+        }
+
         const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
         return { ...tokens, requiresTwoFactor: false, user: this.publicUser(user) };
     }
@@ -137,7 +187,7 @@ export class AuthService {
         if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
             throw new UnauthorizedException('Two-factor authentication is not enabled for this account');
         }
-        const valid = await verifyOtp({ token: code, secret: this.encryption.decrypt(user.twoFactorSecret) });
+        const valid = await verifyTotp(code, this.encryption.decrypt(user.twoFactorSecret));
         if (!valid) throw new UnauthorizedException('Incorrect verification code');
 
         const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
@@ -245,6 +295,14 @@ export class AuthService {
 
         const user = await this.prisma.user.findUnique({ where: { id: token.userId } });
         if (!user || !user.isActive) throw new UnauthorizedException('Account not available');
+
+        // Same gate as login: a privileged account without 2FA enabled must not
+        // keep working through a refresh token issued before the enforcement.
+        // This closes the window for accounts that predate it and pushes them
+        // through the setup challenge on their next real login.
+        if (this.isPrivilegedRole(user.role) && !user.twoFactorEnabled) {
+            throw new UnauthorizedException('Two-factor authentication is required for this account');
+        }
 
         // Rotate the refresh token, keeping the family lineage intact.
         const newRefresh = this.generateToken();
@@ -358,8 +416,9 @@ export class AuthService {
         return { ok: true };
     }
 
-    async setup2FA(userId: string) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    async setup2FA(userId: string | undefined, tempToken?: string) {
+        const identity = this.resolveSetupIdentity(userId, tempToken);
+        const user = await this.prisma.user.findUnique({ where: { id: identity.userId } });
         if (!user) throw new UnauthorizedException('User not found');
 
         const secret = generateSecret();
@@ -369,19 +428,30 @@ export class AuthService {
 
         // Store the secret immediately so confirm can verify against it.
         // EncryptionService.encrypt() keeps the TOTP secret out of the DB in plaintext.
-        await this.prisma.user.update({ where: { id: userId }, data: { twoFactorSecret: this.encryption.encrypt(secret) } });
+        await this.prisma.user.update({ where: { id: identity.userId }, data: { twoFactorSecret: this.encryption.encrypt(secret) } });
 
         return { secret, otpauth, qrDataUrl };
     }
 
-    async confirm2FA(userId: string, code: string) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    async confirm2FA(userId: string | undefined, code: string, tempToken?: string) {
+        const identity = this.resolveSetupIdentity(userId, tempToken);
+        const user = await this.prisma.user.findUnique({ where: { id: identity.userId } });
         if (!user || !user.twoFactorSecret) throw new BadRequestException('No pending 2FA setup');
 
-        const valid = await verifyOtp({ token: code, secret: this.encryption.decrypt(user.twoFactorSecret) });
+        const valid = await verifyTotp(code, this.encryption.decrypt(user.twoFactorSecret));
         if (!valid) throw new BadRequestException('Incorrect verification code');
 
-        await this.prisma.user.update({ where: { id: userId }, data: { twoFactorEnabled: true } });
+        await this.prisma.user.update({ where: { id: identity.userId }, data: { twoFactorEnabled: true } });
+
+        // When the setup was started from the sign-in challenge, the password
+        // was already proven at login and this code proves the second factor --
+        // the same trust model as verify2FALogin -- so a full session is handed
+        // out immediately. A user editing 2FA from an existing session keeps the
+        // plain confirmation shape.
+        if (identity.fromChallenge) {
+            const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
+            return { ...tokens, user: this.publicUser(user), twoFactorEnabled: true };
+        }
         return { ok: true, twoFactorEnabled: true };
     }
 
@@ -389,12 +459,19 @@ export class AuthService {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user) throw new UnauthorizedException('User not found');
 
+        // Admin and finance sign-in is not optional, so none of them may turn it
+        // off once it is on. This is checked before the password so the refusal
+        // is not gated on anything the caller could change.
+        if (this.isPrivilegedRole(user.role)) {
+            throw new ForbiddenException('Administrative and finance accounts cannot disable two-factor authentication');
+        }
+
         const pwMatches = await bcrypt.compare(password, user.passwordHash);
         if (!pwMatches) throw new BadRequestException('Password is incorrect');
 
         if (user.twoFactorEnabled) {
             if (!user.twoFactorSecret) throw new BadRequestException('Two-factor is not configured');
-            const valid = await verifyOtp({ token: code, secret: this.encryption.decrypt(user.twoFactorSecret) });
+            const valid = await verifyTotp(code, this.encryption.decrypt(user.twoFactorSecret));
             if (!valid) throw new BadRequestException('Incorrect verification code');
         }
 
@@ -420,6 +497,18 @@ export class AuthService {
         }
 
         if (!user.isActive) throw new ForbiddenException('Account is suspended');
+
+        // Privileged roles are held to the same 2FA bar through Google: without
+        // an enrollment, no access token or refresh token is issued. The oauth
+        // callback redirects the browser to the setup challenge (see
+        // AuthController.googleAuthRedirect / the frontend success page).
+        if (this.isPrivilegedRole(user.role) && !user.twoFactorEnabled) {
+            const tempToken = this.jwtService.sign(
+                { sub: user.id, email: user.email, role: user.role, purpose: '2fa_setup' },
+                { expiresIn: '10m' }
+            );
+            return { requiresTwoFactorSetup: true, tempToken };
+        }
 
         if (user.twoFactorEnabled) {
             const tempToken = this.jwtService.sign(
