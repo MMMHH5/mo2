@@ -8,6 +8,7 @@ import * as express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { corsOrigins } from './common/cors-origins';
+import { surfaceGate } from './common/surface-gate';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { bodyParserErrorHandler } from './common/body-parser-error.middleware';
 
@@ -178,6 +179,11 @@ async function bootstrap() {
         // privileged mutations).
         allowedHeaders: 'Content-Type, Accept, Authorization, X-Ops-Grant, X-Step-Up-Code',
     });
+
+    // Phase 8 — server-side half of the origin split. CORS above already keeps
+    // disallowed browser origins out; this gate holds for every other client
+    // and decides which audience (admin vs learner) the host serves at all.
+    app.use(surfaceGate);
 
     await app.listen(process.env.PORT || 3001);
 }

@@ -10,6 +10,14 @@ import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Home } from 'lucide-react';
 
+// Phase 8 — where each role signs in. Both origins serve this page, but a
+// session minted for the wrong origin is useless there (the API host refuses
+// the other audience), so the hand-off happens here, before anything is stored.
+const APP_MODE = (process.env.NEXT_PUBLIC_APP_MODE || 'learner') === 'admin' ? 'admin' : 'learner';
+const ADMIN_ORIGIN = process.env.NEXT_PUBLIC_ADMIN_ORIGIN || '';
+const LEARNER_ORIGIN = process.env.NEXT_PUBLIC_LEARNER_ORIGIN || '';
+const PRIVILEGED_ROLES = ['ADMIN', 'FINANCE', 'COURSE_MANAGER'];
+
 export default function LoginPage() {
     return (
         <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-brand-navy-dark dark:text-gray-300 text-gray-600 font-bold">Loading...</div>}>
@@ -61,6 +69,19 @@ function LoginForm() {
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const payload = JSON.parse(window.atob(base64));
+            const privileged = PRIVILEGED_ROLES.includes(payload.role);
+
+            if (APP_MODE === 'learner' && privileged && ADMIN_ORIGIN) {
+                // Admin/finance/course-manager on the learner origin: hand the
+                // session over to the admin origin instead of storing a token
+                // this host's API would refuse.
+                window.location.replace(`${ADMIN_ORIGIN}/login?redirect=${encodeURIComponent(redirect)}`);
+                return;
+            }
+            if (APP_MODE === 'admin' && !privileged && LEARNER_ORIGIN) {
+                window.location.replace(`${LEARNER_ORIGIN}/login?redirect=${encodeURIComponent(redirect)}`);
+                return;
+            }
 
             login(token, {
                 userId: payload.sub,
@@ -150,12 +171,14 @@ function LoginForm() {
                 </form>
 
                 <div className="mt-8 text-center space-y-3">
+                    {APP_MODE !== 'admin' && (
                     <p className={`text-sm font-semibold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                         {t('auth.dont_have_account')}{' '}
                         <a href="/register" className={`font-black transition-colors ${dark ? 'text-brand-gold-light hover:text-brand-gold' : 'text-brand-gold-dark hover:text-brand-gold'}`}>
                             {t('auth.register_now')}
                         </a>
                     </p>
+                )}
                     <p className="text-sm">
                         <a href="/forgot-password" className={`flex items-center justify-center font-bold transition-colors ${dark ? 'text-brand-gold hover:text-brand-gold-light' : 'text-brand-gold-dark hover:text-brand-gold'}`}>
                             {t('recovery.forgotLink')}
