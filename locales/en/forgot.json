@@ -1,0 +1,21 @@
+{
+  "title": "Reset your password",
+  "body": "Enter your username. If an account with that name exists, a six-digit code goes to the email address on it.",
+  "username": "Username",
+  "send": "Send the code",
+  "send_offline": "Server unreachable",
+  "privacy_note": "The screen says the same thing whether or not the account exists. Telling you would tell anyone else who asked.",
+  "back": "Back to sign in",
+  "self_hosted": "Self-hosted · nothing leaves this machine",
+  "limit_label": "Too many requests",
+  "limit_title": "This account has asked for a code five times",
+  "limit_body": "Codes stop being sent for fifteen minutes. The codes already sent still work until they expire.",
+  "limit_retry_at": "you can ask again at {time}",
+  "no_mail_title": "This installation cannot send email",
+  "no_mail_body": "No mail server is configured, so there is nowhere to send a code. An administrator resets the password on the machine itself:",
+  "no_mail_hint": "The command prints a new password once. It is not stored and cannot be shown again.",
+  "no_mail_settings": "Configure a mail server in Settings",
+  "offline_title": "This browser cannot reach your Tel-Agent server",
+  "offline_body": "No response from {host}. Your calls are unaffected if the machine is still running — this is a network problem between you and it. Check that you are on the business network or connected to the VPN.",
+  "offline_retry": "Retry connection"
+}

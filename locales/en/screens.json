@@ -1,0 +1,130 @@
+{
+  "brand": "Tel-Agent",
+  "title": "Screens",
+  "intro": "Twenty-six screens. Every app screen opens with a state switcher at the top — default, empty, loading, error, offline — and the sidebar carries the dark/light switch, the account and workspace menu, and the incoming-call notification.",
+  "reference_label": "Reference screen",
+  "reference_title": "Call detail",
+  "reference_desc": "Opened from any row in the calls list: the recording with its waveform, the transcript beside the whisper channel, and what the assistant did — summary, detected intent, tools invoked and the one that failed. Sets the vocabulary for everything else.",
+  "items": {
+    "home": {
+      "title": "Home",
+      "desc": "Needs your attention first, recent calls second, a deliberately minor dial card."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "desc": "Things waiting on a human decision at the top, with the buttons that fix them; a thirty-day record of what was already dealt with below."
+    },
+    "conversations": {
+      "title": "Channels",
+      "desc": "Written conversations only — WhatsApp, Telegram, SMS and web chat — grouped by day. Calls have their own list; this screen is what someone typed."
+    },
+    "calls": {
+      "title": "Calls list",
+      "desc": "Every call in a table, with full-text search across all transcripts."
+    },
+    "call_detail": {
+      "title": "Call detail",
+      "desc": "One finished call opened from the list: the transcript beside what the assistant did about it."
+    },
+    "live": {
+      "title": "Live calls",
+      "desc": "Reached from the badge at the foot of the sidebar whenever something is on the line: every concurrent call on the left, the selected one's live transcript, whisper, take over and hand off on the right."
+    },
+    "calendar": {
+      "title": "Calendar",
+      "desc": "Week grid of the business diary, with everything the agent booked marked as such."
+    },
+    "contacts": {
+      "title": "Contacts",
+      "desc": "Customers and partners, and exactly which fields the assistant is allowed to use."
+    },
+    "assistants": {
+      "title": "Assistants",
+      "desc": "Every assistant with its type, number and last activity — plus a dark/light switch."
+    },
+    "campaigns": {
+      "title": "Outbound campaigns",
+      "desc": "Calling a list instead of answering it. The running campaign sits on top with a live split of booked, reached, no answer and skipped; the four-step create flow settles who is called, what is said, and inside which hours."
+    },
+    "consent": {
+      "title": "Consent log",
+      "desc": "Reached from Outbound campaigns. Every attempt with the reason it was allowed, a signed chain that cannot be edited after the fact, and the do-not-call list anyone lands on the second they say stop."
+    },
+    "catalogue": {
+      "title": "Catalogue",
+      "desc": "What the business sells and what it records about the people who buy it — services with their length, price and whether the assistant may book them; contact fields each carrying its own permission; and a tab that shows the sentences the assistant can say from it."
+    },
+    "editor": {
+      "title": "Edit assistant",
+      "desc": "Opened from a row in Assistants. Capability rows instead of one long form: enabled rows carry their current value, dormant ones a dashed border and a plus."
+    },
+    "knowledge": {
+      "title": "Knowledge",
+      "desc": "The shared source library and the structured opening hours. Reached from an assistant’s Answer questions panel, not from the sidebar."
+    },
+    "rules": {
+      "title": "Routing rules",
+      "desc": "One ordered list read from the top — the first rule a call matches decides who answers, and a tester replays the list against any number to show which rule wins and which are never reached."
+    },
+    "numbers": {
+      "title": "Numbers and phones",
+      "desc": "Two tabs: the numbers the installation answers, and the desk phones, handsets and apps that ring as extensions on the line."
+    },
+    "apps": {
+      "title": "Apps",
+      "desc": "Everything installable: channel apps for phone, WhatsApp and Telegram, plus tools the agent can use."
+    },
+    "connectors": {
+      "title": "Connectors",
+      "desc": "MCP tool servers the agent calls during a call: who runs each one, which of its tools may run, and what broke. The other direction — Tel-Agent as a server — stays in Settings."
+    },
+    "usage": {
+      "title": "Usage",
+      "desc": "What the month cost, split by what actually charges money, against a budget that warns but never cuts the line."
+    },
+    "settings": {
+      "title": "Settings",
+      "desc": "Nine tabs, defaults filled in, advanced kept out of the way. Reached from the account menu at the foot of the sidebar."
+    },
+    "health": {
+      "title": "System health",
+      "desc": "What is running and what is not: services, disk, model latency, and the checks that failed with the command that fixes each one."
+    },
+    "backup": {
+      "title": "Backup and restore",
+      "desc": "What is backed up, when it last ran, and a restore that says out loud what it will overwrite."
+    },
+    "update": {
+      "title": "Update",
+      "desc": "The version you run, what changed, and an update that can be rolled back."
+    },
+    "install": {
+      "title": "Install and setup",
+      "desc": "One flow from unpacking to the first call: language, install type, machine check, database and ports, then the phone line, the line of work that seeds the catalogue, the greeting, and ringing your own number."
+    },
+    "workspace": {
+      "title": "New workspace",
+      "desc": "A second business or location kept apart: name it, start empty or copy the current setup, decide who gets in."
+    },
+    "login": {
+      "title": "Sign in",
+      "desc": "Local accounts on your own server. No cloud login."
+    },
+    "forgot": {
+      "title": "Reset password",
+      "desc": "Ask for a code, or the command when there is no mail server."
+    },
+    "code": {
+      "title": "Verification code",
+      "desc": "Six digits, expiry and resend. The same screen serves two-factor sign-in."
+    },
+    "new_password": {
+      "title": "New password",
+      "desc": "Strength measured in the browser, and what changing it signs out."
+    },
+    "key": {
+      "title": "Sign in with a key",
+      "desc": "A challenge signed on your own machine. No password, no key upload."
+    }
+  }
+}

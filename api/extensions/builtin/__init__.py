@@ -1,0 +1,25 @@
+"""Official extensions that ship with the core."""
+
+# Loaded in this order at startup. Order matters only where one listener wants to run
+# before another on the same event; today none do, and the list is explicit so that
+# when one does, the answer is a line here rather than an import-time accident.
+BUILTIN = (
+    "api.extensions.builtin.agent_core",
+    "api.extensions.builtin.database",
+    "api.extensions.builtin.web_chat",
+    "api.extensions.builtin.telegram",
+    "api.extensions.builtin.email",
+    "api.extensions.builtin.whatsapp",
+    "api.extensions.builtin.messenger",
+    "api.extensions.builtin.instagram",
+    "api.extensions.builtin.discord",
+    "api.extensions.builtin.slack",
+    "api.extensions.builtin.sms",
+    "api.extensions.builtin.teams",
+    "api.extensions.builtin.mattermost",
+    "api.extensions.builtin.irc",
+    "api.extensions.builtin.matrix",
+    "api.extensions.builtin.line",
+    "api.extensions.builtin.signal",
+    "api.extensions.builtin.viber",
+)

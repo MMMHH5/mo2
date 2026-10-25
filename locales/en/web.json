@@ -1,0 +1,109 @@
+{
+  "app": {
+    "name": "Tel-Agent"
+  },
+  "nav": {
+    "home": "Home",
+    "conversations": "Conversations",
+    "contacts": "Contacts",
+    "rules": "Rules",
+    "agent": "Agent",
+    "settings": "Settings"
+  },
+  "status": {
+    "connected": "Connected",
+    "degraded": "Degraded",
+    "offline": "Offline"
+  },
+  "channel": {
+    "web_chat": "Web chat",
+    "phone": "Phone",
+    "email": "Email",
+    "sms": "SMS",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "messenger": "Messenger",
+    "instagram": "Instagram",
+    "discord": "Discord",
+    "teams": "Microsoft Teams",
+    "mattermost": "Mattermost",
+    "irc": "IRC",
+    "matrix": "Matrix",
+    "line": "LINE",
+    "signal": "Signal",
+    "viber": "Viber"
+  },
+  "handling": {
+    "ai": "AI handled",
+    "passed": "Passed to a human",
+    "blocked": "Blocked",
+    "attention": "Needs attention"
+  },
+  "speaker": {
+    "visitor": "Visitor",
+    "agent": "Agent",
+    "human": "Operator"
+  },
+  "conversations": {
+    "title": "Conversations",
+    "search_placeholder": "Search everything that was said",
+    "search_hint": "Full-text across every conversation",
+    "column_who": "Who",
+    "column_channel": "Channel",
+    "column_started": "Started",
+    "column_duration": "Duration",
+    "column_handling": "Handling",
+    "column_summary": "Summary",
+    "empty_title": "No conversations yet",
+    "empty_body": "When someone starts a chat, it appears here with the full transcript.",
+    "count": "{count} conversations"
+  },
+  "detail": {
+    "back": "Back to conversations",
+    "summary": "Summary",
+    "intent": "Detected intent",
+    "tools": "Tools invoked",
+    "whisper": "Whisper channel",
+    "whisper_note": "Operator instructions. The visitor never saw these.",
+    "transcript": "Transcript",
+    "human_joined": "human joined: {name}",
+    "agent_resumed": "agent resumed",
+    "empty_title": "No transcript",
+    "empty_body": "Nothing was recorded for this conversation.",
+    "tool_ok": "ok",
+    "tool_failed": "failed",
+    "language": "Language",
+    "confidence": "Confidence"
+  },
+  "common": {
+    "loading": "Loading",
+    "retry": "Try again"
+  },
+  "auth": {
+    "title": "Sign in",
+    "subtitle": "Accounts live on this server only. There is no cloud login, and a reset never leaves your own mail server.",
+    "username": "Username",
+    "password": "Password",
+    "forgot": "Forgot it?",
+    "submit": "Sign in",
+    "submit_offline": "Server unreachable",
+    "submit_locked": "Locked for now",
+    "wrong_password": "That password does not match this username.",
+    "server_error": "The server could not answer that, so the password was not checked. Nothing is locked and nothing is wrong with the account — try again in a moment.",
+    "key_prompt": "Signing in with a key instead?",
+    "key_link": "Use an SSH certificate",
+    "blocked_label": "Sign-in blocked",
+    "blocked_title": "Too many failed attempts on this account",
+    "blocked_body": "Five wrong passwords in a row, so this account is locked. If that was not you, someone is guessing — an administrator can unlock it and force a password change from the users tab.",
+    "blocked_unlocks": "unlocks at {time}",
+    "empty_title": "No accounts exist on this installation",
+    "empty_body": "This is a fresh install and nobody has signed up yet. The first account you create becomes the administrator — it can add everyone else afterwards.",
+    "empty_action": "Create the first account",
+    "offline_title": "This browser cannot reach your Tel-Agent server",
+    "offline_body": "No response from {host}. Your calls are unaffected if the machine is still running — this is a network problem between you and it. Check that you are on the business network or connected to the VPN.",
+    "offline_retry": "Retry connection",
+    "self_hosted": "Self-hosted · nothing leaves this machine",
+    "continue": "Continue to dashboard",
+    "language": "Language"
+  }
+}

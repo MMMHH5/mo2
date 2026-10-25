@@ -1,0 +1,18 @@
+{
+  "title": "Code eingeben",
+  "sent_to": "Ein sechsstelliger Code ging an {address}. Er gilt zehn Minuten.",
+  "digit_label": "Ziffer {position} von {total}",
+  "submit": "Weiter",
+  "submit_offline": "Server nicht erreichbar",
+  "wrong_code": "Dieser Code stimmt nicht. Noch {attempts} Versuche, danach ist ein neuer Code nötig.",
+  "expired_title": "Dieser Code ist abgelaufen",
+  "expired_body": "Codes gelten zehn Minuten. Fordern Sie einen neuen an - der alte funktioniert auch dann nicht mehr, wenn Sie ihn wiederfinden.",
+  "expires_in": "Läuft ab in {time}",
+  "resend": "Neuen Code senden",
+  "resend_prompt_expired": "Es gibt nichts mehr abzuwarten",
+  "back": "Zurück zur Anmeldung",
+  "self_hosted": "Selbst gehostet · nichts verlässt diesen Rechner",
+  "offline_title": "Dieser Browser erreicht Ihren Tel-Agent-Server nicht",
+  "offline_body": "Keine Antwort von {host}. Ihre Anrufe sind nicht betroffen, solange die Maschine läuft — das ist ein Netzwerkproblem zwischen Ihnen und ihr. Prüfen Sie, ob Sie im Firmennetz oder mit dem VPN verbunden sind.",
+  "offline_retry": "Verbindung erneut versuchen"
+}

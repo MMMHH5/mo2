@@ -1,0 +1,37 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "web",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "38471"
+      ],
+      "port": 38471,
+      "autoPort": false
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "py",
+      "runtimeArgs": [
+        "-3.12",
+        "-m",
+        "uvicorn",
+        "api.main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "38472"
+      ],
+      "port": 38472,
+      "autoPort": false
+    }
+  ]
+}

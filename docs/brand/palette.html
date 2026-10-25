@@ -1,0 +1,214 @@
+<meta charset="utf-8">
+<title>Tel-Agent Palette</title>
+<style>
+  :root{
+    --bg:#0D0D0F; --surface:#151518; --surface-2:#1C1C20;
+    --border:#2A2A31; --border-strong:#3A3A44;
+    --text:#EAEAEE; --muted:#A0A0AB; --dim:#6E6E7A;
+    --accent:#A78BFA; --accent-hi:#C4B5FD; --accent-dim:#3C2F63;
+    --green:#4ADE80; --red:#F87171; --amber:#FBBF24;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:48px 32px 96px;background:var(--bg);color:var(--text);
+       font-family:"Inter","Segoe UI",system-ui,sans-serif;line-height:1.6;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:30px;letter-spacing:-.02em;margin:0 0 8px;font-weight:650}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 12px;max-width:62ch}
+  h2{font-size:13px;letter-spacing:.10em;text-transform:uppercase;color:var(--dim);
+     font-weight:600;margin:54px 0 18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  p{font-size:14.5px;color:#C9C9D2;max-width:70ch}
+  p.note{font-size:13.5px;color:var(--muted)}
+  b{color:var(--text);font-weight:600}
+  code,.mono{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12.5px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th{text-align:left;font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+     color:var(--dim);font-weight:600;padding:0 14px 10px;border-bottom:1px solid var(--border)}
+  td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  .sw{width:30px;height:30px;border-radius:7px;border:1px solid var(--border-strong);display:block}
+  .pass{color:var(--green);font-weight:600}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px}
+
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+         padding:4px 11px;border-radius:99px;border:1px solid}
+  .b-ai{color:var(--accent);border-color:var(--accent-dim);background:rgba(167,139,250,.10)}
+  .b-hum{color:var(--green);border-color:rgba(74,222,128,.28);background:rgba(74,222,128,.09)}
+  .b-blk{color:var(--red);border-color:rgba(248,113,113,.28);background:rgba(248,113,113,.09)}
+  .b-att{color:var(--amber);border-color:rgba(251,191,36,.28);background:rgba(251,191,36,.09)}
+  .dot{width:6px;height:6px;border-radius:99px;background:currentColor}
+
+  .live{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;font-weight:600;color:var(--accent)}
+  .pulse{width:9px;height:9px;border-radius:99px;background:var(--accent);
+         box-shadow:0 0 0 0 rgba(167,139,250,.65);animation:p 1.8s infinite}
+  @keyframes p{70%{box-shadow:0 0 0 11px rgba(167,139,250,0)}100%{box-shadow:0 0 0 0 rgba(167,139,250,0)}}
+
+  .tx{display:grid;grid-template-columns:52px 106px 1fr;gap:0 18px;font-size:14.5px;line-height:1.75}
+  .tx .t{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--dim);padding-top:4px}
+  .tx .s{font-size:12.5px;font-weight:650;padding-top:3px}
+  .tx .l{padding-bottom:13px}
+  .s-caller{color:var(--muted)} .s-agent{color:var(--accent)} .s-human{color:var(--green)}
+  .rule{grid-column:1/-1;display:flex;align-items:center;gap:12px;color:var(--green);
+        font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;
+        margin:6px 0 15px}
+  .rule:before,.rule:after{content:"";height:1px;background:rgba(74,222,128,.3);flex:1}
+  .whisper{border-left:2px dashed var(--border-strong);padding:12px 0 12px 18px;margin-top:20px}
+  .whisper .h{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);
+              font-weight:600;margin-bottom:9px}
+  .whisper .w{font-size:13.5px;color:var(--muted);font-style:italic}
+</style>
+
+<div class="wrap">
+
+<h1>Tel-Agent — colour palette</h1>
+<p class="sub">
+  Tel-Agent's own identity, independent of the Dpro brand. Dark theme first.
+  Every contrast ratio below is measured, not estimated.
+</p>
+
+<h2>Why violet — by elimination, not taste</h2>
+<p style="margin-bottom:14px">
+  The design specification already assigns three of the four colours it needs:
+  <b style="color:var(--green)">green</b> for passed to a human,
+  <b style="color:var(--red)">red</b> for blocked,
+  <b style="color:var(--amber)">amber</b> for needs attention.
+  The accent is the fourth, and it means <b>the AI handled this</b>.
+</p>
+<p style="margin-bottom:14px">
+  So the accent has to sit far from all three in hue, or the handling badges start
+  lying to the reader. That removes green, red, orange and yellow immediately.
+  What is left is blue, teal, violet and magenta.
+</p>
+<ul style="font-size:14.5px;color:#C9C9D2;max-width:70ch;padding-left:20px">
+  <li style="margin:6px 0"><b>Teal</b> — too close to green at badge size. A teal “AI handled” chip and a green “passed to human” chip are confusable in peripheral vision, which is exactly how badges get read.</li>
+  <li style="margin:6px 0"><b>Blue</b> — safe, and the default accent of every developer tool. It also reads as “information”, which weakens it as a state colour.</li>
+  <li style="margin:6px 0"><b>Magenta</b> — distinctive, but reads consumer and playful. Wrong register for something a clinic runs.</li>
+  <li style="margin:6px 0"><b>Violet</b> — maximally distant from all three semantics, distinctive without being loud, and it holds up on both dark and light grounds.</li>
+</ul>
+
+<h2>Dark theme — the primary design target</h2>
+<div class="card">
+<table>
+  <tr><th style="width:52px"></th><th>Token</th><th>Hex</th><th>Role</th><th style="text-align:right">On base</th></tr>
+  <tr><td><span class="sw" style="background:#0D0D0F"></span></td><td class="mono">bg</td><td class="mono">#0D0D0F</td><td>Page ground</td><td style="text-align:right;color:var(--dim)">—</td></tr>
+  <tr><td><span class="sw" style="background:#151518"></span></td><td class="mono">surface</td><td class="mono">#151518</td><td>Cards, panels</td><td style="text-align:right;color:var(--dim)">—</td></tr>
+  <tr><td><span class="sw" style="background:#1C1C20"></span></td><td class="mono">surface-2</td><td class="mono">#1C1C20</td><td>Raised rows, hover</td><td style="text-align:right;color:var(--dim)">—</td></tr>
+  <tr><td><span class="sw" style="background:#2A2A31"></span></td><td class="mono">border</td><td class="mono">#2A2A31</td><td>Default separators</td><td style="text-align:right;color:var(--dim)">—</td></tr>
+  <tr><td><span class="sw" style="background:#3A3A44"></span></td><td class="mono">border-strong</td><td class="mono">#3A3A44</td><td>Emphasis, focus ring</td><td style="text-align:right;color:var(--dim)">—</td></tr>
+  <tr><td><span class="sw" style="background:#EAEAEE"></span></td><td class="mono">text</td><td class="mono">#EAEAEE</td><td>Transcript body, headings</td><td style="text-align:right" class="pass">16.2</td></tr>
+  <tr><td><span class="sw" style="background:#A0A0AB"></span></td><td class="mono">muted</td><td class="mono">#A0A0AB</td><td>Secondary text</td><td style="text-align:right" class="pass">7.5</td></tr>
+  <tr><td><span class="sw" style="background:#6E6E7A"></span></td><td class="mono">dim</td><td class="mono">#6E6E7A</td><td>Timestamps, labels — <b>never body text</b></td><td style="text-align:right" style="color:var(--amber)">3.9</td></tr>
+  <tr><td><span class="sw" style="background:#A78BFA"></span></td><td class="mono">accent</td><td class="mono">#A78BFA</td><td>AI handled · primary action · live</td><td style="text-align:right" class="pass">7.1</td></tr>
+  <tr><td><span class="sw" style="background:#C4B5FD"></span></td><td class="mono">accent-hi</td><td class="mono">#C4B5FD</td><td>Hover, active</td><td style="text-align:right" class="pass">10.5</td></tr>
+  <tr><td><span class="sw" style="background:#4ADE80"></span></td><td class="mono">green</td><td class="mono">#4ADE80</td><td>Passed through to a human</td><td style="text-align:right" class="pass">11.1</td></tr>
+  <tr><td><span class="sw" style="background:#F87171"></span></td><td class="mono">red</td><td class="mono">#F87171</td><td>Blocked</td><td style="text-align:right" class="pass">7.0</td></tr>
+  <tr><td><span class="sw" style="background:#FBBF24"></span></td><td class="mono">amber</td><td class="mono">#FBBF24</td><td>Needs attention</td><td style="text-align:right" class="pass">11.6</td></tr>
+</table>
+</div>
+<p class="note" style="margin-top:14px">
+  Everything meant to carry text clears WCAG AA (4.5:1) with room to spare.
+  <code>dim</code> at 3.9 is the one exception and is deliberate — it is for timestamps
+  and column labels only, and must never be used for anything a person actually reads.
+</p>
+
+<h2>The semantic set in context</h2>
+<div class="card" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+  <span class="badge b-ai"><span class="dot"></span>AI handled</span>
+  <span class="badge b-hum"><span class="dot"></span>Passed to human</span>
+  <span class="badge b-blk"><span class="dot"></span>Blocked</span>
+  <span class="badge b-att"><span class="dot"></span>Needs attention</span>
+  <span style="flex:1"></span>
+  <span class="live"><span class="pulse"></span>LIVE CALL</span>
+</div>
+<p class="note" style="margin-top:14px">
+  Four states, four hues, no two confusable at a glance or in peripheral vision.
+  The live indicator pulses, as the specification requires — it is the only place the
+  accent is allowed to move.
+</p>
+
+<h2>The palette applied to the transcript</h2>
+<p style="margin-bottom:18px">
+  Worth noticing: the transcript needs three speaker colours, and <b>it does not need
+  three new ones</b>. The semantic set already answers the question.
+</p>
+<div class="card">
+  <div class="tx">
+    <div class="t">00:06</div><div class="s s-caller">Caller</div>
+    <div class="l">Good morning, Gruber here. I have an appointment on Tuesday and I need to move it.</div>
+
+    <div class="t">00:13</div><div class="s s-agent">Agent</div>
+    <div class="l">Of course, Ms Gruber. I can see Tuesday at 14:00. What day would suit you better?</div>
+
+    <div class="t">00:31</div><div class="s s-agent">Agent</div>
+    <div class="l">Thursday at 10:00 is free. Should I put you down for that?</div>
+
+    <div class="rule">human joined — Mohamed</div>
+
+    <div class="t">00:49</div><div class="s s-human">Mohamed</div>
+    <div class="l">Your referral is valid until the end of September, so you do not need a new one.</div>
+
+    <div class="rule">agent resumed</div>
+
+    <div class="t">01:06</div><div class="s s-agent">Agent</div>
+    <div class="l">Then you are booked for Thursday at 10:00. Anything else?</div>
+  </div>
+
+  <div class="whisper">
+    <div class="h">Whisper — not heard by the caller</div>
+    <div class="w">00:44 &nbsp; Operator → Agent &nbsp;·&nbsp; The referral is valid until 30 September. Tell her she does not need a new one.</div>
+  </div>
+</div>
+
+<p class="note" style="margin-top:16px">
+  <b>Caller</b> takes muted grey — they speak the most lines, and colouring them would
+  tire the eye over a long transcript.
+  <b>Agent</b> takes the accent, matching the “AI handled” badge in the header.
+  <b>Human operator</b> takes green, matching “passed to a human”. The takeover rules
+  are green for the same reason. One vocabulary, learned once.
+</p>
+<p class="note" style="margin-top:12px">
+  The whisper channel deliberately gets <b>no semantic colour at all</b> — a dashed
+  border and muted text instead. Amber was tempting and would have been wrong: whisper
+  is not a problem, and amber has to keep meaning “something needs you”.
+</p>
+
+<h2>Light theme</h2>
+<p style="margin-bottom:16px">
+  A real second pass, not an inversion. The accent and semantics darken so they hold
+  contrast on white; the hue relationships stay identical.
+</p>
+<div class="card" style="background:#FFFFFF;border-color:#E4E4E8">
+<table style="color:#18181B">
+  <tr>
+    <th style="width:52px;color:#8A8A94;border-color:#E4E4E8"></th>
+    <th style="color:#8A8A94;border-color:#E4E4E8">Token</th>
+    <th style="color:#8A8A94;border-color:#E4E4E8">Hex</th>
+    <th style="color:#8A8A94;border-color:#E4E4E8;text-align:right">On white</th>
+  </tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#FFFFFF;border-color:#E4E4E8"></span></td><td class="mono" style="border-color:#E4E4E8">bg</td><td class="mono" style="border-color:#E4E4E8">#FFFFFF</td><td style="border-color:#E4E4E8;text-align:right;color:#8A8A94">—</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#F4F4F6;border-color:#E4E4E8"></span></td><td class="mono" style="border-color:#E4E4E8">surface</td><td class="mono" style="border-color:#E4E4E8">#F4F4F6</td><td style="border-color:#E4E4E8;text-align:right;color:#8A8A94">—</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#E4E4E8;border-color:#D4D4DA"></span></td><td class="mono" style="border-color:#E4E4E8">border</td><td class="mono" style="border-color:#E4E4E8">#E4E4E8</td><td style="border-color:#E4E4E8;text-align:right;color:#8A8A94">—</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#18181B;border-color:#D4D4DA"></span></td><td class="mono" style="border-color:#E4E4E8">text</td><td class="mono" style="border-color:#E4E4E8">#18181B</td><td style="border-color:#E4E4E8;text-align:right;color:#15803D;font-weight:600">17.7</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#56565F;border-color:#D4D4DA"></span></td><td class="mono" style="border-color:#E4E4E8">muted</td><td class="mono" style="border-color:#E4E4E8">#56565F</td><td style="border-color:#E4E4E8;text-align:right;color:#15803D;font-weight:600">7.3</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#6D28D9;border-color:#D4D4DA"></span></td><td class="mono" style="border-color:#E4E4E8">accent</td><td class="mono" style="border-color:#E4E4E8">#6D28D9</td><td style="border-color:#E4E4E8;text-align:right;color:#15803D;font-weight:600">7.1</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#15803D;border-color:#D4D4DA"></span></td><td class="mono" style="border-color:#E4E4E8">green</td><td class="mono" style="border-color:#E4E4E8">#15803D</td><td style="border-color:#E4E4E8;text-align:right;color:#15803D;font-weight:600">5.0</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#DC2626;border-color:#D4D4DA"></span></td><td class="mono" style="border-color:#E4E4E8">red</td><td class="mono" style="border-color:#E4E4E8">#DC2626</td><td style="border-color:#E4E4E8;text-align:right;color:#15803D;font-weight:600">4.8</td></tr>
+  <tr><td style="border-color:#E4E4E8"><span class="sw" style="background:#B45309;border-color:#D4D4DA"></span></td><td class="mono" style="border-color:#E4E4E8">amber</td><td class="mono" style="border-color:#E4E4E8">#B45309</td><td style="border-color:#E4E4E8;text-align:right;color:#15803D;font-weight:600">5.0</td></tr>
+</table>
+</div>
+<p class="note" style="margin-top:14px">
+  Note that amber on light must become a dark ochre. The bright <code>#FBBF24</code>
+  that works on dark scores about 1.7 on white — invisible. This is the clearest proof
+  that the light theme cannot be generated by inverting the dark one.
+</p>
+
+<h2>Not decided here</h2>
+<p>
+  Whether the mascot uses the accent violet or a warmer colour of its own is still
+  open. Mascots often sit outside the interface palette on purpose. What is settled is
+  that the interface accent is violet, and that it is not the Dpro orange — an orange
+  accent next to amber warnings would fight for the same meaning.
+</p>
+
+</div>

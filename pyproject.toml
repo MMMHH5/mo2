@@ -1,0 +1,147 @@
+[project]
+name = "tel-agent"
+version = "0.1.0"
+description = "An AI agent that answers the phone and every messaging channel a customer reaches you on."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "AGPL-3.0-or-later" }
+authors = [{ name = "Dpro GmbH" }]
+
+dependencies = [
+    # Upper bounds because FastAPI is pre-1.0: the minor position is the breaking one.
+    # Starlette 1.6 put `_IncludedRouter` objects in `app.routes` and turned main red
+    # with nothing in this repository having changed. Starlette is listed in its own
+    # right, not left to arrive through FastAPI: api/errors.py and four middlewares
+    # import it directly, and FastAPI asks only for `starlette>=0.46.0`, so capping
+    # FastAPI alone would leave the same door open.
+    "fastapi>=0.118,<0.142",
+    "starlette>=0.46,<2",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.14",
+    # Both dialects ship by default (D-029): the file-based one is what the install
+    # wizard offers first, and Postgres is what an existing server already runs.
+    "aiosqlite>=0.20",
+    "asyncpg>=0.30",
+    # Argon2id. `argon2-cffi` directly rather than through passlib: passlib has not had
+    # a release since 2020, and this is the one choice that cannot be corrected later
+    # without every user resetting their password.
+    "argon2-cffi>=23.1",
+    # AES-GCM for credentials at rest (B9.2). The `cryptography` wheel carries the
+    # audited primitives; nothing in this repository implements a cipher.
+    "cryptography>=43.0",
+    # The Discord gateway and Slack Socket Mode are WebSocket clients (Milestone 3).
+    # Already present through `uvicorn[standard]`, but an import this repository
+    # makes is a dependency this repository declares - a transitive extra is one
+    # uvicorn release away from disappearing.
+    "websockets>=13",
+    # A runtime dependency since Milestone 3, not just the test client: every
+    # channel transport and the webhook sender speak HTTP through it. It used to
+    # sit only in [dev], which the Docker image was first to notice.
+    "httpx>=0.28",
+    # The IANA time-zone database as a package, because the OS one cannot be assumed:
+    # Windows ships none, and a slim container drops it. Without this `zoneinfo` cannot
+    # read `Europe/Vienna`, and Milestone 4's business hours fall back to the server
+    # clock - silently answering at the wrong times. `zoneinfo` uses it automatically.
+    "tzdata>=2024.1",
+]
+
+[project.scripts]
+# The documented way to start the API. It exists so that `bind_host` is applied rather
+# than suggested - see `api/__main__.py`.
+tel-agent = "api.__main__:main"
+
+[project.optional-dependencies]
+# The phone's media transport (Milestone 11). Optional because the core - every text
+# channel, the whole dashboard - runs without it: only the LiveKit room binding in
+# `agent/session/livekit_room.py` imports it, lazily. Install with `.[voice]` when
+# wiring the phone against a LiveKit account.
+voice = [
+    "livekit>=0.17",
+]
+dev = [
+    "ruff>=0.14",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    # A test that waits forever is what killed three CI runs in a row: the job was
+    # cancelled at its twenty-minute cap with no output naming the test, because a
+    # hung test never prints its own name. This makes a hang a normal failure with a
+    # stack trace in it.
+    "pytest-timeout>=2.3",
+    # The suite is embarrassingly parallel - every test builds its own database and
+    # shares nothing - and it runs the whole matrix twice, once per dialect. See
+    # `_worker_database` in tests/conftest.py for the one thing that had to change
+    # before `-n` was safe.
+    "pytest-xdist>=3.6",
+    "import-linter>=2.1",
+    "httpx>=0.28",
+]
+
+[project.urls]
+Homepage = "https://tel-agent.com"
+Source = "https://github.com/Dpro-at/Tel-Agent"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+# find, not a hand-written list: an explicit `packages = ["agent", "api"]` names the
+# two TOP-LEVEL packages only, so every subpackage (api.security, api.routes,
+# agent.providers, ...) was silently missing from the wheel. Nothing noticed for
+# months because the container and the test suite both run from the repository
+# root, where the source tree on sys.path shadows the broken install - the Linux
+# package's cold-install smoke test was the first environment honest enough to
+# import from site-packages alone.
+[tool.setuptools.packages.find]
+include = ["agent*", "api*"]
+
+# --- Ruff --------------------------------------------------------------------
+# Formatting and linting live here rather than in a separate file, so there is one
+# place to look. CLAUDE.md mandates `ruff format` and `ruff check`; B0 is what turns
+# that from a sentence into a gate.
+
+[tool.ruff]
+line-length = 96
+target-version = "py311"
+extend-exclude = [".next", "node_modules", "web"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # import sorting
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "ASYNC",# Rule 3: nothing on the audio path blocks
+    "S",    # bandit — a secret or a shell call slipping in is the expensive kind
+    "ANN",  # type hints on every public function, per the code conventions
+    "RUF",
+]
+ignore = [
+    "ANN401",  # an explicit `Any` is sometimes the honest annotation
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests assert; they do not need `assert` flagged, and fixtures are not public API.
+# ASYNC240: an async test checking a file it just wrote is doing exactly the right
+# thing. The rule guards a request loop; a test has no other traffic to block.
+"tests/**" = ["S101", "ANN", "ASYNC240"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+# --- Pytest ------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+# No test in this suite has ever taken longer than a few seconds; the whole file of
+# them runs in well under a minute. Two minutes is therefore not a budget, it is the
+# line past which a test is not slow but stuck - and pytest-timeout prints the stack
+# of every thread when it fires, which is the one thing a cancelled CI job cannot.
+timeout = 120
+# Note: pytest exits 5 on an empty suite, which CI reads as a failure. There is
+# therefore always at least one real test - see tests/test_packages.py.

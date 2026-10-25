@@ -1,0 +1,123 @@
+# ---------------------------------------------------------------------------
+# Secrets — never commit these. API keys and SIP credentials live here.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials.json
+
+# ---------------------------------------------------------------------------
+# Call data — recordings and transcripts are personal data (GDPR).
+# They must never leave the machine that produced them.
+# ---------------------------------------------------------------------------
+recordings/
+transcripts/
+call_logs/
+*.wav
+*.mp3
+*.opus
+*.raw
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# ---------------------------------------------------------------------------
+# Node / Next.js
+# ---------------------------------------------------------------------------
+node_modules/
+.next/
+out/
+build/
+.turbo/
+*.tsbuildinfo
+.npm
+.yarn/
+.pnp.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------------------------------------------------------------------------
+# Databases and local state
+# ---------------------------------------------------------------------------
+*.sqlite
+*.sqlite3
+*.db
+pgdata/
+redis-data/
+
+# ---------------------------------------------------------------------------
+# Logs
+# ---------------------------------------------------------------------------
+logs/
+*.log
+
+# ---------------------------------------------------------------------------
+# Editors and OS
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Internal documentation — never published.
+#
+# `docs/` is public and ships with the repository.
+# `internal/` is for the team only: progress tracking, commercial strategy,
+# PBX topology, and brand work that is not decided yet.
+#
+# See internal/README.md for what belongs on which side of this line.
+# ---------------------------------------------------------------------------
+internal/
+
+# ---------------------------------------------------------------------------
+# Local scratch — anything under this path is ignored by design.
+# Use it for experiments you do not want to commit.
+# ---------------------------------------------------------------------------
+scratch/
+tmp/

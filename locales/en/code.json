@@ -1,0 +1,18 @@
+{
+  "title": "Enter the code",
+  "sent_to": "A six-digit code went to {address}. It is good for ten minutes.",
+  "digit_label": "Digit {position} of {total}",
+  "submit": "Continue",
+  "submit_offline": "Server unreachable",
+  "wrong_code": "That code does not match. {attempts} attempts left before a new code is required.",
+  "expired_title": "This code has expired",
+  "expired_body": "Codes last ten minutes. Ask for a new one - the old one will not work even if you find it.",
+  "expires_in": "Expires in {time}",
+  "resend": "Send a new code",
+  "resend_prompt_expired": "Nothing to wait for now",
+  "back": "Back to sign in",
+  "self_hosted": "Self-hosted · nothing leaves this machine",
+  "offline_title": "This browser cannot reach your Tel-Agent server",
+  "offline_body": "No response from {host}. Your calls are unaffected if the machine is still running — this is a network problem between you and it. Check that you are on the business network or connected to the VPN.",
+  "offline_retry": "Retry connection"
+}

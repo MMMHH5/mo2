@@ -1,0 +1,123 @@
+name: CI
+
+# Every rule in CLAUDE.md is a note until it is a step in this file.
+#
+# Pull requests from forks run these jobs without access to secrets, which is the
+# behaviour we want: everybody contributes through a fork (D-021), and a stranger's
+# pull request must not be able to read anything.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: web — lint and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run lint
+        working-directory: web
+      - run: npm run typecheck
+        working-directory: web
+
+  locales:
+    name: locales — the committed languages are complete
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Two tiers, per locales/README.md: this exits 1 when a committed locale
+      # (de, ar, es, nl) is missing a key, and 0 when a community language is behind.
+      # Falling behind is exactly what a community locale is allowed to do.
+      - run: node scripts/check-locales.mjs
+      # And this one gates every locale, community ones included. Being unfinished is
+      # allowed; a {placeholder} that was dropped or misspelled in a string that already
+      # shipped is a bug, invisible to a coverage count and to a reviewer who does not
+      # read the language. `always()` so one run reports both problems, not two.
+      - run: node scripts/check-placeholders.mjs
+        if: always()
+
+  api:
+    name: api and agent — format, lint, imports, tests
+    runs-on: ubuntu-latest
+    # A hung job otherwise runs to GitHub's six-hour cap. One did: the database never
+    # came up and pytest sat waiting for a connection that was never going to arrive,
+    # holding a pull request for forty minutes before anybody looked.
+    #
+    # **Twenty was not three times the runtime, it was barely twice it.** The same
+    # commit took 8m53s and 20m16s depending on which runner picked it up, and the slow
+    # draw failed at the cap with `Terminate orphan process: pid (2631) (pytest)` -
+    # nothing wrong with the code, and a re-run passed at 10m26s. Parallelism is what
+    # fixed that (see the pytest step); this stays at twenty because the ceiling is now
+    # several times the runtime again rather than adjacent to it.
+    timeout-minutes: 20
+
+    # D-029 supports two dialects, so the suite runs against both. Without a real
+    # server here, "PostgreSQL is supported" is a claim nothing checks — and the two
+    # differ in more than syntax: full-text search uses entirely different mechanisms.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: telagent
+          POSTGRES_PASSWORD: telagent
+          POSTGRES_DB: telagent_test
+        ports:
+          - 5432:5432
+        # `pg_isready` with no arguments connects as the container's own OS user,
+        # `root`, to a database of the same name. Neither exists, so every check logs
+        # `FATAL: role "root" does not exist` - and still reports success, because the
+        # server answered. That is the bug: it answers during initialisation, from a
+        # temporary server that has not yet created `telagent_test`, so the job can
+        # start against a database that is not there and then wait for one forever.
+        # Naming the real user and the real database is what makes readiness mean it.
+        options: >-
+          --health-cmd "pg_isready -U telagent -d telagent_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      TEST_POSTGRES_URL: postgresql+asyncpg://telagent:telagent@localhost:5432/telagent_test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff format --check .
+      - run: ruff check .
+      # docs/ARCHITECTURE.md rule 3: agent/ never imports from api/.
+      - run: lint-imports
+      # pytest exits 5 on an empty suite and CI reads that as a failure, so the
+      # repository always carries at least one real test.
+      # `-n auto` uses every core the runner has. The suite is embarrassingly parallel:
+      # each test builds its own database and shares nothing with any other, and it runs
+      # the whole matrix twice, once per dialect. The one thing that had to change first
+      # was PostgreSQL - `_reset_postgres` drops and recreates `public`, so workers
+      # sharing a database would have deleted each other's schema mid-test and it would
+      # have read as flakiness. `tests/conftest.py` gives each worker its own.
+      #
+      # Measured on a developer machine, both dialects, the same 1269 tests:
+      # 16m43s serially, 3m14s on four workers.
+      - run: pytest -n auto

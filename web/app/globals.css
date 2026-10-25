@@ -1,0 +1,248 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./od-theme.css";
+
+@custom-variant dark (&:is(:root:not([data-od-theme="light"]) *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+    --font-mono: var(--font-mono);
+
+    /* The design system's own tokens, exposed to Tailwind as `bg-od-panel`,
+       `text-od-muted`, `border-od-line` and so on. */
+    --color-od-canvas: var(--od-canvas);
+    --color-od-canvas-2: var(--od-canvas-2);
+    --color-od-panel: var(--od-panel);
+    --color-od-panel-deep-2: var(--od-panel-deep-2);
+    --color-od-panel-deep-3: var(--od-panel-deep-3);
+    --color-od-raise: var(--od-raise);
+    --color-od-raise-10: var(--od-raise-10);
+    --color-od-line: var(--od-line);
+    --color-od-line-2: var(--od-line-2);
+    --color-od-border: var(--od-border);
+    --color-od-border-2: var(--od-border-2);
+    --color-od-border-3: var(--od-border-3);
+    --color-od-border-6: var(--od-border-6);
+    --color-od-stroke: var(--od-stroke);
+    --color-od-text: var(--od-text);
+    --color-od-text-2: var(--od-text-2);
+    --color-od-text-3: var(--od-text-3);
+    --color-od-muted: var(--od-muted);
+    --color-od-muted-4: var(--od-muted-4);
+    --color-od-muted-5: var(--od-muted-5);
+    --color-od-faint: var(--od-faint);
+    --color-od-faint-2: var(--od-faint-2);
+    --color-od-violet: var(--od-violet);
+    --color-od-violet-2: var(--od-violet-2);
+    --color-od-green: var(--od-green);
+    --color-od-amber: var(--od-amber);
+    --color-od-red-bg: var(--od-red-bg);
+    --color-od-red-bg-2: var(--od-red-bg-2);
+    --color-od-red-bg-3: var(--od-red-bg-3);
+    --color-od-red-bg-4: var(--od-red-bg-4);
+    --color-od-red-border: var(--od-red-border);
+    --color-od-red-border-2: var(--od-red-border-2);
+    --color-od-red-border-3: var(--od-red-border-3);
+    --color-od-red-text: var(--od-red-text);
+    --color-od-red-text-2: var(--od-red-text-2);
+    --color-od-red-text-3: var(--od-red-text-3);
+    --color-od-red-text-4: var(--od-red-text-4);
+    --color-od-red-text-5: var(--od-red-text-5);
+    --color-od-red-text-6: var(--od-red-text-6);
+    --color-od-red-text-7: var(--od-red-text-7);
+    --color-od-amber-bg: var(--od-amber-bg);
+    --color-od-amber-border: var(--od-amber-border);
+    --color-od-amber-border-2: var(--od-amber-border-2);
+    --color-od-border-10: var(--od-border-10);
+    --color-od-border-11: var(--od-border-11);
+    --color-od-border-4: var(--od-border-4);
+    --color-od-border-5: var(--od-border-5);
+    --color-od-border-7: var(--od-border-7);
+    --color-od-border-8: var(--od-border-8);
+    --color-od-border-9: var(--od-border-9);
+    --color-od-faint-3: var(--od-faint-3);
+    --color-od-green-border: var(--od-green-border);
+    --color-od-muted-2: var(--od-muted-2);
+    --color-od-muted-3: var(--od-muted-3);
+    --color-od-panel-deep-4: var(--od-panel-deep-4);
+    --color-od-panel-deep-6: var(--od-panel-deep-6);
+    --color-od-panel-deep-8: var(--od-panel-deep-8);
+    --color-od-panel-green: var(--od-panel-green);
+    --color-od-raise-12: var(--od-raise-12);
+    --color-od-raise-5: var(--od-raise-5);
+    --color-od-raise-4: var(--od-raise-4);
+    --color-od-raise-8: var(--od-raise-8);
+    --color-od-red-bg-5: var(--od-red-bg-5);
+    --color-od-red-bg-6: var(--od-red-bg-6);
+    --color-od-red-border-4: var(--od-red-border-4);
+    --color-od-stroke-2: var(--od-stroke-2);
+    --color-od-stroke-3: var(--od-stroke-3);
+    --color-od-stroke-4: var(--od-stroke-4);
+    --color-od-text-4: var(--od-text-4);
+    --color-od-text-5: var(--od-text-5);
+
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+/* shadcn's semantic tokens are aliases onto the design system above, so a component
+   from the registry and a screen ported from the design never disagree on a colour. */
+:root,
+html[data-od-theme="light"] {
+    --background: var(--od-canvas);
+    --foreground: var(--od-text-2);
+    --card: var(--od-panel-deep-3);
+    --card-foreground: var(--od-text-2);
+    --popover: var(--od-panel);
+    --popover-foreground: var(--od-text-2);
+    --primary: var(--od-violet-solid);
+    --primary-foreground: var(--od-white);
+    --secondary: var(--od-raise-10);
+    --secondary-foreground: var(--od-text-2);
+    --muted: var(--od-raise);
+    --muted-foreground: var(--od-muted-4);
+    --accent: var(--od-raise-10);
+    --accent-foreground: var(--od-text);
+    --destructive: var(--od-red-strong-2);
+    --border: var(--od-border-6);
+    --input: var(--od-border-6);
+    --ring: var(--od-violet);
+    --radius: 0.5rem;
+    --sidebar: var(--od-panel);
+    --sidebar-foreground: var(--od-text-2);
+    --sidebar-primary: var(--od-violet);
+    --sidebar-primary-foreground: var(--od-white);
+    --sidebar-accent: var(--od-raise-10);
+    --sidebar-accent-foreground: var(--od-text);
+    --sidebar-border: var(--od-border);
+    --sidebar-ring: var(--od-violet);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    background: var(--od-canvas);
+    color: var(--od-text-2);
+    @apply font-sans antialiased;
+  }
+}
+
+/* The shell's rail.
+
+   `--od-shell-w` is the space every screen leaves for the sidebar, so collapsing it
+   is one attribute on `<html>` rather than an edit to twenty-four screens. The
+   sidebar itself widens back to the open width while it is pointed at or tabbed
+   through, and overflows its own column to do it - a peek lies over the page instead
+   of pushing it sideways, in both directions. */
+:root {
+    --od-shell-open: 224px;
+    --od-shell-rail: 56px;
+    --od-shell-w: var(--od-shell-open);
+}
+:root[data-od-rail="on"] {
+    --od-shell-w: var(--od-shell-rail);
+}
+
+.od-rail {
+    width: var(--od-shell-w);
+    transition: width .14s ease;
+}
+:root[data-od-rail="on"] .od-rail:hover,
+:root[data-od-rail="on"] .od-rail:focus-within {
+    width: var(--od-shell-open);
+    /* A peek covers the page rather than moving it, so it needs an edge to sit on. */
+    box-shadow: 0 0 44px var(--od-scrim-3);
+}
+
+/* Collapsed: the rail is on and nobody is pointing at or tabbing through it. Only
+   the icons survive; `.od-rail-narrow` is the mark that stands in for the wordmark. */
+:root[data-od-rail="on"] .od-rail:not(:hover):not(:focus-within) .od-rail-wide {
+    display: none;
+}
+:root[data-od-rail="on"] .od-rail:not(:hover):not(:focus-within) .od-rail-narrow {
+    display: inline-flex;
+}
+:root[data-od-rail="on"] .od-rail:not(:hover):not(:focus-within) .od-rail-row {
+    justify-content: center;
+    padding-inline: 0;
+}
+.od-rail-narrow {
+    display: none;
+}
+
+/* Animations used by the ported screens. */
+@keyframes od-ring {
+  0% { box-shadow: 0 0 0 0 rgba(240, 96, 94, .55); }
+  70% { box-shadow: 0 0 0 12px rgba(240, 96, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 96, 94, 0); }
+}
+@keyframes od-shimmer {
+  0% { background-position: -420px 0; }
+  100% { background-position: 420px 0; }
+}
+@keyframes od-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Machine data only - phone numbers, timestamps, API keys, logs, IDs, hostnames.
+   Never the transcript body. */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Latin-script data stays LTR even inside an RTL layout. */
+.ltr-data {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* The violet pulse used by live indicators; the red one above marks a fault. */
+@keyframes od-ring-violet {
+  0% { box-shadow: 0 0 0 0 rgba(139, 124, 255, .5); }
+  70% { box-shadow: 0 0 0 11px rgba(139, 124, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 124, 255, 0); }
+}
+@keyframes od-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* The pulse that marks something happening right now - a live dot, a level meter. */
+@keyframes od-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .3; transform: scale(.75); }
+}

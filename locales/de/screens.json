@@ -1,0 +1,130 @@
+{
+  "brand": "Tel-Agent",
+  "title": "Bildschirme",
+  "intro": "Sechsundzwanzig Bildschirme. Jeder Bildschirm der Anwendung beginnt oben mit einem Zustandsumschalter — Standard, leer, lädt, Fehler, offline — und die Seitenleiste trägt den Hell-/Dunkel-Schalter, das Konto- und Arbeitsbereichsmenü sowie die Benachrichtigung über eingehende Anrufe.",
+  "reference_label": "Referenzbildschirm",
+  "reference_title": "Anrufdetail",
+  "reference_desc": "Wird aus jeder Zeile der Anrufliste geöffnet: die Aufnahme mit ihrer Wellenform, das Transkript neben dem Flüsterkanal und was der Assistent getan hat — Zusammenfassung, erkannte Absicht, aufgerufene Werkzeuge und jenes, das fehlgeschlagen ist. Legt das Vokabular für alles Übrige fest.",
+  "items": {
+    "home": {
+      "title": "Start",
+      "desc": "Zuerst, was Ihre Aufmerksamkeit braucht, dann die letzten Anrufe, und eine bewusst nebensächliche Wählkarte."
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "desc": "Oben, was auf eine menschliche Entscheidung wartet, samt der Schaltflächen, die es erledigen; darunter ein Verlauf von dreißig Tagen dessen, was bereits erledigt wurde."
+    },
+    "conversations": {
+      "title": "Kanäle",
+      "desc": "Nur geschriebene Konversationen — WhatsApp, Telegram, SMS und Web-Chat — nach Tagen gruppiert. Anrufe haben ihre eigene Liste; dieser Bildschirm zeigt, was jemand getippt hat."
+    },
+    "calls": {
+      "title": "Anrufliste",
+      "desc": "Jeder Anruf in einer Tabelle, mit Volltextsuche über alle Transkripte."
+    },
+    "call_detail": {
+      "title": "Anrufdetail",
+      "desc": "Ein abgeschlossener Anruf, aus der Liste geöffnet: das Transkript neben dem, was der Assistent daraufhin getan hat."
+    },
+    "live": {
+      "title": "Laufende Anrufe",
+      "desc": "Erreichbar über das Abzeichen am Fuß der Seitenleiste, sobald jemand in der Leitung ist: links alle gleichzeitigen Anrufe, rechts das Live-Transkript des ausgewählten, Flüstern, Übernehmen und Weitergeben."
+    },
+    "calendar": {
+      "title": "Kalender",
+      "desc": "Wochenraster des Geschäftskalenders, in dem alles vom Agenten Gebuchte als solches gekennzeichnet ist."
+    },
+    "contacts": {
+      "title": "Kontakte",
+      "desc": "Kundinnen, Kunden und Partner — und genau welche Felder der Assistent verwenden darf."
+    },
+    "assistants": {
+      "title": "Assistenten",
+      "desc": "Jeder Assistent mit Typ, Nummer und letzter Aktivität — dazu ein Hell-/Dunkel-Schalter."
+    },
+    "campaigns": {
+      "title": "Ausgehende Kampagnen",
+      "desc": "Eine Liste anrufen, statt sie entgegenzunehmen. Die laufende Kampagne steht oben mit einer Live-Aufteilung aus gebucht, erreicht, keine Antwort und übersprungen; der vierstufige Ablauf legt fest, wer angerufen wird, was gesagt wird und innerhalb welcher Zeiten."
+    },
+    "consent": {
+      "title": "Einwilligungsprotokoll",
+      "desc": "Erreichbar über Ausgehende Kampagnen. Jeder Versuch mit dem Grund, aus dem er erlaubt war, eine signierte Kette, die sich nachträglich nicht ändern lässt, und die Sperrliste, auf der jemand in derselben Sekunde landet, in der er Stopp sagt."
+    },
+    "catalogue": {
+      "title": "Katalog",
+      "desc": "Was das Unternehmen verkauft und was es über die Käufer festhält — Leistungen mit Dauer, Preis und der Frage, ob der Assistent sie buchen darf; Kontaktfelder, von denen jedes seine eigene Berechtigung trägt; und ein Reiter, der die Sätze zeigt, die der Assistent daraus sagen kann."
+    },
+    "editor": {
+      "title": "Assistent bearbeiten",
+      "desc": "Aus einer Zeile in Assistenten geöffnet. Fähigkeitszeilen statt eines langen Formulars: aktive Zeilen tragen ihren aktuellen Wert, ruhende einen gestrichelten Rahmen und ein Plus."
+    },
+    "knowledge": {
+      "title": "Wissen",
+      "desc": "Die gemeinsame Quellenbibliothek und die strukturierten Öffnungszeiten. Erreichbar über den Bereich „Fragen beantworten“ eines Assistenten, nicht über die Seitenleiste."
+    },
+    "rules": {
+      "title": "Weiterleitungsregeln",
+      "desc": "Eine geordnete Liste, von oben gelesen — die erste Regel, auf die ein Anruf passt, entscheidet, wer abhebt; ein Prüfer spielt die Liste gegen eine beliebige Nummer durch und zeigt, welche Regel gewinnt und welche nie erreicht wird."
+    },
+    "numbers": {
+      "title": "Nummern und Telefone",
+      "desc": "Zwei Reiter: die Nummern, die diese Installation entgegennimmt, und die Tischtelefone, Mobilteile und Apps, die als Nebenstellen an der Leitung läuten."
+    },
+    "apps": {
+      "title": "Apps",
+      "desc": "Alles Installierbare: Kanal-Apps für Telefon, WhatsApp und Telegram, dazu Werkzeuge, die der Agent nutzen kann."
+    },
+    "connectors": {
+      "title": "Konnektoren",
+      "desc": "MCP-Werkzeugserver, die der Agent während eines Anrufs aufruft: wer sie jeweils betreibt, welche ihrer Werkzeuge laufen dürfen und was ausgefallen ist. Die Gegenrichtung — Tel-Agent als Server — bleibt in den Einstellungen."
+    },
+    "usage": {
+      "title": "Verbrauch",
+      "desc": "Was der Monat gekostet hat, aufgeteilt nach dem, was tatsächlich Geld kostet, gegen ein Budget, das warnt, aber die Leitung nie kappt."
+    },
+    "settings": {
+      "title": "Einstellungen",
+      "desc": "Neun Reiter, Voreinstellungen ausgefüllt, Fortgeschrittenes aus dem Weg. Erreichbar über das Kontomenü am Fuß der Seitenleiste."
+    },
+    "health": {
+      "title": "Systemzustand",
+      "desc": "Was läuft und was nicht: Dienste, Speicherplatz, Modell-Latenz und die fehlgeschlagenen Prüfungen samt dem Befehl, der sie jeweils behebt."
+    },
+    "backup": {
+      "title": "Sicherung und Wiederherstellung",
+      "desc": "Was gesichert wird, wann es zuletzt lief, und eine Wiederherstellung, die laut ausspricht, was sie überschreibt."
+    },
+    "update": {
+      "title": "Aktualisierung",
+      "desc": "Die Version, die Sie betreiben, was sich geändert hat, und eine Aktualisierung, die sich zurücknehmen lässt."
+    },
+    "install": {
+      "title": "Installation und Einrichtung",
+      "desc": "Ein Ablauf vom Auspacken bis zum ersten Anruf: Sprache, Installationsart, Maschinenprüfung, Datenbank und Ports, dann die Telefonleitung, die Branche, aus der der Katalog entsteht, die Begrüßung und ein Anruf auf Ihrer eigenen Nummer."
+    },
+    "workspace": {
+      "title": "Neuer Arbeitsbereich",
+      "desc": "Ein zweites Unternehmen oder ein zweiter Standort, getrennt gehalten: benennen, leer beginnen oder die aktuelle Einrichtung kopieren, festlegen, wer hineinkommt."
+    },
+    "login": {
+      "title": "Anmelden",
+      "desc": "Lokale Konten auf Ihrem eigenen Server. Keine Cloud-Anmeldung."
+    },
+    "forgot": {
+      "title": "Passwort zurücksetzen",
+      "desc": "Code anfordern - oder den Befehl, wenn kein Mailserver da ist."
+    },
+    "code": {
+      "title": "Bestätigungscode",
+      "desc": "Sechs Ziffern, Ablauf und erneutes Senden. Dieselbe Seite dient der Zwei-Faktor-Anmeldung."
+    },
+    "new_password": {
+      "title": "Neues Passwort",
+      "desc": "Stärke im Browser gemessen - und was die Änderung abmeldet."
+    },
+    "key": {
+      "title": "Mit Schlüssel anmelden",
+      "desc": "Eine Aufgabe, auf dem eigenen Rechner signiert. Kein Passwort, kein Schlüssel-Upload."
+    }
+  }
+}

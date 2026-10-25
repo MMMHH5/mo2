@@ -1,0 +1,205 @@
+# Builds the Linux packages - deb and rpm, amd64 and arm64 - and attaches them to
+# the release whose tag triggered the build. The download page's Linux entry
+# becomes real the day these exist on a published release.
+#
+# Same proving rule as the images workflow: a manual run builds the packages and
+# keeps them as workflow artifacts, but only a version tag attaches anything to a
+# release - trying the pipeline cannot impersonate one.
+
+name: Release packages
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-14
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build the dashboard
+        run: cd web && npm ci && npm run build
+      - name: Build the unsigned package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          [ "$GITHUB_REF_TYPE" = tag ] || VERSION="0.0.0-$(git rev-parse --short HEAD)"
+          sh packaging/macos/build-tree.sh ${{ matrix.arch }} "$RUNNER_TEMP/tel-agent-macos"
+          mkdir -p dist
+          pkgbuild --root "$RUNNER_TEMP/tel-agent-macos/root" --scripts "$RUNNER_TEMP/tel-agent-macos/scripts" --identifier at.dpro.tel-agent --version "$VERSION" --install-location / "dist/Tel-Agent-$VERSION-macos-${{ matrix.arch }}-unsigned.pkg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tel-agent-macos-${{ matrix.arch }}
+          path: dist/*.pkg
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/*.pkg --clobber
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build the dashboard
+        shell: pwsh
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Stage the installer tree
+        shell: pwsh
+        run: |
+          $env:TEL_AGENT_VERSION = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.Substring(1) } else { "0.0.0-$($env:GITHUB_SHA.Substring(0, 7))" }
+          packaging/windows/build-tree.ps1 -Stage "$env:RUNNER_TEMP\\tel-agent-stage"
+
+      # A smoke test of the staged tree itself, before Inno wraps it: start the two
+      # service commands the way WinSW will, and require both the API (/health on 38472)
+      # and the dashboard (GET / on 38471) to answer. The v0.1.1 installer shipped
+      # without a dashboard service and nothing here noticed - this step is why.
+      - name: Start both services from the staged tree and probe them
+        shell: pwsh
+        run: |
+          $app = "$env:RUNNER_TEMP\tel-agent-stage\app"
+          New-Item -ItemType Directory -Force -Path "C:\ProgramData\Tel-Agent\data" | Out-Null
+          $api = Start-Process -FilePath "$app\api-start.cmd" -WorkingDirectory $app -PassThru -WindowStyle Hidden
+          $web = Start-Process -FilePath "$app\web-start.cmd" -WorkingDirectory $app -PassThru -WindowStyle Hidden
+          function Wait-Url([string]$url, [string]$what) {
+            for ($i = 0; $i -lt 60; $i++) {
+              try { Invoke-WebRequest -UseBasicParsing -Uri $url -TimeoutSec 3 | Out-Null; Write-Host "$what answered $url"; return } catch { Start-Sleep -Seconds 2 }
+            }
+            throw "$what never answered $url"
+          }
+          try {
+            Wait-Url "http://127.0.0.1:38472/health" "API"
+            Wait-Url "http://127.0.0.1:38471/" "Dashboard"
+          } finally {
+            foreach ($p in @($api, $web)) { if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue } }
+            Get-Process -Name node, python -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$app*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Build the unsigned installer
+        shell: pwsh
+        run: |
+          $env:TEL_AGENT_VERSION = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.Substring(1) } else { "0.0.0-$($env:GITHUB_SHA.Substring(0, 7))" }
+          $env:TEL_AGENT_STAGE = "$env:RUNNER_TEMP\\tel-agent-stage"
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging/windows/tel-agent.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tel-agent-windows-x64
+          path: dist/*.exe
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: gh release upload $env:GITHUB_REF_NAME dist/*.exe --clobber
+
+  linux:
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # The dashboard, built with the default NEXT_PUBLIC_API_URL - the packaged
+      # edition serves the standard localhost case, same as the published image.
+      # No NODE_ENV=production on this step: it would make `npm ci` skip the
+      # devDependencies the build itself needs (Tailwind's postcss plugin was the
+      # one that failed). `next build` sets production mode on its own.
+      - name: Build the dashboard
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Stage the file tree
+        run: |
+          sh packaging/linux/build-tree.sh ${{ matrix.arch }} "$RUNNER_TEMP/stage"
+
+      - name: Install nfpm
+        run: |
+          curl -fsSL https://github.com/goreleaser/nfpm/releases/download/v2.43.1/nfpm_2.43.1_$(dpkg --print-architecture).deb -o /tmp/nfpm.deb
+          sudo dpkg -i /tmp/nfpm.deb
+
+      - name: Package
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            # A dispatch run on a branch: a version that cannot be mistaken for a release.
+            VERSION="0.0.0~$(git rev-parse --short HEAD)"
+          fi
+          # nfpm does not expand env vars in `contents` paths, so the config is
+          # resolved with envsubst first and nfpm reads the concrete file.
+          export VERSION ARCH="${{ matrix.arch }}" STAGE="$RUNNER_TEMP/stage"
+          envsubst '$VERSION $ARCH $STAGE' \
+            < packaging/linux/nfpm.yaml > "$RUNNER_TEMP/nfpm.resolved.yaml"
+          mkdir -p dist
+          for format in deb rpm; do
+            nfpm package -f "$RUNNER_TEMP/nfpm.resolved.yaml" -p "$format" -t dist/
+          done
+          ls -lh dist/
+
+      # A cold-start smoke test of the artifact itself, not its sources: install
+      # the deb in a clean container, wait, and ask /health. (amd64 tests in
+      # docker; the arm64 runner is already the target platform.)
+      - name: Install and probe the deb
+        run: |
+          docker run --rm -v "$PWD/dist:/dist" ubuntu:24.04 bash -ec '
+            apt-get update -q && apt-get install -yq /dist/*.deb
+            runuser -u telagent -- sh -c "cd /opt/tel-agent && ENCRYPTION_KEY=$(grep ^ENCRYPTION_KEY= /etc/tel-agent/tel-agent.env | cut -d= -f2) DATABASE_URL=sqlite+aiosqlite:////var/lib/tel-agent/tel-agent.db /bin/sh /opt/tel-agent/api-start.sh" &
+            for i in $(seq 1 30); do
+              sleep 2
+              if /opt/tel-agent/python/bin/python3 -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:38472/health\", timeout=3)"; then
+                echo "API answered /health"; exit 0
+              fi
+            done
+            echo "API never answered /health" >&2; exit 1'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tel-agent-linux-${{ matrix.arch }}
+          path: dist/*
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber

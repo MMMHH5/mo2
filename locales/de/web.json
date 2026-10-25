@@ -1,0 +1,109 @@
+{
+  "app": {
+    "name": "Tel-Agent"
+  },
+  "nav": {
+    "home": "Start",
+    "conversations": "Gespräche",
+    "contacts": "Kontakte",
+    "rules": "Regeln",
+    "agent": "Agent",
+    "settings": "Einstellungen"
+  },
+  "status": {
+    "connected": "Verbunden",
+    "degraded": "Eingeschränkt",
+    "offline": "Offline"
+  },
+  "channel": {
+    "web_chat": "Web-Chat",
+    "phone": "Telefon",
+    "email": "E-Mail",
+    "sms": "SMS",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "messenger": "Messenger",
+    "instagram": "Instagram",
+    "discord": "Discord",
+    "teams": "Microsoft Teams",
+    "mattermost": "Mattermost",
+    "irc": "IRC",
+    "matrix": "Matrix",
+    "line": "LINE",
+    "signal": "Signal",
+    "viber": "Viber"
+  },
+  "handling": {
+    "ai": "Vom Agenten bearbeitet",
+    "passed": "An einen Menschen übergeben",
+    "blocked": "Blockiert",
+    "attention": "Benötigt Aufmerksamkeit"
+  },
+  "speaker": {
+    "visitor": "Besucher",
+    "agent": "Agent",
+    "human": "Mitarbeiter"
+  },
+  "conversations": {
+    "title": "Gespräche",
+    "search_placeholder": "Alles Gesagte durchsuchen",
+    "search_hint": "Volltext über alle Gespräche",
+    "column_who": "Wer",
+    "column_channel": "Kanal",
+    "column_started": "Begonnen",
+    "column_duration": "Dauer",
+    "column_handling": "Bearbeitung",
+    "column_summary": "Zusammenfassung",
+    "empty_title": "Noch keine Gespräche",
+    "empty_body": "Sobald jemand einen Chat beginnt, erscheint er hier mit dem vollständigen Transkript.",
+    "count": "{count} Gespräche"
+  },
+  "detail": {
+    "back": "Zurück zu den Gesprächen",
+    "summary": "Zusammenfassung",
+    "intent": "Erkannte Absicht",
+    "tools": "Aufgerufene Werkzeuge",
+    "whisper": "Flüsterkanal",
+    "whisper_note": "Anweisungen an den Mitarbeiter. Der Besucher hat diese nie gesehen.",
+    "transcript": "Transkript",
+    "human_joined": "Mensch übernimmt: {name}",
+    "agent_resumed": "Agent übernimmt wieder",
+    "empty_title": "Kein Transkript",
+    "empty_body": "Für dieses Gespräch wurde nichts aufgezeichnet.",
+    "tool_ok": "ok",
+    "tool_failed": "fehlgeschlagen",
+    "language": "Sprache",
+    "confidence": "Konfidenz"
+  },
+  "common": {
+    "loading": "Wird geladen",
+    "retry": "Erneut versuchen"
+  },
+  "auth": {
+    "title": "Anmelden",
+    "subtitle": "Konten existieren nur auf diesem Server. Es gibt keine Cloud-Anmeldung, und ein Zurücksetzen verlässt Ihren eigenen Mailserver nie.",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "forgot": "Vergessen?",
+    "submit": "Anmelden",
+    "submit_offline": "Server nicht erreichbar",
+    "submit_locked": "Vorerst gesperrt",
+    "wrong_password": "Dieses Passwort passt nicht zu diesem Benutzernamen.",
+    "server_error": "Der Server konnte darauf nicht antworten, das Passwort wurde also gar nicht geprüft. Nichts ist gesperrt und mit dem Konto stimmt alles — versuchen Sie es gleich noch einmal.",
+    "key_prompt": "Lieber mit einem Schlüssel anmelden?",
+    "key_link": "SSH-Zertifikat verwenden",
+    "blocked_label": "Anmeldung blockiert",
+    "blocked_title": "Zu viele fehlgeschlagene Versuche für dieses Konto",
+    "blocked_body": "Fünf falsche Passwörter hintereinander, deshalb ist dieses Konto gesperrt. Waren Sie das nicht, rät jemand — eine Administratorin oder ein Administrator kann es im Benutzer-Tab entsperren und eine Passwortänderung erzwingen.",
+    "blocked_unlocks": "entsperrt um {time}",
+    "empty_title": "Auf dieser Installation existieren keine Konten",
+    "empty_body": "Dies ist eine frische Installation und es hat sich noch niemand registriert. Das erste Konto, das Sie anlegen, wird zur Administration — sie kann danach alle weiteren hinzufügen.",
+    "empty_action": "Erstes Konto anlegen",
+    "offline_title": "Dieser Browser erreicht Ihren Tel-Agent-Server nicht",
+    "offline_body": "Keine Antwort von {host}. Ihre Anrufe sind nicht betroffen, solange der Rechner läuft — das ist ein Netzwerkproblem zwischen Ihnen und ihm. Prüfen Sie, ob Sie im Firmennetz oder über VPN verbunden sind.",
+    "offline_retry": "Verbindung erneut versuchen",
+    "self_hosted": "Selbst gehostet · nichts verlässt diesen Rechner",
+    "continue": "Weiter zum Dashboard",
+    "language": "Sprache"
+  }
+}

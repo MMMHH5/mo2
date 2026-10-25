@@ -1,0 +1,21 @@
+{
+  "title": "Passwort zurücksetzen",
+  "body": "Geben Sie Ihren Benutzernamen ein. Existiert ein Konto mit diesem Namen, geht ein sechsstelliger Code an die hinterlegte E-Mail-Adresse.",
+  "username": "Benutzername",
+  "send": "Code senden",
+  "send_offline": "Server nicht erreichbar",
+  "privacy_note": "Diese Seite antwortet gleich, ob das Konto existiert oder nicht. Würde sie es Ihnen verraten, verriete sie es auch jedem anderen.",
+  "back": "Zurück zur Anmeldung",
+  "self_hosted": "Selbst gehostet · nichts verlässt diesen Rechner",
+  "limit_label": "Zu viele Anfragen",
+  "limit_title": "Dieses Konto hat fünfmal einen Code angefordert",
+  "limit_body": "Fünfzehn Minuten lang werden keine Codes mehr gesendet. Bereits gesendete Codes gelten bis zu ihrem Ablauf weiter.",
+  "limit_retry_at": "nächste Anfrage ab {time}",
+  "no_mail_title": "Diese Installation kann keine E-Mails senden",
+  "no_mail_body": "Es ist kein Mailserver eingerichtet, es gibt also kein Ziel für einen Code. Ein Administrator setzt das Passwort direkt auf dem Rechner zurück:",
+  "no_mail_hint": "Der Befehl gibt das neue Passwort genau einmal aus. Es wird nicht gespeichert und lässt sich nicht erneut anzeigen.",
+  "no_mail_settings": "Mailserver in den Einstellungen einrichten",
+  "offline_title": "Dieser Browser erreicht Ihren Tel-Agent-Server nicht",
+  "offline_body": "Keine Antwort von {host}. Ihre Anrufe sind nicht betroffen, solange die Maschine läuft — das ist ein Netzwerkproblem zwischen Ihnen und ihr. Prüfen Sie, ob Sie im Firmennetz oder mit dem VPN verbunden sind.",
+  "offline_retry": "Verbindung erneut versuchen"
+}
