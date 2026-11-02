@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerModule, ThrottlerGuard, ThrottlerStorage } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 
@@ -47,6 +48,7 @@ import { OperationsModule } from './operations/operations.module';
 
 @Module({
     imports: [
+        SentryModule.forRoot(),
         ScheduleModule.forRoot(),
         ThrottlerModule.forRoot([{
             ttl: 60000,

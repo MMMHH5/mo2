@@ -69,6 +69,27 @@ hostnames. If you use another custom frontend domain, add its exact origin to
 `NEXT_PUBLIC_*` values during build). Configure any Google OAuth callback and
 Stripe webhook URLs to the deployed service URLs as well.
 
+### Error monitoring with Sentry
+
+The backend and Next.js frontend support Sentry error reporting and sampled
+performance tracing. Create Sentry projects for the backend and frontend, then
+set `SENTRY_DSN` on both API services and `NEXT_PUBLIC_SENTRY_DSN` on both web
+services. The public frontend DSN is designed to be included in the browser;
+keep the backend DSN server-side. The SDKs stay disabled when their DSN is
+unset.
+
+Tracing defaults to 5% of transactions and can be adjusted with
+`SENTRY_TRACES_SAMPLE_RATE` on the APIs and
+`NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` on the web services. Request bodies,
+cookies, headers, query strings, database parameters, and user identity are
+excluded from Sentry events; session replay is not enabled.
+
+For readable frontend stack traces, optionally set `SENTRY_AUTH_TOKEN`,
+`SENTRY_ORG`, and `SENTRY_PROJECT` on both web services. These enable source-map
+upload during the frontend build. Keep the auth token secret. Adding or changing
+the public frontend DSN requires a frontend rebuild because Next.js embeds
+`NEXT_PUBLIC_*` variables during build.
+
 ### Free-plan limitations
 
 This Blueprint intentionally selects free plans because it is an evaluation

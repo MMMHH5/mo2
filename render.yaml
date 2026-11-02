@@ -30,6 +30,10 @@ services:
         value: https://laxalab-web-learner.onrender.com
       - key: CORS_ORIGINS
         value: https://laxalab.com,https://www.laxalab.com
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.05"
       - key: R2_ENDPOINT
         sync: false
       - key: R2_BUCKET
@@ -70,6 +74,10 @@ services:
         value: https://m.o2.h.laxalab.com
       - key: CORS_ORIGINS
         value: https://m.o2.h.laxalab.com
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.05"
       - key: R2_ENDPOINT
         sync: false
       - key: R2_BUCKET
@@ -98,6 +106,16 @@ services:
         value: https://laxalab-api-public.onrender.com
       - key: NEXT_PUBLIC_SITE_URL
         value: https://laxalab-web-learner.onrender.com
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false
+      - key: NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+        value: "0.05"
+      - key: SENTRY_AUTH_TOKEN
+        sync: false
+      - key: SENTRY_ORG
+        sync: false
+      - key: SENTRY_PROJECT
+        sync: false
 
   - type: web
     name: laxalab-web-admin
@@ -118,6 +136,16 @@ services:
         value: https://laxalab-api-admin.onrender.com
       - key: NEXT_PUBLIC_SITE_URL
         value: https://m.o2.h.laxalab.com
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false
+      - key: NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+        value: "0.05"
+      - key: SENTRY_AUTH_TOKEN
+        sync: false
+      - key: SENTRY_ORG
+        sync: false
+      - key: SENTRY_PROJECT
+        sync: false
 
   - type: keyvalue
     name: laxalab-redis

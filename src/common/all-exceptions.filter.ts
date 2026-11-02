@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
+import * as Sentry from '@sentry/nestjs';
 
 /**
  * Single place where an error becomes an HTTP response.
@@ -119,6 +120,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
      * where passwords live.
      */
     private logInternal(exception: unknown, req: Request, requestId: string) {
+        Sentry.captureException(exception, {
+            extra: {
+                requestId,
+                method: req.method,
+            },
+        });
         this.logger.error(
             `unhandled exception requestId=${requestId} ${req.method} ${req.originalUrl} :: ${
                 exception instanceof Error
