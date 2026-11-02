@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, MapPin } from 'lucide-react';
+import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, MapPin, Route } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { useFetchData } from '@/lib/useFetchData';
@@ -9,7 +9,15 @@ import { formatNumber } from '@/lib/format';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import MarketingShell from '@/components/MarketingShell';
 import CourseCard, { type PublicCourse } from '@/components/CourseCard';
-import LearningPathList from '@/components/LearningPathList';
+
+interface HomeLearningPath {
+  id: string;
+  titleAr: string;
+  titleEn: string;
+  descriptionAr?: string | null;
+  descriptionEn?: string | null;
+  courses?: { course?: { id: string } | null }[];
+}
 
 export default function Home() {
   const { t, pick, locale } = useI18n();
@@ -17,25 +25,21 @@ export default function Home() {
   const isAr = locale === 'ar';
   const { data: stats } = useFetchData<{ courses: number; instructors: number; enrollments: number; certificates: number } | null>('/public/stats');
   const { data: homeCourses, loading: homeCoursesLoading } = useFetchData<PublicCourse[]>('/public/courses');
-  const [activeCategory, setActiveCategory] = useState('');
+  const { data: homeLearningPaths, error: homeLearningPathsError } = useFetchData<HomeLearningPath[]>('/learning-paths');
+  const [activePathId, setActivePathId] = useState('');
 
-  // Categories are free-text on Course, so derive the bar from what is actually
-  // published rather than hardcoding a list that can drift out of sync.
-  const homeCategories = useMemo(() => {
-    const seen = new Set<string>();
-    (homeCourses ?? []).forEach(c => {
-      const label = pick(c, 'category')?.trim();
-      if (label) seen.add(label);
-    });
-    return Array.from(seen).sort((a, b) => a.localeCompare(b, locale));
-  }, [homeCourses, pick, locale]);
+  const activePath = homeLearningPaths?.find(path => path.id === activePathId);
+  const activePathCourseIds = useMemo(
+    () => new Set((homeLearningPaths?.find(path => path.id === activePathId)?.courses ?? []).map(item => item.course?.id).filter((id): id is string => !!id)),
+    [homeLearningPaths, activePathId],
+  );
 
   const featuredCourses = useMemo(() => {
-    const pool = activeCategory
-      ? (homeCourses ?? []).filter(c => pick(c, 'category')?.trim() === activeCategory)
+    const pool = activePathId
+      ? (homeCourses ?? []).filter(course => activePathCourseIds.has(course.id))
       : (homeCourses ?? []);
     return pool.slice(0, 3);
-  }, [homeCourses, activeCategory, pick]);
+  }, [homeCourses, activePathId, activePathCourseIds]);
 
   const aboutValues = [
     { icon: Target, titleAr: 'التعلم العملي', titleEn: 'Hands-on Learning', descAr: 'دورات مبنية على مشاريع واقعية وتطبيق مباشر.', descEn: 'Courses built on real-world projects and direct application.' },
@@ -205,31 +209,54 @@ export default function Home() {
             </Link>
           </div>
 
-          {homeCategories.length > 0 && (
+          {(homeLearningPaths?.length ?? 0) > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-2.5 mb-12">
               <button
                 type="button"
-                onClick={() => setActiveCategory('')}
-                aria-pressed={activeCategory === ''}
-                className={`px-5 py-2.5 rounded-full text-sm font-black transition-all duration-300 cursor-pointer ${activeCategory === ''
+                onClick={() => setActivePathId('')}
+                aria-pressed={activePathId === ''}
+                className={`px-5 py-2.5 rounded-full text-sm font-black transition-all duration-300 cursor-pointer ${activePathId === ''
                   ? 'bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-navy-dark shadow-lg shadow-brand-gold/20'
                   : dark ? 'bg-white/5 border border-white/10 text-gray-300 hover:border-brand-gold/50 hover:text-white' : 'bg-white border border-gray-200 text-brand-navy hover:border-brand-gold'}`}
               >
-                {t('explore.all_categories')}
+                {isAr ? 'كل المسارات' : 'All paths'}
               </button>
-              {homeCategories.map(cat => (
+              {homeLearningPaths?.map(path => (
                 <button
-                  key={cat}
+                  key={path.id}
                   type="button"
-                  onClick={() => setActiveCategory(cat === activeCategory ? '' : cat)}
-                  aria-pressed={activeCategory === cat}
-                  className={`px-5 py-2.5 rounded-full text-sm font-black transition-all duration-300 cursor-pointer ${activeCategory === cat
+                  onClick={() => setActivePathId(path.id === activePathId ? '' : path.id)}
+                  aria-pressed={activePathId === path.id}
+                  className={`px-5 py-2.5 rounded-full text-sm font-black transition-all duration-300 cursor-pointer ${activePathId === path.id
                     ? 'bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-navy-dark shadow-lg shadow-brand-gold/20'
                     : dark ? 'bg-white/5 border border-white/10 text-gray-300 hover:border-brand-gold/50 hover:text-white' : 'bg-white border border-gray-200 text-brand-navy hover:border-brand-gold'}`}
                 >
-                  {cat}
+                  {pick(path, 'title')}
                 </button>
               ))}
+            </div>
+          )}
+
+          {homeLearningPathsError && (
+            <div role="alert" className={`mb-8 rounded-xl border p-4 text-sm font-semibold ${dark ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>
+              {homeLearningPathsError}
+            </div>
+          )}
+
+          {activePath && (
+            <div className={`mb-8 flex items-start gap-4 rounded-2xl border p-5 ${dark ? 'border-brand-gold/20 bg-brand-gold/5' : 'border-brand-gold/30 bg-brand-gold/5'}`}>
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${dark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/20 text-brand-gold-dark'}`}>
+                <Route size={21} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h4 className={`font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>{pick(activePath, 'title')}</h4>
+                {pick(activePath, 'description') && (
+                  <p className={`mt-1 text-sm leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{pick(activePath, 'description')}</p>
+                )}
+                <p className={`mt-2 text-xs font-bold ${dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}>
+                  {formatNumber(activePathCourseIds.size, locale)} {isAr ? 'دورة في هذا المسار' : 'courses in this path'}
+                </p>
+              </div>
             </div>
           )}
 
@@ -249,20 +276,25 @@ export default function Home() {
           ) : featuredCourses.length > 0 ? (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               {featuredCourses.map(course => (
-                <CourseCard key={course.id} course={course} isDark={dark} variant="featured" />
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  isDark={dark}
+                  variant="featured"
+                  learningPathNames={(homeLearningPaths ?? [])
+                    .filter(path => path.courses?.some(item => item.course?.id === course.id))
+                    .map(path => pick(path, 'title'))
+                    .filter((name): name is string => !!name)}
+                />
               ))}
             </div>
           ) : null}
 
           {!homeCoursesLoading && featuredCourses.length === 0 && (
             <p className={`text-center py-10 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
-              {activeCategory ? t('explore.no_results') : t('explore.no_courses')}
+              {activePathId ? t('explore.no_results') : t('explore.no_courses')}
             </p>
           )}
-        </section>
-
-        <section>
-          <LearningPathList mode="browse" variant="featured" limit={3} />
         </section>
 
         {/* About Section */}

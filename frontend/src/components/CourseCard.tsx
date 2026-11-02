@@ -79,6 +79,7 @@ interface CourseCardProps {
     /** The home page renders fewer, taller cards. */
     variant?: 'default' | 'featured';
     className?: string;
+    learningPathNames?: string[];
 }
 
 const CHAPTERS_PREVIEW = 3;
@@ -91,6 +92,7 @@ export default function CourseCard({
     onReserve,
     variant = 'default',
     className = '',
+    learningPathNames = [],
 }: CourseCardProps) {
     const { t, pick, locale } = useI18n();
     // The outline is depth, not hook: the card has to answer what/for/how-much
@@ -190,13 +192,13 @@ export default function CourseCard({
 
             {/* Body */}
             <div className="flex flex-1 flex-col p-6">
-                {(pick(course, 'category') || course.language) && (
+                {(learningPathNames.length > 0 || course.language) && (
                     <div className="mb-2.5 flex flex-wrap gap-2">
-                        {pick(course, 'category') && (
-                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${isDark ? 'bg-brand-gold/15 text-gold-ink' : 'bg-brand-gold/10 text-gold-ink'}`}>
-                                {pick(course, 'category')}
+                        {learningPathNames.map((name, index) => (
+                            <span key={`${name}-${index}`} className={`rounded-full px-2.5 py-1 text-[11px] font-black ${isDark ? 'bg-brand-gold/15 text-gold-ink' : 'bg-brand-gold/10 text-gold-ink'}`}>
+                                {name}
                             </span>
-                        )}
+                        ))}
                         {course.language && (
                             <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${isDark ? 'bg-ink/[0.04] text-ink-muted' : 'bg-surface-sunken text-ink-subtle'}`}>
                                 {course.language}

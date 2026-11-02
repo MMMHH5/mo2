@@ -1,7 +1,7 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { BookOpen, Search, SlidersHorizontal, X, Sparkles, AlertTriangle } from 'lucide-react';
+import { BookOpen, Search, SlidersHorizontal, X, Sparkles, AlertTriangle, Route } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
@@ -22,6 +22,15 @@ interface Opening {
     price: string;
 }
 
+interface BrowseLearningPath {
+    id: string;
+    titleAr: string;
+    titleEn: string;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+    courses?: { course?: { id: string } | null }[];
+}
+
 type Course = PublicCourse;
 
 export default function ExploreCourses({ hideHeader = false, dark }: { hideHeader?: boolean; dark?: boolean }) {
@@ -32,6 +41,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const { user } = useAuth();
     const router = useRouter();
     const { data: courses, loading, error } = useFetchData<Course[]>('/public/courses');
+    const { data: learningPaths, error: learningPathsError } = useFetchData<BrowseLearningPath[]>('/learning-paths');
     const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -46,7 +56,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const [couponChecking, setCouponChecking] = useState(false);
 
     const [query, setQuery] = useState('');
-    const [category, setCategory] = useState('');
+    const [learningPathId, setLearningPathId] = useState('');
     const [level, setLevel] = useState('');
     const [contentType, setContentType] = useState('');
     const [showFilters, setShowFilters] = useState(false);
@@ -56,29 +66,23 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const announcedOpening = (course: Course): Opening | undefined => course.openings?.find(o => o.status === 'ANNOUNCEMENT');
     const currentOpening = (course: Course): Opening | undefined => openOpening(course) ?? announcedOpening(course);
 
-    const categories = useMemo(() => {
-        const set = new Set<string>();
-        for (const course of courses ?? []) {
-            const cat = pick(course, 'category');
-            if (cat) set.add(cat);
-        }
-        return Array.from(set).sort((a, b) => a.localeCompare(b));
-    }, [courses, pick]);
+    const selectedPathCourseIds = useMemo(() => {
+        const path = learningPaths?.find((item) => item.id === learningPathId);
+        return new Set((path?.courses ?? []).map((item) => item.course?.id).filter((id): id is string => !!id));
+    }, [learningPaths, learningPathId]);
+    const selectedLearningPath = learningPaths?.find((path) => path.id === learningPathId);
 
     const filteredCourses = useMemo(() => {
         if (!courses) return courses;
         const q = query.trim().toLowerCase();
         return courses.filter((course) => {
+            if (learningPathId && !selectedPathCourseIds.has(course.id)) return false;
             if (level && (course.level ?? 'BEGINNER') !== level) return false;
             // Live vs pre-recorded is not a nice-to-have detail: it is the first
             // question a student has ("when do we meet?" / "can I watch now?").
             // A course with no type yet is left out of both buckets rather than
             // filed under a guess.
             if (contentType && (course.contentType ?? '') !== contentType) return false;
-            if (category) {
-                const cat = pick(course, 'category') ?? '';
-                if (!cat || cat !== category) return false;
-            }
             if (q) {
                 const haystack = [
                     course.titleAr, course.titleEn,
@@ -89,11 +93,11 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             }
             return true;
         });
-    }, [courses, query, category, level, contentType, pick]);
+    }, [courses, query, learningPathId, selectedPathCourseIds, level, contentType]);
 
-    const hasFilters = !!query.trim() || !!category || !!level || !!contentType;
+    const hasFilters = !!query.trim() || !!learningPathId || !!level || !!contentType;
 
-    const clearFilters = () => { setQuery(''); setCategory(''); setLevel(''); setContentType(''); };
+    const clearFilters = () => { setQuery(''); setLearningPathId(''); setLevel(''); setContentType(''); };
 
     const handleEnrollClick = (course: Course) => {
         const opening = currentOpening(course);
@@ -233,10 +237,10 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                     </button>
                     <div className={`${showFilters ? 'flex' : 'hidden'} md:flex flex-col md:flex-row gap-3 md:w-auto w-full`}>
                         <div className="flex-1 relative">
-                            <select value={category} onChange={(e) => setCategory(e.target.value)} className={selectCls}>
-                                <option value="">{t('explore.all_categories')}</option>
-                                {categories.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
+                            <select value={learningPathId} onChange={(e) => setLearningPathId(e.target.value)} className={selectCls}>
+                                <option value="">{locale === 'ar' ? 'كل المسارات' : 'All learning paths'}</option>
+                                {(learningPaths ?? []).map((path) => (
+                                    <option key={path.id} value={path.id}>{pick(path, 'title')}</option>
                                 ))}
                             </select>
                         </div>
@@ -266,6 +270,32 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             </div>
 
             {error && <div className={`p-4 rounded-lg font-semibold ${isDark ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-red-50 text-red-600'}`}>{error}</div>}
+            {learningPathsError && (
+                <div role="alert" className={`rounded-xl border p-4 text-sm font-semibold ${isDark ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                    {learningPathsError}
+                </div>
+            )}
+
+            {selectedLearningPath && (
+                <div className={`flex items-start gap-4 rounded-2xl border p-5 ${isDark ? 'border-brand-gold/20 bg-brand-gold/5' : 'border-brand-gold/30 bg-brand-gold/5'}`}>
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isDark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/20 text-brand-gold-dark'}`}>
+                        <Route size={21} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <h2 className={`font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>
+                            {pick(selectedLearningPath, 'title')}
+                        </h2>
+                        {pick(selectedLearningPath, 'description') && (
+                            <p className={`mt-1 text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {pick(selectedLearningPath, 'description')}
+                            </p>
+                        )}
+                        <p className={`mt-2 text-xs font-bold ${isDark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}>
+                            {formatNumber(selectedPathCourseIds.size, locale)} {locale === 'ar' ? 'دورة في هذا المسار' : 'courses in this path'}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {loading ? (
                 <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -290,6 +320,10 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                             isDark={isDark}
                             onEnroll={handleEnrollClick}
                             onReserve={handleReserveClick}
+                            learningPathNames={(learningPaths ?? [])
+                                .filter((path) => path.courses?.some((item) => item.course?.id === course.id))
+                                .map((path) => pick(path, 'title'))
+                                .filter((name): name is string => !!name)}
                         />
                     ))}
 
