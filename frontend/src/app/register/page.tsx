@@ -158,7 +158,6 @@ function RegisterForm() {
                                     options={[
                                         { value: 'MALE', label: t('auth.gender_male') },
                                         { value: 'FEMALE', label: t('auth.gender_female') },
-                                        { value: 'OTHER', label: t('auth.gender_other') },
                                     ]}
                                 />
                             </div>

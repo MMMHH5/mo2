@@ -150,6 +150,9 @@ export class UsersService {
             // Absent means "leave it alone", so a partial PATCH is safe.
             if (!(key in input)) continue;
             const v = input[key];
+            if (key === 'gender' && v !== null && v !== '' && v !== 'MALE' && v !== 'FEMALE') {
+                throw new BadRequestException('Gender must be MALE or FEMALE');
+            }
             // Explicit null, or a string that trims away to nothing, is a clear.
             if (v === null || (typeof v === 'string' && !v.trim())) {
                 out[key] = null;

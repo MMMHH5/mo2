@@ -1,5 +1,5 @@
 import { registerDecorator, ValidationArguments, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, Matches, Validate } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, Matches, Validate } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @ValidatorConstraint({ name: 'isPastDate', async: false })
@@ -53,9 +53,10 @@ export class RegisterDto {
     @MaxLength(40)
     phone?: string;
 
-    @ApiPropertyOptional({ description: 'Gender (MALE | FEMALE | OTHER)', enum: ['MALE', 'FEMALE', 'OTHER'] })
+    @ApiPropertyOptional({ description: 'Gender', enum: ['MALE', 'FEMALE'] })
     @IsOptional()
     @IsString()
+    @IsIn(['MALE', 'FEMALE'])
     gender?: string;
 
     @ApiPropertyOptional({ description: 'Date of birth (YYYY-MM-DD)', example: '2001-05-14' })

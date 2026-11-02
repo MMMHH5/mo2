@@ -384,6 +384,11 @@ export default function AdminUsersPage() {
                             const initials = fullName.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
                             const statusLabel = (s: string) => t('statuses.' + (s || '').toLowerCase()) || s;
                             const gender = (meta.gender as string) || '';
+                            const genderLabel = gender === 'MALE'
+                                ? t('auth.gender_male')
+                                : gender === 'FEMALE'
+                                    ? t('auth.gender_female')
+                                    : '—';
                             const infoRows: { icon: typeof Mail; label: string; value: string }[] = [
                                 { icon: Mail, label: t('profile.email'), value: details.user.email },
                                 { icon: ShieldCheck, label: t('profile.role'), value: roleLabel(details.user.role) },
@@ -392,7 +397,7 @@ export default function AdminUsersPage() {
                                 { icon: Phone, label: t('profile.phone'), value: (meta.phone as string) || '—' },
                                 { icon: MapPin, label: t('profile.city'), value: (meta.city as string) || '—' },
                                 { icon: GraduationCap, label: t('profile.field_specialty'), value: (meta.specialty as string) || '—' },
-                                { icon: Users, label: t('profile.field_gender'), value: gender ? t('auth.gender_' + gender.toLowerCase()) : '—' },
+                                { icon: Users, label: t('profile.field_gender'), value: genderLabel },
                                 { icon: Cake, label: t('profile.field_birth_date'), value: formatDate(meta.birthDate as string, { locale }) || '—' },
                                 { icon: School, label: t('profile.field_university'), value: (meta.university as string) || '—' },
                                 { icon: FileText, label: t('profile.field_study_status'), value: (meta.studyStatus as string) ? t('auth.study_status_' + (meta.studyStatus as string).toLowerCase()) : '—' },

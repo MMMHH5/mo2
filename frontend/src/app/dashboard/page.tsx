@@ -42,7 +42,11 @@ export default function DashboardPage() {
 
     const gender = (me?.metadata?.gender as string) || '';
     const fullName = (me?.metadata?.fullName as string) || '';
-    const honorific = gender === 'FEMALE' ? t('dashboard.engineer_label_female') : t('dashboard.engineer_label');
+    const honorific = gender === 'FEMALE'
+        ? t('dashboard.engineer_label_female')
+        : gender === 'MALE'
+            ? t('dashboard.engineer_label')
+            : '';
     const displayName = isStudent ? fullName || user.email : `${honorific} ${fullName}`.trim() || user.email;
 
     const metrics: { label: string; value: string | number; icon: typeof Activity; color: string }[] = [

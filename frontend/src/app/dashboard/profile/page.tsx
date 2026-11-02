@@ -231,7 +231,7 @@ function ProfileContent() {
             city: (m.city as string) || '',
             bio: (m.bio as string) || '',
             specialty: (m.specialty as string) || '',
-            gender: (m.gender as string) || '',
+            gender: m.gender === 'MALE' || m.gender === 'FEMALE' ? m.gender : '',
             birthDate: (m.birthDate as string) || '',
             university: (m.university as string) || '',
             studyStatus: (m.studyStatus as string) || '',
@@ -367,11 +367,17 @@ function ProfileContent() {
     // showed six others; every field now appears exactly once, here.
     const DASH = '—';
     const str = (k: string) => (meta[k] as string) || DASH;
+    const genderValue = meta.gender as string | undefined;
+    const genderLabel = genderValue === 'MALE'
+        ? t('auth.gender_male')
+        : genderValue === 'FEMALE'
+            ? t('auth.gender_female')
+            : DASH;
 
     const identityRows: InfoRow[] = [
         { icon: UserRound, label: t('profile.field_name_ar'), value: nameAr || str('fullName') },
         { icon: Globe2, label: t('profile.field_name_en'), value: str('nameEn'), dir: 'ltr' },
-        { icon: Users, label: t('profile.field_gender'), value: meta.gender ? t(`auth.gender_${meta.gender.toLowerCase()}`) || str('gender') : DASH },
+        { icon: Users, label: t('profile.field_gender'), value: genderLabel },
         { icon: Cake, label: t('profile.field_birth_date'), value: str('birthDate'), dir: 'ltr' },
     ];
 
@@ -1009,7 +1015,6 @@ function ProfileContent() {
                                         options={[
                                             { value: 'MALE', label: t('auth.gender_male') },
                                             { value: 'FEMALE', label: t('auth.gender_female') },
-                                            { value: 'OTHER', label: t('auth.gender_other') },
                                         ]}
                                     />
                                 </div>
