@@ -9,6 +9,7 @@ import { formatNumber } from '@/lib/format';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import MarketingShell from '@/components/MarketingShell';
 import CourseCard, { type PublicCourse } from '@/components/CourseCard';
+import LearningPathList from '@/components/LearningPathList';
 
 export default function Home() {
   const { t, pick, locale } = useI18n();
@@ -258,6 +259,10 @@ export default function Home() {
               {activeCategory ? t('explore.no_results') : t('explore.no_courses')}
             </p>
           )}
+        </section>
+
+        <section>
+          <LearningPathList mode="browse" variant="featured" limit={3} />
         </section>
 
         {/* About Section */}

@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState } from 'react';
-import { api, getErrorMessage } from '@/lib/api';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { API_BASE_URL, api, getErrorMessage } from '@/lib/api';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import {
-    ArrowDown, ArrowUp, BarChart3, BookOpen, ChevronDown, GraduationCap, Layers, Loader, Lock, Pencil,
+    ArrowDown, ArrowUp, BarChart3, BookOpen, ChevronDown, GraduationCap, ImagePlus, Layers, Loader, Lock, Pencil,
     Plus, Route, Search, Trash2, X, Zap,
 } from 'lucide-react';
 
@@ -97,7 +98,12 @@ interface PathForm {
 
 interface Props {
     mode?: 'browse' | 'manage';
+    variant?: 'default' | 'featured';
+    limit?: number;
 }
+
+const PATH_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_PATH_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const emptyPathForm: PathForm = {
     titleAr: '',
@@ -116,10 +122,11 @@ const GRADIENTS = [
     'from-emerald-500/25 via-brand-navy-dark to-brand-navy',
 ];
 
-export default function LearningPathList({ mode = 'browse' }: Props) {
+export default function LearningPathList({ mode = 'browse', variant = 'default', limit }: Props) {
     const { t, locale, pick } = useI18n();
     const isAr = locale === 'ar';
     const { user } = useAuth();
+    const { dark } = useTheme();
 
     const canManage = ['ADMIN', 'COURSE_MANAGER'].includes(user?.role || '');
     const manage = mode === 'manage' && canManage;
@@ -137,12 +144,15 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<LearningPathData | null>(null);
     const [form, setForm] = useState<PathForm>(emptyPathForm);
+    const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [coverFilePreview, setCoverFilePreview] = useState('');
     const [saving, setSaving] = useState(false);
     const [courseQuery, setCourseQuery] = useState('');
     const [reportId, setReportId] = useState<string | null>(null);
     const [report, setReport] = useState<LearningPathReport | null>(null);
     const [reportLoading, setReportLoading] = useState(false);
     const [reportError, setReportError] = useState<string | null>(null);
+    const coverPreviewUrlRef = useRef<string | null>(null);
 
     const paths = useMemo(() => {
         const list = data || [];
@@ -152,10 +162,30 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
         () => new Map((studentPathsData || []).map((item) => [item.path.id, item])),
         [studentPathsData],
     );
+    const visiblePaths = useMemo(() => (limit ? paths.slice(0, limit) : paths), [limit, paths]);
+
+    useEffect(() => () => {
+        if (coverPreviewUrlRef.current) URL.revokeObjectURL(coverPreviewUrlRef.current);
+    }, []);
+
+    const clearCoverFile = () => {
+        if (coverPreviewUrlRef.current) {
+            URL.revokeObjectURL(coverPreviewUrlRef.current);
+            coverPreviewUrlRef.current = null;
+        }
+        setCoverFile(null);
+        setCoverFilePreview('');
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+        clearCoverFile();
+    };
 
     const openCreate = () => {
         setEditing(null);
         setForm(emptyPathForm);
+        clearCoverFile();
         setCourseQuery('');
         setModalOpen(true);
     };
@@ -174,8 +204,26 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                 .map((item) => item.course?.id)
                 .filter((id): id is string => !!id),
         });
+        clearCoverFile();
         setCourseQuery('');
         setModalOpen(true);
+    };
+
+    const selectCoverImage = (file?: File) => {
+        if (!file) return;
+        if (!PATH_IMAGE_TYPES.includes(file.type)) {
+            toast.error(isAr ? 'اختر صورة بصيغة JPG أو PNG أو WEBP أو GIF' : 'Choose a JPG, PNG, WEBP, or GIF image');
+            return;
+        }
+        if (file.size > MAX_PATH_IMAGE_SIZE) {
+            toast.error(isAr ? 'يجب ألا يتجاوز حجم الصورة 10 ميجابايت' : 'The image must be 10 MB or smaller');
+            return;
+        }
+        clearCoverFile();
+        const previewUrl = URL.createObjectURL(file);
+        coverPreviewUrlRef.current = previewUrl;
+        setCoverFilePreview(previewUrl);
+        setCoverFile(file);
     };
 
     const save = async () => {
@@ -189,12 +237,21 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
         }
         setSaving(true);
         try {
+            let coverImageUrl = form.coverImageUrl.trim();
+            if (coverFile) {
+                const imageForm = new FormData();
+                imageForm.append('file', coverFile);
+                const uploadResponse = await api.post<{ url: string }>('/api/admin/courses/media?kind=path-cover', imageForm, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                coverImageUrl = uploadResponse.data.url;
+            }
             const payload = {
                 titleAr: form.titleAr.trim(),
                 titleEn: form.titleEn.trim(),
                 descriptionAr: form.descriptionAr.trim(),
                 descriptionEn: form.descriptionEn.trim(),
-                coverImageUrl: form.coverImageUrl.trim(),
+                coverImageUrl,
                 isPublished: form.isPublished,
                 courseIds: form.courseIds,
             };
@@ -205,7 +262,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                 await api.post('/learning-paths', payload);
                 toast.success(isAr ? 'تم إنشاء المسار' : 'Learning path created');
             }
-            setModalOpen(false);
+            closeModal();
             refetch();
         } catch (err) {
             toast.error(getErrorMessage(err) || t('common.error'));
@@ -296,14 +353,33 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
         );
     }
 
+    if (variant === 'featured' && !loading && !error && paths.length === 0) {
+        return null;
+    }
+
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h3 className="flex items-center gap-2 text-lg font-black text-white">
-                    <Route size={20} className="text-brand-gold-light" />
-                    {isAr ? 'مسارات التعلم' : 'Learning Paths'}
-                    <span className="text-xs font-bold text-gray-500">({paths.length})</span>
-                </h3>
+        <div id={variant === 'featured' ? 'learning-paths' : undefined} className={variant === 'featured' ? 'space-y-7' : 'space-y-4'}>
+            <div className={`flex items-center justify-between gap-4 ${variant === 'featured' ? 'flex-col text-center sm:flex-row sm:text-start' : 'flex-wrap'}`}>
+                <div>
+                    <h3 className={`flex items-center gap-2 font-black ${variant === 'featured' ? `justify-center text-2xl sm:justify-start sm:text-3xl ${dark ? 'text-white' : 'text-brand-navy'}` : 'text-lg text-white'}`}>
+                        <Route size={variant === 'featured' ? 24 : 20} className="text-brand-gold-dark dark:text-brand-gold-light" />
+                        {isAr ? 'مسارات التعلم' : 'Learning Paths'}
+                        {variant !== 'featured' && <span className="text-xs font-bold text-gray-500">({paths.length})</span>}
+                    </h3>
+                    {variant === 'featured' && (
+                        <p className={`mt-2 max-w-2xl text-sm sm:text-base ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {isAr
+                                ? 'خطط تعلم متكاملة ترتب لك الدورات خطوة بخطوة للوصول إلى هدفك.'
+                                : 'Curated learning journeys that organize courses step by step to help you reach your goals.'}
+                        </p>
+                    )}
+                </div>
+                <div className="flex items-center gap-3">
+                    {variant === 'featured' && limit !== undefined && paths.length > limit && (
+                        <Link href="/courses#learning-paths" className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${dark ? 'border-white/10 text-gray-200 hover:border-brand-gold/50 hover:text-brand-gold-light' : 'border-gray-200 text-brand-navy hover:border-brand-gold hover:text-brand-gold-dark'}`}>
+                            {isAr ? 'عرض كل المسارات' : 'View all paths'}
+                        </Link>
+                    )}
                 {manage && (
                     <button
                         onClick={openCreate}
@@ -312,6 +388,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                         <Plus size={16} /> {isAr ? 'مسار جديد' : 'New Path'}
                     </button>
                 )}
+                </div>
             </div>
 
             {!manage && studentPathsError && (
@@ -321,13 +398,28 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
             )}
 
             {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader size={28} className="animate-spin text-brand-gold-light" />
-                </div>
+                variant === 'featured' ? (
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                        {[0, 1, 2].map((item) => (
+                            <div key={item} className={`animate-pulse overflow-hidden rounded-3xl border ${dark ? 'border-white/10 bg-brand-navy' : 'border-gray-100 bg-white'}`}>
+                                <div className={`h-48 ${dark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                                <div className="space-y-3 p-5">
+                                    <div className={`h-5 w-3/4 rounded-full ${dark ? 'bg-white/10' : 'bg-gray-100'}`} />
+                                    <div className={`h-4 w-full rounded-full ${dark ? 'bg-white/5' : 'bg-gray-50'}`} />
+                                    <div className={`h-10 rounded-xl ${dark ? 'bg-white/5' : 'bg-gray-50'}`} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-center py-20">
+                        <Loader size={28} className="animate-spin text-brand-gold-light" />
+                    </div>
+                )
             ) : error ? (
-                <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-8 text-center">
+                <div className={`rounded-2xl border p-8 text-center ${variant === 'featured' && !dark ? 'border-red-200 bg-red-50' : 'border-white/5 bg-brand-navy-dark'}`}>
                     <Route size={32} className="mx-auto text-gray-600 mb-3" />
-                    <p className="text-gray-400 font-bold text-sm">{error}</p>
+                    <p className={`text-sm font-bold ${variant === 'featured' && !dark ? 'text-red-700' : 'text-gray-400'}`}>{error}</p>
                 </div>
             ) : paths.length === 0 ? (
                 <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-10 text-center">
@@ -335,8 +427,8 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                     <p className="text-gray-400 font-bold text-sm">{isAr ? 'لا توجد مسارات تعلم بعد' : 'No learning paths yet'}</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {paths.map((p, idx) => {
+                <div className={`grid grid-cols-1 gap-5 ${variant === 'featured' ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
+                    {visiblePaths.map((p, idx) => {
                         const courses = [...(p.courses || [])].sort((a, b) => a.orderIndex - b.orderIndex);
                         const expanded = expandedId === p.id;
                         const studentPath = studentPaths.get(p.id);
@@ -346,16 +438,18 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                         return (
                             <div
                                 key={p.id}
-                                className={`bg-brand-navy-dark border rounded-2xl overflow-hidden flex flex-col transition-all duration-200 ${
-                                    expanded ? 'border-brand-gold/30' : 'border-white/5 hover:border-white/15'
-                                }`}
+                                className={`${variant === 'featured'
+                                    ? `${dark ? 'bg-brand-navy border-white/10' : 'bg-white border-gray-100'} rounded-3xl shadow-sm hover:-translate-y-1 hover:shadow-xl ${dark ? 'hover:border-brand-gold/30' : 'hover:border-brand-gold/50 hover:shadow-brand-navy/10'}`
+                                    : `bg-brand-navy-dark rounded-2xl ${expanded ? 'border-brand-gold/30' : 'border-white/5 hover:border-white/15'}`
+                                } border overflow-hidden flex flex-col transition-all duration-200`}
                             >
                                 {/* Cover */}
-                                <div className={`relative h-28 bg-gradient-to-br ${GRADIENTS[idx % GRADIENTS.length]} flex items-end p-4`}>
+                                <div className={`relative ${variant === 'featured' ? 'h-48' : 'h-28'} bg-gradient-to-br ${GRADIENTS[idx % GRADIENTS.length]} flex items-end p-4`}>
                                     {p.coverImageUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={p.coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                                        <img src={/^https?:\/\//i.test(p.coverImageUrl) ? p.coverImageUrl : `${API_BASE_URL}${p.coverImageUrl}`} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
                                     ) : null}
+                                    {variant === 'featured' && <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/5" />}
                                     <div className="relative z-10 w-full flex items-start justify-between gap-2">
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-[11px] font-bold text-white border border-white/10">
                                             <BookOpen size={12} className="text-brand-gold-light" />
@@ -378,10 +472,10 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                     </div>
                                 </div>
 
-                                <div className="p-4 flex-1 flex flex-col">
-                                    <h4 className="text-white font-black leading-snug">{pick(p, 'title')}</h4>
+                                <div className={`${variant === 'featured' ? 'p-5' : 'p-4'} flex-1 flex flex-col`}>
+                                    <h4 className={`font-black leading-snug ${variant === 'featured' ? `text-lg ${dark ? 'text-white' : 'text-brand-navy'}` : 'text-white'}`}>{pick(p, 'title')}</h4>
                                     {pick(p, 'description') && (
-                                        <p className="text-gray-400 text-xs mt-1.5 leading-relaxed line-clamp-2">{pick(p, 'description')}</p>
+                                        <p className={`${variant === 'featured' && !dark ? 'text-gray-600' : 'text-gray-400'} mt-1.5 text-xs leading-relaxed line-clamp-2`}>{pick(p, 'description')}</p>
                                     )}
 
                                     {manage && (
@@ -469,7 +563,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                     <div className="mt-auto pt-4 flex items-center gap-2">
                                         <button
                                             onClick={() => setExpandedId(expanded ? null : p.id)}
-                                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition"
+                                            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${variant === 'featured' && !dark ? 'border-gray-200 bg-white text-brand-navy hover:border-brand-gold hover:bg-brand-gold/5' : 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'}`}
                                         >
                                             {isAr ? 'الدورات' : 'Courses'}
                                             <ChevronDown size={13} className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
@@ -478,7 +572,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                             <button
                                                 onClick={() => enroll(p)}
                                                 disabled={enrollingId === p.id || !!studentPath || studentPathsLoading}
-                                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light transition disabled:opacity-50"
+                                                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-brand-navy-dark transition hover:bg-brand-gold-light disabled:opacity-50"
                                             >
                                                 {enrollingId === p.id ? <Loader size={13} className="animate-spin" /> : <Zap size={13} />}
                                                 {studentPath
@@ -521,7 +615,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
             )}
 
             {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setModalOpen(false)}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={closeModal}>
                     <div
                         className="bg-brand-navy border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
@@ -530,7 +624,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                             <h3 className="text-lg font-black text-white">
                                 {editing ? (isAr ? 'تعديل المسار' : 'Edit Learning Path') : (isAr ? 'مسار تعلم جديد' : 'New Learning Path')}
                             </h3>
-                            <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                            <button onClick={closeModal} className="text-gray-400 hover:text-white transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
@@ -580,15 +674,55 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-300 mb-1.5">{isAr ? 'رابط صورة الغلاف (اختياري)' : 'Cover image URL (optional)'}</label>
-                                <input
-                                    type="url"
-                                    value={form.coverImageUrl}
-                                    onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })}
-                                    dir="ltr"
-                                    placeholder="https://..."
-                                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-                                />
+                                <label htmlFor="learning-path-cover" className="mb-1.5 block text-sm font-bold text-gray-300">
+                                    {isAr ? 'صورة غلاف المسار (اختياري)' : 'Path cover image (optional)'}
+                                </label>
+                                <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:flex-row sm:items-center">
+                                    {(coverFilePreview || form.coverImageUrl) && (
+                                        <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-lg bg-white/5 sm:w-40">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={coverFilePreview || (/^https?:\/\//i.test(form.coverImageUrl) ? form.coverImageUrl : `${API_BASE_URL}${form.coverImageUrl}`)}
+                                                alt={isAr ? 'معاينة غلاف المسار' : 'Path cover preview'}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+                                        <label
+                                            htmlFor="learning-path-cover"
+                                            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-brand-gold/30 bg-brand-gold/10 px-4 py-2.5 text-sm font-bold text-brand-gold-light transition hover:bg-brand-gold/20"
+                                        >
+                                            <ImagePlus size={16} />
+                                            {isAr ? 'اختيار صورة' : 'Choose image'}
+                                        </label>
+                                        <input
+                                            id="learning-path-cover"
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp,image/gif"
+                                            className="sr-only"
+                                            onChange={(e) => {
+                                                selectCoverImage(e.target.files?.[0]);
+                                                e.currentTarget.value = '';
+                                            }}
+                                        />
+                                        <span className="text-xs leading-relaxed text-gray-500">
+                                            {coverFile?.name || (isAr ? 'JPG أو PNG أو WEBP أو GIF، بحد أقصى 10 ميجابايت' : 'JPG, PNG, WEBP, or GIF, up to 10 MB')}
+                                        </span>
+                                        {(coverFilePreview || form.coverImageUrl) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setCoverFile(null);
+                                                    setForm({ ...form, coverImageUrl: '' });
+                                                }}
+                                                className="ms-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-red-300 transition hover:bg-red-500/10"
+                                            >
+                                                <X size={14} /> {isAr ? 'إزالة الصورة' : 'Remove image'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                             <section className="space-y-3">
                                 <div className="flex items-center justify-between gap-2">
@@ -729,7 +863,7 @@ export default function LearningPathList({ mode = 'browse' }: Props) {
                             </span>
                             <div className="flex items-center gap-3">
                                 <button
-                                    onClick={() => setModalOpen(false)}
+                                    onClick={closeModal}
                                     className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
                                 >
                                     {isAr ? 'إلغاء' : 'Cancel'}
