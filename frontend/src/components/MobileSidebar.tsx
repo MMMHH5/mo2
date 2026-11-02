@@ -12,19 +12,6 @@ import { buildNavLinks, groupInstructorNavLinks, groupStudentNavLinks } from '@/
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
 import { createPortal } from 'react-dom';
-import { CalendarClock, Users as UsersIcon, Newspaper, CreditCard, Settings, LifeBuoy, CalendarPlus, MessageCircle, Megaphone } from 'lucide-react';
-
-const ADMIN_EXTRA_LINKS = [
-    { href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['COURSE_MANAGER', 'ADMIN'] },
-    { href: '/dashboard/admin/users', icon: UsersIcon, roles: ['ADMIN'] },
-    { href: '/dashboard/admin/blog', icon: Newspaper, roles: ['COURSE_MANAGER', 'ADMIN'] },
-    { href: '/dashboard/admin/gateways', icon: CreditCard, roles: ['ADMIN'] },
-    { href: '/dashboard/admin/system', icon: Settings, roles: ['ADMIN'] },
-    { href: '/dashboard/admin/tickets', icon: LifeBuoy, roles: ['COURSE_MANAGER', 'ADMIN'] },
-    { href: '/dashboard/admin/requests', icon: CalendarPlus, roles: ['COURSE_MANAGER', 'ADMIN'] },
-    { href: '/dashboard/admin/chats', icon: MessageCircle, roles: ['COURSE_MANAGER', 'ADMIN'] },
-    { href: '/dashboard/admin/announcements', icon: Megaphone, roles: ['COURSE_MANAGER', 'ADMIN'] },
-] as Array<{ href: string; icon: typeof CalendarClock; roles: string[] }>;
 
 export default function MobileSidebar() {
     const { user, logout } = useAuth();
@@ -86,10 +73,6 @@ export default function MobileSidebar() {
         : roleKey === 'INSTRUCTOR'
             ? groupInstructorNavLinks(links, t)
             : [{ title: '', links }];
-    const adminLinks = pathname?.startsWith('/dashboard/admin')
-        ? ADMIN_EXTRA_LINKS.filter(l => l.roles.includes(roleKey)).map(l => ({ ...l, name: t('admin.nav_' + l.href.split('/').pop()) }))
-        : [];
-
     return (
         <>
             <button
@@ -159,21 +142,6 @@ export default function MobileSidebar() {
                                     {unreadError}
                                 </p>
                             )}
-                            {adminLinks.map((link) => {
-                                const isActive = pathname.startsWith(link.href);
-                                const Icon = link.icon;
-                                return (
-                                    <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
-                                        <div className={`flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold transition-colors ${isActive
-                                                ? dark ? 'bg-brand-gold/20 text-gold-ink' : 'bg-brand-gold/10 text-gold-ink'
-                                                : 'text-ink-muted hover:bg-ink/[0.06] hover:text-ink'
-                                            }`}>
-                                            <Icon size={19} />
-                                            <span>{link.name}</span>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
                         </div>
 
                         <div className={`p-4 border-t space-y-4 ${'border-line'}`}>
