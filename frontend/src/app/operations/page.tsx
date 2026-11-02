@@ -207,6 +207,31 @@ function OperationsCenterPage() {
         }
     };
 
+    const recoverPassword = async (values: {
+        accountPassword: string;
+        twoFactorCode: string;
+        newPassword: string;
+        confirmPassword: string;
+    }) => {
+        setUnlocking(true);
+        setUnlockError(null);
+        try {
+            const res = await api.post('/api/admin/operations/recover-password', {
+                ...values,
+                twoFactorCode: values.twoFactorCode || undefined,
+            });
+            sessionStorage.setItem(GRANT_KEY, res.data.grant);
+            localStorage.setItem(GRANT_USER_KEY, 'me');
+            setGrant(res.data.grant);
+        } catch (err) {
+            setUnlockError(
+                isUnauthorized(err) ? t('ops.recovery_failed') : (getErrorMessage(err) || t('ops.unlock_failed')),
+            );
+        } finally {
+            setUnlocking(false);
+        }
+    };
+
     const lock = useCallback(() => {
         sessionStorage.removeItem(GRANT_KEY);
         localStorage.removeItem(GRANT_USER_KEY);
@@ -328,6 +353,8 @@ function OperationsCenterPage() {
                 error={unlockError}
                 busy={unlocking}
                 onSubmit={unlock}
+                onRecover={recoverPassword}
+                clearError={() => setUnlockError(null)}
                 t={t}
             />
         );
@@ -638,15 +665,33 @@ function OperationsCenterPage() {
 /* -------------------------------------------------------------- sub-views */
 
 function Gate({
-    keyValue, setKeyValue, error, busy, onSubmit, t,
+    keyValue, setKeyValue, error, busy, onSubmit, onRecover, clearError, t,
 }: {
     keyValue: string;
     setKeyValue: (v: string) => void;
     error: string | null;
     busy: boolean;
     onSubmit: (e: React.FormEvent) => void;
+    onRecover: (values: {
+        accountPassword: string;
+        twoFactorCode: string;
+        newPassword: string;
+        confirmPassword: string;
+    }) => Promise<void>;
+    clearError: () => void;
     t: (k: string) => string;
 }) {
+    const [recovering, setRecovering] = useState(false);
+    const [accountPassword, setAccountPassword] = useState('');
+    const [twoFactorCode, setTwoFactorCode] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+
+    const submitRecovery = (e: React.FormEvent) => {
+        e.preventDefault();
+        void onRecover({ accountPassword, twoFactorCode, newPassword, confirmPassword });
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-brand-navy-dark via-brand-navy to-[#0e2a52] flex items-center justify-center p-4 relative overflow-hidden">
             <div className="absolute -top-32 -start-32 w-[28rem] h-[28rem] bg-brand-gold/10 rounded-full blur-3xl" />
@@ -657,29 +702,96 @@ function Gate({
                     <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center mx-auto mb-4">
                         <ShieldCheck size={30} className="text-brand-gold-light" />
                     </div>
-                    <h1 className="text-2xl font-black text-ink-on-navy tracking-tight">{t('ops.title')}</h1>
+                    <h1 className="text-2xl font-black text-ink-on-navy tracking-tight">{recovering ? t('ops.recovery_title') : t('ops.title')}</h1>
                     <p className="text-sm text-ink-on-navy-subtle mt-2 leading-relaxed">{t('ops.gate_subtitle')}</p>
                 </div>
 
-                <form onSubmit={onSubmit} className="bg-white dark:bg-brand-navy-dark/95 backdrop-blur-xl border border-white/10 rounded-3xl p-7 shadow-2xl space-y-5">
-                    <div>
-                        <label htmlFor="ops-key" className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                            {t('ops.gate_label')}
-                        </label>
-                        <div className="relative">
-                            <KeyRound size={18} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                id="ops-key"
-                                type="password"
-                                autoFocus
-                                autoComplete="off"
-                                value={keyValue}
-                                onChange={e => setKeyValue(e.target.value)}
-                                placeholder="••••••••••••"
-                                className="w-full ps-11 pe-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-brand-navy dark:text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
-                            />
+                <form onSubmit={recovering ? submitRecovery : onSubmit} className="bg-white dark:bg-brand-navy-dark/95 backdrop-blur-xl border border-white/10 rounded-3xl p-7 shadow-2xl space-y-5">
+                    {recovering ? (
+                        <>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('ops.recovery_hint')}</p>
+                            <div>
+                                <label htmlFor="ops-account-password" className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                                    {t('ops.account_password')}
+                                </label>
+                                <input
+                                    id="ops-account-password"
+                                    type="password"
+                                    autoComplete="current-password"
+                                    required
+                                    value={accountPassword}
+                                    onChange={e => setAccountPassword(e.target.value)}
+                                    className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-brand-navy dark:text-white focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="ops-recovery-totp" className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                                    {t('ops.recovery_2fa')}
+                                </label>
+                                <input
+                                    id="ops-recovery-totp"
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    maxLength={6}
+                                    value={twoFactorCode}
+                                    onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-brand-navy dark:text-white focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="ops-new-password" className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                                    {t('ops.new_password')}
+                                </label>
+                                <input
+                                    id="ops-new-password"
+                                    type="password"
+                                    autoComplete="new-password"
+                                    minLength={12}
+                                    maxLength={200}
+                                    required
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-brand-navy dark:text-white focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="ops-confirm-password" className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                                    {t('ops.confirm_password')}
+                                </label>
+                                <input
+                                    id="ops-confirm-password"
+                                    type="password"
+                                    autoComplete="new-password"
+                                    minLength={12}
+                                    maxLength={200}
+                                    required
+                                    value={confirmPassword}
+                                    onChange={e => setConfirmPassword(e.target.value)}
+                                    className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-brand-navy dark:text-white focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div>
+                            <label htmlFor="ops-key" className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                                {t('ops.gate_label')}
+                            </label>
+                            <div className="relative">
+                                <KeyRound size={18} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    id="ops-key"
+                                    type="password"
+                                    autoFocus
+                                    autoComplete="off"
+                                    value={keyValue}
+                                    onChange={e => setKeyValue(e.target.value)}
+                                    placeholder="••••••••••••"
+                                    className="w-full ps-11 pe-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-brand-navy dark:text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition"
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {error && (
                         <div className="flex items-start gap-2.5 p-3.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl">
@@ -690,12 +802,24 @@ function Gate({
 
                     <button
                         type="submit"
-                        disabled={busy || !keyValue}
-                        data-ops-action="operations.unlock"
+                        disabled={busy || (recovering ? !accountPassword || !newPassword || !confirmPassword : !keyValue)}
+                        data-ops-action={recovering ? 'operations.password.recover' : 'operations.unlock'}
                         className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-light hover:to-brand-gold text-black py-3.5 rounded-2xl font-black shadow-lg shadow-brand-gold/25 transition-all disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                     >
                         {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
-                        {busy ? t('ops.unlocking') : t('ops.unlock')}
+                        {busy ? t('ops.unlocking') : recovering ? t('ops.recovery_submit') : t('ops.unlock')}
+                    </button>
+
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                            clearError();
+                            setRecovering(!recovering);
+                        }}
+                        className="w-full text-sm font-bold text-brand-navy dark:text-brand-gold-light hover:underline disabled:opacity-50"
+                    >
+                        {recovering ? t('ops.recovery_back') : t('ops.recover_link')}
                     </button>
 
                     <p className="text-[11px] text-gray-500 dark:text-gray-500 leading-relaxed text-center">

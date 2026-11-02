@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 /**
@@ -37,6 +37,28 @@ export class SetPasswordDto {
     @MinLength(1)
     @MaxLength(200)
     currentPassword!: string;
+
+    @IsString()
+    @MinLength(12)
+    @MaxLength(200)
+    newPassword!: string;
+
+    @IsString()
+    @MinLength(1)
+    @MaxLength(200)
+    confirmPassword!: string;
+}
+
+export class RecoverPasswordDto {
+    @IsString()
+    @MinLength(1)
+    @MaxLength(200)
+    accountPassword!: string;
+
+    @IsOptional()
+    @IsString()
+    @Length(6, 6)
+    twoFactorCode?: string;
 
     @IsString()
     @MinLength(12)

@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -10,12 +11,15 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions/permissions';
 import { InMemoryRateLimiter } from '../common/in-memory-rate-limiter';
+import { verifyTotp } from '../common/totp';
+import { EncryptionService } from '../encryption/encryption.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { OperationsService } from './operations.service';
 import { OperationsKeyService } from './operations-tracker.middleware';
 import { OperationsQueriesService } from './operations-queries.service';
 import { OperationsSettingsService } from './operations-settings.service';
 import {
-    AddAllowlistDto, EventsQueryDto, OverviewQueryDto, SessionsQueryDto, SetPasswordDto, TimelineQueryDto,
+    AddAllowlistDto, EventsQueryDto, OverviewQueryDto, RecoverPasswordDto, SessionsQueryDto, SetPasswordDto, TimelineQueryDto,
     UnlockDto,
 } from './dto/operations.dto';
 
@@ -59,12 +63,15 @@ export class AdminOperationsController {
      * to the endpoint where a miss should be as expensive as a hit.
      */
     private readonly passwordLimiter = new InMemoryRateLimiter(5, 15 * 60 * 1000);
+    private readonly recoveryLimiter = new InMemoryRateLimiter(5, 15 * 60 * 1000);
 
     constructor(
         private readonly ops: OperationsService,
         private readonly queries: OperationsQueriesService,
         private readonly keys: OperationsKeyService,
         private readonly settings: OperationsSettingsService,
+        private readonly prisma: PrismaService,
+        private readonly encryption: EncryptionService,
     ) { }
 
     // ----------------------------------------------------------------- unlocking
@@ -111,6 +118,63 @@ export class AdminOperationsController {
         await this.settings.assertAllowed(userId);
 
         return this.keys.issueGrant(userId, await this.settings.currentKeyVersion());
+    }
+
+    @Post('recover-password')
+    @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.OPS_MANAGE)
+    @HttpCode(200)
+    @ApiOperation({ summary: 'Recover the operations password after re-authenticating the admin account' })
+    async recoverPassword(@Req() req: any, @Body() dto: RecoverPasswordDto) {
+        const userId = req.user.userId as string;
+        const ip = req.ip ?? 'unknown';
+
+        if (!this.recoveryLimiter.allow(`ip:${ip}`) || !this.recoveryLimiter.allow(`user:${userId}`)) {
+            await this.ops.trackSecurity({
+                sessionId: (req as { opsSessionId?: string | null }).opsSessionId ?? null,
+                label: 'operations.password.recovery.rate_limited',
+                ipAddress: ip,
+                userAgent: req.headers['user-agent'] ?? null,
+            });
+            throw new UnauthorizedException('Too many attempts. Try again later.');
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { passwordHash: true, twoFactorEnabled: true, twoFactorSecret: true },
+        });
+        const passwordValid = user ? await bcrypt.compare(dto.accountPassword, user.passwordHash) : false;
+        const twoFactorValid = user?.twoFactorEnabled
+            && user.twoFactorSecret
+            && dto.twoFactorCode
+            ? await verifyTotp(dto.twoFactorCode, this.encryption.decrypt(user.twoFactorSecret))
+            : !user?.twoFactorEnabled;
+
+        if (!passwordValid || !twoFactorValid) {
+            await this.ops.trackSecurity({
+                sessionId: (req as { opsSessionId?: string | null }).opsSessionId ?? null,
+                label: 'operations.password.recovery.failed',
+                ipAddress: ip,
+                userAgent: req.headers['user-agent'] ?? null,
+            });
+            throw new UnauthorizedException('Account verification failed');
+        }
+
+        await this.settings.assertAllowed(userId);
+
+        if (dto.newPassword !== dto.confirmPassword) {
+            throw new BadRequestException('The two new passwords do not match');
+        }
+
+        const keyVersion = await this.settings.setKey(dto.newPassword, userId);
+        await this.ops.trackSecurity({
+            sessionId: (req as { opsSessionId?: string | null }).opsSessionId ?? null,
+            label: 'operations.password.recovered',
+            ipAddress: ip,
+            userAgent: req.headers['user-agent'] ?? null,
+            meta: { actorId: userId, keyVersion },
+        });
+        return { ...this.keys.issueGrant(userId, keyVersion), keyVersion };
     }
 
     // --------------------------------------------------------------------- reads

@@ -11,6 +11,8 @@ import { plainToInstance } from 'class-transformer';
 import { UnauthorizedException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import * as bcrypt from 'bcryptjs';
+import { generateSecret, generateSync } from 'otplib';
 
 /**
  * Tests for the operations center.
@@ -460,7 +462,11 @@ describe('OPERATIONS: changing the password needs more than a grant', () => {
             listAllowlist: async () => [],
             listEligibleAdmins: async () => [],
         } as any;
-        const controller = new AdminOperationsController(ops, queries, keys, settings);
+        const controller = new AdminOperationsController(
+            ops, queries, keys, settings,
+            { user: { findUnique: async () => null } } as any,
+            { decrypt: (value: string) => value } as any,
+        );
         return { controller, securityEvents };
     }
 
@@ -630,7 +636,7 @@ describe('OPERATIONS: concurrent first visits do not error', () => {
 });
 
 describe('OPERATIONS: the controller enforces the gates', () => {
-    function buildController(grantValid: boolean) {
+    function buildController(grantValid: boolean, recoveryUser: any = null) {
         const keys = {
             issueGrant: () => ({ grant: 'g', expiresAt: 'later' }),
             verifyGrant: () => grantValid,
@@ -657,8 +663,11 @@ describe('OPERATIONS: the controller enforces the gates', () => {
             isAllowed: async () => true,
             assertAllowed: async () => {},
             currentKeyVersion: async () => 1,
+            setKey: async () => 2,
         } as any;
-        return new AdminOperationsController(ops, queries, keys, settings);
+        const prisma = { user: { findUnique: async () => recoveryUser } } as any;
+        const encryption = { decrypt: (value: string) => value } as any;
+        return new AdminOperationsController(ops, queries, keys, settings, prisma, encryption);
     }
 
     // The public tracking endpoint stayed behind on `OperationsController`,
@@ -715,7 +724,13 @@ describe('OPERATIONS: the controller enforces the gates', () => {
                 assertAllowed: async () => { throw new ForbiddenException('not allowed'); },
                 currentKeyVersion: async () => 1,
             } as any;
-            return { controller: new AdminOperationsController(ops, queries, keys, settings) };
+            return {
+                controller: new AdminOperationsController(
+                    ops, queries, keys, settings,
+                    { user: { findUnique: async () => null } } as any,
+                    { decrypt: (value: string) => value } as any,
+                ),
+            };
         })();
         const r = req();
         r.user = { userId: 'admin-1' };
@@ -727,6 +742,88 @@ describe('OPERATIONS: the controller enforces the gates', () => {
         const r = req();
         r.user = { userId: 'admin-1' };
         assert.deepEqual(await controller.overview(r, 'grant', {}), { ok: true });
+    });
+
+    test('password recovery verifies the admin account and returns a fresh grant', async () => {
+        const passwordHash = await bcrypt.hash('admin-account-password', 4);
+        const controller = buildController(true, {
+            passwordHash,
+            twoFactorEnabled: false,
+            twoFactorSecret: null,
+        });
+        const r = req();
+        r.user = { userId: 'admin-1' };
+
+        assert.deepEqual(
+            await controller.recoverPassword(r, {
+                accountPassword: 'admin-account-password',
+                newPassword: 'a-new-operations-password',
+                confirmPassword: 'a-new-operations-password',
+            } as any),
+            { grant: 'g', expiresAt: 'later', keyVersion: 2 },
+        );
+    });
+
+    test('password recovery rejects an incorrect account password', async () => {
+        const passwordHash = await bcrypt.hash('admin-account-password', 4);
+        const controller = buildController(true, {
+            passwordHash,
+            twoFactorEnabled: false,
+            twoFactorSecret: null,
+        });
+        const r = req();
+        r.user = { userId: 'admin-1' };
+
+        await assert.rejects(
+            () => controller.recoverPassword(r, {
+                accountPassword: 'incorrect',
+                newPassword: 'a-new-operations-password',
+                confirmPassword: 'a-new-operations-password',
+            } as any),
+            UnauthorizedException,
+        );
+    });
+
+    test('password recovery requires the second factor when it is enabled', async () => {
+        const passwordHash = await bcrypt.hash('admin-account-password', 4);
+        const controller = buildController(true, {
+            passwordHash,
+            twoFactorEnabled: true,
+            twoFactorSecret: 'test-secret',
+        });
+        const r = req();
+        r.user = { userId: 'admin-1' };
+
+        await assert.rejects(
+            () => controller.recoverPassword(r, {
+                accountPassword: 'admin-account-password',
+                newPassword: 'a-new-operations-password',
+                confirmPassword: 'a-new-operations-password',
+            } as any),
+            UnauthorizedException,
+        );
+    });
+
+    test('password recovery accepts the current second-factor code', async () => {
+        const passwordHash = await bcrypt.hash('admin-account-password', 4);
+        const secret = generateSecret();
+        const controller = buildController(true, {
+            passwordHash,
+            twoFactorEnabled: true,
+            twoFactorSecret: secret,
+        });
+        const r = req();
+        r.user = { userId: 'admin-1' };
+
+        assert.deepEqual(
+            await controller.recoverPassword(r, {
+                accountPassword: 'admin-account-password',
+                twoFactorCode: generateSync({ secret }),
+                newPassword: 'a-new-operations-password',
+                confirmPassword: 'a-new-operations-password',
+            } as any),
+            { grant: 'g', expiresAt: 'later', keyVersion: 2 },
+        );
     });
 
     test('a browser cannot forge a server-authored event type', async () => {
