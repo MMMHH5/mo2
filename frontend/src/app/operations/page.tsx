@@ -5,7 +5,7 @@ import { useI18n } from '@/lib/i18n-context';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { api, getErrorMessage, isUnauthorized } from '@/lib/api';
 import {
-    Activity, AlertTriangle, ArrowRight, Bot, Cpu, Eye, Globe, KeyRound, LayoutGrid,
+    Activity, AlertTriangle, ArrowRight, Bot, ClipboardList, Cpu, Eye, Globe, KeyRound, LayoutGrid,
     Loader2, Lock, Monitor, MousePointerClick, RefreshCw, Search, Settings, ShieldCheck, Smartphone,
     Tablet, Tv, User, UserX, X, type LucideIcon,
 } from 'lucide-react';
@@ -66,6 +66,18 @@ interface TrackedEvent {
     label: string | null;
     createdAt: string;
     session: TrackedSession;
+}
+
+interface AdminActivity {
+    id: string;
+    action: string;
+    timestamp: string;
+    actorEmail: string | null;
+    actorRole: string | null;
+    targetType: string | null;
+    targetId: string | null;
+    targetLabel: string | null;
+    details: { changes?: Array<{ field: string; label: string; value?: string | number | boolean }> } | null;
 }
 
 interface TimelinePoint {
@@ -149,13 +161,17 @@ function OperationsCenterPage() {
     const [unlocking, setUnlocking] = useState(false);
     const [unlockError, setUnlockError] = useState<string | null>(null);
 
-    const [tab, setTab] = useState<'overview' | 'live' | 'devices' | 'settings'>('overview');
+    const [tab, setTab] = useState<'overview' | 'live' | 'activity' | 'devices' | 'settings'>('overview');
     const [hours, setHours] = useState(24);
     const [overview, setOverview] = useState<Overview | null>(null);
     const [timeline, setTimeline] = useState<TimelinePoint[]>([]);
     const [events, setEvents] = useState<TrackedEvent[]>([]);
     const [eventTotal, setEventTotal] = useState(0);
     const [eventPage, setEventPage] = useState(0);
+    const [adminActivity, setAdminActivity] = useState<AdminActivity[]>([]);
+    const [adminActivityTotal, setAdminActivityTotal] = useState(0);
+    const [adminActivityPage, setAdminActivityPage] = useState(0);
+    const [adminActivitySearch, setAdminActivitySearch] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [search, setSearch] = useState('');
     const [devices, setDevices] = useState<TrackedSession[]>([]);
@@ -284,6 +300,22 @@ function OperationsCenterPage() {
         }
     }, [eventPage, typeFilter, search, headers, handleApiError]);
 
+    const loadAdminActivity = useCallback(async () => {
+        try {
+            const params = new URLSearchParams({
+                skip: String(adminActivityPage * PAGE_SIZE),
+                take: String(PAGE_SIZE),
+            });
+            if (adminActivitySearch.trim()) params.set('search', adminActivitySearch.trim());
+            const res = await api.get(`/api/admin/operations/admin-activity?${params}`, { headers });
+            setAdminActivity(res.data.items);
+            setAdminActivityTotal(res.data.total);
+            setError(null);
+        } catch (err) {
+            handleApiError(err);
+        }
+    }, [adminActivityPage, adminActivitySearch, headers, handleApiError]);
+
     const loadDevices = useCallback(async () => {
         try {
             const params = new URLSearchParams({
@@ -322,18 +354,20 @@ function OperationsCenterPage() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         if (tab === 'overview') void loadOverview();
         if (tab === 'live') void loadEvents();
+        if (tab === 'activity') void loadAdminActivity();
         if (tab === 'devices') void loadDevices();
-    }, [grant, tab, loadOverview, loadEvents, loadDevices]);
+    }, [grant, tab, loadOverview, loadEvents, loadAdminActivity, loadDevices]);
 
     useEffect(() => {
         if (!grant || !autoRefresh) return;
         const timer = setInterval(() => {
             if (tab === 'overview') void loadOverview();
             if (tab === 'live' && eventPage === 0) void loadEvents();
+            if (tab === 'activity' && adminActivityPage === 0) void loadAdminActivity();
             if (tab === 'devices') void loadDevices();
         }, 30_000);
         return () => clearInterval(timer);
-    }, [grant, autoRefresh, tab, eventPage, loadOverview, loadEvents, loadDevices]);
+    }, [grant, autoRefresh, tab, eventPage, adminActivityPage, loadOverview, loadEvents, loadAdminActivity, loadDevices]);
 
     const maxTimeline = Math.max(1, ...timeline.map((p) => p.pageViews + p.apiCalls + p.actions));
 
@@ -420,6 +454,7 @@ function OperationsCenterPage() {
                     {([
                         ['overview', LayoutGrid, 'ops.tab_overview'],
                         ['live', Activity, 'ops.tab_live'],
+                        ['activity', ClipboardList, 'ops.tab_admin_activity'],
                         ['devices', Monitor, 'ops.tab_devices'],
                         ['settings', Settings, 'ops.tab_settings'],
                     ] as const).map(([id, Icon, label]) => (
@@ -598,6 +633,94 @@ function OperationsCenterPage() {
                             total={eventTotal}
                             pageSize={PAGE_SIZE}
                             onChange={setEventPage}
+                            t={t}
+                        />
+                    </Panel>
+                )}
+
+                {tab === 'activity' && (
+                    <Panel
+                        icon={ClipboardList}
+                        title={t('ops.admin_activity_title')}
+                        subtitle={`${t('ops.admin_activity_subtitle')}: ${adminActivityTotal}`}
+                        actions={
+                            <>
+                                <div className="relative">
+                                    <Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+                                    <input
+                                        value={adminActivitySearch}
+                                        onChange={e => { setAdminActivitySearch(e.target.value); setAdminActivityPage(0); }}
+                                        placeholder={t('ops.admin_activity_search')}
+                                        className="ps-9 pe-3 py-2 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-56 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-brand-gold outline-none transition"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => void loadAdminActivity()}
+                                    aria-label={t('ops.refresh_activity')}
+                                    className="inline-flex items-center gap-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-white/10 px-3.5 py-2 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-white/10 transition cursor-pointer"
+                                >
+                                    <RefreshCw size={15} />
+                                </button>
+                            </>
+                        }
+                    >
+                        {adminActivity.length === 0 ? (
+                            <EmptyPanel text={t('ops.no_admin_activity')} />
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[900px] text-sm">
+                                    <thead>
+                                        <tr className="border-b border-gray-200 dark:border-white/10 text-start text-xs text-gray-500 dark:text-gray-400">
+                                            <th className="px-3 py-3 font-bold">{t('ops.col_time')}</th>
+                                            <th className="px-3 py-3 font-bold">{t('ops.activity_actor')}</th>
+                                            <th className="px-3 py-3 font-bold">{t('ops.col_action')}</th>
+                                            <th className="px-3 py-3 font-bold">{t('ops.activity_target')}</th>
+                                            <th className="px-3 py-3 font-bold">{t('ops.activity_changes')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {adminActivity.map((item) => (
+                                            <tr key={item.id} className="border-b border-gray-100 dark:border-white/5 align-top">
+                                                <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+                                                    {new Date(item.timestamp).toLocaleString()}
+                                                </td>
+                                                <td className="px-3 py-4">
+                                                    <div className="font-bold text-brand-navy dark:text-white">{item.actorEmail ?? t('ops.na')}</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {item.actorRole === 'ADMIN' ? t('ops.role_admin')
+                                                            : item.actorRole === 'FINANCE' ? t('ops.role_finance')
+                                                                : item.actorRole === 'COURSE_MANAGER' ? t('ops.role_course_manager')
+                                                                    : item.actorRole ?? t('ops.na')}
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-4 font-bold text-brand-navy dark:text-white">{item.action}</td>
+                                                <td className="px-3 py-4 text-gray-700 dark:text-gray-300">
+                                                    <div>{item.targetLabel ?? item.targetType ?? t('ops.na')}</div>
+                                                    {item.targetId && <div className="text-xs font-mono text-gray-500 dark:text-gray-400" dir="ltr">{item.targetId}</div>}
+                                                </td>
+                                                <td className="px-3 py-4 text-gray-700 dark:text-gray-300">
+                                                    {item.details?.changes?.length ? (
+                                                        <ul className="space-y-1">
+                                                            {item.details.changes.map((change, index) => (
+                                                                <li key={`${change.field}-${index}`}>
+                                                                    <span className="font-bold">{change.label}</span>
+                                                                    {change.value !== undefined && <>: {String(change.value)}</>}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    ) : <span className="text-gray-500 dark:text-gray-400">{t('ops.no_field_details')}</span>}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        <Pager
+                            page={adminActivityPage}
+                            total={adminActivityTotal}
+                            pageSize={PAGE_SIZE}
+                            onChange={setAdminActivityPage}
                             t={t}
                         />
                     </Panel>

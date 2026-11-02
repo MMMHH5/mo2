@@ -172,6 +172,50 @@ export class OperationsQueriesService {
         return { items, total };
     }
 
+    /** Paginated business activity carried out by staff accounts. */
+    async adminActivity(filters: { search?: string; skip: number; take: number }) {
+        const where = {
+            actorRole: { in: ['ADMIN', 'FINANCE', 'COURSE_MANAGER'] },
+            method: { not: null },
+            ...(filters.search
+                ? {
+                    OR: [
+                        { action: { contains: filters.search, mode: 'insensitive' as const } },
+                        { actorEmail: { contains: filters.search, mode: 'insensitive' as const } },
+                        { actorRole: { contains: filters.search, mode: 'insensitive' as const } },
+                        { targetType: { contains: filters.search, mode: 'insensitive' as const } },
+                        { targetId: { contains: filters.search, mode: 'insensitive' as const } },
+                        { targetLabel: { contains: filters.search, mode: 'insensitive' as const } },
+                    ],
+                }
+                : {}),
+        };
+
+        const [items, total] = await Promise.all([
+            this.prisma.auditLog.findMany({
+                where,
+                orderBy: { timestamp: 'desc' },
+                skip: filters.skip,
+                take: filters.take,
+                select: {
+                    id: true,
+                    action: true,
+                    timestamp: true,
+                    actorEmail: true,
+                    actorRole: true,
+                    targetType: true,
+                    targetId: true,
+                    targetLabel: true,
+                    method: true,
+                    route: true,
+                    details: true,
+                },
+            }),
+            this.prisma.auditLog.count({ where }),
+        ]);
+        return { items, total };
+    }
+
     /** The device list, with the event counts the admin filters on. */
     async sessions(filters: {
         search?: string;

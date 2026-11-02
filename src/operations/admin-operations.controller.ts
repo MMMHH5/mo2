@@ -214,6 +214,17 @@ export class AdminOperationsController {
         return { ...result, skip: q.skip ?? 0, take: q.take ?? 50 };
     }
 
+    @Get('admin-activity')
+    @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.OPS_READ)
+    @ApiOperation({ summary: 'List administrative changes made by staff accounts' })
+    async adminActivity(@Req() req: any, @Headers('x-ops-grant') grant: string | undefined, @Query() q: EventsQueryDto) {
+        await this.assertGranted(req, grant);
+        const skip = q.skip ?? 0;
+        const take = Math.min(q.take ?? 25, 100);
+        return { ...(await this.queries.adminActivity({ search: q.search, skip, take })), skip, take };
+    }
+
     @Get('sessions')
     @Roles(Role.ADMIN)
     @RequirePermissions(PERMISSIONS.OPS_READ)
