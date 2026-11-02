@@ -17,6 +17,9 @@ import {
     MessagesSquare,
     CalendarClock,
     BadgeCheck,
+    Route,
+    Flag,
+    Megaphone,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -126,5 +129,26 @@ export function buildNavLinks(t: (key: string) => string): NavLink[] {
         { name: t('sidebar.audit_logs'), href: '/dashboard/admin/audit', icon: ShieldAlert, roles: ['ADMIN'] },
         { name: t('sidebar.finance'), href: '/dashboard/admin/finance', icon: CreditCard, roles: ['FINANCE', 'ADMIN'] },
         { name: t('sidebar.admin'), href: '/dashboard/admin', icon: Settings, roles: ['ADMIN'] },
+    ];
+}
+
+export function buildAdminNavLinks(t: (key: string) => string): NavLink[] {
+    return [
+        { name: t('admin.nav_overview'), href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
+        { name: t('admin.nav_courses'), href: '/dashboard/admin/courses', icon: BookOpen, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_learning_paths'), href: '/dashboard/admin/learning-paths', icon: Route, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_openings'), href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_ended'), href: '/dashboard/admin/ended', icon: Flag, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_users'), href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
+        { name: t('admin.nav_finance'), href: '/dashboard/admin/finance', icon: Wallet, roles: ['FINANCE', 'ADMIN'] },
+        { name: t('admin.nav_instructors'), href: '/dashboard/admin/instructors', icon: GraduationCap, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_blog'), href: '/dashboard/admin/blog', icon: BookOpen, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_gateways'), href: '/dashboard/admin/gateways', icon: CreditCard, roles: ['ADMIN'] },
+        { name: t('admin.nav_system'), href: '/dashboard/admin/system', icon: Settings, roles: ['ADMIN'] },
+        { name: t('admin.nav_tickets'), href: '/dashboard/admin/tickets', icon: LifeBuoy, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_requests'), href: '/dashboard/admin/requests', icon: CalendarClock, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_chats'), href: '/dashboard/admin/chats', icon: MessagesSquare, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_announcements'), href: '/dashboard/admin/announcements', icon: Megaphone, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_audit'), href: '/dashboard/admin/audit', icon: ShieldAlert, roles: ['ADMIN'] },
     ];
 }

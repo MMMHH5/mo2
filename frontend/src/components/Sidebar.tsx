@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { api, getErrorMessage } from '@/lib/api';
-import { buildNavLinks, groupInstructorNavLinks, groupStudentNavLinks } from '@/lib/nav-links';
+import { buildAdminNavLinks, buildNavLinks, groupInstructorNavLinks, groupStudentNavLinks } from '@/lib/nav-links';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
 import { LogOut } from 'lucide-react';
@@ -17,12 +17,14 @@ export default function Sidebar() {
     const { user, logout } = useAuth();
     const { t } = useI18n();
     const { dark } = useTheme();
+    const roleKey = (user?.role || '').toUpperCase();
+    const isAdminRole = ['ADMIN', 'COURSE_MANAGER', 'FINANCE'].includes(roleKey);
     const [unread, setUnread] = useState(0);
     const [notificationsUnread, setNotificationsUnread] = useState(0);
     const [unreadError, setUnreadError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || isAdminRole) return;
         let active = true;
         const load = async () => {
             setUnreadError(null);
@@ -42,12 +44,11 @@ export default function Sidebar() {
         load();
         const timer = setInterval(load, 15000);
         return () => { active = false; clearInterval(timer); };
-    }, [user, t]);
+    }, [user, t, isAdminRole]);
 
     if (!user) return null;
 
-    const roleKey = (user.role || '').toUpperCase();
-    const allNav = buildNavLinks(t);
+    const allNav = isAdminRole ? buildAdminNavLinks(t) : buildNavLinks(t);
     const roleLinks = allNav.filter(link => link.roles.some(r => r.toUpperCase() === roleKey));
     const links = roleLinks.length > 0
         ? roleLinks
