@@ -9,6 +9,7 @@ type Locale = 'ar' | 'en';
 // primary language, so the old key is deliberately ignored and the new default
 // applies once. From here on an explicit choice is what selects the language.
 const LOCALE_COOKIE = 'laxalab_locale_v2';
+const LOCALE_REWRITE_HEADER = 'x-laxalab-locale-rewrite';
 const DEFAULT_LOCALE: Locale = 'ar';
 const SKIP_PATHS = ['/sitemap.xml', '/robots.txt', '/manifest.webmanifest', '/favicon.ico'];
 const EXT_RE = /\.(png|jpe?g|svg|gif|webp|ico|avif|woff2?|ttf|eot|otf|pdf|mp4|webm)$/i;
@@ -104,6 +105,15 @@ export function middleware(req: NextRequest) {
         return notFound();
     }
 
+    // Rewrites are routed through middleware again. Mark the internal,
+    // locale-stripped request so it reaches the app route instead of being
+    // redirected back to its locale-prefixed URL.
+    if (!hasPrefix && req.headers.get(LOCALE_REWRITE_HEADER) === '1') {
+        const headers = new Headers(req.headers);
+        headers.delete(LOCALE_REWRITE_HEADER);
+        return NextResponse.next({ request: { headers } });
+    }
+
     if (hasPrefix) {
         const locale = first as Locale;
         const url = req.nextUrl.clone();
@@ -112,7 +122,9 @@ export function middleware(req: NextRequest) {
         url.pathname = APP_MODE === 'admin' && (base === '/' || base === '/dashboard')
             ? '/dashboard/admin'
             : base;
-        const res = NextResponse.rewrite(url);
+        const headers = new Headers(req.headers);
+        headers.set(LOCALE_REWRITE_HEADER, '1');
+        const res = NextResponse.rewrite(url, { request: { headers } });
         setLocaleCookie(res, locale);
         return res;
     }

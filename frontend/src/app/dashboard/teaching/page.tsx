@@ -10,7 +10,7 @@ import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import toast from 'react-hot-toast';
 import {
-    BookOpen, CalendarPlus, Lightbulb, Flag, Users, ClipboardList, X, ArrowUpRight, Loader, Clock, Award,
+    BookOpen, CalendarPlus, Lightbulb, Flag, Users, ClipboardList, X, ArrowUpRight, Loader, Clock, Award, Search, SlidersHorizontal,
 } from 'lucide-react';
 
 interface MyOpening {
@@ -68,6 +68,10 @@ type ModalState =
     | { type: 'close'; opening: MyOpening }
     | null;
 
+type OpeningStatusFilter = 'ALL' | 'DRAFT' | 'ANNOUNCEMENT' | 'OPEN' | 'STARTED' | 'ENDED';
+const openingStatusFilters: OpeningStatusFilter[] = ['ALL', 'DRAFT', 'ANNOUNCEMENT', 'OPEN', 'STARTED', 'ENDED'];
+const openingStatusOrder: Record<string, number> = { STARTED: 0, OPEN: 1, ANNOUNCEMENT: 2, DRAFT: 3, ENDED: 4 };
+
 const openingStatusColors: Record<string, string> = {
     DRAFT: 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
     ANNOUNCEMENT: 'bg-brand-navy-light/10 text-brand-navy-light border border-brand-navy-light/20',
@@ -105,6 +109,8 @@ export default function TeachingHubPage() {
     const [certOpening, setCertOpening] = useState<MyOpening | null>(null);
     const [dismissCloseId, setDismissCloseId] = useState<string | null>(null);
     const [selectedCourseId, setSelectedCourseId] = useState('');
+    const [openingSearch, setOpeningSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<OpeningStatusFilter>('ALL');
     const [reason, setReason] = useState('');
     const [saving, setSaving] = useState(false);
 
@@ -129,6 +135,34 @@ export default function TeachingHubPage() {
         .filter((opening) => opening.access.canManageTasks || opening.access.canGrade || opening.access.canViewAnalytics)
         .reduce((sum, opening) => sum + (opening._count?.tasks ?? 0), 0);
     const pendingRequests = [...(openRequests || []), ...(closeRequests || [])].filter(r => r.status === 'PENDING').length;
+    const statusCounts: Record<OpeningStatusFilter, number> = {
+        ALL: openings?.length ?? 0,
+        DRAFT: (openings || []).filter(opening => opening.status === 'DRAFT').length,
+        ANNOUNCEMENT: (openings || []).filter(opening => opening.status === 'ANNOUNCEMENT').length,
+        OPEN: (openings || []).filter(opening => opening.status === 'OPEN').length,
+        STARTED: (openings || []).filter(opening => opening.status === 'STARTED').length,
+        ENDED: (openings || []).filter(opening => opening.status === 'ENDED').length,
+    };
+    const searchTerm = openingSearch.trim().toLocaleLowerCase(isAr ? 'ar' : 'en');
+    const visibleOpenings = (openings || [])
+        .filter(opening => {
+            if (statusFilter !== 'ALL' && opening.status !== statusFilter) return false;
+            if (!searchTerm) return true;
+            const searchableText = [pick(opening.course, 'title'), pick(opening, 'name')]
+                .filter(Boolean)
+                .join(' ')
+                .toLocaleLowerCase(isAr ? 'ar' : 'en');
+            return searchableText.includes(searchTerm);
+        })
+        .sort((a, b) => {
+            const statusDifference = (openingStatusOrder[a.status] ?? 99) - (openingStatusOrder[b.status] ?? 99);
+            if (statusDifference !== 0) return statusDifference;
+            const dateA = a.startDate ? Date.parse(a.startDate) : Number.POSITIVE_INFINITY;
+            const dateB = b.startDate ? Date.parse(b.startDate) : Number.POSITIVE_INFINITY;
+            const safeDateA = Number.isFinite(dateA) ? dateA : Number.POSITIVE_INFINITY;
+            const safeDateB = Number.isFinite(dateB) ? dateB : Number.POSITIVE_INFINITY;
+            return safeDateA - safeDateB || a.id.localeCompare(b.id);
+        });
 
     const requestOpen = async () => {
         if (!selectedCourseId) { toast.error(isAr ? 'اختر دورة' : 'Please select a course'); return; }
@@ -217,18 +251,71 @@ export default function TeachingHubPage() {
                             </h3>
                             <p className="text-sm text-gray-400 mt-1">{isAr ? 'الدورات المسندة إليك — أدِر الطلاب والدرجات والمهام' : 'Batches assigned to you — manage students, grades and tasks'}</p>
                         </div>
+                        {!loading && !error && (
+                            <span className="shrink-0 rounded-full border border-brand-gold/20 bg-brand-gold/10 px-3 py-1.5 text-xs font-black text-brand-gold-light">
+                                {isAr ? `${visibleOpenings.length} من ${statusCounts.ALL}` : `${visibleOpenings.length} of ${statusCounts.ALL}`}
+                            </span>
+                        )}
                     </div>
 
                     {loading ? (
                         <div className="h-40 flex items-center justify-center text-gray-400"><Loader className="animate-spin me-2" size={20} /> {isAr ? 'جاري التحميل...' : 'Loading...'}</div>
-                    ) : (openings || []).length === 0 ? (
+                    ) : error ? null : (openings || []).length === 0 ? (
                         <div className="text-center py-12 text-gray-400 border-2 border-dashed border-white/10 rounded-xl">
                             <BookOpen size={40} className="mx-auto mb-3 text-gray-500" />
                             <p className="font-bold">{isAr ? 'لا توجد دورات مسندة بعد' : 'No openings assigned yet'}</p>
                         </div>
                     ) : (
+                        <>
+                        <div className="mb-5 flex flex-col gap-3 sm:flex-row">
+                            <label className="relative min-w-0 flex-1">
+                                <Search size={17} className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                                <input
+                                    type="search"
+                                    value={openingSearch}
+                                    onChange={event => setOpeningSearch(event.target.value)}
+                                    placeholder={isAr ? 'ابحث باسم الدورة أو الدفعة...' : 'Search course or batch name...'}
+                                    aria-label={isAr ? 'ابحث في الدورات المسندة' : 'Search assigned courses'}
+                                    className="w-full rounded-xl border border-white/10 bg-brand-navy-dark py-3 ps-11 pe-4 text-sm font-semibold text-white outline-none transition placeholder:font-normal placeholder:text-gray-500 focus:border-brand-gold/50 focus:ring-2 focus:ring-brand-gold/20"
+                                />
+                            </label>
+                            <label className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-brand-navy-dark px-3 text-gray-400">
+                                <SlidersHorizontal size={16} />
+                                <select
+                                    value={statusFilter}
+                                    onChange={event => {
+                                        const selectedStatus = openingStatusFilters.find(status => status === event.target.value);
+                                        if (selectedStatus) setStatusFilter(selectedStatus);
+                                    }}
+                                    aria-label={isAr ? 'تصفية حسب حالة الدورة' : 'Filter by course status'}
+                                    className="min-w-36 bg-transparent py-3 text-sm font-bold text-white outline-none [&>option]:bg-brand-navy"
+                                >
+                                    {openingStatusFilters.map(status => (
+                                        <option key={status} value={status}>
+                                            {status === 'ALL'
+                                                ? (isAr ? 'كل الحالات' : 'All statuses')
+                                                : `${isAr ? openingStatusLabels[status] : openingStatusLabelsEn[status]} (${statusCounts[status]})`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+
+                        {visibleOpenings.length === 0 ? (
+                            <div className="rounded-xl border-2 border-dashed border-white/10 py-10 text-center text-gray-400">
+                                <Search size={28} className="mx-auto mb-3 text-gray-500" />
+                                <p className="font-bold">{isAr ? 'لا توجد نتائج تطابق البحث أو التصفية' : 'No courses match your search or filter'}</p>
+                                <button
+                                    type="button"
+                                    onClick={() => { setOpeningSearch(''); setStatusFilter('ALL'); }}
+                                    className="mt-3 text-sm font-bold text-brand-gold-light hover:underline"
+                                >
+                                    {isAr ? 'مسح البحث والتصفية' : 'Clear search and filters'}
+                                </button>
+                            </div>
+                        ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(openings || []).map((o) => {
+                            {visibleOpenings.map((o) => {
                                 const isEnded = o.status === 'ENDED';
                                 const closePending = pendingCloseFor(o.id);
                                 const canViewEnrollmentCount = o.access.canGrade || o.access.canManageTasks || o.access.canViewAnalytics;
@@ -307,6 +394,8 @@ export default function TeachingHubPage() {
                                 );
                             })}
                         </div>
+                        )}
+                        </>
                     )}
                 </section>
 

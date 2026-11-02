@@ -269,7 +269,10 @@ export default function CoursePlayer({ courseId }: Props) {
                 }
                 const mods = flattenModules(c.data);
                 if (mods.length > 0) {
-                    const firstIncomplete = mods.find(m => !m.completedMap) ?? mods[0];
+                    const completedIds = new Set((incoming?.modules ?? [])
+                        .filter(module => module.completed)
+                        .map(module => module.id));
+                    const firstIncomplete = mods.find(module => !completedIds.has(module.id)) ?? mods[0];
                     setSelectedId(firstIncomplete.id);
                 }
             } catch (e) {
@@ -679,7 +682,7 @@ export default function CoursePlayer({ courseId }: Props) {
         ];
         return (
             <div className="mt-6">
-                <div className="flex gap-1 border-b border-line overflow-x-auto">
+                <div className="flex flex-wrap gap-2 rounded-2xl border border-line bg-surface-raised p-2">
                     {tabs.map(tb => {
                         const Icon = tb.icon;
                         const active = deckTab === tb.key;
@@ -687,17 +690,18 @@ export default function CoursePlayer({ courseId }: Props) {
                             <button
                                 key={tb.key}
                                 onClick={() => setDeckTab(tb.key)}
-                                className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-all duration-200 whitespace-nowrap cursor-pointer relative ${
-                                    active ? 'text-accent' : 'text-ink-subtle hover:text-ink-muted'
+                                className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                                    active
+                                        ? 'border-brand-gold/30 bg-brand-navy text-white shadow-sm dark:bg-brand-navy-light'
+                                        : 'border-transparent text-ink-subtle hover:border-line hover:bg-surface hover:text-ink'
                                 }`}
                             >
                                 <Icon size={15} /> {tb.label}
-                                {active && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-brand-gold-light rounded-full" />}
                             </button>
                         );
                     })}
                 </div>
-                <div className="mt-4 min-h-[120px]">
+                <div className="mt-4 min-h-[120px] rounded-2xl border border-line bg-surface p-4 sm:p-5">
                     {deckTab === 'overview' && selected && (
                         <div className="space-y-4">
                             {pick(selected, 'description') && (
@@ -828,7 +832,7 @@ export default function CoursePlayer({ courseId }: Props) {
             {/* Header */}
             <header className="sticky top-0 z-30 bg-gradient-to-r from-brand-navy via-brand-navy-light to-brand-navy border-b border-line px-4 md:px-6 py-3 flex items-center gap-3">
                 <button
-                    onClick={() => router.push('/dashboard')}
+                    onClick={() => router.push('/dashboard/my-courses')}
                     title={t('player.back')}
                     className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-ink/[0.04] text-ink-muted hover:bg-ink/[0.08] hover:text-ink transition-all duration-200"
                 >
@@ -1430,7 +1434,7 @@ function NotesEditor({ initial, moduleId, onSave }: {
     );
 }
 
-function flattenModules(course: CourseData): (CourseModule & { completedMap?: boolean })[] {
+function flattenModules(course: CourseData): CourseModule[] {
     const chs: CourseChapter[] = course?.chapters?.length ? course.chapters : [{ id: 'root', titleAr: null, titleEn: null, modules: course?.modules || [] }];
     return chs.flatMap(c => c.modules || []);
 }
