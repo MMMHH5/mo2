@@ -45,23 +45,6 @@ export class LearningPathsController {
         return this.svc.listCoursesForManagement();
     }
 
-    @ApiOperation({ summary: 'Get learning path learner and completion report' })
-    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-    @Roles(...STAFF)
-    @RequirePermissions(PERMISSIONS.PATHS_WRITE)
-    @Get('manage/:id/report')
-    report(@Param('id') id: string) {
-        return this.svc.getPathReport(id);
-    }
-
-    @ApiOperation({ summary: 'List the current student learning paths and progress' })
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.STUDENT)
-    @Get('my')
-    myPaths(@Request() req: any) {
-        return this.svc.getStudentPaths(req.user.userId);
-    }
-
     @ApiOperation({ summary: 'List learning paths' })
     @Get()
     list() {
@@ -92,11 +75,4 @@ export class LearningPathsController {
         return this.svc.deletePath(id, req.user.userId, req.user.role);
     }
 
-    @ApiOperation({ summary: 'Enroll in a learning path' })
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.STUDENT)
-    @Post(':id/enroll')
-    enroll(@Param('id') id: string, @Request() req: any) {
-        return this.svc.enrollPath(id, req.user.userId);
-    }
 }

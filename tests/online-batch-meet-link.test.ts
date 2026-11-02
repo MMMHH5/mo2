@@ -1,5 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { BadRequestException } from '@nestjs/common';
 import { normalizeMeetLink } from '../src/common/meeting-links';
 import { CoursesService } from '../src/courses/courses.service';
 import { EnrollmentsService } from '../src/enrollments/enrollments.service';
@@ -79,6 +80,44 @@ describe('CoursesService opening delivery mode', () => {
     }
 
     const staff = { actorId: 'admin-1', actorRole: 'ADMIN' as any };
+
+    test('requires a published learning path before publishing course registration', async () => {
+        const prisma = {
+            courseOpening: {
+                findUnique: () => Promise.resolve({
+                    id: 'o1',
+                    courseId: 'c1',
+                    instructorId: 'i1',
+                    status: 'DRAFT',
+                    course: { id: 'c1', titleAr: 'دورة', titleEn: 'Course' },
+                }),
+            },
+            learningPathCourse: { findFirst: () => Promise.resolve(null) },
+        };
+        const svc = service(prisma);
+
+        await assert.rejects(
+            () => svc.startAnnouncement('o1', staff.actorId, staff.actorRole, {}),
+            BadRequestException,
+        );
+    });
+
+    test('only lists courses assigned to a published learning path publicly', async () => {
+        let query: any;
+        const prisma = {
+            course: {
+                findMany: (args: any) => {
+                    query = args;
+                    return Promise.resolve([]);
+                },
+            },
+        };
+        await service(prisma).findAll();
+
+        assert.deepEqual(query.where, {
+            learningPathCourses: { some: { path: { isPublished: true } } },
+        });
+    });
 
     test('createOpening stores an online batch and its link', async () => {
         let created: any;
@@ -195,17 +234,18 @@ describe('the classroom link never reaches a public route', () => {
      * the test asserts the redaction rather than the mock's completeness.
      */
     function coursePagePrisma(viewer: { enrolled: boolean }) {
+        const course = {
+            id: 'c1', instructorId: 'i1', titleAr: 'د', titleEn: 'c',
+            descriptionAr: null, descriptionEn: null, price: 100, currency: 'SAR',
+            openings: [opening()], modules: [], chapters: [], objectives: [],
+            prerequisites: [], audiences: [], faqs: [], gallery: [],
+            instructor: { id: 'i1', email: 'i@x.test', role: 'INSTRUCTOR', metadata: null },
+            _count: { enrollments: viewer.enrolled ? 1 : 0, modules: 0 },
+        };
         return {
             course: {
-                findUnique: () => Promise.resolve({
-                    id: 'c1', instructorId: 'i1', titleAr: 'د', titleEn: 'c',
-                    descriptionAr: null, descriptionEn: null, price: 100, currency: 'SAR',
-                    openings: [opening()], modules: [], chapters: [], objectives: [],
-                    prerequisites: [], audiences: [], faqs: [], gallery: [],
-                    instructor: { id: 'i1', email: 'i@x.test', role: 'INSTRUCTOR', metadata: null },
-                    _count: { enrollments: viewer.enrolled ? 1 : 0, modules: 0 },
-                }),
-                findFirst: () => Promise.resolve(null),
+                findUnique: () => Promise.resolve(course),
+                findFirst: () => Promise.resolve(course),
             },
             enrollment: {
                 findFirst: () => Promise.resolve(viewer.enrolled ? { id: 'e1' } : null),
@@ -218,6 +258,7 @@ describe('the classroom link never reaches a public route', () => {
     test('listOpenings hides the link from an anonymous caller', async () => {
         const prisma = {
             course: { findUnique: () => Promise.resolve({ id: 'c1' }) },
+            learningPathCourse: { findFirst: () => Promise.resolve({ id: 'path-course-1' }) },
             courseOpening: { findMany: () => Promise.resolve([opening()]) },
         };
         const out = await service(prisma).listOpenings('c1');
@@ -225,6 +266,16 @@ describe('the classroom link never reaches a public route', () => {
         assert.equal(JSON.stringify(out).includes('room-1'), false);
         // The mode itself is public syllabus information and stays.
         assert.equal(out[0].deliveryMode, 'ONLINE');
+    });
+
+    test('does not expose openings for a course without a published learning path', async () => {
+        const prisma = {
+            course: { findUnique: () => Promise.resolve({ id: 'c1' }) },
+            learningPathCourse: { findFirst: () => Promise.resolve(null) },
+            courseOpening: { findMany: () => Promise.reject(new Error('must not be reached')) },
+        };
+
+        await assert.rejects(() => service(prisma).listOpenings('c1'), /Course not found/);
     });
 
     test('listOpenings still shows the link to an admin managing the batch', async () => {

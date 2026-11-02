@@ -42,7 +42,7 @@ describe('learning path course order and publishing rules', () => {
         let createdRelations: { pathId: string; courseId: string; orderIndex: number }[] = [];
         const prisma = {
             learningPath: {
-                findUnique: async () => ({ id: 'path-1', creatorId: 'staff-1', isPublished: false, _count: { courses: 0 } }),
+                findUnique: async () => ({ id: 'path-1', creatorId: 'staff-1', isPublished: false, courses: [] }),
                 update: async () => ({}),
                 findUniqueOrThrow: async () => ({ id: 'path-1' }),
             },
@@ -69,7 +69,7 @@ describe('learning path course order and publishing rules', () => {
     test('refuses to publish paths with no courses', async () => {
         const prisma = {
             learningPath: {
-                findUnique: async () => ({ id: 'path-1', creatorId: 'staff-1', isPublished: false, _count: { courses: 0 } }),
+                findUnique: async () => ({ id: 'path-1', creatorId: 'staff-1', isPublished: false, courses: [] }),
             },
             $transaction: async () => {
                 throw new Error('transaction should not run');
@@ -79,6 +79,34 @@ describe('learning path course order and publishing rules', () => {
 
         await assert.rejects(
             () => service.updatePath('path-1', { isPublished: true }, 'staff-1', Role.COURSE_MANAGER),
+            BadRequestException,
+        );
+    });
+
+    test('keeps published courses in at least one published path', async () => {
+        const prisma = {
+            learningPath: {
+                findUnique: async () => ({
+                    id: 'path-1',
+                    creatorId: 'staff-1',
+                    isPublished: true,
+                    courses: [{ courseId: 'course-1' }],
+                }),
+            },
+            courseOpening: {
+                findMany: async () => [{ courseId: 'course-1' }],
+            },
+            learningPathCourse: {
+                findMany: async () => [],
+            },
+            $transaction: async () => {
+                throw new Error('transaction should not run');
+            },
+        };
+        const service = new LearningPathsService(prisma as unknown as PrismaService, {} as AuditService);
+
+        await assert.rejects(
+            () => service.updatePath('path-1', { isPublished: false }, 'staff-1', Role.COURSE_MANAGER),
             BadRequestException,
         );
     });

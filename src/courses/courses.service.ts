@@ -349,6 +349,9 @@ export class CoursesService {
         const openingsWhere = await this.visibleOpeningsFilter(includeUnpublished, viewer);
         const sessionManagedOpeningIds = await this.sessionManagedOpeningIds(viewer);
         const courses = await this.prisma.course.findMany({
+            where: includeUnpublished ? undefined : {
+                learningPathCourses: { some: { path: { isPublished: true } } },
+            },
             orderBy: { createdAt: 'desc' },
             include: {
                 instructor: { select: publicInstructorSelect },
@@ -374,9 +377,7 @@ export class CoursesService {
     async findOne(id: string, includeUnpublished = false, viewer?: CourseViewer) {
         const openingsWhere = await this.visibleOpeningsFilter(includeUnpublished, viewer);
         const sessionManagedOpeningIds = await this.sessionManagedOpeningIds(viewer);
-        const course = await this.prisma.course.findUnique({
-            where: { id },
-            include: {
+        const courseInclude = {
                 instructor: { select: publicInstructorSelect },
                 openings: {
                     where: openingsWhere,
@@ -402,8 +403,13 @@ export class CoursesService {
                 audiences: { orderBy: { orderIndex: 'asc' } },
                 faqs: { orderBy: { orderIndex: 'asc' } },
                 gallery: { orderBy: { orderIndex: 'asc' } },
-            },
-        });
+        } satisfies Prisma.CourseInclude;
+        const course = includeUnpublished
+            ? await this.prisma.course.findUnique({ where: { id }, include: courseInclude })
+            : await this.prisma.course.findFirst({
+                where: { id, learningPathCourses: { some: { path: { isPublished: true } } } },
+                include: courseInclude,
+            });
         if (!course) throw new NotFoundException('Course not found');
         // Public route: swap the instructor row for the derived public card
         // before either the full or the redacted payload is returned.
@@ -586,9 +592,26 @@ export class CoursesService {
         return opening;
     }
 
+    private async hasPublishedPath(courseId: string) {
+        const pathCourse = await this.prisma.learningPathCourse.findFirst({
+            where: { courseId, path: { isPublished: true } },
+            select: { id: true },
+        });
+        return !!pathCourse;
+    }
+
+    private async assertCourseHasPublishedPath(courseId: string) {
+        if (!(await this.hasPublishedPath(courseId))) {
+            throw new BadRequestException('Add this course to a published learning path before publishing registration');
+        }
+    }
+
     async listOpenings(courseId: string, includeUnpublished = false, viewer?: CourseViewer) {
         const course = await this.prisma.course.findUnique({ where: { id: courseId } });
         if (!course) throw new NotFoundException('Course not found');
+        if (!includeUnpublished && !(await this.hasPublishedPath(courseId))) {
+            throw new NotFoundException('Course not found');
+        }
         const openings = await this.prisma.courseOpening.findMany({
             where: {
                 courseId,
@@ -925,6 +948,7 @@ export class CoursesService {
     ) {
         const opening = await this.requireOpening(openingId);
         this.assertCanManage(opening, actorId, actorRole);
+        await this.assertCourseHasPublishedPath(opening.courseId);
         if (opening.status !== CourseOpeningStatus.DRAFT && opening.status !== CourseOpeningStatus.ANNOUNCEMENT) {
             throw new BadRequestException('Only a draft opening can be moved to announcement');
         }
@@ -974,6 +998,7 @@ export class CoursesService {
     async openOpening(openingId: string, actorId: string, actorRole: Role) {
         const opening = await this.requireOpening(openingId);
         this.assertCanManage(opening, actorId, actorRole);
+        await this.assertCourseHasPublishedPath(opening.courseId);
         if (opening.status !== CourseOpeningStatus.DRAFT && opening.status !== CourseOpeningStatus.ANNOUNCEMENT) {
             throw new BadRequestException('Only a draft or announced opening can be opened for registration');
         }
@@ -1045,6 +1070,7 @@ export class CoursesService {
         // flips PENDING reservations to "payment due". That blast had to be
         // gated on actually managing the opening.
         this.assertCanManage(existing, actorId, actorRole);
+        if (isPublished) await this.assertCourseHasPublishedPath(existing.courseId);
         const result = await this.setStatus(openingId, isPublished ? CourseOpeningStatus.OPEN : CourseOpeningStatus.DRAFT);
         if (isPublished) {
             const wishlistUsers = await this.prisma.wishlist.findMany({

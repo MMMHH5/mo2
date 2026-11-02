@@ -122,6 +122,10 @@ export class LearningPathsService {
         const courses = await this.prisma.course.findMany({
             select: {
                 ...courseSummarySelect,
+                learningPathCourses: {
+                    where: { path: { isPublished: true } },
+                    select: { id: true },
+                },
                 openings: {
                     select: {
                         id: true,
@@ -135,8 +139,9 @@ export class LearningPathsService {
             },
             orderBy: { createdAt: 'desc' },
         });
-        return courses.map((course) => ({
+        return courses.map(({ learningPathCourses, ...course }) => ({
             ...course,
+            publishedPathCount: learningPathCourses.length,
             readiness: this.courseReadiness(course),
         }));
     }
@@ -153,7 +158,7 @@ export class LearningPathsService {
     async updatePath(pathId: string, dto: UpdateLearningPathDto, userId: string, userRole: Role) {
         const path = await this.prisma.learningPath.findUnique({
             where: { id: pathId },
-            include: { _count: { select: { courses: true } } },
+            include: { courses: { select: { courseId: true } } },
         });
         if (!path) throw new NotFoundException('Learning path not found');
         if (userRole !== Role.ADMIN && userRole !== Role.COURSE_MANAGER && path.creatorId !== userId) throw new ForbiddenException('Not allowed');
@@ -166,10 +171,17 @@ export class LearningPathsService {
         const courseIds = dto.courseIds;
         if (courseIds !== undefined) await this.assertCoursesExist(courseIds);
         const publishing = dto.isPublished ?? path.isPublished;
-        const resultingCourseCount = courseIds?.length ?? path._count.courses;
+        const existingCourseIds = path.courses.map(({ courseId }) => courseId);
+        const resultingCourseCount = courseIds?.length ?? existingCourseIds.length;
         if (publishing && resultingCourseCount === 0) {
             throw new BadRequestException('A learning path needs at least one course before publishing');
         }
+        const removedCourseIds = path.isPublished
+            ? publishing
+                ? existingCourseIds.filter((courseId) => courseIds !== undefined && !courseIds.includes(courseId))
+                : existingCourseIds
+            : [];
+        await this.assertCoursesKeepPublishedPath(removedCourseIds, pathId);
 
         return this.prisma.$transaction(async (tx) => {
             await tx.learningPath.update({
@@ -199,11 +211,45 @@ export class LearningPathsService {
     }
 
     async deletePath(pathId: string, userId: string, userRole: Role) {
-        const path = await this.prisma.learningPath.findUnique({ where: { id: pathId } });
+        const path = await this.prisma.learningPath.findUnique({
+            where: { id: pathId },
+            include: { courses: { select: { courseId: true } } },
+        });
         if (!path) throw new NotFoundException('Learning path not found');
         if (userRole !== Role.ADMIN && userRole !== Role.COURSE_MANAGER && path.creatorId !== userId) throw new ForbiddenException('Not allowed');
+        if (path.isPublished) {
+            await this.assertCoursesKeepPublishedPath(path.courses.map(({ courseId }) => courseId), pathId);
+        }
         await this.prisma.learningPath.delete({ where: { id: pathId } });
         return { ok: true };
+    }
+
+    private async assertCoursesKeepPublishedPath(courseIds: string[], excludedPathId: string) {
+        const uniqueCourseIds = [...new Set(courseIds)];
+        if (uniqueCourseIds.length === 0) return;
+
+        const liveCourses = await this.prisma.courseOpening.findMany({
+            where: { courseId: { in: uniqueCourseIds }, isPublished: true },
+            select: { courseId: true },
+            distinct: ['courseId'],
+        });
+        const liveCourseIds = liveCourses.map(({ courseId }) => courseId);
+        if (liveCourseIds.length === 0) return;
+
+        const remainingMemberships = await this.prisma.learningPathCourse.findMany({
+            where: {
+                courseId: { in: liveCourseIds },
+                pathId: { not: excludedPathId },
+                path: { isPublished: true },
+            },
+            select: { courseId: true },
+            distinct: ['courseId'],
+        });
+        const stillAssigned = new Set(remainingMemberships.map(({ courseId }) => courseId));
+        const orphanedCourses = liveCourseIds.filter((courseId) => !stillAssigned.has(courseId));
+        if (orphanedCourses.length > 0) {
+            throw new BadRequestException('A published course must remain in at least one published learning path');
+        }
     }
 
     async enrollPath(pathId: string, userId: string) {

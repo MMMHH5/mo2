@@ -9,8 +9,8 @@ import { useTheme } from '@/lib/theme-context';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import {
-    ArrowDown, ArrowUp, BarChart3, BookOpen, ChevronDown, GraduationCap, ImagePlus, Layers, Loader, Lock, Pencil,
-    Plus, Route, Search, Trash2, X, Zap,
+    ArrowDown, ArrowUp, ArrowUpRight, BookOpen, ChevronDown, GraduationCap, ImagePlus, Layers, Loader, Lock, Pencil,
+    Plus, Route, Search, Trash2, X,
 } from 'lucide-react';
 
 interface CourseReadiness {
@@ -28,6 +28,7 @@ interface CourseOption {
     level?: string | null;
     isPublished?: boolean;
     readiness?: CourseReadiness;
+    publishedPathCount?: number;
 }
 
 interface PathCourseItem {
@@ -43,35 +44,6 @@ interface PathCourseItem {
     isCompleted?: boolean;
 }
 
-interface StudentPathEnrollment {
-    id: string;
-    path: { id: string };
-    totalCourses: number;
-    completedCourses: number;
-    totalLessons: number;
-    completedLessons: number;
-    progressPercent: number;
-    isCompleted: boolean;
-    pathEnrollment?: { id: string };
-    courses: PathCourseItem[];
-}
-
-interface LearningPathReport {
-    path: { id: string; titleAr: string; titleEn: string; isPublished: boolean };
-    learners: number;
-    activeStudents: number;
-    completedStudents: number;
-    completionRate: number;
-    courses: {
-        id: string;
-        titleAr: string;
-        titleEn: string;
-        enrolledStudents: number;
-        totalLessons: number;
-        readiness: CourseReadiness;
-    }[];
-}
-
 interface LearningPathData {
     id: string;
     titleAr: string;
@@ -83,7 +55,6 @@ interface LearningPathData {
     createdAt: string;
     creator?: { id: string; email?: string } | null;
     courses?: PathCourseItem[];
-    _count?: { enrollments?: number };
 }
 
 interface PathForm {
@@ -132,14 +103,11 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
     const manage = mode === 'manage' && canManage;
 
     const { data, loading, error, refetch } = useFetchData<LearningPathData[]>(manage ? '/learning-paths/manage' : '/learning-paths');
-    const { data: studentPathsData, loading: studentPathsLoading, error: studentPathsError, refetch: refetchStudentPaths } =
-        useFetchData<StudentPathEnrollment[]>(!manage && user?.role === 'STUDENT' ? '/learning-paths/my' : null);
     const { data: courseData, loading: coursesLoading, error: coursesError } = useFetchData<CourseOption[]>(
         manage ? '/learning-paths/manage/courses' : null,
     );
 
     const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [enrollingId, setEnrollingId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<LearningPathData | null>(null);
@@ -148,21 +116,17 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
     const [coverFilePreview, setCoverFilePreview] = useState('');
     const [saving, setSaving] = useState(false);
     const [courseQuery, setCourseQuery] = useState('');
-    const [reportId, setReportId] = useState<string | null>(null);
-    const [report, setReport] = useState<LearningPathReport | null>(null);
-    const [reportLoading, setReportLoading] = useState(false);
-    const [reportError, setReportError] = useState<string | null>(null);
     const coverPreviewUrlRef = useRef<string | null>(null);
 
     const paths = useMemo(() => {
         const list = data || [];
         return manage ? list : list.filter((p) => p.isPublished !== false);
     }, [data, manage]);
-    const studentPaths = useMemo(
-        () => new Map((studentPathsData || []).map((item) => [item.path.id, item])),
-        [studentPathsData],
-    );
     const visiblePaths = useMemo(() => (limit ? paths.slice(0, limit) : paths), [limit, paths]);
+    const coursesWithoutPublishedPath = useMemo(
+        () => (courseData || []).filter((course) => !course.publishedPathCount),
+        [courseData],
+    );
 
     useEffect(() => () => {
         if (coverPreviewUrlRef.current) URL.revokeObjectURL(coverPreviewUrlRef.current);
@@ -271,43 +235,6 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
         }
     };
 
-    const enroll = async (p: LearningPathData) => {
-        setEnrollingId(p.id);
-        try {
-            const response = await api.post(`/learning-paths/${p.id}/enroll`);
-            const openCount = response.data.courses.filter((course: { registrationStatus: string }) => course.registrationStatus === 'open').length;
-            const reservationCount = response.data.courses.filter((course: { registrationStatus: string }) => course.registrationStatus === 'reservation').length;
-            toast.success(
-                (isAr ? 'تمت إضافتك إلى المسار. الدورات المتاحة للتسجيل الآن: ' : 'You joined the path. Courses open for registration: ')
-                + openCount
-                + (reservationCount > 0
-                    ? (isAr ? `، ومقاعد متاحة للحجز المسبق: ${reservationCount}.` : `; ${reservationCount} available for early reservation.`)
-                    : '.')
-                + (isAr ? ' أكمل التسجيل لكل دورة من صفحتها.' : ' Complete enrollment for each course from its course page.'),
-            );
-            await refetchStudentPaths();
-        } catch (err) {
-            toast.error(getErrorMessage(err) || t('common.error'));
-        } finally {
-            setEnrollingId(null);
-        }
-    };
-
-    const openReport = async (pathId: string) => {
-        setReportId(pathId);
-        setReport(null);
-        setReportError(null);
-        setReportLoading(true);
-        try {
-            const response = await api.get<LearningPathReport>(`/learning-paths/manage/${pathId}/report`);
-            setReport(response.data);
-        } catch (err) {
-            setReportError(getErrorMessage(err) || t('common.error'));
-        } finally {
-            setReportLoading(false);
-        }
-    };
-
     const remove = async (p: LearningPathData) => {
         if (!confirm(isAr ? `هل أنت متأكد من حذف مسار "${pick(p, 'title')}"؟` : `Delete the path "${pick(p, 'title')}"?`)) return;
         setDeletingId(p.id);
@@ -391,10 +318,18 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                 </div>
             </div>
 
-            {!manage && studentPathsError && (
-                <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs font-bold text-red-300">
-                    {studentPathsError}
-                </p>
+            {manage && coursesWithoutPublishedPath.length > 0 && (
+                <div role="status" className="rounded-xl border border-brand-gold/20 bg-brand-gold/5 px-4 py-3">
+                    <p className="text-sm font-bold text-brand-gold-light">
+                        {isAr
+                            ? `${coursesWithoutPublishedPath.length} دورة غير مرتبطة بمسار منشور. أضفها إلى مسار وانشره قبل فتح التسجيل.`
+                            : `${coursesWithoutPublishedPath.length} course(s) are not in a published path. Add them to a path and publish it before opening registration.`}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                        {coursesWithoutPublishedPath.slice(0, 5).map((course) => pick(course, 'title')).join(isAr ? '، ' : ', ')}
+                        {coursesWithoutPublishedPath.length > 5 ? (isAr ? '، والمزيد' : ', and more') : ''}
+                    </p>
+                </div>
             )}
 
             {loading ? (
@@ -431,7 +366,6 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                     {visiblePaths.map((p, idx) => {
                         const courses = [...(p.courses || [])].sort((a, b) => a.orderIndex - b.orderIndex);
                         const expanded = expandedId === p.id;
-                        const studentPath = studentPaths.get(p.id);
                         const pathReadiness = courses.length > 0
                             ? Math.round(courses.reduce((total, item) => total + (item.readiness?.percent ?? 0), 0) / courses.length)
                             : 0;
@@ -464,11 +398,6 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                                 {p.isPublished ? (isAr ? 'منشور' : 'Published') : (isAr ? 'مسودة' : 'Draft')}
                                             </span>
                                         )}
-                                        {manage && (
-                                            <span className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-bold text-white">
-                                                {p._count?.enrollments ?? 0} {isAr ? 'متعلم' : 'learners'}
-                                            </span>
-                                        )}
                                     </div>
                                 </div>
 
@@ -489,25 +418,12 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                             <div className="h-full rounded-full bg-brand-gold" style={{ width: `${pathReadiness}%` }} />
                                         </div>
                                     )}
-                                    {studentPath && (
-                                        <div className="mt-3 space-y-1.5">
-                                            <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-gray-300">
-                                                <span>{isAr ? 'تقدمك في المسار' : 'Your path progress'}</span>
-                                                <span>{studentPath.completedCourses}/{studentPath.totalCourses} {isAr ? 'دورات' : 'courses'} · {studentPath.progressPercent}%</span>
-                                            </div>
-                                            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                                                <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${studentPath.progressPercent}%` }} />
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {expanded && (
                                         <div className="mt-4 space-y-2 animate-fade-in">
                                             {courses.length === 0 ? (
                                                 <p className="text-[11px] text-gray-500 font-bold">{isAr ? 'لا توجد دورات في هذا المسار بعد' : 'No courses in this path yet'}</p>
                                             ) : (
                                                 courses.map((pc, i) => {
-                                                    const studentCourse = studentPath?.courses.find((item) => item.course?.id === pc.course?.id);
                                                     const readiness = pc.readiness;
                                                     return (
                                                         <div key={pc.id} className="space-y-2 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5">
@@ -516,7 +432,7 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                                                     {i + 1}
                                                                 </span>
                                                                 <div className="min-w-0 flex-1">
-                                                                    {studentPath && pc.course?.id ? (
+                                                                    {pc.course?.id ? (
                                                                         <Link href={`/courses/${pc.course.id}`} className="block truncate text-xs font-bold text-gray-200 hover:text-brand-gold-light">
                                                                             {pick(pc.course, 'title') || (isAr ? 'دورة' : 'Course')}
                                                                         </Link>
@@ -530,14 +446,6 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                                                             {isAr ? 'جاهزية الدورة' : 'Course readiness'}: {readiness.percent}%
                                                                         </span>
                                                                     )}
-                                                                    {studentPath && studentCourse && (
-                                                                        <span className="text-[10px] font-bold text-gray-400">
-                                                                            {t(`learningPaths.status_${studentCourse.registrationStatus || 'not_enrolled'}`)}
-                                                                            {studentCourse.enrollmentStatus === 'APPROVED' && studentCourse.totalLessons
-                                                                                ? ` · ${studentCourse.completedLessons}/${studentCourse.totalLessons}`
-                                                                                : ''}
-                                                                        </span>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                             {manage && readiness?.missing.length ? (
@@ -546,12 +454,14 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                                                     {readiness.missing.map((key) => t(`learningPaths.check_${key}`)).join(isAr ? '، ' : ', ')}
                                                                 </p>
                                                             ) : null}
-                                                            {studentPath && studentCourse && (
-                                                                <div className="ps-8">
-                                                                    <div className="h-1 overflow-hidden rounded-full bg-white/10">
-                                                                        <div className="h-full rounded-full bg-emerald-400" style={{ width: `${studentCourse.progressPercent ?? 0}%` }} />
-                                                                    </div>
-                                                                </div>
+                                                            {!manage && pc.course?.id && (
+                                                                <Link
+                                                                    href={`/courses/${pc.course.id}`}
+                                                                    className="ms-8 inline-flex items-center gap-1.5 text-[11px] font-black text-brand-gold-light transition hover:text-brand-gold"
+                                                                >
+                                                                    {isAr ? 'عرض الدورة والتسجيل' : 'View course and enroll'}
+                                                                    <ArrowUpRight size={13} className="rtl:rotate-[-90deg]" />
+                                                                </Link>
                                                             )}
                                                         </div>
                                                     );
@@ -568,27 +478,8 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                             {isAr ? 'الدورات' : 'Courses'}
                                             <ChevronDown size={13} className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
                                         </button>
-                                        {!manage && (
-                                            <button
-                                                onClick={() => enroll(p)}
-                                                disabled={enrollingId === p.id || !!studentPath || studentPathsLoading}
-                                                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-brand-navy-dark transition hover:bg-brand-gold-light disabled:opacity-50"
-                                            >
-                                                {enrollingId === p.id ? <Loader size={13} className="animate-spin" /> : <Zap size={13} />}
-                                                {studentPath
-                                                    ? (isAr ? 'مسجل في المسار' : 'Joined')
-                                                    : (isAr ? 'التسجيل في المسار' : 'Join path')}
-                                            </button>
-                                        )}
                                         {manage && (
                                             <>
-                                                <button
-                                                    onClick={() => openReport(p.id)}
-                                                    className="p-2 rounded-xl bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors"
-                                                    title={isAr ? 'تقرير المسار' : 'Path report'}
-                                                >
-                                                    <BarChart3 size={14} />
-                                                </button>
                                                 <button
                                                     onClick={() => openEdit(p)}
                                                     className="p-2 rounded-xl bg-brand-gold/10 text-brand-gold-light hover:bg-brand-gold/20 transition-colors"
@@ -879,67 +770,6 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-            {reportId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setReportId(null)}>
-                    <section
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="learning-path-report-title"
-                        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-brand-navy p-6 shadow-2xl"
-                        onClick={(event) => event.stopPropagation()}
-                    >
-                        <header className="mb-5 flex items-center justify-between gap-3 border-b border-white/5 pb-4">
-                            <h3 id="learning-path-report-title" className="text-lg font-black text-white">
-                                {isAr ? 'تقرير المسار' : 'Learning path report'}
-                            </h3>
-                            <button onClick={() => setReportId(null)} aria-label={isAr ? 'إغلاق' : 'Close'} className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white">
-                                <X size={18} />
-                            </button>
-                        </header>
-                        {reportLoading ? (
-                            <div className="flex justify-center py-12"><Loader size={24} className="animate-spin text-brand-gold-light" /></div>
-                        ) : reportError ? (
-                            <p role="alert" className="rounded-xl bg-red-500/10 p-4 text-sm text-red-300">{reportError}</p>
-                        ) : report ? (
-                            <div className="space-y-5">
-                                <h4 className="font-black text-white">{pick(report.path, 'title')}</h4>
-                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                    {[
-                                        { label: isAr ? 'إجمالي المسجلين' : 'Learners', value: report.learners },
-                                        { label: isAr ? 'يتعلمون حاليًا' : 'Active', value: report.activeStudents },
-                                        { label: isAr ? 'أكملوا المسار' : 'Completed', value: report.completedStudents },
-                                        { label: isAr ? 'نسبة الإكمال' : 'Completion rate', value: `${report.completionRate}%` },
-                                    ].map((stat) => (
-                                        <div key={stat.label} className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
-                                            <p className="text-[10px] font-bold text-gray-500">{stat.label}</p>
-                                            <p className="mt-1 text-xl font-black text-brand-gold-light">{stat.value}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="space-y-2">
-                                    <h5 className="text-sm font-black text-white">{isAr ? 'تفاصيل الدورات والجاهزية' : 'Courses and readiness'}</h5>
-                                    {report.courses.map((course) => (
-                                        <article key={course.id} className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <p className="truncate text-xs font-bold text-gray-200">{pick(course, 'title')}</p>
-                                                <span className="shrink-0 text-[10px] font-bold text-gray-400">
-                                                    {course.enrolledStudents} {isAr ? 'تسجيل' : 'enrollments'} · {course.readiness.percent}%
-                                                </span>
-                                            </div>
-                                            {course.readiness.missing.length > 0 && (
-                                                <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
-                                                    {isAr ? 'ناقص: ' : 'Missing: '}
-                                                    {course.readiness.missing.map((key) => t(`learningPaths.check_${key}`)).join(isAr ? '، ' : ', ')}
-                                                </p>
-                                            )}
-                                        </article>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : null}
-                    </section>
                 </div>
             )}
         </div>
