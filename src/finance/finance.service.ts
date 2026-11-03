@@ -1,7 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { Prisma, CouponMaxScope } from '@prisma/client';
+import {
+    FinanceExpenseCategory,
+    FinanceExpenseStatus,
+    FinanceExpenseType,
+    Prisma,
+    CouponMaxScope,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { CreateFinanceExpenseDto } from './dto/accounting.dto';
+import { calculateCourseProfit, calculateInstructorEntitlement } from './accounting.math';
 
 export interface CreateCouponInput {
     name: string;
@@ -66,6 +74,330 @@ export class FinanceService {
             totalRevenue: Number(revenueSum._sum.amount || 0),
             statusCounts: statusMap,
         };
+    }
+
+    async getAccountingReport() {
+        const [openings, expenses] = await Promise.all([
+            this.prisma.courseOpening.findMany({
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    nameAr: true,
+                    nameEn: true,
+                    currency: true,
+                    instructorId: true,
+                    instructorSharePercent: true,
+                    course: { select: { titleAr: true, titleEn: true } },
+                    instructor: { select: { id: true, email: true } },
+                    payments: {
+                        where: { status: { in: ['PAID', 'REFUNDED'] } },
+                        select: { amount: true, currency: true, status: true },
+                    },
+                },
+            }),
+            this.prisma.financeExpense.findMany({
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    opening: {
+                        select: {
+                            nameAr: true,
+                            nameEn: true,
+                            course: { select: { titleAr: true, titleEn: true } },
+                        },
+                    },
+                    instructor: { select: { id: true, email: true } },
+                    createdBy: { select: { id: true, email: true } },
+                    approvedBy: { select: { id: true, email: true } },
+                    paidBy: { select: { id: true, email: true } },
+                },
+            }),
+        ]);
+
+        const byCurrency = new Map<string, {
+            currency: string;
+            collected: number;
+            refunded: number;
+            operatingExpenses: number;
+            instructorAccrued: number;
+            instructorPaid: number;
+            unconfiguredInstructorRevenue: number;
+        }>();
+        const currencyTotals = (currency: string) => {
+            let totals = byCurrency.get(currency);
+            if (!totals) {
+                totals = {
+                    currency,
+                    collected: 0,
+                    refunded: 0,
+                    operatingExpenses: 0,
+                    instructorAccrued: 0,
+                    instructorPaid: 0,
+                    unconfiguredInstructorRevenue: 0,
+                };
+                byCurrency.set(currency, totals);
+            }
+            return totals;
+        };
+        const expensesByOpening = new Map<string, typeof expenses>();
+        for (const expense of expenses) {
+            if (!expense.openingId) continue;
+            const openingExpenses = expensesByOpening.get(expense.openingId) || [];
+            openingExpenses.push(expense);
+            expensesByOpening.set(expense.openingId, openingExpenses);
+        }
+
+        const openingRows = openings.flatMap((opening) => {
+            const sharePercent = opening.instructorSharePercent === null
+                ? null
+                : Number(opening.instructorSharePercent);
+            const openingExpenses = expensesByOpening.get(opening.id) || [];
+            const currencies = new Set([
+                opening.currency,
+                ...opening.payments.map((payment) => payment.currency),
+                ...openingExpenses.map((expense) => expense.currency),
+            ]);
+            if (currencies.size === 0) currencies.add(opening.currency);
+
+            return Array.from(currencies).map((currency) => {
+                let collected = 0;
+                let refunded = 0;
+                for (const payment of opening.payments) {
+                    if (payment.currency !== currency) continue;
+                    if (payment.status === 'PAID') collected += Number(payment.amount);
+                    else refunded += Number(payment.amount);
+                }
+                const instructorAccrued = sharePercent === null
+                    ? 0
+                    : calculateInstructorEntitlement(collected, sharePercent);
+                const totals = currencyTotals(currency);
+                totals.collected += collected;
+                totals.refunded += refunded;
+                totals.instructorAccrued += instructorAccrued;
+                if (sharePercent === null) totals.unconfiguredInstructorRevenue += collected;
+
+                const currencyExpenses = openingExpenses.filter((expense) => expense.currency === currency);
+                const operatingExpenses = currencyExpenses
+                    .filter((expense) => expense.type === FinanceExpenseType.OPERATING && expense.status === FinanceExpenseStatus.PAID)
+                    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+                const instructorPaid = currencyExpenses
+                    .filter((expense) => expense.type === FinanceExpenseType.INSTRUCTOR_PAYOUT && expense.status === FinanceExpenseStatus.PAID)
+                    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+                const instructorPayoutsPending = currencyExpenses
+                    .filter((expense) => expense.type === FinanceExpenseType.INSTRUCTOR_PAYOUT && expense.status === FinanceExpenseStatus.APPROVED)
+                    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+                const instructorPayoutsReserved = currencyExpenses
+                    .filter((expense) => expense.type === FinanceExpenseType.INSTRUCTOR_PAYOUT && expense.status !== FinanceExpenseStatus.REJECTED)
+                    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+
+                return {
+                    id: opening.id,
+                    courseName: opening.course.titleAr || opening.course.titleEn,
+                    openingName: opening.nameAr || opening.nameEn,
+                    currency,
+                    instructor: opening.instructor,
+                    sharePercent,
+                    collected,
+                    refunded,
+                    instructorAccrued,
+                    instructorPaid,
+                    instructorPayoutsPending,
+                    instructorPayoutsReserved,
+                    instructorRemaining: Math.max(0, instructorAccrued - instructorPaid),
+                    instructorOverpaid: Math.max(0, instructorPaid - instructorAccrued),
+                    operatingExpenses,
+                    profit: calculateCourseProfit(collected, instructorAccrued, operatingExpenses),
+                    hasUnsettledShare: sharePercent === null && collected > 0,
+                };
+            });
+        });
+
+        for (const expense of expenses) {
+            if (expense.status !== FinanceExpenseStatus.PAID) continue;
+            const totals = currencyTotals(expense.currency);
+            if (expense.type === FinanceExpenseType.OPERATING) {
+                totals.operatingExpenses += Number(expense.amount);
+            } else {
+                totals.instructorPaid += Number(expense.amount);
+            }
+        }
+
+        const summary = Array.from(byCurrency.values()).map((totals) => ({
+            ...totals,
+            profit: calculateCourseProfit(totals.collected, totals.instructorAccrued, totals.operatingExpenses),
+            cashAfterPaidExpenses: totals.collected - totals.operatingExpenses - totals.instructorPaid,
+        }));
+
+        return { summary, openings: openingRows, expenses };
+    }
+
+    async setInstructorShare(openingId: string, sharePercent: number | null, actorId: string) {
+        if (sharePercent !== null && (!Number.isFinite(sharePercent) || sharePercent < 0 || sharePercent > 100)) {
+            throw new BadRequestException('Instructor share must be between 0 and 100');
+        }
+        const { updated, courseName } = await this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw`SELECT "id" FROM "CourseOpening" WHERE "id" = ${openingId} FOR UPDATE`;
+            const opening = await tx.courseOpening.findUnique({
+                where: { id: openingId },
+                select: { id: true, course: { select: { titleAr: true, titleEn: true } } },
+            });
+            if (!opening) throw new NotFoundException('Course opening not found');
+            const payoutsByCurrency = await tx.financeExpense.groupBy({
+                by: ['currency'],
+                where: {
+                    openingId,
+                    type: FinanceExpenseType.INSTRUCTOR_PAYOUT,
+                    status: { not: FinanceExpenseStatus.REJECTED },
+                },
+                _sum: { amount: true },
+            });
+            if (sharePercent === null && payoutsByCurrency.length > 0) {
+                throw new ConflictException('Cannot unset the instructor share while payouts are recorded');
+            }
+            if (sharePercent !== null) {
+                const paymentsByCurrency = await tx.payment.groupBy({
+                    by: ['currency'],
+                    where: { openingId, status: 'PAID' },
+                    _sum: { amount: true },
+                });
+                for (const payout of payoutsByCurrency) {
+                    const paidRevenue = paymentsByCurrency.find((payment) => payment.currency === payout.currency)?._sum.amount || 0;
+                    const earned = calculateInstructorEntitlement(Number(paidRevenue), sharePercent);
+                    if (Number(payout._sum.amount || 0) > earned + 0.001) {
+                        throw new ConflictException('The new share would be lower than instructor payouts already recorded');
+                    }
+                }
+            }
+            return {
+                updated: await tx.courseOpening.update({
+                    where: { id: openingId },
+                    data: { instructorSharePercent: sharePercent },
+                }),
+                courseName: opening.course.titleAr || opening.course.titleEn,
+            };
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        await this.audit.logAction(
+            `Set instructor share for ${courseName}: ${sharePercent === null ? 'unconfigured' : `${sharePercent}%`}`,
+            undefined,
+            actorId,
+        );
+        return updated;
+    }
+
+    async createFinanceExpense(dto: CreateFinanceExpenseDto, actorId: string) {
+        const isPayout = dto.type === FinanceExpenseType.INSTRUCTOR_PAYOUT;
+        if (isPayout && (!dto.openingId || !dto.instructorId)) {
+            throw new BadRequestException('Instructor payouts require a course opening and instructor');
+        }
+        if (!isPayout && dto.instructorId) {
+            throw new BadRequestException('An instructor can only be set for an instructor payout');
+        }
+        if (!isPayout && dto.openingId) {
+            const openingExists = await this.prisma.courseOpening.count({ where: { id: dto.openingId } });
+            if (!openingExists) throw new NotFoundException('Course opening not found');
+        }
+
+        if (isPayout) {
+            const created = await this.prisma.$transaction(async (tx) => {
+                await tx.$queryRaw`SELECT "id" FROM "CourseOpening" WHERE "id" = ${dto.openingId} FOR UPDATE`;
+                const opening = await tx.courseOpening.findUnique({
+                    where: { id: dto.openingId! },
+                    select: { id: true, currency: true, instructorId: true, instructorSharePercent: true },
+                });
+                if (!opening) throw new NotFoundException('Course opening not found');
+                if (opening.instructorId !== dto.instructorId) throw new BadRequestException('Instructor does not teach this course opening');
+                if (opening.instructorSharePercent === null) throw new BadRequestException('Set the instructor share before recording a payout');
+
+                const [payments, payouts] = await Promise.all([
+                    tx.payment.aggregate({ where: { openingId: opening.id, status: 'PAID', currency: dto.currency }, _sum: { amount: true } }),
+                    tx.financeExpense.aggregate({
+                        where: {
+                            openingId: opening.id,
+                            currency: dto.currency,
+                            type: FinanceExpenseType.INSTRUCTOR_PAYOUT,
+                            status: { not: FinanceExpenseStatus.REJECTED },
+                        },
+                        _sum: { amount: true },
+                    }),
+                ]);
+                const earned = calculateInstructorEntitlement(Number(payments._sum.amount || 0), Number(opening.instructorSharePercent));
+                const reserved = Number(payouts._sum.amount || 0);
+                if (Number(dto.amount) > earned - reserved + 0.001) {
+                    throw new BadRequestException(`Payout exceeds the remaining instructor entitlement (${Math.max(0, earned - reserved).toFixed(2)} ${opening.currency})`);
+                }
+
+                return tx.financeExpense.create({
+                    data: {
+                        type: FinanceExpenseType.INSTRUCTOR_PAYOUT,
+                        category: FinanceExpenseCategory.SALARIES,
+                        title: dto.title.trim(),
+                        vendor: dto.vendor?.trim() || null,
+                        notes: dto.notes?.trim() || null,
+                        amount: new Prisma.Decimal(dto.amount),
+                        currency: dto.currency,
+                        openingId: opening.id,
+                        instructorId: opening.instructorId,
+                        createdById: actorId,
+                    },
+                });
+            }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+            await this.audit.logAction(`Created instructor payout draft ${created.id}`, undefined, actorId);
+            return created;
+        }
+
+        const created = await this.prisma.financeExpense.create({
+            data: {
+                type: FinanceExpenseType.OPERATING,
+                category: dto.category || FinanceExpenseCategory.OTHER,
+                title: dto.title.trim(),
+                vendor: dto.vendor?.trim() || null,
+                notes: dto.notes?.trim() || null,
+                amount: new Prisma.Decimal(dto.amount),
+                currency: dto.currency,
+                openingId: dto.openingId || null,
+                createdById: actorId,
+            },
+        });
+        await this.audit.logAction(`Created operating expense draft ${created.id}`, undefined, actorId);
+        return created;
+    }
+
+    async transitionFinanceExpense(id: string, action: 'approve' | 'reject' | 'pay', actorId: string, paymentReference?: string) {
+        const expense = await this.prisma.financeExpense.findUnique({ where: { id } });
+        if (!expense) throw new NotFoundException('Expense not found');
+
+        const updateStatus = async (
+            expectedStatus: FinanceExpenseStatus,
+            data: Prisma.FinanceExpenseUncheckedUpdateManyInput,
+        ) => {
+            const result = await this.prisma.financeExpense.updateMany({
+                where: { id, status: expectedStatus },
+                data,
+            });
+            if (result.count !== 1) throw new ConflictException('Expense status changed; reload and try again');
+            return this.prisma.financeExpense.findUniqueOrThrow({ where: { id } });
+        };
+        let updated;
+        if (action === 'approve') {
+            if (expense.status !== FinanceExpenseStatus.DRAFT) throw new ConflictException('Only draft expenses can be approved');
+            updated = await updateStatus(FinanceExpenseStatus.DRAFT, {
+                status: FinanceExpenseStatus.APPROVED,
+                approvedById: actorId,
+            });
+        } else if (action === 'reject') {
+            if (expense.status !== FinanceExpenseStatus.DRAFT) throw new ConflictException('Only draft expenses can be rejected');
+            updated = await updateStatus(FinanceExpenseStatus.DRAFT, { status: FinanceExpenseStatus.REJECTED });
+        } else {
+            if (expense.status !== FinanceExpenseStatus.APPROVED) throw new ConflictException('Only approved expenses can be marked paid');
+            if (!paymentReference?.trim()) throw new BadRequestException('Payment reference is required');
+            updated = await updateStatus(FinanceExpenseStatus.APPROVED, {
+                status: FinanceExpenseStatus.PAID,
+                paymentReference: paymentReference.trim(),
+                paidAt: new Date(),
+                paidById: actorId,
+            });
+        }
+        await this.audit.logAction(`${action} finance expense ${id}`, undefined, actorId);
+        return updated;
     }
 
     // ------------------------------------------------------------------

@@ -262,6 +262,7 @@ export default function AdminFinancePage() {
                 subtitle={t('admin.finance_subtitle')}
                 actions={
                     <div className="flex flex-wrap gap-2">
+                        <BtnPrimary icon={Wallet} href="/dashboard/admin/finance/accounting">{locale === 'ar' ? 'الحسابات والربحية' : 'Accounting'}</BtnPrimary>
                         <BtnPrimary icon={Tag} href="/dashboard/admin/finance/coupons">{t('finance.coupons.title')}</BtnPrimary>
                         <BtnSoft icon={RefreshCw} onClick={refetch}>{t('admin.refresh')}</BtnSoft>
                     </div>

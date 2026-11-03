@@ -114,6 +114,28 @@ enum RefundMethod {
   BANK
 }
 
+enum FinanceExpenseStatus {
+  DRAFT
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum FinanceExpenseType {
+  OPERATING
+  INSTRUCTOR_PAYOUT
+}
+
+enum FinanceExpenseCategory {
+  MARKETING
+  PLATFORM
+  SALARIES
+  MATERIALS
+  TRAVEL
+  OFFICE
+  OTHER
+}
+
 enum QuizQuestionType {
   SINGLE_CHOICE
   MULTIPLE_CHOICE
@@ -212,6 +234,10 @@ model User {
   reviewedRefundRequests    RefundRequest[]            @relation("RefundReviewedBy")
   completedRefundRequests   RefundRequest[]            @relation("RefundCompletedBy")
   attendanceMarked          SessionAttendance[]        @relation("AttendanceMarkedBy")
+  financeExpensesCreated    FinanceExpense[]           @relation("FinanceExpenseCreatedBy")
+  financeExpensesApproved   FinanceExpense[]           @relation("FinanceExpenseApprovedBy")
+  financeExpensesPaid       FinanceExpense[]           @relation("FinanceExpensePaidBy")
+  financeExpensesInstructor FinanceExpense[]           @relation("FinanceExpenseInstructor")
 }
 
 model Course {
@@ -328,6 +354,7 @@ model CourseOpening {
   // The instructor teaching THIS opening/batch
   instructorId String
   instructor   User   @relation("OpeningInstructors", fields: [instructorId], references: [id], onDelete: Restrict)
+  instructorSharePercent Decimal? @db.Decimal(5, 2)
 
   enrollments      Enrollment[]
   assessments      Assessment[]
@@ -340,6 +367,7 @@ model CourseOpening {
   refundRequests   RefundRequest[]
   liveSessions     LiveSession[]
   instructorGrants OpeningInstructorGrant[]
+  financeExpenses  FinanceExpense[]
 
   @@index([archivedAt])
 }
@@ -1217,6 +1245,41 @@ model Payment {
   @@index([status])
   @@index([gatewayId])
   @@index([couponId])
+}
+
+model FinanceExpense {
+  id               String                 @id @default(uuid())
+  type             FinanceExpenseType     @default(OPERATING)
+  category         FinanceExpenseCategory @default(OTHER)
+  status           FinanceExpenseStatus   @default(DRAFT)
+  title            String
+  vendor           String?
+  notes            String?                @db.Text
+  amount           Decimal                @db.Decimal(12, 2)
+  currency         String                 @default("SAR")
+  paymentReference String?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  paidAt           DateTime?
+
+  openingId String?
+  opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: SetNull)
+
+  instructorId String?
+  instructor   User?   @relation("FinanceExpenseInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+
+  createdById String
+  createdBy   User   @relation("FinanceExpenseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  approvedById String?
+  approvedBy   User?   @relation("FinanceExpenseApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  paidById String?
+  paidBy   User?   @relation("FinanceExpensePaidBy", fields: [paidById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([openingId, currency, status])
+  @@index([instructorId, status])
 }
 
 // A student's request to be refunded the (full) amount they paid for a course.
