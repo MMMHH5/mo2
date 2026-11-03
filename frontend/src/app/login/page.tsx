@@ -10,13 +10,20 @@ import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Home } from 'lucide-react';
 
-// Phase 8 — where each role signs in. Both origins serve this page, but a
-// session minted for the wrong origin is useless there (the API host refuses
-// the other audience), so the hand-off happens here, before anything is stored.
+// Each application surface accepts only its own account roles.
 const APP_MODE = (process.env.NEXT_PUBLIC_APP_MODE || 'learner') === 'admin' ? 'admin' : 'learner';
-const ADMIN_ORIGIN = process.env.NEXT_PUBLIC_ADMIN_ORIGIN || '';
-const LEARNER_ORIGIN = process.env.NEXT_PUBLIC_LEARNER_ORIGIN || '';
 const PRIVILEGED_ROLES = ['ADMIN', 'FINANCE', 'COURSE_MANAGER'];
+
+function getTokenPayload(token: string): { sub?: string; email?: string; role?: string } | null {
+    try {
+        const base64Url = token.split('.')[1];
+        if (!base64Url) return null;
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(window.atob(base64));
+    } catch {
+        return null;
+    }
+}
 
 export default function LoginPage() {
     return (
@@ -49,6 +56,22 @@ function LoginForm() {
             setError('');
             const res = await api.post('/auth/login', { email, password });
             const body = res.data;
+            const sessionToken = body.access_token || body.tempToken;
+            if (!sessionToken) {
+                setError(t('auth.login_failed'));
+                return;
+            }
+
+            const payload = getTokenPayload(sessionToken);
+            if (!payload?.role || !payload.sub || !payload.email) {
+                setError(t('auth.login_failed'));
+                return;
+            }
+            const privileged = PRIVILEGED_ROLES.includes(payload.role);
+            if ((APP_MODE === 'learner' && privileged) || (APP_MODE === 'admin' && !privileged)) {
+                setError(t('auth.login_failed'));
+                return;
+            }
 
             if (body.requiresTwoFactor && body.tempToken) {
                 router.push(`/auth/two-factor?tempToken=${encodeURIComponent(body.tempToken)}&redirect=${encodeURIComponent(redirect)}`);
@@ -65,26 +88,12 @@ function LoginForm() {
                 return;
             }
 
-            const token = body.access_token;
+            const token = body.access_token as string;
+            if (!token) {
+                setError(t('auth.login_failed'));
+                return;
+            }
             const refreshToken = body.refresh_token;
-
-            // Decode payload easily without a heavy library (NextJs client side friendly)
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const payload = JSON.parse(window.atob(base64));
-            const privileged = PRIVILEGED_ROLES.includes(payload.role);
-
-            if (APP_MODE === 'learner' && privileged && ADMIN_ORIGIN) {
-                // Admin/finance/course-manager on the learner origin: hand the
-                // session over to the admin origin instead of storing a token
-                // this host's API would refuse.
-                window.location.replace(`${ADMIN_ORIGIN}/login?redirect=${encodeURIComponent(redirect)}`);
-                return;
-            }
-            if (APP_MODE === 'admin' && !privileged && LEARNER_ORIGIN) {
-                window.location.replace(`${LEARNER_ORIGIN}/login?redirect=${encodeURIComponent(redirect)}`);
-                return;
-            }
 
             login(token, {
                 userId: payload.sub,

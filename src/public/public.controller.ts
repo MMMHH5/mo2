@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
+import { ContactMethod } from '@prisma/client';
 import { publicInstructorSelect, publicInstructorWhere, toPublicInstructor } from '../common/public-instructor';
 
 /**
@@ -255,16 +256,39 @@ export class PublicController {
     @ApiOperation({ summary: 'Submit a contact message' })
     @Post('contact')
     @Throttle({ default: { ttl: 60_000, limit: 5 } })
-    async contact(@Body() body: { name?: string; email?: string; subject?: string; message?: string }, @Ip() ip: string) {
+    async contact(
+        @Body() body: { name?: string; email?: string; phone?: string; contactMethod?: string; subject?: string; message?: string },
+        @Ip() ip: string,
+    ) {
         const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase().slice(0, 254) : '';
+        const phone = typeof body?.phone === 'string' ? body.phone.trim().slice(0, 30) : '';
         const message = typeof body?.message === 'string' ? body.message.trim().slice(0, 4000) : '';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !message) {
-            throw new BadRequestException('A valid email and message are required');
+        const contactMethod = body?.contactMethod === 'phone'
+            ? 'phone'
+            : body?.contactMethod === 'email'
+                ? 'email'
+                : email ? 'email' : 'phone';
+        const contactValue = contactMethod === 'email' ? email : phone;
+        const isValidEmail = contactMethod === 'email' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const phoneDigits = phone.replace(/\D/g, '');
+        const isValidPhone = contactMethod === 'phone' && /^[+\d\s().-]+$/.test(phone) && phoneDigits.length >= 7 && phoneDigits.length <= 15;
+        if ((!isValidEmail && !isValidPhone) || !message) {
+            throw new BadRequestException('A valid email or phone number and message are required');
         }
         const name = typeof body?.name === 'string' ? body.name.trim().slice(0, 200) : '';
         const subject = typeof body?.subject === 'string' ? body.subject.trim().slice(0, 200) : '';
-        await this.audit.logAction(`Contact form submission from ${email}`, ip);
-        await this.email.sendContactEmail(email, name, subject, message);
-        return { ok: true };
+        const submission = await this.prisma.contactSubmission.create({
+            data: {
+                name: name || null,
+                email: contactMethod === 'email' ? email : null,
+                phone: contactMethod === 'phone' ? phone : null,
+                contactMethod: contactMethod === 'email' ? ContactMethod.EMAIL : ContactMethod.PHONE,
+                subject,
+                message,
+            },
+        });
+        await this.audit.logAction(`Contact form submission via ${contactMethod}`, ip);
+        await this.email.sendContactEmail(contactValue, contactMethod, name, subject, message);
+        return { ok: true, id: submission.id };
     }
 }

@@ -115,6 +115,7 @@ describe('CoursesService opening delivery mode', () => {
         await service(prisma).findAll();
 
         assert.deepEqual(query.where, {
+            archivedAt: null,
             learningPathCourses: { some: { path: { isPublished: true } } },
         });
     });
@@ -123,7 +124,7 @@ describe('CoursesService opening delivery mode', () => {
         let created: any;
         const prisma = {
             course: { findUnique: () => Promise.resolve({ id: 'c1' }) },
-            user: { findUnique: () => Promise.resolve({ id: 'i1' }) },
+            user: { findUnique: () => Promise.resolve({ id: 'i1', role: 'INSTRUCTOR' }) },
             courseOpening: {
                 create: (args: any) => { created = args.data; return Promise.resolve({ id: 'o1', ...args.data }); },
             },
@@ -144,7 +145,7 @@ describe('CoursesService opening delivery mode', () => {
         let created: any;
         const prisma = {
             course: { findUnique: () => Promise.resolve({ id: 'c1' }) },
-            user: { findUnique: () => Promise.resolve({ id: 'i1' }) },
+            user: { findUnique: () => Promise.resolve({ id: 'i1', role: 'INSTRUCTOR' }) },
             courseOpening: {
                 create: (args: any) => { created = args.data; return Promise.resolve({ id: 'o1' }); },
             },
@@ -157,7 +158,7 @@ describe('CoursesService opening delivery mode', () => {
     test('a link on an in-person batch is refused rather than silently dropped', async () => {
         const prisma = {
             course: { findUnique: () => Promise.resolve({ id: 'c1' }) },
-            user: { findUnique: () => Promise.resolve({ id: 'i1' }) },
+            user: { findUnique: () => Promise.resolve({ id: 'i1', role: 'INSTRUCTOR' }) },
             courseOpening: { create: () => Promise.reject(new Error('must not be reached')) },
         };
         await assert.rejects(

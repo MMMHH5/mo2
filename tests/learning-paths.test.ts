@@ -21,9 +21,16 @@ describe('learning path payloads', () => {
             titleEn: 'Path',
             courseIds: ['course-1', 'course-2'],
             isPublished: true,
+            showCover: false,
+            showDescription: true,
+            showCourses: false,
+            allowEnrollment: true,
         });
         assert.deepEqual(path.courseIds, ['course-1', 'course-2']);
         assert.equal(path.isPublished, true);
+        assert.equal(path.showCover, false);
+        assert.equal(path.showCourses, false);
+        assert.equal(path.allowEnrollment, true);
     });
 
     test('rejects duplicate course IDs and allows partial updates', async () => {
@@ -127,12 +134,40 @@ describe('learning path course order and publishing rules', () => {
         await assert.rejects(() => service.getPublishedPath('path-1'), NotFoundException);
     });
 
+    test('applies path display settings to public details', async () => {
+        const prisma = {
+            learningPath: {
+                findUnique: async () => ({
+                    id: 'path-1',
+                    isPublished: true,
+                    showCover: false,
+                    showDescription: false,
+                    showCourses: false,
+                    allowEnrollment: false,
+                    coverImageUrl: '/path-cover.jpg',
+                    descriptionAr: 'وصف',
+                    descriptionEn: 'Description',
+                    courses: [{ id: 'path-course-1' }],
+                }),
+            },
+        };
+        const service = new LearningPathsService(prisma as unknown as PrismaService, {} as AuditService);
+
+        const path = await service.getPublishedPath('path-1');
+
+        assert.equal(path.coverImageUrl, null);
+        assert.equal(path.descriptionAr, null);
+        assert.equal(path.descriptionEn, null);
+        assert.deepEqual(path.courses, []);
+    });
+
     test('joins the learning path without bypassing course payments and reports real opening availability', async () => {
         let courseEnrollmentWrites = 0;
         const path = {
             id: 'path-1',
             titleEn: 'Path',
             isPublished: true,
+            allowEnrollment: true,
             courses: [
                 { course: { id: 'course-open' } },
                 { course: { id: 'course-unavailable' } },

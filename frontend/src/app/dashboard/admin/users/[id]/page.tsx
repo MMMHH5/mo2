@@ -15,7 +15,14 @@ interface UserDetail {
     role: string;
     isActive: boolean;
     createdAt: string;
+    language: string;
+    emailVerifiedAt: string | null;
     metadata?: Record<string, unknown> | null;
+}
+
+interface UserRoleDetails {
+    coursesTaught: { id: string; titleAr: string; titleEn: string; createdAt: string }[];
+    openingsTaught: { id: string; nameAr: string | null; nameEn: string | null; status: string; startDate: string | null; endDate: string | null }[];
 }
 
 interface Enrollment {
@@ -68,6 +75,7 @@ export default function AdminUserDetailPage() {
     const { t, locale, pick } = useI18n();
 
     const { data: user, loading, error } = useFetchData<UserDetail>(`/users/${id}`);
+    const { data: roleDetails } = useFetchData<UserRoleDetails>(`/users/${id}/details`);
     const { data: enrollments, loading: enrollmentsLoading } = useFetchData<Enrollment[]>(`/enrollments/all?studentId=${id}`);
     const { data: payments, loading: paymentsLoading } = useFetchData<Payment[]>(`/payments?userId=${id}`);
     const { data: gamification } = useFetchData<GamificationData>(`/gamification/${id}`);
@@ -88,13 +96,22 @@ export default function AdminUserDetailPage() {
         { label: t('profile.phone'), value: (meta.phone as string) || '—' },
         { label: t('profile.city'), value: (meta.city as string) || '—' },
         { label: t('profile.specialty'), value: (meta.specialty as string) || '—' },
+        { label: t('admin.verification_status'), value: user?.emailVerifiedAt ? t('admin.email_verified') : t('admin.email_unverified') },
+        { label: t('admin.profile_university'), value: (meta.university as string) || '—' },
+        { label: t('admin.profile_study_status'), value: (meta.studyStatus as string) || '—' },
+        { label: t('admin.profile_study_level'), value: (meta.studyLevel as string) || '—' },
+        { label: t('admin.profile_job_title'), value: ((locale === 'ar' ? meta.jobTitleAr : meta.jobTitleEn) as string) || '—' },
+        { label: t('admin.profile_experience_years'), value: meta.experienceYears !== undefined && meta.experienceYears !== null ? String(meta.experienceYears) : '—' },
+        { label: t('profile.gender'), value: (meta.gender as string) || '—' },
+        { label: t('profile.birth_date'), value: formatDate(meta.birthDate as string, { locale }) || '—' },
+        { label: t('admin.profile_language'), value: user?.language || '—' },
     ];
 
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Back */}
             <Link
-                href="/dashboard/admin/users"
+                href={`/dashboard/admin/users/${user?.role === 'STUDENT' ? 'students' : user?.role === 'INSTRUCTOR' ? 'instructors' : 'staff'}`}
                 className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white hover:border-brand-navy/20 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-[#1a2d4a] transition"
             >
                 <ArrowLeft size={16} className="rtl:rotate-180" /> {t('common.back')}
@@ -109,7 +126,7 @@ export default function AdminUserDetailPage() {
             ) : (
                 <>
                     <PageHeader
-                        title={user?.email || id as string}
+                        title={String(meta.fullName || user?.email || id)}
                         subtitle={t('admin.users_heading')}
                         actions={
                             user && (
@@ -144,6 +161,37 @@ export default function AdminUserDetailPage() {
                             </div>
                         </div>
                     </div>
+
+                    {user?.role === 'INSTRUCTOR' && (
+                        <div className="grid gap-5 lg:grid-cols-2 animate-fade-in-up">
+                            <section className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-6">
+                                <h3 className="font-black text-brand-navy dark:text-white mb-4">{t('admin.instructor_courses')}</h3>
+                                {roleDetails?.coursesTaught.length ? (
+                                    <div className="space-y-2">
+                                        {roleDetails.coursesTaught.map(course => (
+                                            <div key={course.id} className="rounded-xl border border-gray-200 dark:border-white/10 p-3 flex items-center justify-between gap-3">
+                                                <span className="font-bold text-sm text-brand-navy dark:text-gray-200" dir="auto">{locale === 'ar' ? course.titleAr : course.titleEn}</span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(course.createdAt, { locale })}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : <EmptyState icon={BookOpen} title={t('admin.no_instructor_courses')} />}
+                            </section>
+                            <section className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-6">
+                                <h3 className="font-black text-brand-navy dark:text-white mb-4">{t('admin.instructor_openings')}</h3>
+                                {roleDetails?.openingsTaught.length ? (
+                                    <div className="space-y-2">
+                                        {roleDetails.openingsTaught.map(opening => (
+                                            <div key={opening.id} className="rounded-xl border border-gray-200 dark:border-white/10 p-3 flex items-center justify-between gap-3">
+                                                <span className="font-bold text-sm text-brand-navy dark:text-gray-200" dir="auto">{locale === 'ar' ? opening.nameAr || '—' : opening.nameEn || '—'}</span>
+                                                <Badge tone={statusTone[opening.status] || 'gray'} dot={false}>{statusLabel(opening.status)}</Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : <EmptyState icon={BookOpen} title={t('admin.no_instructor_openings')} />}
+                            </section>
+                        </div>
+                    )}
 
                     {/* Gamification stats */}
                     {gamification && (

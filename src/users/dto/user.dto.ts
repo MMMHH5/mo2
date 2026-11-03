@@ -28,6 +28,11 @@ export class CreateUserDto {
     @IsOptional()
     @IsBoolean()
     mustChangePassword?: boolean;
+
+    @ApiPropertyOptional({ description: 'Initial user profile fields' })
+    @IsOptional()
+    @IsObject()
+    metadata?: Record<string, unknown>;
 }
 
 export class UpdateUserDto {

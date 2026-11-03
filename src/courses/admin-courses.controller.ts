@@ -24,6 +24,22 @@ const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/quicktime'];
 export class AdminCoursesController {
     constructor(private readonly coursesService: CoursesService) { }
 
+    @ApiOperation({ summary: 'List archived courses and openings' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_READ)
+    @Get('archived')
+    listArchived() {
+        return this.coursesService.listArchived();
+    }
+
+    @ApiOperation({ summary: 'Restore an archived course' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_WRITE)
+    @Post(':id/restore')
+    restore(@Param('id') id: string, @Request() req: any, @Ip() ip: string) {
+        return this.coursesService.restoreCourse(id, req.user.userId, ip);
+    }
+
     @ApiOperation({ summary: 'Create a new course (Managers/Admins)' })
     @ApiResponse({ status: 201, description: 'Course created.' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)

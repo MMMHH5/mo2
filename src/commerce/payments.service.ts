@@ -6,7 +6,7 @@ import { AuditService } from '../audit/audit.service';
 import { ChatService } from '../chat/chat.service';
 import { FinanceService } from '../finance/finance.service';
 import { Role, PaymentStatus, EnrollmentStatus } from '@prisma/client';
-import { claimSeat, releaseSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
+import { claimSeat, assertOpeningEligible, CapacityConflictException } from '../common/opening-seats';
 import { Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { getFrontendUrl } from '../common/frontend-url';
@@ -270,57 +270,6 @@ export class PaymentsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-  }
-
-  async refund(paymentId: string, actorId: string, role: Role, reason?: string) {
-    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
-    if (!payment) throw new NotFoundException('Payment not found');
-    if (role !== Role.ADMIN && role !== Role.FINANCE) throw new ForbiddenException('Only finance staff can refund payments');
-    if (payment.status !== PaymentStatus.PAID) throw new BadRequestException('Only paid payments can be refunded');
-
-    if (payment.provider === 'STRIPE' && payment.providerRef && this.stripe) {
-      const refundReason = reason === 'duplicate' || reason === 'fraudulent' || reason === 'requested_by_customer' ? reason : undefined;
-      await this.stripe.refunds.create({ payment_intent: payment.providerRef, ...(refundReason ? { reason: refundReason } : {}) });
-    }
-
-    // Refund disables the enrollment in the same transaction: the student no
-    // longer has an active seat (enrollment -> REVOKED), so they can't keep
-    // course access after the money has been returned.
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const p = await tx.payment.update({
-        where: { id: paymentId },
-        data: { status: PaymentStatus.REFUNDED, refundedAt: new Date() },
-      });
-      if (payment.enrollmentId) {
-        await tx.enrollment.update({
-          where: { id: payment.enrollmentId },
-          data: { status: EnrollmentStatus.REVOKED },
-        });
-        // The student gives up their seat when the money is returned, so the
-        // opening can be re-filled (atomic counter keeps parity with capacity).
-        await releaseSeat(tx, payment.openingId);
-      }
-      return p;
-    });
-
-    await this.audit.logAction(`Finance refunded Payment ${paymentId}${reason ? ` (${reason})` : ''}`, undefined, actorId);
-    await this.notifications.notify({
-      userId: payment.studentId,
-      type: 'payment.refunded',
-      titleAr: 'تم استرداد المبلغ',
-      titleEn: 'Payment refunded',
-      bodyAr: reason ?? 'تم استرداد مبلغ دفعتك وتم إلغاء تسجيلك في الدورة.',
-      bodyEn: reason ?? 'Your payment has been refunded and your enrollment was cancelled.',
-      data: { paymentId },
-    }).catch(() => {});
-    // REVOKED members must leave the batch chat room (membership syncs only APPROVED/RESERVED).
-    if (payment.openingId) {
-      try {
-        const room = await this.chatService.getOrCreateRoomForOpening(payment.openingId);
-        await this.chatService.syncRoomMembers(room.id);
-      } catch { /* don't fail refund if chat sync fails */ }
-    }
-    return { ok: true, status: updated.status, enrollmentStatus: payment.enrollmentId ? EnrollmentStatus.REVOKED : null };
   }
 
   async cancel(paymentId: string, actorId: string, role: Role) {

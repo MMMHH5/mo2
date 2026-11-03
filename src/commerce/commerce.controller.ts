@@ -9,7 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
-import { CheckoutDto, RefundPaymentDto } from './dto/commerce.dto';
+import { CheckoutDto } from './dto/commerce.dto';
 
 const ALL_ROLES = ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'];
 
@@ -45,14 +45,6 @@ export class CommerceController {
     @Get('payments')
   allPayments() {
     return this.payments.listAll();
-  }
-
-  @ApiOperation({ summary: 'Refund a payment (admin/finance)' })
-@Roles(Role.ADMIN, Role.FINANCE)
-    @RequirePermissions(PERMISSIONS.PAYMENTS_REFUND)
-    @Post('payments/:id/refund')
-  refund(@Param('id') id: string, @Body() dto: RefundPaymentDto, @Request() req: any) {
-    return this.payments.refund(id, req.user.userId, req.user.role, dto.reason);
   }
 
   @ApiOperation({ summary: 'Cancel a pending payment (owner student, admin, or finance)' })

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Prisma, CourseContentType, CourseOpeningStatus, DeliveryMode, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -73,7 +73,7 @@ export class CoursesService {
 
     async update(id: string, data: UpdateCourseDto, viewer?: CourseViewer) {
         const existing = await this.prisma.course.findUnique({ where: { id } });
-        if (!existing) throw new NotFoundException('Course not found');
+        if (!existing || existing.archivedAt) throw new NotFoundException('Course not found');
 
         const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, ...rest } = data;
 
@@ -328,15 +328,20 @@ export class CoursesService {
         includeUnpublished: boolean,
         viewer?: CourseViewer,
     ): Promise<Prisma.CourseOpeningWhereInput | undefined> {
-        if (includeUnpublished) return undefined;
+        if (includeUnpublished) return { archivedAt: null };
         if (viewer?.role === Role.ADMIN || viewer?.role === Role.COURSE_MANAGER) {
-            return { isPublished: true };
+            return { archivedAt: null, isPublished: true };
         }
         const related = await this.relatedCourseIds(viewer);
         if (related.length === 0) {
-            return { isPublished: true, status: { in: [CourseOpeningStatus.OPEN, CourseOpeningStatus.ANNOUNCEMENT] } };
+            return {
+                archivedAt: null,
+                isPublished: true,
+                status: { in: [CourseOpeningStatus.OPEN, CourseOpeningStatus.ANNOUNCEMENT] },
+            };
         }
         return {
+            archivedAt: null,
             isPublished: true,
             OR: [
                 { status: { in: [CourseOpeningStatus.OPEN, CourseOpeningStatus.ANNOUNCEMENT] } },
@@ -349,8 +354,11 @@ export class CoursesService {
         const openingsWhere = await this.visibleOpeningsFilter(includeUnpublished, viewer);
         const sessionManagedOpeningIds = await this.sessionManagedOpeningIds(viewer);
         const courses = await this.prisma.course.findMany({
-            where: includeUnpublished ? undefined : {
-                learningPathCourses: { some: { path: { isPublished: true } } },
+            where: {
+                archivedAt: null,
+                ...(includeUnpublished ? {} : {
+                    learningPathCourses: { some: { path: { isPublished: true } } },
+                }),
             },
             orderBy: { createdAt: 'desc' },
             include: {
@@ -407,10 +415,14 @@ export class CoursesService {
         const course = includeUnpublished
             ? await this.prisma.course.findUnique({ where: { id }, include: courseInclude })
             : await this.prisma.course.findFirst({
-                where: { id, learningPathCourses: { some: { path: { isPublished: true } } } },
+                where: {
+                    id,
+                    archivedAt: null,
+                    learningPathCourses: { some: { path: { isPublished: true } } },
+                },
                 include: courseInclude,
             });
-        if (!course) throw new NotFoundException('Course not found');
+        if (!course || course.archivedAt) throw new NotFoundException('Course not found');
         // Public route: swap the instructor row for the derived public card
         // before either the full or the redacted payload is returned.
         const shaped = await this.canViewPaidContent(course, viewer)
@@ -565,9 +577,9 @@ export class CoursesService {
 
     async createOpening(courseId: string, dto: CreateOpeningDto & { nameAr?: string; nameEn?: string }) {
         const course = await this.prisma.course.findUnique({ where: { id: courseId } });
-        if (!course) throw new NotFoundException('Course not found');
+        if (!course || course.archivedAt) throw new NotFoundException('Course not found');
         const instructor = await this.prisma.user.findUnique({ where: { id: dto.instructorId } });
-        if (!instructor) throw new NotFoundException('Instructor not found');
+        if (!instructor || instructor.role !== Role.INSTRUCTOR) throw new BadRequestException('Select an instructor account');
 
         const resolved = this.resolveDelivery(dto, DeliveryMode.IN_PERSON);
 
@@ -608,13 +620,14 @@ export class CoursesService {
 
     async listOpenings(courseId: string, includeUnpublished = false, viewer?: CourseViewer) {
         const course = await this.prisma.course.findUnique({ where: { id: courseId } });
-        if (!course) throw new NotFoundException('Course not found');
+        if (!course || course.archivedAt) throw new NotFoundException('Course not found');
         if (!includeUnpublished && !(await this.hasPublishedPath(courseId))) {
             throw new NotFoundException('Course not found');
         }
         const openings = await this.prisma.courseOpening.findMany({
             where: {
                 courseId,
+                archivedAt: null,
                 ...(includeUnpublished ? {} : { isPublished: true }),
             },
             orderBy: { createdAt: 'desc' },
@@ -630,11 +643,15 @@ export class CoursesService {
             throw new ForbiddenException('Not allowed to list openings');
         }
         const openings = await this.prisma.courseOpening.findMany({
-            where: isStaff ? undefined : {
-                OR: [
-                    { instructorId: userId },
-                    { instructorGrants: { some: { instructorId: userId } } },
-                ],
+            where: {
+                archivedAt: null,
+                course: { archivedAt: null },
+                ...(isStaff ? {} : {
+                    OR: [
+                        { instructorId: userId },
+                        { instructorGrants: { some: { instructorId: userId } } },
+                    ],
+                }),
             },
             orderBy: { createdAt: 'desc' },
             include: {
@@ -710,9 +727,9 @@ export class CoursesService {
     async getOpeningInstructorGrants(openingId: string) {
         const opening = await this.prisma.courseOpening.findUnique({
             where: { id: openingId },
-            select: { id: true },
+            select: { id: true, archivedAt: true },
         });
-        if (!opening) throw new NotFoundException('Opening not found');
+        if (!opening || opening.archivedAt) throw new NotFoundException('Opening not found');
         return this.prisma.openingInstructorGrant.findMany({
             where: { openingId },
             orderBy: { instructor: { email: 'asc' } },
@@ -736,9 +753,9 @@ export class CoursesService {
     ) {
         const opening = await this.prisma.courseOpening.findUnique({
             where: { id: openingId },
-            select: { id: true, instructorId: true },
+            select: { id: true, instructorId: true, archivedAt: true },
         });
-        if (!opening) throw new NotFoundException('Opening not found');
+        if (!opening || opening.archivedAt) throw new NotFoundException('Opening not found');
 
         const ids = instructors.map(({ instructorId }) => instructorId);
         if (new Set(ids).size !== ids.length) {
@@ -779,7 +796,7 @@ export class CoursesService {
 
     async updateOpening(openingId: string, dto: UpdateOpeningDto, actorId: string, actorRole: Role) {
         const existing = await this.prisma.courseOpening.findUnique({ where: { id: openingId } });
-        if (!existing) throw new NotFoundException('Opening not found');
+        if (!existing || existing.archivedAt) throw new NotFoundException('Opening not found');
         // Without this, any INSTRUCTOR could rewrite another instructor's batch:
         // reassign instructorId (taking it and its roster), change the price,
         // dates and capacity. Every sibling transition already calls this; the
@@ -791,7 +808,9 @@ export class CoursesService {
         if (dto.nameEn !== undefined) data.nameEn = dto.nameEn;
         if (dto.instructorId !== undefined) {
             const instructor = await this.prisma.user.findUnique({ where: { id: dto.instructorId } });
-            if (!instructor) throw new NotFoundException('Instructor not found');
+            if (!instructor || instructor.role !== Role.INSTRUCTOR) {
+                throw new BadRequestException('Select an instructor account');
+            }
             data.instructor = { connect: { id: dto.instructorId } };
         }
         if (dto.startDate !== undefined) data.startDate = dto.startDate as unknown as Date;
@@ -826,9 +845,9 @@ export class CoursesService {
     private async requireOpening(openingId: string) {
         const opening = await this.prisma.courseOpening.findUnique({
             where: { id: openingId },
-            include: { course: { select: { id: true, titleAr: true, titleEn: true } } },
+            include: { course: { select: { id: true, titleAr: true, titleEn: true, archivedAt: true } } },
         });
-        if (!opening) throw new NotFoundException('Opening not found');
+        if (!opening || opening.archivedAt || opening.course.archivedAt) throw new NotFoundException('Opening not found');
         return opening;
     }
 
@@ -887,7 +906,7 @@ export class CoursesService {
                 },
             },
         });
-        if (!opening) throw new NotFoundException('Opening not found');
+        if (!opening || opening.archivedAt) throw new NotFoundException('Opening not found');
         if (actorRole === Role.ADMIN || actorRole === Role.COURSE_MANAGER) return opening;
         if (actorRole === Role.INSTRUCTOR && opening.instructorId === actorId) return opening;
         const grant = opening.instructorGrants?.[0];
@@ -909,6 +928,7 @@ export class CoursesService {
         const opening = await this.prisma.courseOpening.findUnique({
             where: { id: openingId },
             select: {
+                archivedAt: true,
                 instructorId: true,
                 instructorGrants: {
                     where: { instructorId: actorId },
@@ -923,7 +943,7 @@ export class CoursesService {
                 },
             },
         });
-        if (!opening) return false;
+        if (!opening || opening.archivedAt) return false;
         if (opening.instructorId === actorId) return true;
         const grant = opening.instructorGrants?.[0];
         return permissions.some((permission) => grant?.[permission] === true);
@@ -1065,7 +1085,7 @@ export class CoursesService {
             where: { id: openingId },
             include: { course: { select: { id: true, titleAr: true, titleEn: true } } },
         });
-        if (!existing) throw new NotFoundException('Opening not found');
+        if (!existing || existing.archivedAt) throw new NotFoundException('Opening not found');
         // Publishing is not a cosmetic flag: it emails every wishlist user and
         // flips PENDING reservations to "payment due". That blast had to be
         // gated on actually managing the opening.
@@ -1098,41 +1118,87 @@ export class CoursesService {
     }
 
     async removeOpening(openingId: string, deleterId: string, ip?: string) {
-        let deleted;
-        try {
-            deleted = await this.prisma.courseOpening.delete({ where: { id: openingId } });
-        } catch (e) {
-            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2003') {
-                throw new ConflictException(
-                    'Opening cannot be deleted because it has enrollments. End the opening instead, or remove its enrollments first.'
-                );
-            }
-            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
-                throw new NotFoundException('Opening not found');
-            }
-            throw e;
-        }
-        await this.audit.logAction(`User ${deleterId} deleted Opening ${openingId}`, ip, deleterId);
-        return deleted;
+        const opening = await this.prisma.courseOpening.findFirst({
+            where: { id: openingId, archivedAt: null, course: { archivedAt: null } },
+        });
+        if (!opening) throw new NotFoundException('Opening not found');
+        const archived = await this.prisma.courseOpening.update({
+            where: { id: openingId },
+            data: { archivedAt: new Date(), isPublished: false },
+        });
+        await this.audit.logAction(`User ${deleterId} archived Opening ${openingId}`, ip, deleterId);
+        return archived;
     }
 
     async remove(id: string, deleterId: string, ip?: string) {
-        let deleted;
-        try {
-            deleted = await this.prisma.course.delete({ where: { id } });
-        } catch (e) {
-            if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2003') {
-                throw new ConflictException(
-                    'Course cannot be deleted because it has enrollments. Archive the course or remove its enrollments first.'
-                );
-            }
-            throw e;
+        const course = await this.prisma.course.findFirst({ where: { id, archivedAt: null } });
+        if (!course) throw new NotFoundException('Course not found');
+        const archivedAt = new Date();
+        const archived = await this.prisma.$transaction(async (tx) => {
+            await tx.courseOpening.updateMany({
+                where: { courseId: id, archivedAt: null },
+                data: { archivedAt, isPublished: false },
+            });
+            return tx.course.update({ where: { id }, data: { archivedAt } });
+        });
+        await this.audit.logAction(`User ${deleterId} archived Course ${id}`, ip, deleterId);
+        return archived;
+    }
+
+    async listArchived() {
+        const [courses, openings] = await Promise.all([
+            this.prisma.course.findMany({
+                where: { archivedAt: { not: null } },
+                orderBy: { archivedAt: 'desc' },
+                select: { id: true, titleAr: true, titleEn: true, archivedAt: true },
+            }),
+            this.prisma.courseOpening.findMany({
+                where: { archivedAt: { not: null }, course: { archivedAt: null } },
+                orderBy: { archivedAt: 'desc' },
+                include: {
+                    course: { select: { id: true, titleAr: true, titleEn: true } },
+                    instructor: { select: { email: true } },
+                    _count: { select: { enrollments: true } },
+                },
+            }),
+        ]);
+        return { courses, openings };
+    }
+
+    async restoreCourse(id: string, actorId: string, ip?: string) {
+        const course = await this.prisma.course.findFirst({ where: { id, archivedAt: { not: null } } });
+        if (!course) throw new NotFoundException('Archived course not found');
+        const restored = await this.prisma.$transaction(async (tx) => {
+            await tx.courseOpening.updateMany({
+                where: { courseId: id, archivedAt: course.archivedAt },
+                data: { archivedAt: null, status: CourseOpeningStatus.DRAFT, isPublished: false },
+            });
+            return tx.course.update({ where: { id }, data: { archivedAt: null } });
+        });
+        await this.audit.logAction(`User ${actorId} restored Course ${id}`, ip, actorId);
+        return restored;
+    }
+
+    async restoreOpening(openingId: string, actorId: string, actorRole: Role, ip?: string) {
+        const opening = await this.prisma.courseOpening.findFirst({
+            where: { id: openingId, archivedAt: { not: null }, course: { archivedAt: null } },
+        });
+        if (opening) {
+            const restored = await this.prisma.courseOpening.update({
+                where: { id: openingId },
+                data: { archivedAt: null, status: CourseOpeningStatus.DRAFT, isPublished: false },
+            });
+            await this.audit.logAction(`User ${actorId} restored archived Opening ${openingId}`, ip, actorId);
+            return restored;
         }
-        await this.audit.logAction(
-            `User ${deleterId} deleted Course ${id}`,
-            ip,
-            deleterId
-        );
-        return deleted;
+
+        const ended = await this.requireOpening(openingId);
+        this.assertCanManage(ended, actorId, actorRole);
+        if (ended.status !== CourseOpeningStatus.ENDED) {
+            throw new BadRequestException('Only an ended or archived opening can be restored');
+        }
+        const restored = await this.setStatus(openingId, CourseOpeningStatus.STARTED);
+        await this.audit.logAction(`User ${actorId} restored ended Opening ${openingId}`, ip, actorId);
+        return restored;
     }
 }

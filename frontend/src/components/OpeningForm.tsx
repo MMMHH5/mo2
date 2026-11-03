@@ -127,7 +127,7 @@ export default function OpeningForm({ courseId, openingId }: { courseId: string;
         }
     };
 
-    const instructorOptions = (instructors || []).filter((u) => u.role === 'INSTRUCTOR' || u.role === 'ADMIN' || u.role === 'COURSE_MANAGER');
+    const instructorOptions = (instructors || []).filter((u) => u.role === 'INSTRUCTOR');
     const inputCls = "w-full px-4 py-3 bg-white/5 border border-white/10 [color-scheme:dark] rounded-xl focus:ring-2 focus:ring-brand-gold/50 focus:border-brand-gold/40 outline-none transition placeholder:text-gray-500 text-white [&>option]:bg-brand-navy";
 
     if (loadingInit) {

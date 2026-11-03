@@ -81,6 +81,7 @@ interface GamificationMe {
 const TABS = [
     { id: 'courses', icon: BookOpen },
     { id: 'certificates', icon: Award },
+    { id: 'professional', icon: Briefcase },
     { id: 'personal', icon: UserRound },
     { id: 'security', icon: ShieldCheck },
 ] as const;
@@ -155,10 +156,13 @@ function ProfileContent() {
     const localized = (ar?: string | null, en?: string | null) =>
         (locale === 'ar' ? (ar || en) : (en || ar)) || '';
     const { data: profile, loading, error, refetch } = useFetchData<MyProfile>('/users/me');
+    const isInstructor = profile?.role === 'INSTRUCTOR' || profile?.role === 'COURSE_MANAGER';
     // Reused rather than re-counted: the platform already tracks points/level
     // and study sessions, so the hero and the stats bar read those numbers
     // instead of growing a parallel profile-stats endpoint.
-    const { data: gamification } = useFetchData<GamificationMe>('/gamification/me');
+    const { data: gamification } = useFetchData<GamificationMe>(
+        profile?.role === 'STUDENT' ? '/gamification/me' : null,
+    );
     // Learning hours and completions are a student-only resource. Passing null
     // keeps a 403 off the wire for instructors and staff, and the stats bar
     // renders those two cards as unavailable instead of showing a fake zero.
@@ -183,7 +187,15 @@ function ProfileContent() {
     // The tab lives in the URL so that the sidebar entry and the per-course
     // "view certificate" link in my-courses can deep-link into it.
     const tabParam = searchParams.get('tab');
-    const activeTab: TabId = TABS.some((x) => x.id === tabParam) ? (tabParam as TabId) : 'courses';
+    const visibleTabs = TABS.filter(({ id }) =>
+        isInstructor
+            ? id === 'professional' || id === 'personal' || id === 'security'
+            : id !== 'professional',
+    );
+    const defaultTab: TabId = isInstructor ? 'professional' : 'courses';
+    const activeTab: TabId = visibleTabs.some((tab) => tab.id === tabParam)
+        ? (tabParam as TabId)
+        : defaultTab;
     const setTab = (id: TabId) => router.replace(`/dashboard/profile?tab=${id}`, { scroll: false });
 
     const [editing, setEditing] = useState(false);
@@ -337,7 +349,6 @@ function ProfileContent() {
 
     const meta = (profile?.metadata ?? {}) as Record<string, string | undefined>;
     const emailPrefix = user?.email?.split('@')[0] || profile?.email || '';
-    const isInstructor = profile?.role === 'INSTRUCTOR' || profile?.role === 'COURSE_MANAGER';
     // The one CV field that is not a string: the sanitiser stores years of
     // experience as a clamped number so it can be sorted and validated.
     const cvYears = (profile?.metadata as Record<string, unknown> | undefined)?.experienceYears;
@@ -495,11 +506,18 @@ function ProfileContent() {
 
                                     {/* Quick basics */}
                                     <dl className="flex flex-wrap gap-x-6 gap-y-2 mt-5 pt-5 border-t border-white/10">
-                                        {[
-                                            { icon: Globe2, label: t('profile.country'), value: meta.country },
-                                            { icon: Calendar, label: t('profile.member_since'), value: joinedLabel },
-                                            { icon: Phone, label: t('profile.phone'), value: meta.phone },
-                                        ].map((row) => (
+                                        {(isInstructor
+                                            ? [
+                                                { icon: Briefcase, label: t('profile.field_specialty'), value: meta.specialty },
+                                                { icon: Clock, label: t('instructorProfile.experience_years_label'), value: cvYearsLabel || '' },
+                                                { icon: Calendar, label: t('profile.member_since'), value: joinedLabel },
+                                            ]
+                                            : [
+                                                { icon: Globe2, label: t('profile.country'), value: meta.country },
+                                                { icon: Calendar, label: t('profile.member_since'), value: joinedLabel },
+                                                { icon: Phone, label: t('profile.phone'), value: meta.phone },
+                                            ]
+                                        ).filter((row) => row.value).map((row) => (
                                             <div key={row.label} className="flex items-center gap-2 min-w-0">
                                                 <row.icon size={14} className="text-brand-gold-light shrink-0" />
                                                 <dt className="text-brand-mist/60 text-xs font-bold">{row.label}</dt>
@@ -521,7 +539,7 @@ function ProfileContent() {
                             /users/me, hours and completions from /analytics/me.
                             The two student-only figures render as unavailable
                             rather than a misleading zero. */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {!isInstructor && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             {[
                                 { icon: BookOpen, label: t('profile.stat_enrolled'), value: profile.stats?.enrollments },
                                 { icon: Trophy, label: t('profile.stat_completed'), value: analytics?.coursesCompleted },
@@ -547,11 +565,11 @@ function ProfileContent() {
                                     </div>
                                 </div>
                             ))}
-                        </div>
+                        </div>}
 
                         {/* Tab bar */}
                         <div className="flex gap-1 p-1.5 bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl shadow-sm overflow-x-auto">
-                            {TABS.map((tab) => (
+                            {visibleTabs.map((tab) => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setTab(tab.id)}
@@ -695,6 +713,95 @@ function ProfileContent() {
                             </div>
                         )}
 
+                        {activeTab === 'professional' && isInstructor && (
+                            <section className="space-y-5">
+                                <div className="flex flex-col gap-4 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/5 dark:bg-brand-navy-dark sm:flex-row sm:items-center sm:justify-between sm:p-7">
+                                    <div className="flex items-start gap-4">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light">
+                                            <Briefcase size={23} />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-brand-navy dark:text-white">{t('instructorProfile.heading')}</h2>
+                                            <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">{t('instructorProfile.cv_hint')}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {profile && (
+                                            <Link
+                                                href={`/instructors/${profile.id}`}
+                                                target="_blank"
+                                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-brand-navy transition hover:border-brand-gold dark:border-white/10 dark:text-white"
+                                            >
+                                                <Eye size={16} /> {t('profile.view_public_profile')}
+                                            </Link>
+                                        )}
+                                        <button
+                                            onClick={startEdit}
+                                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-gold to-brand-gold-dark px-4 py-2.5 text-sm font-black text-brand-navy transition hover:opacity-90"
+                                        >
+                                            <Edit3 size={16} /> {t('profile.edit_profile')}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {!meta.jobTitleAr && !meta.jobTitleEn && !meta.bio && !meta.bioEn && !meta.specialty ? (
+                                    <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-8 text-center dark:border-amber-500/30 dark:bg-amber-500/5">
+                                        <Briefcase className="mx-auto mb-3 text-amber-500" size={28} />
+                                        <p className="font-bold text-amber-800 dark:text-amber-300">{t('instructorProfile.profile_incomplete')}</p>
+                                        <button onClick={startEdit} className="mt-4 rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 dark:bg-white dark:text-brand-navy">
+                                            {t('profile.edit_profile')}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grid gap-5 lg:grid-cols-3">
+                                        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-brand-navy-dark lg:col-span-2">
+                                            <div className="flex items-center gap-3 border-b border-gray-100 pb-4 dark:border-white/5">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light">
+                                                    <GraduationCap size={20} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-brand-navy dark:text-white">{meta.jobTitleAr || meta.jobTitleEn || t('instructorProfile.not_filled')}</h3>
+                                                    <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{meta.specialty || t('profile.field_specialty')}</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                                                <div>
+                                                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('instructorProfile.job_title_label')} · عربي</p>
+                                                    <p className="font-semibold text-brand-navy dark:text-white" dir="rtl">{meta.jobTitleAr || '—'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400" dir="ltr">{t('instructorProfile.job_title_label')} · English</p>
+                                                    <p className="font-semibold text-brand-navy dark:text-white" dir="ltr">{meta.jobTitleEn || '—'}</p>
+                                                </div>
+                                            </div>
+                                            {meta.bio && (
+                                                <div className="mt-6 border-t border-gray-100 pt-5 dark:border-white/5">
+                                                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('profile.field_bio')} · عربي</p>
+                                                    <p className="whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300" dir="rtl">{meta.bio}</p>
+                                                </div>
+                                            )}
+                                            {meta.bioEn && (
+                                                <div className="mt-5 border-t border-gray-100 pt-5 dark:border-white/5">
+                                                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400" dir="ltr">{t('instructorProfile.bio_en_label')}</p>
+                                                    <p className="whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300" dir="ltr">{meta.bioEn}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-brand-navy-dark">
+                                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light">
+                                                <Clock size={20} />
+                                            </div>
+                                            <p className="mt-5 text-sm font-bold text-gray-500 dark:text-gray-400">{t('instructorProfile.experience_years_label')}</p>
+                                            <p className="mt-1 text-3xl font-black text-brand-navy dark:text-white">{cvYearsLabel ?? '—'}</p>
+                                            <p className="mt-5 border-t border-gray-100 pt-4 text-sm leading-6 text-gray-500 dark:border-white/5 dark:text-gray-400">
+                                                {t('instructorProfile.cv_hint')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
                         {activeTab === 'personal' && (
                             <div className="space-y-6">
                                 <div className="flex justify-end">
@@ -717,7 +824,7 @@ function ProfileContent() {
                                                 {t('profile.name_en_set')}
                                             </p>
                                         ) : null}
-                                        {meta.bio ? (
+                                        {!isInstructor && meta.bio ? (
                                             <div className="mt-5 pt-5 border-t border-gray-200 dark:border-white/5">
                                                 <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
                                                     <FileText size={14} /> {t('profile.bio')}
@@ -730,62 +837,10 @@ function ProfileContent() {
                                     </SectionCard>
 
                                     <SectionCard icon={Phone} title={t('profile.section_contact')} rows={contactRows} />
-                                    <SectionCard icon={GraduationCap} title={t('profile.section_academic')} rows={academicRows} />
-                                    <SectionCard icon={ShieldCheck} title={t('profile.section_account')} rows={accountRows} />
-
-                                    {/* Public CV preview: this is exactly what a
-                                        course visitor sees, so the instructor can
-                                        confirm it before publishing. */}
-                                    {isInstructor && (
-                                        <div className="lg:col-span-2 bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-3xl shadow-sm p-6 lg:p-7">
-                                            <div className="flex items-center gap-2.5 mb-2">
-                                                <div className="w-10 h-10 rounded-xl bg-brand-gold/10 flex items-center justify-center text-brand-gold-dark dark:text-brand-gold-light">
-                                                    <Briefcase size={20} />
-                                                </div>
-                                                <h3 className="text-xl font-black text-brand-navy dark:text-white">
-                                                    {t('instructorProfile.heading')}
-                                                </h3>
-                                            </div>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-                                                {t('instructorProfile.cv_hint')}
-                                            </p>
-
-                                            {!meta.jobTitleAr && !meta.jobTitleEn ? (
-                                                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
-                                                    {t('instructorProfile.profile_incomplete')}
-                                                </p>
-                                            ) : null}
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
-                                                        {t('instructorProfile.job_title_label')}
-                                                    </div>
-                                                    <p className="text-sm font-bold text-brand-navy dark:text-white" dir="auto">
-                                                        {meta.jobTitleAr || meta.jobTitleEn || t('instructorProfile.not_filled')}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
-                                                        {t('instructorProfile.experience_years_label')}
-                                                    </div>
-                                                    <p className="text-sm font-bold text-brand-navy dark:text-white">
-                                                        {cvYearsLabel ?? t('instructorProfile.not_filled')}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {meta.bioEn ? (
-                                                <div className="mt-4">
-                                                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1" dir="ltr">
-                                                        {t('instructorProfile.bio_en_label')}
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line" dir="ltr">
-                                                        {meta.bioEn}
-                                                    </p>
-                                                </div>
-                                            ) : null}
-                                        </div>
+                                    {!isInstructor && (
+                                        <SectionCard icon={GraduationCap} title={t('profile.section_academic')} rows={academicRows} />
                                     )}
+                                    <SectionCard icon={ShieldCheck} title={t('profile.section_account')} rows={accountRows} />
                                 </div>
                             </div>
                         )}
@@ -979,7 +1034,7 @@ function ProfileContent() {
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className={`grid grid-cols-1 gap-4 ${isInstructor ? 'sm:grid-cols-1' : 'sm:grid-cols-2'}`}>
                                 <div>
                                     <label className={labelCls}>{t('profile.field_city')}</label>
                                     <input
@@ -990,7 +1045,7 @@ function ProfileContent() {
                                         dir="auto"
                                     />
                                 </div>
-                                <div>
+                                {isInstructor && <div>
                                     <label className={labelCls}>{t('profile.field_specialty')}</label>
                                     <input
                                         type="text"
@@ -999,9 +1054,9 @@ function ProfileContent() {
                                         className={inputCls}
                                         dir="auto"
                                     />
-                                </div>
+                                </div>}
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className={`grid grid-cols-1 gap-4 ${isInstructor ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
                                 <div>
                                     <label className={labelCls} htmlFor="pf-gender">{t('profile.field_gender')}</label>
                                     <SelectField
@@ -1029,7 +1084,7 @@ function ProfileContent() {
                                         className={inputCls}
                                     />
                                 </div>
-                                <div>
+                                {!isInstructor && <div>
                                     <label className={labelCls}>{t('profile.field_university')}</label>
                                     <input
                                         type="text"
@@ -1039,9 +1094,9 @@ function ProfileContent() {
                                         dir="auto"
                                         placeholder={t('auth.university_ph')}
                                     />
-                                </div>
+                                </div>}
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {!isInstructor && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className={labelCls} htmlFor="pf-study-status">{t('profile.field_study_status')}</label>
                                     <SelectField
@@ -1070,7 +1125,7 @@ function ProfileContent() {
                                         placeholder={t('auth.study_level_ph')}
                                     />
                                 </div>
-                            </div>
+                            </div>}
                             <div>
                                 <label className={labelCls}>{t('profile.field_bio')}</label>
                                 <textarea
@@ -1082,12 +1137,7 @@ function ProfileContent() {
                                 />
                             </div>
 
-                            {/* Instructor CV. These are the fields a course
-                                visitor sees on the public instructor profile,
-                                so they are collected next to `bio` rather than
-                                behind a role check — a student may hold them
-                                too, and hiding them would strand the data. */}
-                            <div className="pt-2 mt-2 border-t border-gray-200 dark:border-white/5">
+                            {isInstructor && <div className="pt-2 mt-2 border-t border-gray-200 dark:border-white/5">
                                 <h3 className="text-sm font-black text-brand-navy dark:text-white mb-1 flex items-center gap-2">
                                     <Briefcase size={15} className="text-brand-gold" />
                                     {t('instructorProfile.cv_heading')}
@@ -1143,7 +1193,7 @@ function ProfileContent() {
                                         placeholder={t('instructorProfile.bio_en_ph')}
                                     />
                                 </div>
-                            </div>
+                            </div>}
                         </div>
 
                         <div className="flex gap-4 mt-8">

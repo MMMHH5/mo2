@@ -50,7 +50,7 @@ const EXPECTED_ADMIN_CONTROLLERS = [
 const adminControllers = walk(SRC)
     .filter((f) => f.endsWith('.controller.ts'))
     .filter((f) => /@Controller\('api\/admin/.test(readFileSync(f, 'utf8')))
-    .map((f) => relative(ROOT, f));
+    .map((f) => relative(ROOT, f).replace(/\\/g, '/'));
 
 test('every admin-pure family has its /api/admin controller', () => {
     for (const expected of EXPECTED_ADMIN_CONTROLLERS) {

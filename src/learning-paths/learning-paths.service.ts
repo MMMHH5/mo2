@@ -36,6 +36,42 @@ const learningPathInclude = {
     creator: { select: { id: true, email: true } },
 };
 
+const publishedPathWhere = {
+    isPublished: true,
+    courses: {
+        some: {
+            course: {
+                openings: {
+                    some: {
+                        isPublished: true,
+                        status: { in: [CourseOpeningStatus.OPEN, CourseOpeningStatus.ANNOUNCEMENT] },
+                    },
+                },
+            },
+        },
+    },
+};
+
+const publicLearningPathInclude = {
+    courses: {
+        where: {
+            course: {
+                openings: {
+                    some: {
+                        isPublished: true,
+                        status: { in: [CourseOpeningStatus.OPEN, CourseOpeningStatus.ANNOUNCEMENT] },
+                    },
+                },
+            },
+        },
+        include: {
+            course: { select: courseSummarySelect },
+        },
+        orderBy: { orderIndex: 'asc' as const },
+    },
+    creator: { select: { id: true, email: true } },
+};
+
 const managementLearningPathInclude = {
     ...learningPathInclude,
     _count: { select: { enrollments: true } },
@@ -86,6 +122,10 @@ export class LearningPathsService {
                 descriptionEn: dto.descriptionEn?.trim() || null,
                 coverImageUrl: dto.coverImageUrl?.trim() || null,
                 isPublished: dto.isPublished ?? false,
+                showCover: dto.showCover ?? true,
+                showDescription: dto.showDescription ?? true,
+                showCourses: dto.showCourses ?? true,
+                allowEnrollment: dto.allowEnrollment ?? false,
                 creatorId,
                 courses: {
                     create: courseIds.map((courseId, i) => ({ courseId, orderIndex: i })),
@@ -110,6 +150,14 @@ export class LearningPathsService {
                     readiness: this.courseReadiness(item.course),
                 })),
             }));
+        }
+        if (isPublished) {
+            const paths = await this.prisma.learningPath.findMany({
+                where: publishedPathWhere,
+                include: publicLearningPathInclude,
+                orderBy: { createdAt: 'desc' },
+            });
+            return paths.map((path) => this.toStudentPath(path));
         }
         return this.prisma.learningPath.findMany({
             where: { isPublished },
@@ -193,6 +241,10 @@ export class LearningPathsService {
                     descriptionEn: dto.descriptionEn === undefined ? path.descriptionEn : dto.descriptionEn?.trim() || null,
                     coverImageUrl: dto.coverImageUrl === undefined ? path.coverImageUrl : dto.coverImageUrl?.trim() || null,
                     isPublished: publishing,
+                    showCover: dto.showCover ?? path.showCover,
+                    showDescription: dto.showDescription ?? path.showDescription,
+                    showCourses: dto.showCourses ?? path.showCourses,
+                    allowEnrollment: dto.allowEnrollment ?? path.allowEnrollment,
                 },
             });
             if (courseIds !== undefined) {
@@ -253,8 +305,12 @@ export class LearningPathsService {
     }
 
     async enrollPath(pathId: string, userId: string) {
-        const path = await this.getPath(pathId);
-        if (!path.isPublished) throw new NotFoundException('Learning path not found');
+        const path = await this.prisma.learningPath.findUnique({
+            where: { id: pathId },
+            include: publicLearningPathInclude,
+        });
+        if (!path || !path.isPublished || path.courses.length === 0) throw new NotFoundException('Learning path not found');
+        if (!path.allowEnrollment) throw new BadRequestException('Enrollment is disabled for this learning path');
         const existing = await this.prisma.learningPathEnrollment.findUnique({
             where: { pathId_studentId: { pathId, studentId: userId } },
             select: { id: true },
@@ -307,9 +363,30 @@ export class LearningPathsService {
     }
 
     async getPublishedPath(pathId: string) {
-        const path = await this.getPath(pathId);
-        if (!path.isPublished) throw new NotFoundException('Learning path not found');
-        return path;
+        const path = await this.prisma.learningPath.findUnique({
+            where: { id: pathId },
+            include: publicLearningPathInclude,
+        });
+        if (!path || !path.isPublished || path.courses.length === 0) throw new NotFoundException('Learning path not found');
+        return this.toStudentPath(path);
+    }
+
+    private toStudentPath<T extends {
+        showCover: boolean;
+        showDescription: boolean;
+        showCourses: boolean;
+        coverImageUrl: string | null;
+        descriptionAr: string | null;
+        descriptionEn: string | null;
+        courses: unknown[];
+    }>(path: T) {
+        return {
+            ...path,
+            coverImageUrl: path.showCover ? path.coverImageUrl : null,
+            descriptionAr: path.showDescription ? path.descriptionAr : null,
+            descriptionEn: path.showDescription ? path.descriptionEn : null,
+            courses: path.showCourses ? path.courses : [],
+        };
     }
 
     async getStudentPaths(studentId: string) {

@@ -28,6 +28,8 @@ interface Eligibility {
     reason: string | null;
     requestId: string | null;
     requestStatus: string | null;
+    couponCode?: string | null;
+    coupon?: { name: string } | null;
 }
 
 interface RefundRequest {
@@ -41,6 +43,9 @@ interface RefundRequest {
     studentNote?: string | null;
     reviewerNote?: string | null;
     reviewedAt?: string | null;
+    completedAt?: string | null;
+    payoutReference?: string | null;
+    payment?: { couponCode?: string | null; coupon?: { name: string } | null } | null;
     createdAt: string;
     course?: { titleAr?: string | null; titleEn?: string | null } | null;
     opening?: { nameAr?: string | null; nameEn?: string | null } | null;
@@ -69,7 +74,8 @@ export default function RefundsPage() {
     const statusBadge = (status: string) => {
         const cls = status === 'APPROVED' ? 'bg-green-500/10 text-green-400 border-green-500/20'
             : status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+                : status === 'PROCESSING' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                    : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
         const Icon = status === 'APPROVED' ? CheckCircle : status === 'REJECTED' ? XCircle : Clock;
         return (
             <span className={`px-3 py-1 text-xs font-bold rounded-full border flex items-center gap-1.5 w-fit ${cls}`}>
@@ -107,7 +113,7 @@ export default function RefundsPage() {
     };
 
     const submit = async () => {
-        if (!selected?.courseId) return;
+        if (!selected?.paymentId) return;
         if (!accountName.trim() || !accountNumber.trim()) {
             toast.error(t('refunds.need_all_fields'));
             return;
@@ -115,7 +121,7 @@ export default function RefundsPage() {
         setSubmitting(true);
         try {
             await api.post('/refunds', {
-                courseId: selected.courseId,
+                paymentId: selected.paymentId,
                 method,
                 accountName: accountName.trim(),
                 accountNumber: accountNumber.trim(),
@@ -165,6 +171,11 @@ export default function RefundsPage() {
                                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{locale === 'ar' ? item.openingNameAr : item.openingNameEn}</p>
                                         )}
                                         <p className="text-sm mt-1 text-green-600 dark:text-green-400 font-bold">{money(item.amount, item.currency)}</p>
+                                        {item.couponCode && (
+                                            <p className="text-xs mt-1 text-brand-gold-dark dark:text-brand-gold-light">
+                                                {t('refunds.coupon_used')}: {item.couponCode}{item.coupon?.name ? ` · ${item.coupon.name}` : ''}
+                                            </p>
+                                        )}
                                         {item.deadline && (
                                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                                 {t('refunds.eligible_until')} {formatDate(item.deadline, { locale })}
@@ -211,6 +222,12 @@ export default function RefundsPage() {
                                         <span>{t('refunds.account_holder')}: <strong className="text-brand-navy dark:text-white">{r.accountName}</strong></span>
                                         <span>{t('refunds.account_number')}: <strong className="text-brand-navy dark:text-white break-all">{r.accountNumber}</strong></span>
                                     </div>
+                                    {r.payment?.couponCode && (
+                                        <p className="mt-2 text-sm text-brand-gold-dark dark:text-brand-gold-light">
+                                            {t('refunds.coupon_used')}: <strong>{r.payment.couponCode}</strong>
+                                            {r.payment.coupon?.name ? ` · ${r.payment.coupon.name}` : ''}
+                                        </p>
+                                    )}
                                     {r.studentNote && (
                                         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400"><strong>{t('refunds.note')}:</strong> {r.studentNote}</p>
                                     )}
@@ -218,6 +235,21 @@ export default function RefundsPage() {
                                         <div className={`mt-3 p-3 rounded-xl text-sm border ${r.status === 'REJECTED' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-green-500/10 text-green-500 border-green-500/20'}`}>
                                             <strong>{t('refunds.reviewer_note')}:</strong> {r.reviewerNote}
                                         </div>
+                                    )}
+                                    {r.status === 'PROCESSING' && (
+                                        <p className="mt-3 p-3 rounded-xl text-sm border bg-blue-500/10 text-blue-400 border-blue-500/20">
+                                            {t('refunds.student_processing_notice')}
+                                        </p>
+                                    )}
+                                    {r.completedAt && (
+                                        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                                            {t('refunds.completed_at')} {formatDate(r.completedAt, { locale })}
+                                        </p>
+                                    )}
+                                    {r.payoutReference && (
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            {t('refunds.payout_reference')}: <span dir="ltr">{r.payoutReference}</span>
+                                        </p>
                                     )}
                                 </div>
                             ))}

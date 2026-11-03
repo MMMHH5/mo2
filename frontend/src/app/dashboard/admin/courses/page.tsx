@@ -131,7 +131,6 @@ export default function AdminCoursesPage() {
                                 const pub = publishedOpenings(c);
                                 const endedCount = (c.openings || []).filter(o => o.status === 'ENDED').length;
                                 const status = statusTone(pub.length, (c.openings || []).length, endedCount);
-                                const hasEnrollments = (c._count?.enrollments ?? 0) > 0 || totalEnrollments(c) > 0;
                                 const isExpanded = expandedId === c.id;
                                 return (
                                     <Fragment key={c.id}>
@@ -189,9 +188,9 @@ export default function AdminCoursesPage() {
                                             </Link>
                                             <button
                                                 onClick={() => handleDelete(c)}
-                                                disabled={deletingId === c.id || hasEnrollments}
-                                                className={`admin-action-btn tooltip disabled:opacity-40 ${hasEnrollments ? 'text-gray-600 dark:text-gray-400 cursor-not-allowed' : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10'}`}
-                                                title={hasEnrollments ? t('admin.cannot_delete_enrollments') : t('manageCourses.delete_tooltip')}
+                                                disabled={deletingId === c.id}
+                                                className="admin-action-btn tooltip text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40"
+                                                title={t('manageCourses.delete_tooltip')}
                                             >
                                                 <Trash2 size={18} />
                                             </button>

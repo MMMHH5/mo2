@@ -57,6 +57,14 @@ export class LearningPathsController {
         return this.svc.getPublishedPath(id);
     }
 
+    @ApiOperation({ summary: 'Join a published learning path' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.STUDENT)
+    @Post(':id/enroll')
+    enroll(@Param('id') id: string, @Request() req: any) {
+        return this.svc.enrollPath(id, req.user.userId);
+    }
+
     @ApiOperation({ summary: 'Update learning path' })
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(...STAFF)

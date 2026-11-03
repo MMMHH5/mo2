@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { TicketStatus } from '@prisma/client';
 
 @Injectable()
 export class SupportTicketsService {
@@ -58,5 +59,28 @@ export class SupportTicketsService {
         const ticket = await this.prisma.supportTicket.update({ where: { id }, data });
         await this.audit.logAction(`Updated support ticket ${id} -> ${dto.status ?? 'notes'}`, undefined, actorId);
         return ticket;
+    }
+
+    async getContactSubmissions() {
+        return this.prisma.contactSubmission.findMany({
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async updateContactSubmission(id: string, status: string, actorId: string) {
+        const allowed = Object.values(TicketStatus);
+        if (!allowed.includes(status as TicketStatus)) {
+            throw new BadRequestException('Invalid contact submission status');
+        }
+
+        const existing = await this.prisma.contactSubmission.findUnique({ where: { id } });
+        if (!existing) throw new NotFoundException('Contact submission not found');
+
+        const submission = await this.prisma.contactSubmission.update({
+            where: { id },
+            data: { status: status as TicketStatus },
+        });
+        await this.audit.logAction(`Updated contact submission ${id} -> ${status}`, undefined, actorId);
+        return submission;
     }
 }

@@ -6,13 +6,19 @@ import MobileSidebar from '@/components/MobileSidebar';
 import ThemeToggle from '@/components/ThemeToggle';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { usePathname } from 'next/navigation';
+import type { Role } from '@/lib/auth-context';
+
+const APP_MODE = process.env.NEXT_PUBLIC_APP_MODE === 'admin' ? 'admin' : 'learner';
+const PLATFORM_ROLES: Role[] = APP_MODE === 'admin'
+    ? ['ADMIN', 'FINANCE', 'COURSE_MANAGER']
+    : ['STUDENT', 'INSTRUCTOR'];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isCoursePlayer = /^\/(?:(?:ar|en)\/)?dashboard\/courses\/[^/]+\/player\/?$/.test(pathname);
 
     return (
-        <ProtectedRoute>
+        <ProtectedRoute allowedRoles={PLATFORM_ROLES}>
             <div className="flex min-h-screen min-w-0 overflow-x-clip bg-gray-50 dark:bg-brand-navy-dark">
                 {!isCoursePlayer && <Sidebar />}
 

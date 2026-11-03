@@ -162,6 +162,15 @@ export class UsersController {
         return this.usersService.updateRole(id, role, req.user.userId, ip);
     }
 
+    @ApiOperation({ summary: 'Disable two-factor authentication for a user (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Two-factor authentication disabled and the user sessions revoked.' })
+    @Roles(Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.USERS_WRITE)
+    @Patch(':id/two-factor/disable')
+    disableUserTwoFactor(@Param('id') id: string, @Request() req: any, @Ip() ip: string) {
+        return this.usersService.disableUserTwoFactor(id, req.user.userId, ip);
+    }
+
     @ApiOperation({ summary: 'Delete user account (Admin only)' })
     @ApiResponse({ status: 200, description: 'User permanently deleted.' })
     @Roles(Role.ADMIN)

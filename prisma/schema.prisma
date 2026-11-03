@@ -72,6 +72,11 @@ enum TicketStatus {
   CLOSED
 }
 
+enum ContactMethod {
+  EMAIL
+  PHONE
+}
+
 enum PaymentStatus {
   PENDING
   PAID
@@ -96,6 +101,7 @@ enum CouponMaxScope {
 // student and only ever leaves that state through a finance/admin decision.
 enum RefundStatus {
   PENDING
+  PROCESSING
   APPROVED
   REJECTED
 }
@@ -202,6 +208,7 @@ model User {
   announcementBoardPosts    AnnouncementBoard[]
   refundRequests            RefundRequest[]            @relation("RefundRequests")
   reviewedRefundRequests    RefundRequest[]            @relation("RefundReviewedBy")
+  completedRefundRequests   RefundRequest[]            @relation("RefundCompletedBy")
   attendanceMarked          SessionAttendance[]        @relation("AttendanceMarkedBy")
 }
 
@@ -246,6 +253,7 @@ model Course {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  archivedAt DateTime?
 
   instructorId String
   instructor   User   @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Restrict)
@@ -272,6 +280,8 @@ model Course {
   learningPathCourses LearningPathCourse[]
   learningSessions    LearningSession[]
   refundRequests      RefundRequest[]
+
+  @@index([archivedAt])
 }
 
 model CourseOpening {
@@ -308,6 +318,7 @@ model CourseOpening {
   announcementEndAt   DateTime?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
+  archivedAt          DateTime?
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -327,6 +338,8 @@ model CourseOpening {
   refundRequests   RefundRequest[]
   liveSessions     LiveSession[]
   instructorGrants OpeningInstructorGrant[]
+
+  @@index([archivedAt])
 }
 
 model OpeningInstructorGrant {
@@ -763,6 +776,21 @@ model SupportTicket {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model ContactSubmission {
+  id            String        @id @default(uuid())
+  name          String?
+  email         String?
+  phone         String?
+  contactMethod ContactMethod
+  subject       String
+  message       String        @db.Text
+  status        TicketStatus  @default(OPEN)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status, createdAt])
+}
+
 model Assessment {
   id         String   @id @default(uuid())
   nameAr     String
@@ -1162,9 +1190,9 @@ model Payment {
 }
 
 // A student's request to be refunded the (full) amount they paid for a course.
-// Created while the opening's refund window is open; finance/admin then approve
-// (which runs the real refund via PaymentsService) or reject. The request keeps
-// its own audit trail even though the money movement lives on Payment.
+// Created while the opening's refund window is open; finance/admin approve it
+// into PROCESSING, then confirm after manually transferring the money outside
+// the system. The request keeps the payout audit trail with the payment status.
 model RefundRequest {
   id            String       @id @default(uuid())
   status        RefundStatus @default(PENDING)
@@ -1176,6 +1204,8 @@ model RefundRequest {
   studentNote   String?
   reviewerNote  String?
   reviewedAt    DateTime?
+  completedAt   DateTime?
+  payoutReference String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -1193,6 +1223,8 @@ model RefundRequest {
 
   reviewedById String?
   reviewedBy   User?   @relation("RefundReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  completedById String?
+  completedBy   User?   @relation("RefundCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
 
   @@index([studentId])
   @@index([status])
@@ -1549,15 +1581,19 @@ model PointLog {
 // ===== Learning Paths =====
 
 model LearningPath {
-  id            String   @id @default(uuid())
-  titleAr       String
-  titleEn       String
-  descriptionAr String?  @db.Text
-  descriptionEn String?  @db.Text
-  coverImageUrl String?
-  isPublished   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(uuid())
+  titleAr         String
+  titleEn         String
+  descriptionAr   String?  @db.Text
+  descriptionEn   String?  @db.Text
+  coverImageUrl   String?
+  isPublished     Boolean  @default(false)
+  showCover       Boolean  @default(true)
+  showDescription Boolean  @default(true)
+  showCourses     Boolean  @default(true)
+  allowEnrollment Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   creatorId String
   creator   User   @relation(fields: [creatorId], references: [id], onDelete: Restrict)

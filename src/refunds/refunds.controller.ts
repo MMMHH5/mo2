@@ -9,7 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
-import { CreateRefundRequestDto, ReviewRefundRequestDto } from './dto/refund.dto';
+import { CompleteRefundRequestDto, CreateRefundRequestDto, ReviewRefundRequestDto } from './dto/refund.dto';
 
 @ApiTags('Refunds')
 @ApiBearerAuth('JWT-auth')
@@ -54,5 +54,14 @@ export class RefundsController {
     @Patch(':id')
     review(@Param('id') id: string, @Body() dto: ReviewRefundRequestDto, @Request() req: any) {
         return this.refunds.review(id, req.user.userId, req.user.role, dto);
+    }
+
+    @ApiOperation({ summary: 'Record completion of the manual refund transfer' })
+    @Roles(Role.FINANCE, Role.ADMIN)
+    @RequirePermissions(PERMISSIONS.REFUNDS_REVIEW)
+    @UseGuards(StepUpGuard)
+    @Post(':id/complete')
+    complete(@Param('id') id: string, @Body() dto: CompleteRefundRequestDto, @Request() req: any) {
+        return this.refunds.complete(id, req.user.userId, req.user.role, dto);
     }
 }

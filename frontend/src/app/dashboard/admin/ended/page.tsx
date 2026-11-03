@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from 'react';
-import { BookOpen, CalendarClock, Flag, FileText, Search, Users } from 'lucide-react';
+import { ArchiveRestore, BookOpen, CalendarClock, Flag, FileText, Search, Users } from 'lucide-react';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import { PageHeader, StatCard, Badge, EmptyState } from '../components';
 import EndedOpeningReportModal from '@/components/admin/EndedOpeningReportModal';
+import { api, getErrorMessage } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 interface Opening {
     id: string;
@@ -27,6 +29,13 @@ interface Course {
     openings?: Opening[];
 }
 
+interface ArchivedItems {
+    courses: { id: string; titleAr?: string | null; titleEn?: string | null }[];
+    openings: (Opening & {
+        course: { id: string; titleAr?: string | null; titleEn?: string | null };
+    })[];
+}
+
 const formatDate = (v?: string | null) => {
     if (!v) return null;
     const d = new Date(v);
@@ -37,7 +46,27 @@ export default function AdminEndedPage() {
     const { t, pick } = useI18n();
     const [query, setQuery] = useState('');
     const [report, setReport] = useState<{ openingId: string; courseId: string } | null>(null);
-    const { data: courses, loading } = useFetchData<Course[]>('/courses?includeUnpublished=true');
+    const [processingId, setProcessingId] = useState<string | null>(null);
+    const { data: courses, loading, refetch } = useFetchData<Course[]>('/courses?includeUnpublished=true');
+    const {
+        data: archived,
+        loading: archivedLoading,
+        refetch: refetchArchived,
+    } = useFetchData<ArchivedItems>('/api/admin/courses/archived');
+
+    const restore = async (id: string, type: 'course' | 'opening' | 'ended') => {
+        setProcessingId(id);
+        try {
+            await api.post(type === 'course' ? `/api/admin/courses/${id}/restore` : `/openings/${id}/restore`);
+            toast.success(t(type === 'ended' ? 'endedCourses.restore_ended_success' : 'endedCourses.restore_success'));
+            refetch();
+            refetchArchived();
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('endedCourses.restore_failed'));
+        } finally {
+            setProcessingId(null);
+        }
+    };
 
     // A finished batch is the archival unit: it keeps its own roster and its own
     // certificate set, so the wrap-up report is keyed by opening, not by course.
@@ -158,13 +187,23 @@ export default function AdminEndedPage() {
                                                 <Badge tone="gray">{t('manageCourses.status_ended')}</Badge>
                                             </td>
                                             <td className="px-5 py-4">
-                                                <button
-                                                    onClick={() => setReport({ openingId: o.id, courseId: o.courseId })}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-gold/10 hover:bg-brand-gold/20 text-brand-gold-dark dark:text-brand-gold-light text-xs font-black transition-colors"
-                                                >
-                                                    <FileText size={14} />
-                                                    {t('endedCourses.view_report')}
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setReport({ openingId: o.id, courseId: o.courseId })}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-gold/10 hover:bg-brand-gold/20 text-brand-gold-dark dark:text-brand-gold-light text-xs font-black transition-colors"
+                                                    >
+                                                        <FileText size={14} />
+                                                        {t('endedCourses.view_report')}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => restore(o.id, 'ended')}
+                                                        disabled={processingId === o.id}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-black transition-colors disabled:opacity-50"
+                                                    >
+                                                        <ArchiveRestore size={14} />
+                                                        {t('endedCourses.restore')}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -174,6 +213,59 @@ export default function AdminEndedPage() {
                     </table>
                 </div>
             </div>
+
+            <section className="space-y-4">
+                <PageHeader title={t('endedCourses.archived_title')} subtitle={t('endedCourses.archived_subtitle')} />
+                {archivedLoading ? (
+                    <div className="p-8 text-center text-gray-400 font-bold">{t('common.loading')}</div>
+                ) : (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-navy-dark p-5 space-y-3">
+                            <h3 className="font-black text-brand-navy dark:text-white">{t('endedCourses.archived_courses')}</h3>
+                            {(archived?.courses ?? []).length === 0 ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('endedCourses.archived_empty')}</p>
+                            ) : archived?.courses.map(course => (
+                                <div key={course.id} className="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-white/5 pt-3">
+                                    <span className="font-bold text-sm text-brand-navy dark:text-white">{pick(course, 'title') || course.id}</span>
+                                    <button
+                                        onClick={() => restore(course.id, 'course')}
+                                        disabled={processingId === course.id}
+                                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-black text-emerald-700 dark:text-emerald-300 disabled:opacity-50"
+                                    >
+                                        <ArchiveRestore size={14} />
+                                        {t('endedCourses.restore')}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-navy-dark p-5 space-y-3">
+                            <h3 className="font-black text-brand-navy dark:text-white">{t('endedCourses.archived_openings')}</h3>
+                            {(archived?.openings ?? []).length === 0 ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('endedCourses.archived_empty')}</p>
+                            ) : archived?.openings.map(opening => (
+                                <div key={opening.id} className="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-white/5 pt-3">
+                                    <div className="min-w-0">
+                                        <div className="font-bold text-sm text-brand-navy dark:text-white truncate">
+                                            {pick(opening.course, 'title') || t('endedCourses.untitled')}
+                                        </div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                            {pick(opening, 'name') || t('endedCourses.col_opening')}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => restore(opening.id, 'opening')}
+                                        disabled={processingId === opening.id}
+                                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-black text-emerald-700 dark:text-emerald-300 disabled:opacity-50"
+                                    >
+                                        <ArchiveRestore size={14} />
+                                        {t('endedCourses.restore')}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </section>
 
             {report && (
                 <EndedOpeningReportModal

@@ -18,13 +18,6 @@ export class CheckoutDto {
     couponCode?: string;
 }
 
-export class RefundPaymentDto {
-    @ApiPropertyOptional({ enum: ['duplicate', 'fraudulent', 'requested_by_customer'], description: 'Reason for the refund (Stripe-compatible)' })
-    @IsOptional()
-    @IsIn(['duplicate', 'fraudulent', 'requested_by_customer'])
-    reason?: 'duplicate' | 'fraudulent' | 'requested_by_customer';
-}
-
 const COUPON_TYPES = ['PERCENT', 'AMOUNT'] as const;
 
 export class CreateCouponDto {

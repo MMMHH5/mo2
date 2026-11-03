@@ -37,3 +37,27 @@ export class AdminSupportTicketsController {
         return this.supportTicketsService.update(id, { status, adminNotes }, req.user.userId);
     }
 }
+
+@ApiTags('Contact Submissions (رسائل التواصل)')
+@ApiBearerAuth('JWT-auth')
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+@Controller('api/admin/contact-submissions')
+export class AdminContactSubmissionsController {
+    constructor(private readonly supportTicketsService: SupportTicketsService) {}
+
+    @ApiOperation({ summary: 'List public contact form submissions' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.SUPPORT_READ)
+    @Get()
+    getAll() {
+        return this.supportTicketsService.getContactSubmissions();
+    }
+
+    @ApiOperation({ summary: 'Update a contact submission status' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.SUPPORT_WRITE)
+    @Patch(':id')
+    update(@Param('id') id: string, @Body('status') status: string, @Request() req: any) {
+        return this.supportTicketsService.updateContactSubmission(id, status, req.user.userId);
+    }
+}

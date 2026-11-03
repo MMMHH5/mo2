@@ -50,11 +50,16 @@ function setLocaleCookie(res: NextResponse, locale: Locale) {
 // backend: admin tokens are only useful against the admin API host.
 const APP_MODE = (process.env.NEXT_PUBLIC_APP_MODE || process.env.APP_MODE || 'learner') === 'admin' ? 'admin' : 'learner';
 
-const ADMIN_ONLY = ['/dashboard/admin', '/operations'];
+const ADMIN_ONLY = [
+    '/dashboard/admin',
+    '/dashboard/courses/create',
+    '/dashboard/courses/edit',
+    '/dashboard/courses/open',
+    '/operations',
+];
 
-// Course management is shared work (admins edit courses), so it stays open on
-// both origins. Everything below is learner/instructor work that no admin
-// console flow links into.
+// Everything below is learner/instructor work that no admin console flow
+// links into.
 const LEARNER_ONLY_ON_ADMIN = [
     '/dashboard/my-grades',
     '/dashboard/explore',

@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import LoginPromptModal from '@/components/LoginPromptModal';
 import {
     ArrowDown, ArrowUp, ArrowUpRight, BookOpen, ChevronDown, GraduationCap, ImagePlus, Layers, Loader, Lock, Pencil,
     Plus, Route, Search, Trash2, X,
@@ -52,6 +53,10 @@ interface LearningPathData {
     descriptionEn?: string | null;
     coverImageUrl?: string | null;
     isPublished: boolean;
+    showCover: boolean;
+    showDescription: boolean;
+    showCourses: boolean;
+    allowEnrollment: boolean;
     createdAt: string;
     creator?: { id: string; email?: string } | null;
     courses?: PathCourseItem[];
@@ -64,6 +69,10 @@ interface PathForm {
     descriptionEn: string;
     coverImageUrl: string;
     isPublished: boolean;
+    showCover: boolean;
+    showDescription: boolean;
+    showCourses: boolean;
+    allowEnrollment: boolean;
     courseIds: string[];
 }
 
@@ -83,6 +92,10 @@ const emptyPathForm: PathForm = {
     descriptionEn: '',
     coverImageUrl: '',
     isPublished: false,
+    showCover: true,
+    showDescription: true,
+    showCourses: true,
+    allowEnrollment: false,
     courseIds: [],
 };
 
@@ -115,6 +128,8 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [coverFilePreview, setCoverFilePreview] = useState('');
     const [saving, setSaving] = useState(false);
+    const [enrollingId, setEnrollingId] = useState<string | null>(null);
+    const [loginPromptOpen, setLoginPromptOpen] = useState(false);
     const [courseQuery, setCourseQuery] = useState('');
     const coverPreviewUrlRef = useRef<string | null>(null);
 
@@ -163,6 +178,10 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
             descriptionEn: p.descriptionEn || '',
             coverImageUrl: p.coverImageUrl || '',
             isPublished: !!p.isPublished,
+            showCover: p.showCover !== false,
+            showDescription: p.showDescription !== false,
+            showCourses: p.showCourses !== false,
+            allowEnrollment: !!p.allowEnrollment,
             courseIds: [...(p.courses || [])]
                 .sort((a, b) => a.orderIndex - b.orderIndex)
                 .map((item) => item.course?.id)
@@ -217,6 +236,10 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                 descriptionEn: form.descriptionEn.trim(),
                 coverImageUrl,
                 isPublished: form.isPublished,
+                showCover: form.showCover,
+                showDescription: form.showDescription,
+                showCourses: form.showCourses,
+                allowEnrollment: form.allowEnrollment,
                 courseIds: form.courseIds,
             };
             if (editing) {
@@ -246,6 +269,24 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
             toast.error(getErrorMessage(err) || t('common.error'));
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const joinPath = async (pathId: string) => {
+        if (!user) {
+            setLoginPromptOpen(true);
+            return;
+        }
+        if (user.role !== 'STUDENT') return;
+        setEnrollingId(pathId);
+        try {
+            await api.post(`/learning-paths/${pathId}/enroll`);
+            toast.success(t('learningPaths.enrolled'));
+            refetch();
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('common.error'));
+        } finally {
+            setEnrollingId(null);
         }
     };
 
@@ -366,6 +407,9 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                     {visiblePaths.map((p, idx) => {
                         const courses = [...(p.courses || [])].sort((a, b) => a.orderIndex - b.orderIndex);
                         const expanded = expandedId === p.id;
+                        const showCover = manage || p.showCover !== false;
+                        const showDescription = manage || p.showDescription !== false;
+                        const showCourses = manage || p.showCourses !== false;
                         const pathReadiness = courses.length > 0
                             ? Math.round(courses.reduce((total, item) => total + (item.readiness?.percent ?? 0), 0) / courses.length)
                             : 0;
@@ -379,16 +423,18 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                             >
                                 {/* Cover */}
                                 <div className={`relative ${variant === 'featured' ? 'h-48' : 'h-28'} bg-gradient-to-br ${GRADIENTS[idx % GRADIENTS.length]} flex items-end p-4`}>
-                                    {p.coverImageUrl ? (
+                                    {showCover && p.coverImageUrl ? (
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img src={/^https?:\/\//i.test(p.coverImageUrl) ? p.coverImageUrl : `${API_BASE_URL}${p.coverImageUrl}`} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
                                     ) : null}
                                     {variant === 'featured' && <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/5" />}
                                     <div className="relative z-10 w-full flex items-start justify-between gap-2">
-                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-[11px] font-bold text-white border border-white/10">
-                                            <BookOpen size={12} className="text-brand-gold-light" />
-                                            {courses.length} {isAr ? 'دورة' : courses.length === 1 ? 'course' : 'courses'}
-                                        </span>
+                                        {showCourses && (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-[11px] font-bold text-white border border-white/10">
+                                                <BookOpen size={12} className="text-brand-gold-light" />
+                                                {courses.length} {isAr ? 'دورة' : courses.length === 1 ? 'course' : 'courses'}
+                                            </span>
+                                        )}
                                         {mode === 'manage' && (
                                             <span className={`px-2 py-1 rounded-lg text-[10px] font-black backdrop-blur-sm border ${
                                                 p.isPublished
@@ -403,7 +449,7 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
 
                                 <div className={`${variant === 'featured' ? 'p-5' : 'p-4'} flex-1 flex flex-col`}>
                                     <h4 className={`font-black leading-snug ${variant === 'featured' ? `text-lg ${dark ? 'text-white' : 'text-brand-navy'}` : 'text-white'}`}>{pick(p, 'title')}</h4>
-                                    {pick(p, 'description') && (
+                                    {showDescription && pick(p, 'description') && (
                                         <p className={`${variant === 'featured' && !dark ? 'text-gray-600' : 'text-gray-400'} mt-1.5 text-xs leading-relaxed line-clamp-2`}>{pick(p, 'description')}</p>
                                     )}
 
@@ -418,7 +464,7 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                             <div className="h-full rounded-full bg-brand-gold" style={{ width: `${pathReadiness}%` }} />
                                         </div>
                                     )}
-                                    {expanded && (
+                                    {showCourses && expanded && (
                                         <div className="mt-4 space-y-2 animate-fade-in">
                                             {courses.length === 0 ? (
                                                 <p className="text-[11px] text-gray-500 font-bold">{isAr ? 'لا توجد دورات في هذا المسار بعد' : 'No courses in this path yet'}</p>
@@ -459,7 +505,7 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                                                     href={`/courses/${pc.course.id}`}
                                                                     className="ms-8 inline-flex items-center gap-1.5 text-[11px] font-black text-brand-gold-light transition hover:text-brand-gold"
                                                                 >
-                                                                    {isAr ? 'عرض الدورة والتسجيل' : 'View course and enroll'}
+                                                                    {t('learningPaths.view_course_tools')}
                                                                     <ArrowUpRight size={13} className="rtl:rotate-[-90deg]" />
                                                                 </Link>
                                                             )}
@@ -471,13 +517,25 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                     )}
 
                                     <div className="mt-auto pt-4 flex items-center gap-2">
-                                        <button
-                                            onClick={() => setExpandedId(expanded ? null : p.id)}
-                                            className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${variant === 'featured' && !dark ? 'border-gray-200 bg-white text-brand-navy hover:border-brand-gold hover:bg-brand-gold/5' : 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'}`}
-                                        >
-                                            {isAr ? 'الدورات' : 'Courses'}
-                                            <ChevronDown size={13} className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
-                                        </button>
+                                        {showCourses && (
+                                            <button
+                                                onClick={() => setExpandedId(expanded ? null : p.id)}
+                                                className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${variant === 'featured' && !dark ? 'border-gray-200 bg-white text-brand-navy hover:border-brand-gold hover:bg-brand-gold/5' : 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'}`}
+                                            >
+                                                {isAr ? 'الدورات والأدوات' : 'Courses and tools'}
+                                                <ChevronDown size={13} className={`transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
+                                            </button>
+                                        )}
+                                        {!manage && p.allowEnrollment && (!user || user.role === 'STUDENT') && (
+                                            <button
+                                                onClick={() => joinPath(p.id)}
+                                                disabled={enrollingId === p.id}
+                                                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-gold px-3 py-2 text-xs font-black text-brand-navy-dark transition hover:bg-brand-gold-light disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                {enrollingId === p.id ? <Loader size={14} className="animate-spin" /> : <GraduationCap size={14} />}
+                                                {enrollingId === p.id ? t('learningPaths.joining_path') : t('learningPaths.join_path')}
+                                            </button>
+                                        )}
                                         {manage && (
                                             <>
                                                 <button
@@ -498,6 +556,11 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                             </>
                                         )}
                                     </div>
+                                    {!manage && p.allowEnrollment && (
+                                        <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+                                            {t('learningPaths.join_path_hint')}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -615,6 +678,32 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                                     </div>
                                 </div>
                             </div>
+                            <fieldset className="space-y-2 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                                <legend className="px-2 text-sm font-black text-white">
+                                    {isAr ? 'إعدادات عرض المسار للطلاب' : 'Student display settings'}
+                                </legend>
+                                {([
+                                    ['showCover', 'show_cover'],
+                                    ['showDescription', 'show_description'],
+                                    ['showCourses', 'show_courses'],
+                                    ['allowEnrollment', 'allow_enrollment'],
+                                ] as const).map(([field, label]) => (
+                                    <label key={field} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm text-gray-300 transition hover:bg-white/5">
+                                        <input
+                                            type="checkbox"
+                                            checked={form[field]}
+                                            onChange={(e) => setForm({ ...form, [field]: e.target.checked })}
+                                            className="h-4 w-4 accent-brand-gold"
+                                        />
+                                        <span>{t(`learningPaths.${label}`)}</span>
+                                    </label>
+                                ))}
+                                {form.allowEnrollment && (
+                                    <p className="ps-9 text-xs leading-relaxed text-gray-500">
+                                        {t('learningPaths.join_path_hint')}
+                                    </p>
+                                )}
+                            </fieldset>
                             <section className="space-y-3">
                                 <div className="flex items-center justify-between gap-2">
                                     <h4 className="text-sm font-black text-white">
@@ -772,6 +861,11 @@ export default function LearningPathList({ mode = 'browse', variant = 'default',
                     </div>
                 </div>
             )}
+            <LoginPromptModal
+                open={loginPromptOpen}
+                onClose={() => setLoginPromptOpen(false)}
+                redirectTo="/courses#learning-paths"
+            />
         </div>
     );
 }

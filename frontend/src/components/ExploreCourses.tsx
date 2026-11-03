@@ -15,6 +15,7 @@ import PaymentMethods, { type PaymentGateway } from '@/components/payment/Paymen
 import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
 import EnrollSteps from '@/components/payment/EnrollSteps';
 import LoginPromptModal from '@/components/LoginPromptModal';
+import LearningPathList from '@/components/LearningPathList';
 
 interface Opening {
     id: string;
@@ -28,6 +29,7 @@ interface BrowseLearningPath {
     titleEn: string;
     descriptionAr?: string | null;
     descriptionEn?: string | null;
+    showCourses?: boolean;
     courses?: { course?: { id: string } | null }[];
 }
 
@@ -67,10 +69,14 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const currentOpening = (course: Course): Opening | undefined => openOpening(course) ?? announcedOpening(course);
 
     const selectedPathCourseIds = useMemo(() => {
-        const path = learningPaths?.find((item) => item.id === learningPathId);
+        const path = learningPaths?.find((item) => item.id === learningPathId && item.showCourses !== false);
         return new Set((path?.courses ?? []).map((item) => item.course?.id).filter((id): id is string => !!id));
     }, [learningPaths, learningPathId]);
-    const selectedLearningPath = learningPaths?.find((path) => path.id === learningPathId);
+    const filterableLearningPaths = useMemo(
+        () => (learningPaths ?? []).filter((path) => path.showCourses !== false),
+        [learningPaths],
+    );
+    const selectedLearningPath = filterableLearningPaths.find((path) => path.id === learningPathId);
 
     const filteredCourses = useMemo(() => {
         if (!courses) return courses;
@@ -216,6 +222,8 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                 </div>
             )}
 
+            <LearningPathList variant="featured" />
+
             {/* Toolbar */}
             <div className={`rounded-2xl border p-4 sticky top-[72px] md:top-20 z-30 backdrop-blur-md space-y-4 ${isDark ? 'bg-brand-navy-dark/90 border-white/10 shadow-lg shadow-black/20' : 'bg-white/90 border-brand-mist shadow-sm'}`}>
                 <div className="flex flex-col md:flex-row gap-3">
@@ -239,7 +247,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                         <div className="flex-1 relative">
                             <select value={learningPathId} onChange={(e) => setLearningPathId(e.target.value)} className={selectCls}>
                                 <option value="">{locale === 'ar' ? 'كل المسارات' : 'All learning paths'}</option>
-                                {(learningPaths ?? []).map((path) => (
+                                {filterableLearningPaths.map((path) => (
                                     <option key={path.id} value={path.id}>{pick(path, 'title')}</option>
                                 ))}
                             </select>
@@ -321,7 +329,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                             onEnroll={handleEnrollClick}
                             onReserve={handleReserveClick}
                             learningPathNames={(learningPaths ?? [])
-                                .filter((path) => path.courses?.some((item) => item.course?.id === course.id))
+                                .filter((path) => path.showCourses !== false && path.courses?.some((item) => item.course?.id === course.id))
                                 .map((path) => pick(path, 'title'))
                                 .filter((name): name is string => !!name)}
                         />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Mail, Clock, MessageSquare, CheckCircle2, Play, Camera, Send, Hash, Globe } from 'lucide-react';
+import { Mail, Phone, Clock, MessageSquare, CheckCircle2, Play, Camera, Send, Hash, Globe } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import MarketingShell from '@/components/MarketingShell';
@@ -13,7 +13,9 @@ export default function ContactContent() {
     const isAr = locale === 'ar';
 
     const [name, setName] = useState('');
+    const [contactMethod, setContactMethod] = useState<'email' | 'phone'>('email');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -26,10 +28,18 @@ export default function ContactContent() {
         setError('');
         setSuccess(false);
         try {
-            await api.post('/public/contact', { name, email, subject, message });
+            await api.post('/public/contact', {
+                name,
+                contactMethod,
+                email: contactMethod === 'email' ? email : undefined,
+                phone: contactMethod === 'phone' ? phone : undefined,
+                subject,
+                message,
+            });
             setSuccess(true);
             setName('');
             setEmail('');
+            setPhone('');
             setSubject('');
             setMessage('');
         } catch (err) {
@@ -85,14 +95,38 @@ export default function ContactContent() {
                                 />
                             </div>
                             <div>
-                                <label className={`block text-sm font-bold mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{isAr ? 'البريد الإلكتروني' : 'Email'}</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                <label className={`block text-sm font-bold mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{isAr ? 'كيف تفضل أن نتواصل معك؟' : 'How should we contact you?'}</label>
+                                <select
+                                    value={contactMethod}
+                                    onChange={(e) => setContactMethod(e.target.value === 'phone' ? 'phone' : 'email')}
                                     className={inputCls}
+                                >
+                                    <option value="email">{isAr ? 'البريد الإلكتروني' : 'Email'}</option>
+                                    <option value="phone">{isAr ? 'رقم الهاتف' : 'Phone number'}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label className={`block text-sm font-bold mb-1 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {contactMethod === 'email'
+                                    ? isAr ? 'البريد الإلكتروني' : 'Email'
+                                    : isAr ? 'رقم الهاتف' : 'Phone number'}
+                            </label>
+                            <div className="relative">
+                                {contactMethod === 'email' ? (
+                                    <Mail size={18} className={`absolute top-1/2 -translate-y-1/2 ${isAr ? 'right-4' : 'left-4'} ${dark ? 'text-gray-500' : 'text-gray-400'}`} />
+                                ) : (
+                                    <Phone size={18} className={`absolute top-1/2 -translate-y-1/2 ${isAr ? 'right-4' : 'left-4'} ${dark ? 'text-gray-500' : 'text-gray-400'}`} />
+                                )}
+                                <input
+                                    type={contactMethod === 'email' ? 'email' : 'tel'}
+                                    value={contactMethod === 'email' ? email : phone}
+                                    onChange={(e) => contactMethod === 'email' ? setEmail(e.target.value) : setPhone(e.target.value)}
+                                    className={`${inputCls} ${isAr ? 'pr-11' : 'pl-11'}`}
+                                    maxLength={contactMethod === 'email' ? 254 : 30}
                                     required
-                                    placeholder="you@example.com"
+                                    dir="ltr"
+                                    placeholder={contactMethod === 'email' ? 'you@example.com' : isAr ? '+966 5X XXX XXXX' : '+1 555 123 4567'}
                                 />
                             </div>
                         </div>

@@ -54,6 +54,14 @@ function makePrismaStub(opts: {
                         : { id: opts.courseId, instructorId: opts.courseInstructorId ?? null },
                 );
             },
+            findFirst: (args: any) => {
+                calls.push({ model: 'course.findFirst', args });
+                return Promise.resolve(
+                    opts.courseInstructorId === undefined && opts.courseId === undefined
+                        ? null
+                        : { id: opts.courseId, instructorId: opts.courseInstructorId ?? null, archivedAt: null },
+                );
+            },
         },
         courseOpening: {
             findMany: (args: any) => {
@@ -77,6 +85,9 @@ function makePrismaStub(opts: {
                     enrolled.includes(args?.where?.courseId) ? { id: 'enr-1' } : null,
                 );
             },
+        },
+        openingInstructorGrant: {
+            findMany: () => Promise.resolve([]),
         },
         certificate: {
             findUnique: (args: any) => {
@@ -142,7 +153,7 @@ describe('finding 1: anonymous callers must not see closed batches', () => {
         const { prisma, calls } = makePrismaStub({ courseId: 'c1', courseInstructorId: 'other' });
         await coursesService(prisma).findOne('c1', false, undefined);
 
-        const where = calls.find((c) => c.model === 'course.findUnique')!.args.include.openings.where;
+        const where = calls.find((c) => c.model === 'course.findFirst')!.args.include.openings.where;
         assert.deepEqual(where.status.in, OPEN_STATUSES);
     });
 
@@ -150,7 +161,7 @@ describe('finding 1: anonymous callers must not see closed batches', () => {
         const { prisma, calls } = makePrismaStub({});
         await coursesService(prisma).findAll(true, { userId: 'u1', role: Role.ADMIN });
         const where = calls.find((c) => c.model === 'course.findMany')!.args.include.openings.where;
-        assert.equal(where, undefined, 'staff must keep the unfiltered relation');
+        assert.deepEqual(where, { archivedAt: null }, 'staff must not see archived openings');
     });
 
     test('an ADMIN who forgot includeUnpublished still sees published batches', async () => {

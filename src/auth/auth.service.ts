@@ -138,6 +138,15 @@ export class AuthService {
         const pwMatches = await bcrypt.compare(dto.password, user.passwordHash);
         if (!pwMatches) throw new UnauthorizedException('Invalid credentials');
 
+        const requiredAudience = process.env.ADMIN_SURFACE === '1'
+            ? 'admin'
+            : process.env.DENY_ADMIN_AUD === '1'
+                ? 'learner'
+                : null;
+        if (requiredAudience && audienceForRole(user.role) !== requiredAudience) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
         if (user.role === 'STUDENT' && !user.emailVerifiedAt) {
             throw new ForbiddenException('Email address not verified');
         }

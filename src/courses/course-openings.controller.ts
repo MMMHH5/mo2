@@ -130,6 +130,14 @@ export class CourseOpeningsController {
         return this.coursesService.endCourse(id, req.user.userId, req.user.role);
     }
 
+    @ApiOperation({ summary: 'Restore an ended or archived opening' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.OPENINGS_WRITE)
+    @Post(':id/restore')
+    restore(@Param('id') id: string, @Request() req: any, @Ip() ip: string) {
+        return this.coursesService.restoreOpening(id, req.user.userId, req.user.role, ip);
+    }
+
     @ApiOperation({ summary: 'Delete an opening' })
     @ApiResponse({ status: 200, description: 'Opening deleted.' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)

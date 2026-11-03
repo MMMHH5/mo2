@@ -58,15 +58,26 @@ interface RefundRequest {
     studentNote?: string | null;
     reviewerNote?: string | null;
     reviewedAt?: string | null;
+    completedAt?: string | null;
+    payoutReference?: string | null;
     createdAt: string;
     student?: { email: string } | null;
     course?: { titleAr?: string | null; titleEn?: string | null } | null;
     opening?: { nameAr?: string | null; nameEn?: string | null } | null;
-    payment?: { id: string; receiptFileUrl?: string | null; enrollmentId?: string | null } | null;
+    payment?: {
+        id: string;
+        provider?: string | null;
+        providerRef?: string | null;
+        receiptFileUrl?: string | null;
+        enrollmentId?: string | null;
+        couponCode?: string | null;
+        coupon?: { name: string; type: 'PERCENT' | 'AMOUNT'; value: number | string } | null;
+    } | null;
 }
 
 const statusTone: Record<string, Tone> = {
     PENDING: 'amber',
+    PROCESSING: 'blue',
     APPROVED: 'green',
     REJECTED: 'red',
     RESERVED: 'blue',
@@ -96,6 +107,7 @@ export default function AdminFinancePage() {
     const [selectedRefund, setSelectedRefund] = useState<RefundRequest | null>(null);
     const [refundRejecting, setRefundRejecting] = useState(false);
     const [refundReason, setRefundReason] = useState('');
+    const [refundPayoutReference, setRefundPayoutReference] = useState('');
     const [refundProcessing, setRefundProcessing] = useState(false);
     const [refundReceiptUrl, setRefundReceiptUrl] = useState<string | null>(null);
     const [refundReceiptLoading, setRefundReceiptLoading] = useState(false);
@@ -162,6 +174,7 @@ export default function AdminFinancePage() {
         setSelectedRefund(r);
         setRefundRejecting(reject);
         setRefundReason('');
+        setRefundPayoutReference('');
         setRefundReceiptUrl(null);
         setRefundReceiptError(null);
         const enrollmentId = r.payment?.enrollmentId;
@@ -183,6 +196,7 @@ export default function AdminFinancePage() {
         setSelectedRefund(null);
         setRefundRejecting(false);
         setRefundReason('');
+        setRefundPayoutReference('');
         setRefundReceiptUrl(null);
         setRefundReceiptError(null);
     };
@@ -199,7 +213,24 @@ export default function AdminFinancePage() {
                 status,
                 reviewerNote: status === 'REJECTED' ? refundReason.trim() : undefined,
             });
-            toast.success(status === 'APPROVED' ? t('refunds.approved_msg') : t('refunds.rejected_msg'));
+            toast.success(status === 'APPROVED' ? t('refunds.processing_msg') : t('refunds.rejected_msg'));
+            closeRefund();
+            refetchRefunds();
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('refunds.review_failed'));
+        } finally {
+            setRefundProcessing(false);
+        }
+    };
+
+    const completeRefund = async () => {
+        if (!selectedRefund) return;
+        setRefundProcessing(true);
+        try {
+            await api.post(`/refunds/${selectedRefund.id}/complete`, {
+                payoutReference: refundPayoutReference.trim() || undefined,
+            });
+            toast.success(t('refunds.completed_msg'));
             closeRefund();
             refetchRefunds();
         } catch (err) {
@@ -515,6 +546,12 @@ export default function AdminFinancePage() {
                                             <td className="p-4">
                                                 <div className="font-bold text-brand-navy dark:text-white">{pick(r.course, 'title') || '—'}</div>
                                                 {pick(r.opening, 'name') && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{pick(r.opening, 'name')}</div>}
+                                                {r.payment?.couponCode && (
+                                                    <div className="text-xs font-bold text-brand-gold-dark dark:text-brand-gold-light mt-1">
+                                                        {t('refunds.coupon_used')}: {r.payment.couponCode}
+                                                        {r.payment.coupon?.name ? ` · ${r.payment.coupon.name}` : ''}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="p-4 font-black text-brand-gold-dark dark:text-brand-gold-light">{formatPrice(Number(r.amount), { currency: r.currency, locale })}</td>
                                             <td className="p-4">
@@ -560,11 +597,39 @@ export default function AdminFinancePage() {
                                 <span>{t('finance.col_course')}: <strong className="text-white">{pick(selectedRefund.course, 'title')}</strong></span>
                                 <span>{t('refunds.amount')}: <strong className="text-brand-gold-light">{formatPrice(Number(selectedRefund.amount), { currency: selectedRefund.currency, locale })}</strong></span>
                                 <span>{t('refunds.method')}: <strong className="text-white">{selectedRefund.method === 'WALLET' ? t('refunds.method_wallet') : t('refunds.method_bank')}</strong></span>
+                                <span>{t('refunds.payment_provider')}: <strong className="text-white">{selectedRefund.payment?.provider === 'STRIPE' ? t('refunds.stripe_provider') : t('refunds.manual_provider')}</strong></span>
+                                {selectedRefund.payment?.providerRef && (
+                                    <span className="break-all">{t('refunds.provider_reference')}: <strong className="text-white font-mono">{selectedRefund.payment.providerRef}</strong></span>
+                                )}
                                 <span>{t('refunds.account_holder')}: <strong className="text-white">{selectedRefund.accountName}</strong></span>
                                 <span className="break-all">{t('refunds.account_number')}: <strong className="text-white font-mono">{selectedRefund.accountNumber}</strong></span>
                             </div>
                             {selectedRefund.studentNote && (
                                 <p className="text-sm text-gray-400"><strong className="text-gray-200">{t('refunds.note')}:</strong> {selectedRefund.studentNote}</p>
+                            )}
+                            {selectedRefund.payment?.couponCode && (
+                                <p className="text-sm text-brand-gold-light">
+                                    <strong>{t('refunds.coupon_used')}:</strong> {selectedRefund.payment.couponCode}
+                                    {selectedRefund.payment.coupon && (
+                                        <> · {selectedRefund.payment.coupon.name || (selectedRefund.payment.coupon.type === 'PERCENT'
+                                            ? `${Number(selectedRefund.payment.coupon.value)}%`
+                                            : formatPrice(Number(selectedRefund.payment.coupon.value), { locale }))}</>
+                                    )}
+                                </p>
+                            )}
+                            {selectedRefund.reviewerNote && (
+                                <p className="text-sm text-gray-400"><strong className="text-gray-200">{t('refunds.reviewer_note')}:</strong> {selectedRefund.reviewerNote}</p>
+                            )}
+                            {selectedRefund.payoutReference && (
+                                <p className="text-sm text-gray-400"><strong className="text-gray-200">{t('refunds.payout_reference')}:</strong> <span dir="ltr">{selectedRefund.payoutReference}</span></p>
+                            )}
+                            {selectedRefund.completedAt && (
+                                <p className="text-sm text-gray-400"><strong className="text-gray-200">{t('refunds.completed_at')}:</strong> {new Date(selectedRefund.completedAt).toLocaleString(locale === 'ar' ? 'ar' : 'en')}</p>
+                            )}
+                            {selectedRefund.status === 'PROCESSING' && (
+                                <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-100">
+                                    {t('refunds.manual_transfer_notice')}
+                                </div>
                             )}
                             <div>
                                 <label className="block text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">{t('refunds.registration_receipt')}</label>
@@ -591,16 +656,33 @@ export default function AdminFinancePage() {
                                     </button>
                                 </div>
                             </div>
-                        ) : (
+                        ) : selectedRefund.status === 'PROCESSING' ? (
+                            <div className="p-6 border-t border-white/10 bg-brand-navy space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-300 mb-2">{t('refunds.payout_reference')}</label>
+                                    <input
+                                        value={refundPayoutReference}
+                                        onChange={e => setRefundPayoutReference(e.target.value)}
+                                        maxLength={120}
+                                        dir="ltr"
+                                        className="w-full border border-white/10 rounded-xl p-3 bg-brand-navy-dark text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
+                                        placeholder={t('refunds.payout_reference_ph')}
+                                    />
+                                </div>
+                                <button onClick={completeRefund} disabled={refundProcessing} className="w-full bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:opacity-90 text-black font-black py-4 rounded-xl shadow-md shadow-brand-gold/25 disabled:opacity-50 transition flex items-center justify-center gap-2">
+                                    <Check size={20} /> {refundProcessing ? t('common.processing') : t('refunds.confirm_transfer')}
+                                </button>
+                            </div>
+                        ) : selectedRefund.status === 'PENDING' ? (
                             <div className="p-6 border-t border-white/10 bg-brand-navy flex gap-4">
                                 <button onClick={() => reviewRefund('APPROVED')} disabled={refundProcessing || selectedRefund.status !== 'PENDING'} className="flex-1 bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:opacity-90 text-black font-black py-4 rounded-xl shadow-md shadow-brand-gold/25 disabled:opacity-50 transition flex items-center justify-center gap-2">
-                                    <Check size={20} /> {t('refunds.approve')}
+                                    <Check size={20} /> {t('refunds.approve_for_transfer')}
                                 </button>
                                 <button onClick={() => setRefundRejecting(true)} disabled={refundProcessing || selectedRefund.status !== 'PENDING'} className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 font-bold py-4 rounded-xl disabled:opacity-50 transition flex items-center justify-center gap-2">
                                     <X size={20} /> {t('refunds.reject')}
                                 </button>
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             )}

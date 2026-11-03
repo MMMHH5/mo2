@@ -93,6 +93,39 @@ function fullUser(over: Record<string, unknown> = {}) {
 }
 
 describe('PHASE 5: privileged roles can manage optional 2FA', () => {
+    test('login rejects roles belonging to the other application surface', async () => {
+        const previousAdminSurface = process.env.ADMIN_SURFACE;
+        const previousDenyAdminAudience = process.env.DENY_ADMIN_AUD;
+        try {
+            const passwordHash = await bcrypt.hash('pw', 4);
+
+            delete process.env.ADMIN_SURFACE;
+            process.env.DENY_ADMIN_AUD = '1';
+            const { svc: learnerService } = makeAuthService({
+                user: fullUser({ role: Role.ADMIN, passwordHash }),
+            });
+            await assert.rejects(
+                () => learnerService.login({ email: 'admin@test.test', password: 'pw' } as any),
+                (error: unknown) => error instanceof UnauthorizedException && error.message === 'Invalid credentials',
+            );
+
+            process.env.ADMIN_SURFACE = '1';
+            delete process.env.DENY_ADMIN_AUD;
+            const { svc: adminService } = makeAuthService({
+                user: fullUser({ role: Role.STUDENT, passwordHash }),
+            });
+            await assert.rejects(
+                () => adminService.login({ email: 'admin@test.test', password: 'pw' } as any),
+                (error: unknown) => error instanceof UnauthorizedException && error.message === 'Invalid credentials',
+            );
+        } finally {
+            if (previousAdminSurface === undefined) delete process.env.ADMIN_SURFACE;
+            else process.env.ADMIN_SURFACE = previousAdminSurface;
+            if (previousDenyAdminAudience === undefined) delete process.env.DENY_ADMIN_AUD;
+            else process.env.DENY_ADMIN_AUD = previousDenyAdminAudience;
+        }
+    });
+
     test('ADMIN and FINANCE can sign in without 2FA when it is disabled', async () => {
         const pwHash = await bcrypt.hash('pw', 4);
         for (const role of [Role.ADMIN, Role.FINANCE]) {

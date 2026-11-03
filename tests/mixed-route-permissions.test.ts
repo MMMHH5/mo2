@@ -54,6 +54,8 @@ const MIXED_CONTROLLERS = [
 const EXPECTED_PERMISSIONS: Record<string, [string, string, string][]> = {
     'src/learning-paths/learning-paths.controller.ts': [
         ['POST', '', 'PATHS_WRITE'],
+        ['GET', 'manage', 'PATHS_WRITE'],
+        ['GET', 'manage/courses', 'PATHS_WRITE'],
         ['PATCH', ':id', 'PATHS_WRITE'],
         ['DELETE', ':id', 'PATHS_WRITE'],
     ],
@@ -65,7 +67,6 @@ const EXPECTED_PERMISSIONS: Record<string, [string, string, string][]> = {
     ],
     'src/commerce/commerce.controller.ts': [
         ['GET', 'payments', 'PAYMENTS_READ'],
-        ['POST', 'payments/:id/refund', 'PAYMENTS_REFUND'],
         ['POST', 'currencies', 'PAYMENTS_SETTINGS'],
         ['PATCH', 'currencies/:code', 'PAYMENTS_SETTINGS'],
         ['DELETE', 'currencies/:code', 'PAYMENTS_SETTINGS'],
@@ -88,10 +89,12 @@ const EXPECTED_PERMISSIONS: Record<string, [string, string, string][]> = {
     ],
     'src/analytics/analytics.controller.ts': [
         ['GET', 'course/:courseId', 'ANALYTICS_READ'],
+        ['GET', 'instructor-dashboard', 'ANALYTICS_READ'],
     ],
     'src/refunds/refunds.controller.ts': [
         ['GET', '', 'REFUNDS_REVIEW'],
         ['PATCH', ':id', 'REFUNDS_REVIEW'],
+        ['POST', ':id/complete', 'REFUNDS_REVIEW'],
     ],
     'src/users/users.controller.ts': [
         ['GET', '', 'USERS_READ'],
@@ -100,6 +103,7 @@ const EXPECTED_PERMISSIONS: Record<string, [string, string, string][]> = {
         ['GET', ':id', 'USERS_READ'],
         ['PATCH', ':id', 'USERS_WRITE'],
         ['PATCH', ':id/role', 'USERS_ROLE'],
+        ['PATCH', ':id/two-factor/disable', 'USERS_WRITE'],
         ['DELETE', ':id', 'USERS_DELETE'],
     ],
     'src/lms/reviews.controller.ts': [
@@ -117,6 +121,7 @@ const EXPECTED_PERMISSIONS: Record<string, [string, string, string][]> = {
     ],
     'src/tasks/tasks.controller.ts': [
         ['POST', 'opening/:openingId', 'CONTENT_WRITE'],
+        ['GET', 'opening/:openingId/roster', 'CONTENT_READ'],
         ['PATCH', ':id', 'CONTENT_WRITE'],
         ['DELETE', ':id', 'CONTENT_DELETE'],
         ['GET', 'submissions', 'GRADES_READ'],
@@ -139,8 +144,12 @@ const EXPECTED_PERMISSIONS: Record<string, [string, string, string][]> = {
         ['POST', '', 'OPENINGS_WRITE'],
         ['PATCH', ':id', 'OPENINGS_WRITE'],
         ['DELETE', ':id', 'OPENINGS_WRITE'],
+        ['GET', ':id/attendance', 'GRADES_READ'],
+        ['PUT', ':id/attendance', 'GRADES_WRITE'],
     ],
     'src/courses/course-openings.controller.ts': [
+        ['GET', ':id/instructor-grants', 'OPENINGS_WRITE'],
+        ['PUT', ':id/instructor-grants', 'OPENINGS_WRITE'],
         ['PATCH', ':id', 'OPENINGS_WRITE'],
         ['POST', ':id/publish', 'OPENINGS_WRITE'],
         ['POST', ':id/unpublish', 'OPENINGS_WRITE'],
@@ -148,6 +157,7 @@ const EXPECTED_PERMISSIONS: Record<string, [string, string, string][]> = {
         ['POST', ':id/open', 'OPENINGS_WRITE'],
         ['POST', ':id/start', 'OPENINGS_WRITE'],
         ['POST', ':id/end', 'OPENINGS_WRITE'],
+        ['POST', ':id/restore', 'OPENINGS_WRITE'],
         ['DELETE', ':id', 'OPENINGS_DELETE'],
     ],
     'src/calendar/calendar.controller.ts': [
@@ -238,7 +248,7 @@ function classLevelRoles(src: string, consts: Map<string, string[]>): string[] |
 
 test('Phase 4 fixture is wired and fully annotated', () => {
     const total = Object.values(EXPECTED_PERMISSIONS).reduce((sum, rows) => sum + rows.length, 0);
-    assert.equal(total, 75, 'the mixed-surface fixture drifted from the 75 annotated platform routes');
+    assert.equal(total, 85, 'the mixed-surface fixture drifted from the 85 annotated platform routes');
 
     for (const rel of MIXED_CONTROLLERS) {
         const src = readFileSync(join(ROOT, rel), 'utf8');

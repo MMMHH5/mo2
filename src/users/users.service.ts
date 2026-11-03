@@ -20,7 +20,7 @@ export class UsersService {
 
     async findAll() {
         return this.prisma.user.findMany({
-            select: { id: true, email: true, role: true, isActive: true, createdAt: true },
+            select: { id: true, email: true, role: true, isActive: true, twoFactorEnabled: true, metadata: true, createdAt: true },
             orderBy: { createdAt: 'desc' },
         });
     }
@@ -37,11 +37,22 @@ export class UsersService {
     async getDetails(id: string) {
         const user = await this.prisma.user.findUnique({
             where: { id },
-            select: { id: true, email: true, role: true, isActive: true, metadata: true, createdAt: true },
+            select: {
+                id: true,
+                email: true,
+                role: true,
+                isActive: true,
+                metadata: true,
+                language: true,
+                emailVerifiedAt: true,
+                twoFactorEnabled: true,
+                createdAt: true,
+                updatedAt: true,
+            },
         });
         if (!user) throw new NotFoundException('User not found');
 
-        const [enrollments, certificates] = await Promise.all([
+        const [enrollments, certificates, coursesTaught, openingsTaught] = await Promise.all([
             this.prisma.enrollment.findMany({
                 where: { studentId: id },
                 include: {
@@ -55,9 +66,19 @@ export class UsersService {
                 select: { id: true, verificationCode: true, issuingDate: true, verificationStatus: true, courseId: true },
                 orderBy: { issuingDate: 'desc' },
             }),
+            this.prisma.course.findMany({
+                where: { instructorId: id },
+                select: { id: true, titleAr: true, titleEn: true, createdAt: true },
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.courseOpening.findMany({
+                where: { instructorId: id },
+                select: { id: true, nameAr: true, nameEn: true, status: true, startDate: true, endDate: true },
+                orderBy: { createdAt: 'desc' },
+            }),
         ]);
 
-        return { user, enrollments, certificates };
+        return { user, enrollments, certificates, coursesTaught, openingsTaught };
     }
 
     async getMe(userId: string) {
@@ -438,6 +459,7 @@ export class UsersService {
                 passwordHash,
                 role: dto.role ?? Role.STUDENT,
                 isActive: dto.isActive ?? true,
+                ...(dto.metadata ? { metadata: this.sanitizeProfileMetadata(dto.metadata) as Prisma.InputJsonValue } : {}),
                 // Admin-provided passwords must be replaced by the user on first login.
                 mustChangePassword: dto.mustChangePassword !== false,
             },
@@ -511,6 +533,39 @@ export class UsersService {
         // to bite immediately, not when the cache happens to expire.
         await this.userCache.invalidate(id);
         return updated;
+    }
+
+    async disableUserTwoFactor(id: string, adminId: string, ip?: string) {
+        const existing = await this.prisma.user.findUnique({
+            where: { id },
+            select: { id: true, email: true, twoFactorEnabled: true },
+        });
+        if (!existing) throw new NotFoundException('User not found');
+        if (!existing.twoFactorEnabled) return { ok: true, twoFactorEnabled: false };
+
+        const [user] = await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id },
+                data: {
+                    twoFactorEnabled: false,
+                    twoFactorSecret: null,
+                    tokenVersion: { increment: 1 },
+                },
+                select: { id: true, email: true, twoFactorEnabled: true },
+            }),
+            this.prisma.refreshToken.updateMany({
+                where: { userId: id, revokedAt: null },
+                data: { revokedAt: new Date() },
+            }),
+        ]);
+
+        await this.userCache.invalidate(id);
+        await this.audit.logAction(
+            `ADMIN ${adminId} disabled two-factor authentication for user ${id} (${existing.email})`,
+            ip,
+            adminId,
+        );
+        return { ok: true, twoFactorEnabled: user.twoFactorEnabled };
     }
 
     async remove(id: string, adminId: string, ip?: string) {
