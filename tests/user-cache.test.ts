@@ -387,6 +387,7 @@ test('SECURITY: completing a forced password change evicts', async () => {
                 expiresAt: new Date(Date.now() + 60_000),
             }),
             update: async () => ({}),
+            updateMany: async () => ({}),
         },
         user: { update: async () => ({}) },
         refreshToken: { updateMany: async () => ({}) },

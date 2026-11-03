@@ -39,6 +39,18 @@ export function isUnauthorized(err: unknown): boolean {
     return axios.isAxiosError(err) && err.response?.status === 401;
 }
 
+export function isEmailNotVerified(err: unknown): boolean {
+    if (!axios.isAxiosError(err) || err.response?.status !== 403) return false;
+    const data = err.response.data as { message?: unknown } | undefined;
+    return data?.message === 'Email address not verified';
+}
+
+export function isRegistrationEmailFailure(err: unknown): boolean {
+    if (!axios.isAxiosError(err) || err.response?.status !== 503) return false;
+    const data = err.response.data as { message?: unknown } | undefined;
+    return data?.message === 'ACCOUNT_CREATED_EMAIL_DELIVERY_FAILED';
+}
+
 // Create a centralized Axios instance
 export const api = axios.create({
     baseURL: API_BASE_URL, // Our NestJS Backend

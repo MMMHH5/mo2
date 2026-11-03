@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useAuth, Role } from '@/lib/auth-context';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage, isEmailNotVerified } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -27,14 +27,17 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-    const [email, setEmail] = useState('');
+    const searchParams = useSearchParams();
+    const [email, setEmail] = useState(searchParams?.get('email') || '');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [needsVerification, setNeedsVerification] = useState(searchParams?.get('verificationEmailFailed') === '1');
+    const [resendingVerification, setResendingVerification] = useState(false);
+    const [verificationResent, setVerificationResent] = useState(false);
     const { login } = useAuth();
     const router = useRouter();
     const { t } = useI18n();
     const { dark } = useTheme();
-    const searchParams = useSearchParams();
     const redirect = searchParams?.get('redirect') || '/dashboard';
 
     const inputCls = `block w-full px-4 py-3.5 border rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition-all duration-200 ${dark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10 [color-scheme:dark]' : 'bg-white border-gray-300 text-brand-charcoal hover:bg-gray-50'}`;
@@ -91,7 +94,25 @@ function LoginForm() {
 
             router.push(redirect);
         } catch (err) {
-            setError(getErrorMessage(err) || t('auth.login_failed'));
+            const message = getErrorMessage(err);
+            if (isEmailNotVerified(err)) {
+                setNeedsVerification(true);
+                setError('');
+            } else {
+                setError(message || t('auth.login_failed'));
+            }
+        }
+    };
+
+    const handleResendVerification = async () => {
+        setResendingVerification(true);
+        try {
+            await api.post('/auth/resend-verification-email', { email });
+            setVerificationResent(true);
+        } catch (err) {
+            setError(getErrorMessage(err) || t('auth.verification_resend_failed'));
+        } finally {
+            setResendingVerification(false);
         }
     };
 
@@ -124,6 +145,33 @@ function LoginForm() {
                 </div>
 
                 {error && <div className={`mb-4 p-3 rounded-md text-sm font-semibold animate-fade-in-up ${dark ? 'bg-red-500/10 border border-red-400/30 text-red-400' : 'bg-red-50 border border-red-200 text-red-600'}`}>{error}</div>}
+                {searchParams?.get('verifyEmail') === '1' && (
+                    <div className={`mb-4 p-3 rounded-xl text-sm font-semibold ${dark ? 'bg-brand-gold/10 border border-brand-gold/20 text-brand-gold-light' : 'bg-amber-50 border border-amber-200 text-amber-900'}`}>
+                        {t('auth.check_verification_email')}
+                    </div>
+                )}
+                {searchParams?.get('verificationEmailFailed') === '1' && (
+                    <div className={`mb-4 p-3 rounded-xl text-sm font-semibold ${dark ? 'bg-brand-gold/10 border border-brand-gold/20 text-brand-gold-light' : 'bg-amber-50 border border-amber-200 text-amber-900'}`}>
+                        {t('auth.verification_delivery_failed')}
+                    </div>
+                )}
+                {needsVerification && (
+                    <div className={`mb-4 p-4 rounded-xl text-sm ${dark ? 'bg-brand-gold/10 border border-brand-gold/20 text-gray-200' : 'bg-amber-50 border border-amber-200 text-amber-900'}`}>
+                        <p className="font-semibold">{t('auth.verification_required')}</p>
+                        {verificationResent ? (
+                            <p className="mt-2">{t('auth.verification_resent')}</p>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={handleResendVerification}
+                                disabled={resendingVerification || !email}
+                                className="mt-3 font-black underline disabled:opacity-60"
+                            >
+                                {resendingVerification ? t('common.processing') : t('auth.resend_verification')}
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 <form onSubmit={handleLogin} className="space-y-5">
                     <div>

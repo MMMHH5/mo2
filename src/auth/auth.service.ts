@@ -4,6 +4,7 @@ import {
     ConflictException,
     ForbiddenException,
     BadRequestException,
+    ServiceUnavailableException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -111,10 +112,16 @@ export class AuthService {
             },
         });
 
-        await this.issueVerificationEmail(user.id, user.email);
+        try {
+            await this.issueVerificationEmail(user.id, user.email);
+        } catch (error) {
+            if (error instanceof ServiceUnavailableException) {
+                throw new ServiceUnavailableException('ACCOUNT_CREATED_EMAIL_DELIVERY_FAILED');
+            }
+            throw error;
+        }
 
-        const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
-        return { ...tokens, user: this.publicUser(user) };
+        return { ok: true };
     }
 
     async login(dto: LoginDto): Promise<LoginResult> {
@@ -130,6 +137,10 @@ export class AuthService {
 
         const pwMatches = await bcrypt.compare(dto.password, user.passwordHash);
         if (!pwMatches) throw new UnauthorizedException('Invalid credentials');
+
+        if (user.role === 'STUDENT' && !user.emailVerifiedAt) {
+            throw new ForbiddenException('Email address not verified');
+        }
 
         if (user.mustChangePassword) {
             const tempToken = this.jwtService.sign(
@@ -347,7 +358,10 @@ export class AuthService {
         const hashed = await bcrypt.hash(newPassword, 12);
 
         await this.prisma.$transaction([
-            this.prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+            this.prisma.passwordResetToken.updateMany({
+                where: { userId: record.userId, usedAt: null },
+                data: { usedAt: new Date() },
+            }),
             this.prisma.user.update({
                 where: { id: record.userId },
                 data: { passwordHash: hashed, mustChangePassword: false, tokenVersion: { increment: 1 } },
@@ -360,12 +374,32 @@ export class AuthService {
     }
 
     async requestEmailVerification(userId: string, email: string) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { emailVerifiedAt: true } });
+        if (!user || user.emailVerifiedAt) return { ok: true };
+
         const { raw, hash: tokenHash } = this.generateToken();
-        await this.prisma.emailVerificationToken.create({
-            data: { tokenHash, userId, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
-        });
+        await this.prisma.$transaction([
+            this.prisma.emailVerificationToken.updateMany({
+                where: { userId, usedAt: null },
+                data: { usedAt: new Date() },
+            }),
+            this.prisma.emailVerificationToken.create({
+                data: { tokenHash, userId, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
+            }),
+        ]);
         const verifyUrl = `${this.appUrl()}/verify-email?token=${raw}`;
         await this.email.sendEmailVerification(email, verifyUrl);
+        return { ok: true };
+    }
+
+    async resendVerificationEmail(email: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+            select: { id: true, email: true, emailVerifiedAt: true, role: true },
+        });
+        if (user && user.role === 'STUDENT' && !user.emailVerifiedAt) {
+            await this.requestEmailVerification(user.id, user.email);
+        }
         return { ok: true };
     }
 
@@ -382,6 +416,7 @@ export class AuthService {
             this.prisma.emailVerificationToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
             this.prisma.user.update({ where: { id: record.userId }, data: { emailVerifiedAt: new Date() } }),
         ]);
+        await this.userCache.invalidate(record.userId);
         return { ok: true };
     }
 

@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { plainToInstance } from 'class-transformer';
 import { validateSync, getMetadataStorage } from 'class-validator';
 import { ForgotPasswordDto } from '../src/auth/dto/forgot-password.dto';
+import { LoginDto } from '../src/auth/dto/login.dto';
+import { RegisterDto } from '../src/auth/dto/register.dto';
 import { RefreshTokenDto } from '../src/auth/dto/refresh-token.dto';
 import { VerifyEmailDto } from '../src/auth/dto/verify-email.dto';
 
@@ -55,6 +57,13 @@ const cases: { name: string; cls: any; good: Record<string, unknown>; bad: { lab
 ];
 
 describe('public auth endpoints reject malformed input instead of crashing', () => {
+    test('email auth DTOs normalize addresses consistently', () => {
+        for (const cls of [RegisterDto, LoginDto, ForgotPasswordDto]) {
+            const dto = plainToInstance(cls, { email: '  Student@Example.COM  ' });
+            assert.equal(dto.email, 'student@example.com');
+        }
+    });
+
     for (const { name, cls, good, bad } of cases) {
         test(`${name} accepts a well-formed payload`, () => {
             assert.deepEqual(errorsFor(cls, good), [], 'a valid request must not be rejected');

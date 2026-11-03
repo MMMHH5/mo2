@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 
@@ -29,13 +29,17 @@ export class EmailService {
         }
     }
 
-    private async send(to: string, subject: string, html: string): Promise<boolean> {
+    private async send(to: string, subject: string, html: string, replyTo?: string): Promise<boolean> {
         if (!this.transporter) {
-            this.logger.verbose(`[DEV] Email to ${to} | Subject: ${subject}\n${html}`);
+            if (process.env.NODE_ENV === 'production') {
+                this.logger.error(`Cannot send email to ${to} (${subject}): SMTP is not configured`);
+            } else {
+                this.logger.verbose(`[DEV] Email to ${to} | Subject: ${subject}\n${html}`);
+            }
             return false;
         }
         try {
-            await this.transporter.sendMail({ from: this.from, to, subject, html });
+            await this.transporter.sendMail({ from: this.from, to, subject, html, replyTo });
             this.logger.log(`Email sent to ${to} (${subject})`);
             return true;
         } catch (err) {
@@ -84,7 +88,7 @@ export class EmailService {
             'Reset your password',
             `<p style="color:#3d4a56;line-height:1.7">We received a request to reset your password. Click the button below within 1 hour to choose a new password. If you did not request this, you can ignore this email.</p>${this.actionButton(resetUrl, 'Reset password')}`
         );
-        await this.send(to, 'Reset your Laxalab password', html);
+        await this.sendAuthEmail(to, 'Reset your Laxalab password', html);
     }
 
     async sendEmailVerification(to: string, verifyUrl: string): Promise<void> {
@@ -92,7 +96,14 @@ export class EmailService {
             'Verify your email address',
             `<p style="color:#3d4a56;line-height:1.7">Welcome to Laxalab. Please confirm your email address by clicking the button below to secure your account and start learning.</p>${this.actionButton(verifyUrl, 'Verify my email')}`
         );
-        await this.send(to, 'Verify your email — Laxalab', html);
+        await this.sendAuthEmail(to, 'Verify your email — Laxalab', html);
+    }
+
+    private async sendAuthEmail(to: string, subject: string, html: string): Promise<void> {
+        const sent = await this.send(to, subject, html);
+        if (!sent && process.env.NODE_ENV === 'production') {
+            throw new ServiceUnavailableException('Email delivery is temporarily unavailable. Please try again later.');
+        }
     }
 
     async sendNotification(to: string, subject: string, body: string, actionUrl?: string, actionLabel?: string): Promise<void> {
@@ -133,20 +144,25 @@ export class EmailService {
     }
 
     /** Contact-form message routed to the configured admin inbox (dev-logged when unconfigured). */
-    async sendContactEmail(fromEmail: string, name: string, subject: string, message: string): Promise<void> {
-        const escape = (s: string) => String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    async sendContactEmail(contactValue: string, contactMethod: 'email' | 'phone', name: string, subject: string, message: string): Promise<void> {
+        const escape = (s: string) => String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
         const adminEmail = process.env.ADMIN_EMAIL;
         if (!adminEmail) {
-            this.logger.verbose(`[DEV] Contact form from ${fromEmail} | ${subject}\n${message}`);
+            this.logger.warn(`Contact form notification not sent: ADMIN_EMAIL is not configured (${contactMethod}: ${contactValue})`);
             return;
         }
         const html = this.layout(
             'Contact form submission',
             `<p><strong>Name:</strong> ${escape(name)}</p>
-             <p><strong>Email:</strong> ${escape(fromEmail)}</p>
+             <p><strong>${contactMethod === 'email' ? 'Email' : 'Phone'}:</strong> ${escape(contactValue)}</p>
              <p><strong>Subject:</strong> ${escape(subject)}</p>
              <p style="color:#3d4a56;line-height:1.7">${escape(message).replace(/\n/g, '<br/>')}</p>`
         );
-        await this.send(adminEmail, `Contact: ${escape(subject) || 'Message'} — Laxalab`, html);
+        await this.send(adminEmail, `Contact: ${escape(subject) || 'Message'} — Laxalab`, html, contactMethod === 'email' ? contactValue : undefined);
     }
 }

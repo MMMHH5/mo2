@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage, isRegistrationEmailFailure } from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { Mail, Lock, User, Phone, LogIn, GraduationCap, UserCog, Layers, Users, Cake, School, Home } from 'lucide-react';
@@ -59,19 +59,24 @@ function RegisterForm() {
             await api.post('/auth/register', {
                 email: formData.email,
                 password: formData.password,
-                fullName: formData.fullName,
-                phone: formData.phone,
-                gender: formData.gender,
-                birthDate: formData.birthDate,
-                university: formData.university,
-                specialty: formData.specialty,
-                studyStatus: formData.studyStatus,
-                studyLevel: formData.studyLevel,
+                ...(formData.fullName && { fullName: formData.fullName }),
+                ...(formData.phone && { phone: formData.phone }),
+                ...(formData.gender && { gender: formData.gender }),
+                ...(formData.birthDate && { birthDate: formData.birthDate }),
+                ...(formData.university && { university: formData.university }),
+                ...(formData.specialty && { specialty: formData.specialty }),
+                ...(formData.studyStatus && { studyStatus: formData.studyStatus }),
+                ...(formData.studyLevel && { studyLevel: formData.studyLevel }),
             });
             toast.success(t('auth.registration_success'));
-            router.push(redirect === '/dashboard' ? redirect : `/login?redirect=${encodeURIComponent(redirect)}`);
+            router.push(`/login?verifyEmail=1&email=${encodeURIComponent(formData.email)}&redirect=${encodeURIComponent(redirect)}`);
         } catch (err) {
-            toast.error(getErrorMessage(err) || t('auth.register_failed'));
+            if (isRegistrationEmailFailure(err)) {
+                toast.error(t('auth.verification_delivery_failed'));
+                router.push(`/login?verificationEmailFailed=1&email=${encodeURIComponent(formData.email)}&redirect=${encodeURIComponent(redirect)}`);
+            } else {
+                toast.error(getErrorMessage(err) || t('auth.register_failed'));
+            }
         } finally {
             setIsLoading(false);
         }

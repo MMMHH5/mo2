@@ -34,9 +34,15 @@
         "start_learning": "Start your learning journey today",
         "login_failed": "Login failed. Please check your credentials.",
         "passwords_not_match": "Passwords do not match",
-        "registration_success": "Registration successful! Please login.",
+        "registration_success": "Your account was created. Verify your email address, then sign in.",
         "register_failed": "Failed to register account.",
-        "creating_account": "Creating Account..."
+        "verification_delivery_failed": "Your account was created, but we couldn't send the verification email. Use the resend option here once email delivery is available.",
+        "creating_account": "Creating Account...",
+        "check_verification_email": "We sent a verification link to your email. Open it to activate your account.",
+        "verification_required": "Verify your email address before signing in.",
+        "resend_verification": "Resend verification link",
+        "verification_resent": "If the account is unverified, a new link will be sent to its email address.",
+        "verification_resend_failed": "The verification email could not be sent. Please try again later."
     },
     "landing": {
         "home": "Home",
@@ -1713,6 +1719,8 @@
         "goToLogin": "Go to login",
         "verifyTitle": "Verify your email",
         "verifySub": "Confirming your email address...",
+        "verifyIntro": "Click below to confirm your email address and activate your account.",
+        "verifyAction": "Verify email address",
         "verifying": "Verifying...",
         "verified": "Email verified",
         "verifiedBody": "Your email address has been successfully verified.",

@@ -1,5 +1,6 @@
 import { registerDecorator, ValidationArguments, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, Matches, Validate } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @ValidatorConstraint({ name: 'isPastDate', async: false })
@@ -28,6 +29,7 @@ function IsPastDate(validationOptions?: ValidationOptions) {
 
 export class RegisterDto {
     @ApiProperty({ description: 'User email address', example: 'newuser@laxalab.com' })
+    @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
     @IsEmail()
     @IsNotEmpty()
     email!: string;

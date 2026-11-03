@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
@@ -17,34 +17,24 @@ export default function VerifyEmailPage() {
 }
 
 function VerifyEmailForm() {
-    const [state, setState] = useState<'verifying' | 'verified' | 'failed'>('verifying');
+    const [verificationState, setVerificationState] = useState<'ready' | 'verifying' | 'verified' | 'failed'>('ready');
     const [error, setError] = useState('');
     const { t } = useI18n();
     const { dark } = useTheme();
     const searchParams = useSearchParams();
     const token = searchParams?.get('token') || '';
+    const state = token ? verificationState : 'failed';
 
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            if (!token) {
-                setState('failed');
-                return;
-            }
-            try {
-                await api.post('/auth/verify-email', { token });
-                if (!cancelled) setState('verified');
-            } catch (err) {
-                if (!cancelled) {
-                    setError(getErrorMessage(err) || t('common.error'));
-                    setState('failed');
-                }
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, [token]);
+    const confirmEmail = async () => {
+        setVerificationState('verifying');
+        try {
+            await api.post('/auth/verify-email', { token });
+            setVerificationState('verified');
+        } catch (err) {
+            setError(getErrorMessage(err) || t('common.error'));
+            setVerificationState('failed');
+        }
+    };
 
     return (
         <div className={`min-h-screen flex items-center justify-center relative overflow-hidden p-4 ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
@@ -60,6 +50,16 @@ function VerifyEmailForm() {
             <BackHomeButton />
             <div className={`w-full max-w-md backdrop-blur-2xl p-6 sm:p-10 rounded-[2rem] relative z-10 transition-all duration-500 text-center ${dark ? 'bg-brand-navy-dark/90 shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 hover:border-white/20' : 'bg-white shadow-xl border border-gray-200 hover:shadow-2xl'}`}>
                 <h1 className={`text-3xl font-black mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>laxa<span className="text-brand-gold">lab</span></h1>
+
+                {state === 'ready' && (
+                    <div className="space-y-4">
+                        <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-brand-navy'}`}>{t('recovery.verifyTitle')}</h2>
+                        <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{t('recovery.verifyIntro')}</p>
+                        <button onClick={confirmEmail} className="px-6 py-3 bg-brand-gold hover:bg-brand-gold-light text-brand-navy-dark font-black rounded-xl">
+                            {t('recovery.verifyAction')}
+                        </button>
+                    </div>
+                )}
 
                 {state === 'verifying' && (
                     <div className="flex flex-col items-center">

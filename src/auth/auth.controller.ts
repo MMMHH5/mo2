@@ -65,6 +65,14 @@ export class AuthController {
         return this.authService.forgotPassword(dto.email);
     }
 
+    @ApiOperation({ summary: 'Resend a verification email without revealing whether an account exists' })
+    @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 3, ttl: 900000 } })
+    @Post('resend-verification-email')
+    async resendVerificationEmail(@Body() dto: ForgotPasswordDto) {
+        return this.authService.resendVerificationEmail(dto.email);
+    }
+
     @ApiOperation({ summary: 'Reset the password using a reset token' })
     @HttpCode(HttpStatus.OK)
     @Throttle({ default: { limit: 3, ttl: 900000 } }) // 3 attempts per 15 minutes

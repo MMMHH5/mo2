@@ -152,7 +152,8 @@ Railway deploys from this GitHub repository. Three services:
 | Frontend   | `npm install`        | `npm run build && npm start` (Next standalone) | `NEXT_PUBLIC_API_URL` (no `/api` suffix) |
 | Postgres   | (Railway managed)    | —                  | internal `DATABASE_URL` connection |
 
-Backend variables (all on the backend service dashboard):
+Backend variables (all on the backend service dashboard; SMTP settings are
+required to deliver email-verification and password-reset links):
 
 ```
 DATABASE_URL, JWT_SECRET, FRONTEND_URL, GOOGLE_CLIENT_ID,
