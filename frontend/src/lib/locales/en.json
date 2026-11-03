@@ -508,6 +508,7 @@
         "clear_filters": "Clear search and filters",
         "no_description": "No description available.",
         "enrolled_on": "Enrolled:",
+        "announced_not_started": "Announced · Not started",
         "continue": "Continue",
         "locked": "Locked",
         "finance_note": "Finance Note:",

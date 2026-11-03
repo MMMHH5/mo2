@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
-import { BookOpen, Clock, CheckCircle, XCircle, GraduationCap, Award, CreditCard, ChevronRight, Video, Search, SlidersHorizontal, X } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, XCircle, GraduationCap, Award, CreditCard, ChevronRight, Video, Search, SlidersHorizontal, X, CalendarClock } from 'lucide-react';
 import StudentSessionList, { StudentLiveSession } from '@/components/StudentSessionList';
 import Link from 'next/link';
 
@@ -288,18 +288,26 @@ export default function MyCoursesPage() {
                                                 )}
                                             </div>
                                         </div>
-                                        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${
-                                            isCompleted(enrollment) ? 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300' :
-                                            enrollment.status === 'APPROVED' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' :
-                                            enrollment.status === 'REJECTED' ? 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300' :
-                                            enrollment.status === 'RESERVED' ? 'border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300' :
-                                            'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                                        }`}>
-                                            {isCompleted(enrollment) ? <Award size={13} /> :
-                                                enrollment.status === 'APPROVED' ? <CheckCircle size={13} /> :
-                                                    enrollment.status === 'REJECTED' ? <XCircle size={13} /> : <Clock size={13} />}
-                                            {isCompleted(enrollment) ? t('statuses.completed') : statusLabel(enrollment.status)}
-                                        </span>
+                                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${
+                                                isCompleted(enrollment) ? 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300' :
+                                                enrollment.status === 'APPROVED' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' :
+                                                enrollment.status === 'REJECTED' ? 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300' :
+                                                enrollment.status === 'RESERVED' ? 'border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300' :
+                                                'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                            }`}>
+                                                {isCompleted(enrollment) ? <Award size={13} /> :
+                                                    enrollment.status === 'APPROVED' ? <CheckCircle size={13} /> :
+                                                        enrollment.status === 'REJECTED' ? <XCircle size={13} /> : <Clock size={13} />}
+                                                {isCompleted(enrollment) ? t('statuses.completed') : statusLabel(enrollment.status)}
+                                            </span>
+                                            {enrollment.opening?.status === 'ANNOUNCEMENT' && (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/40 bg-brand-gold/15 px-3 py-1.5 text-xs font-black text-brand-navy dark:text-brand-gold-light">
+                                                    <CalendarClock size={13} />
+                                                    {t('myCourses.announced_not_started')}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <p className="mb-4 line-clamp-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
