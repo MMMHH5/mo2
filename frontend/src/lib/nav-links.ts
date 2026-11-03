@@ -139,6 +139,7 @@ export function buildAdminNavLinks(t: (key: string) => string): NavLink[] {
         { name: t('admin.nav_learning_paths'), href: '/dashboard/admin/learning-paths', icon: Route, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_openings'), href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_ended'), href: '/dashboard/admin/ended', icon: Flag, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_certificates'), href: '/dashboard/admin/certificates', icon: Award, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_users'), href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
         { name: t('admin.nav_students'), href: '/dashboard/admin/users/students', icon: Users, roles: ['ADMIN'] },
         { name: t('admin.nav_instructors_users'), href: '/dashboard/admin/users/instructors', icon: GraduationCap, roles: ['ADMIN'] },

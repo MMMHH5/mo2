@@ -4,6 +4,34 @@ import { AuditService } from '../audit/audit.service';
 import { Role, CertificateStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 
+const CERTIFICATE_TEMPLATE_ID = 'singleton';
+
+const CERTIFICATE_TEMPLATE_DEFAULTS = {
+    academyNameAr: 'أكاديمية Laxalab',
+    academyNameEn: 'Laxalab Academy',
+    titleAr: 'شهادة إتمام الدورة',
+    titleEn: 'Certificate of Completion',
+    descriptionAr: 'بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.',
+    descriptionEn: 'Including all coursework, practical assignments, and assessments required for successful completion.',
+};
+
+const TEMPLATE_TEXT_LIMITS = {
+    academyNameAr: 120,
+    academyNameEn: 120,
+    titleAr: 120,
+    titleEn: 120,
+    descriptionAr: 1200,
+    descriptionEn: 1200,
+} as const;
+
+export type CertificateAssetKind = 'teacherSignature' | 'directorSignature' | 'academyStamp';
+type TemplateAssetKind = Exclude<CertificateAssetKind, 'teacherSignature'>;
+
+const ASSET_FIELDS: Record<TemplateAssetKind, 'directorSignatureUrl' | 'academyStampUrl'> = {
+    directorSignature: 'directorSignatureUrl',
+    academyStamp: 'academyStampUrl',
+};
+
 @Injectable()
 export class CertificatesService {
     constructor(
@@ -11,6 +39,147 @@ export class CertificatesService {
         private audit: AuditService,
         private notifications: NotificationsService,
     ) { }
+
+    async getTemplate() {
+        const template = await this.prisma.certificateTemplate.upsert({
+            where: { id: CERTIFICATE_TEMPLATE_ID },
+            create: { id: CERTIFICATE_TEMPLATE_ID, ...CERTIFICATE_TEMPLATE_DEFAULTS },
+            update: {},
+        });
+        return template;
+    }
+
+    private async getPublicTemplate() {
+        const template = await this.getTemplate();
+        return {
+            academyNameAr: template.academyNameAr,
+            academyNameEn: template.academyNameEn,
+            titleAr: template.titleAr,
+            titleEn: template.titleEn,
+            descriptionAr: template.descriptionAr,
+            descriptionEn: template.descriptionEn,
+            directorSignatureUrl: template.directorSignatureUrl,
+            academyStampUrl: template.academyStampUrl,
+        };
+    }
+
+    async updateTemplate(input: Record<string, unknown>, actorId: string) {
+        const data: Partial<typeof CERTIFICATE_TEMPLATE_DEFAULTS> = {};
+        for (const [key, value] of Object.entries(input)) {
+            if (!(key in TEMPLATE_TEXT_LIMITS)) {
+                throw new BadRequestException(`Unsupported certificate template field: ${key}`);
+            }
+            if (typeof value !== 'string') {
+                throw new BadRequestException(`${key} must be a string`);
+            }
+            const text = value.trim();
+            const limit = TEMPLATE_TEXT_LIMITS[key as keyof typeof TEMPLATE_TEXT_LIMITS];
+            if (!text || text.length > limit) {
+                throw new BadRequestException(`${key} must contain between 1 and ${limit} characters`);
+            }
+            data[key as keyof typeof TEMPLATE_TEXT_LIMITS] = text;
+        }
+        if (Object.keys(data).length === 0) {
+            throw new BadRequestException('At least one certificate template field is required');
+        }
+
+        const updated = await this.prisma.certificateTemplate.upsert({
+            where: { id: CERTIFICATE_TEMPLATE_ID },
+            create: { id: CERTIFICATE_TEMPLATE_ID, ...CERTIFICATE_TEMPLATE_DEFAULTS, ...data, updatedById: actorId },
+            update: { ...data, updatedById: actorId },
+        });
+        await this.audit.logAction('Updated certificate template', undefined, actorId);
+        return updated;
+    }
+
+    async setTemplateAsset(kind: CertificateAssetKind, url: string | null, actorId: string) {
+        if (kind === 'teacherSignature') {
+            throw new BadRequestException('Teacher signatures must be assigned to an instructor');
+        }
+        const field = ASSET_FIELDS[kind];
+        if (!field) throw new BadRequestException('Unsupported certificate asset');
+        if (url !== null && (!/^\/uploads\/certificates\/[A-Za-z0-9._/-]+$/.test(url) || url.includes('..'))) {
+            throw new BadRequestException('Certificate assets must be stored in the certificate uploads directory');
+        }
+
+        const updated = await this.prisma.certificateTemplate.upsert({
+            where: { id: CERTIFICATE_TEMPLATE_ID },
+            create: { id: CERTIFICATE_TEMPLATE_ID, ...CERTIFICATE_TEMPLATE_DEFAULTS, [field]: url, updatedById: actorId },
+            update: { [field]: url, updatedById: actorId },
+        });
+        await this.audit.logAction(`${url ? 'Updated' : 'Removed'} certificate ${kind}`, undefined, actorId);
+        return updated;
+    }
+
+    async setInstructorSignature(instructorId: string, url: string, actorId: string) {
+        if (!instructorId) throw new BadRequestException('An instructor must be selected');
+        if (!/^\/uploads\/certificates\/[A-Za-z0-9._/-]+$/.test(url) || url.includes('..')) {
+            throw new BadRequestException('Certificate signatures must be stored in the certificate uploads directory');
+        }
+        const instructor = await this.prisma.user.findUnique({
+            where: { id: instructorId },
+            select: { id: true, role: true, isActive: true },
+        });
+        if (!instructor || instructor.role !== Role.INSTRUCTOR || !instructor.isActive) {
+            throw new BadRequestException('Choose an active instructor');
+        }
+        const saved = await this.prisma.certificateInstructorSignature.upsert({
+            where: { instructorId },
+            create: { instructorId, signatureUrl: url, updatedById: actorId },
+            update: { signatureUrl: url, updatedById: actorId },
+        });
+        await this.audit.logAction(`Updated certificate signature for instructor ${instructorId}`, undefined, actorId);
+        return saved;
+    }
+
+    async removeInstructorSignature(instructorId: string, actorId: string) {
+        if (!instructorId) throw new BadRequestException('An instructor must be selected');
+        await this.prisma.certificateInstructorSignature.deleteMany({ where: { instructorId } });
+        await this.audit.logAction(`Removed certificate signature for instructor ${instructorId}`, undefined, actorId);
+        return { instructorId, signatureUrl: null };
+    }
+
+    async managementOverview() {
+        const [courses, certificates, instructors] = await Promise.all([
+            this.prisma.course.findMany({
+                where: { certificateIssued: true },
+                select: {
+                    id: true,
+                    titleAr: true,
+                    titleEn: true,
+                    _count: { select: { certificates: true } },
+                },
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.certificate.groupBy({
+                by: ['verificationStatus'],
+                _count: { _all: true },
+            }),
+            this.prisma.user.findMany({
+                where: { role: Role.INSTRUCTOR, isActive: true },
+                select: {
+                    id: true,
+                    email: true,
+                    metadata: true,
+                    certificateInstructorSignature: { select: { signatureUrl: true } },
+                },
+                orderBy: { email: 'asc' },
+            }),
+        ]);
+        const counts = { VALID: 0, REVOKED: 0, EXPIRED: 0 } as Record<CertificateStatus, number>;
+        for (const group of certificates) counts[group.verificationStatus] = group._count._all;
+        return {
+            counts,
+            total: Object.values(counts).reduce((sum, count) => sum + count, 0),
+            courses,
+            instructors: instructors.map((instructor) => ({
+                id: instructor.id,
+                email: instructor.email,
+                name: this.displayName(instructor, false),
+                signatureUrl: instructor.certificateInstructorSignature?.signatureUrl ?? null,
+            })),
+        };
+    }
 
     /**
      * Compose the exact set of students that MAY receive a certificate for an
@@ -95,12 +264,16 @@ export class CertificatesService {
                 // Re-affirming a certificate that was revoked/expired.
                 const cert = await this.prisma.certificate.update({
                     where: { id: existing.id },
-                    data: { verificationStatus: CertificateStatus.VALID, issuingDate: new Date() },
+                    data: {
+                        verificationStatus: CertificateStatus.VALID,
+                        issuingDate: new Date(),
+                        instructorId: opening.instructorId,
+                    },
                 });
                 issued.push(cert.id);
             } else {
                 const cert = await this.prisma.certificate.create({
-                    data: { studentId, courseId: opening.courseId },
+                    data: { studentId, courseId: opening.courseId, instructorId: opening.instructorId },
                 });
                 issued.push(cert.id);
             }
@@ -382,7 +555,7 @@ export class CertificatesService {
         const cert = await this.prisma.certificate.findUnique({
             where: { verificationCode: code },
             include: {
-                student: { select: { id: true } }, // Never expose email publicly
+                student: { select: { id: true, metadata: true } }, // Never expose email publicly
                 course: {
                     select: { id: true, titleAr: true, titleEn: true, certificateIssued: true },
                 },
@@ -398,7 +571,8 @@ export class CertificatesService {
                 verificationCode: cert.verificationCode,
                 issuingDate: cert.issuingDate,
                 verificationStatus: cert.verificationStatus,
-                student: cert.student,
+                student: cert.student ? { id: cert.student.id } : null,
+                holderName: this.displayName(cert.student, false),
                 course: cert.course,
             },
         };
@@ -433,6 +607,13 @@ export class CertificatesService {
                 // metadata is selected only to derive the printable name; the
                 // raw blob is never returned.
                 student: { select: { id: true, metadata: true } }, // Never expose email publicly
+                instructor: {
+                    select: {
+                        id: true,
+                        metadata: true,
+                        certificateInstructorSignature: { select: { signatureUrl: true } },
+                    },
+                },
                 course: {
                     select: {
                         id: true,
@@ -459,12 +640,14 @@ export class CertificatesService {
             verificationStatus: cert.verificationStatus,
             student: cert.student ? { id: cert.student.id } : null,
             holderName: this.displayName(cert.student, false),
-            instructorName: this.displayName(cert.course?.openings?.[0]?.instructor, false),
+            instructorName: this.displayName(cert.instructor ?? cert.course?.openings?.[0]?.instructor, false),
+            instructorSignatureUrl: cert.instructor?.certificateInstructorSignature?.signatureUrl ?? null,
             course: cert.course ? {
                 id: cert.course.id,
                 titleAr: cert.course.titleAr,
                 titleEn: cert.course.titleEn,
             } : null,
+            template: await this.getPublicTemplate(),
         };
     }
 }

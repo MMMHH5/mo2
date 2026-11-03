@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { CertificatesService } from '../src/certificates/certificates.service';
 import { UsersService } from '../src/users/users.service';
 import { EnrollmentsService } from '../src/enrollments/enrollments.service';
+import { Role } from '@prisma/client';
 
 /**
  * Regression tests for two defects found while building the profile redesign.
@@ -33,6 +34,19 @@ function certsService(prisma: any) {
 /** getPublicById's exact shape: student metadata in, public name out. */
 function publicPrisma(student: any, instructor: any) {
     return {
+        certificateTemplate: {
+            upsert: () => Promise.resolve({
+                academyNameAr: 'أكاديمية Laxalab',
+                academyNameEn: 'Laxalab Academy',
+                titleAr: 'شهادة إتمام الدورة',
+                titleEn: 'Certificate of Completion',
+                descriptionAr: 'إتمام الدورة بنجاح.',
+                descriptionEn: 'Successful course completion.',
+                directorSignatureUrl: null,
+                academyStampUrl: null,
+                updatedById: 'private-admin-id',
+            }),
+        },
         certificate: {
             findUnique: () =>
                 Promise.resolve({
@@ -41,6 +55,10 @@ function publicPrisma(student: any, instructor: any) {
                     issuingDate: new Date('2026-01-01'),
                     verificationStatus: 'VALID',
                     student,
+                    instructor: {
+                        ...instructor,
+                        certificateInstructorSignature: { signatureUrl: '/uploads/certificates/instructor-signature.png' },
+                    },
                     course: {
                         id: 'c1',
                         titleAr: 'دورة',
@@ -54,6 +72,74 @@ function publicPrisma(student: any, instructor: any) {
 }
 
 describe('certificate holder identity', () => {
+    test('new certificates retain the instructor identity for signature selection', async () => {
+        const created: Array<{ data: Record<string, unknown> }> = [];
+        const prisma = {
+            courseOpening: {
+                findUnique: () => Promise.resolve({
+                    id: 'opening-1',
+                    courseId: 'course-1',
+                    instructorId: 'teacher-1',
+                    status: 'ENDED',
+                    course: { id: 'course-1', titleAr: 'دورة', titleEn: 'Course', certificateIssued: true },
+                }),
+            },
+            enrollment: {
+                findMany: () => Promise.resolve([{ studentId: 'student-1' }]),
+            },
+            certificate: {
+                findFirst: () => Promise.resolve(null),
+                create: (args: { data: Record<string, unknown> }) => {
+                    created.push(args);
+                    return Promise.resolve({ id: 'certificate-1' });
+                },
+            },
+        };
+        await certsService(prisma).issueForStudents('opening-1', ['student-1'], 'admin-1', Role.ADMIN);
+        assert.equal(created[0].data.instructorId, 'teacher-1');
+    });
+
+    test('public verification returns the holder name without exposing account details', async () => {
+        const prisma = {
+            certificate: {
+                findUnique: () => Promise.resolve({
+                    id: 'cert-1',
+                    verificationCode: 'ABC',
+                    issuingDate: new Date('2026-01-01'),
+                    verificationStatus: 'VALID',
+                    student: { id: 's1', metadata: { nameAr: 'محمد الأحمدي', email: 'private@example.com' } },
+                    course: { id: 'c1', titleAr: 'دورة', titleEn: 'Course', certificateIssued: true },
+                }),
+            },
+        };
+        const out: any = await certsService(prisma).verifyByCode('ABC');
+        assert.equal(out.valid, true);
+        assert.equal(out.certificate.holderName, 'محمد الأحمدي');
+        assert.deepEqual(out.certificate.student, { id: 's1' });
+        assert.ok(!('email' in out.certificate.student));
+    });
+
+    test('a revoked certificate is returned as invalid and a missing code has no certificate', async () => {
+        const revokedPrisma = {
+            certificate: {
+                findUnique: () => Promise.resolve({
+                    id: 'cert-1',
+                    verificationCode: 'ABC',
+                    issuingDate: new Date('2026-01-01'),
+                    verificationStatus: 'REVOKED',
+                    student: null,
+                    course: null,
+                }),
+            },
+        };
+        const revoked = await certsService(revokedPrisma).verifyByCode('ABC');
+        assert.equal(revoked.valid, false);
+        assert.equal(revoked.certificate?.verificationStatus, 'REVOKED');
+
+        const missing = await certsService({ certificate: { findUnique: () => Promise.resolve(null) } }).verifyByCode('missing');
+        assert.deepEqual(missing, { valid: false, certificate: null });
+    });
+
     test('a public certificate prints the stored name, not "Student"', async () => {
         const prisma = publicPrisma(
             { id: 's1', metadata: { nameEn: 'Mohammed Al-Ahmadi', fullName: 'محمد الأحمدي' } },
@@ -62,6 +148,8 @@ describe('certificate holder identity', () => {
         const out: any = await certsService(prisma).getPublicById('cert-1');
         assert.equal(out.holderName, 'Mohammed Al-Ahmadi');
         assert.equal(out.instructorName, 'Sara Instructor');
+        assert.equal(out.instructorSignatureUrl, '/uploads/certificates/instructor-signature.png');
+        assert.ok(!('updatedById' in out.template), 'the public certificate must not expose the settings editor identity');
     });
 
     test('the english name wins over the arabic one, because it is the printed one', async () => {

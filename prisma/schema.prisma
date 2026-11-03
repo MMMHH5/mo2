@@ -162,6 +162,8 @@ model User {
   openingInstructorGrantsCreated OpeningInstructorGrant[] @relation("OpeningInstructorGrantor")
   enrollments                    Enrollment[]
   certificates                   Certificate[]
+  certificatesSigned             Certificate[]              @relation("CertificateInstructor")
+  certificateInstructorSignature CertificateInstructorSignature?
 
   // Certificates this staff member released on paper. Named separately from
   // `certificates`, which is the student side of the same table.
@@ -580,6 +582,9 @@ model Certificate {
   studentId String
   student   User   @relation(fields: [studentId], references: [id], onDelete: Restrict)
 
+  instructorId String?
+  instructor   User? @relation("CertificateInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+
   // A paper certificate leaves the system once it is printed, so the handover
   // has to be auditable: when it happened and which staff member released it.
   // Both stay null while the certificate only exists on screen.
@@ -590,6 +595,31 @@ model Certificate {
   // A certificate can optionally be tied to a specific course
   courseId String?
   course   Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([instructorId])
+}
+
+model CertificateTemplate {
+  id                    String   @id @default("singleton")
+  academyNameAr         String   @default("أكاديمية Laxalab")
+  academyNameEn         String   @default("Laxalab Academy")
+  titleAr               String   @default("شهادة إتمام الدورة")
+  titleEn               String   @default("Certificate of Completion")
+  descriptionAr         String   @default("بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.") @db.Text
+  descriptionEn         String   @default("Including all coursework, practical assignments, and assessments required for successful completion.") @db.Text
+  directorSignatureUrl  String?
+  academyStampUrl       String?
+  updatedAt             DateTime @updatedAt
+  updatedById           String?
+}
+
+model CertificateInstructorSignature {
+  id           String   @id @default(uuid())
+  instructorId String   @unique
+  instructor   User     @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  signatureUrl String
+  updatedAt    DateTime @updatedAt
+  updatedById  String?
 }
 
 model AuditLog {

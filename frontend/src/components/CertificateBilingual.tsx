@@ -2,6 +2,19 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import QRCode from 'qrcode';
+import Image from 'next/image';
+import { API_BASE_URL } from '@/lib/api';
+
+export interface CertificateTemplateData {
+    academyNameAr: string;
+    academyNameEn: string;
+    titleAr: string;
+    titleEn: string;
+    descriptionAr: string;
+    descriptionEn: string;
+    directorSignatureUrl: string | null;
+    academyStampUrl: string | null;
+}
 
 export interface CertificateProps {
     studentName: string;
@@ -10,7 +23,9 @@ export interface CertificateProps {
     issueDate: string;
     verificationCode: string;
     verificationUrl: string;
+    instructorSignatureUrl?: string | null;
     lang: 'ar' | 'en';
+    template?: CertificateTemplateData;
 }
 
 function formatDate(dateStr: string, lang: 'ar' | 'en'): string {
@@ -21,13 +36,15 @@ function formatDate(dateStr: string, lang: 'ar' | 'en'): string {
     return d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-function QRCodeSVG({ url }: { url: string }) {
+function QRCodeSVG({ url, lang }: { url: string; lang: 'ar' | 'en' }) {
     const [svg, setSvg] = useState('');
+    const [failed, setFailed] = useState(false);
     useEffect(() => {
         QRCode.toString(url, { type: 'svg', width: 90, margin: 1, color: { dark: '#12305A', light: '#ffffff00' } })
             .then(setSvg)
-            .catch(() => {});
+            .catch(() => setFailed(true));
     }, [url]);
+    if (failed) return <div role="img" aria-label={lang === 'ar' ? 'تعذر إنشاء رمز QR' : 'QR code unavailable'} className="flex h-[90px] w-[90px] items-center justify-center rounded bg-gray-100 px-2 text-center text-[9px] text-gray-500">{lang === 'ar' ? 'تعذر إنشاء الرمز' : 'QR unavailable'}</div>;
     if (!svg) return <div className="w-[90px] h-[90px] bg-gray-100 animate-pulse rounded" />;
     return <div className="w-[90px] h-[90px]" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
@@ -50,8 +67,11 @@ function OrnamentLine({ side }: { side: 'left' | 'right' }) {
     );
 }
 
-export default function CertificateBilingual({ studentName, courseName, instructorName, issueDate, verificationCode, verificationUrl, lang }: CertificateProps) {
+export default function CertificateBilingual({ studentName, courseName, instructorName, instructorSignatureUrl, issueDate, verificationCode, verificationUrl, lang, template }: CertificateProps) {
     const isAr = lang === 'ar';
+    const academyName = isAr ? template?.academyNameAr : template?.academyNameEn;
+    const certificateTitle = isAr ? template?.titleAr : template?.titleEn;
+    const certificateDescription = isAr ? template?.descriptionAr : template?.descriptionEn;
     const [scale, setScale] = useState(1);
     const certRef = useRef<HTMLDivElement>(null);
 
@@ -75,9 +95,9 @@ export default function CertificateBilingual({ studentName, courseName, instruct
 
     useEffect(() => {
         document.title = isAr
-            ? `شهادة إتمام الدورة - ${courseName} | Laxalab`
-            : `Certificate of Completion - ${courseName} | Laxalab`;
-    }, [isAr, courseName]);
+            ? `${certificateTitle || 'شهادة إتمام الدورة'} - ${courseName} | ${academyName || 'Laxalab'}`
+            : `${certificateTitle || 'Certificate of Completion'} - ${courseName} | ${academyName || 'Laxalab'}`;
+    }, [isAr, courseName, academyName, certificateTitle]);
 
     return (
         <>
@@ -89,7 +109,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             <span className="text-black font-black text-sm">L</span>
                         </div>
                         <span className="text-white font-bold text-sm hidden sm:inline">
-                            {isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion'}
+                            {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion')}
                         </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -123,14 +143,12 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 <div className="w-9 h-9 bg-[#12305A] rounded-lg flex items-center justify-center">
                                     <span className="text-[#C6A15B] font-black text-lg">L</span>
                                 </div>
-                                <span className="text-xl font-black text-[#12305A] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
-                                    laxa<span className="text-[#C6A15B]">lab</span>
-                                </span>
+                                <span className="text-xl font-black text-[#12305A] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{academyName || 'Laxalab Academy'}</span>
                             </div>
                             <div className="h-px mx-8 bg-gradient-to-r from-transparent via-[#C6A15B]/60 to-transparent" />
                             <div>
                                 <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-4" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
-                                    {isAr ? 'شهادة إتمام الدورة' : 'CERTIFICATE OF COMPLETION'}
+                                    {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'CERTIFICATE OF COMPLETION')}
                                 </p>
                                 <p className="text-sm text-gray-500 italic">{isAr ? 'تُمنح هذه الشهادة إلى' : 'This is to certify that'}</p>
                                 <p className="text-2xl font-bold text-[#12305A] mt-1 break-words" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{studentName}</p>
@@ -151,9 +169,22 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     <p className="text-xs font-bold text-[#12305A] mt-1" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{formatDate(issueDate, lang)}</p>
                                 </div>
                             </div>
+                            <div className="grid grid-cols-2 gap-3 border-t border-dashed border-[#12305A]/15 pt-4">
+                                <div className="text-center">
+                                    {instructorSignatureUrl && <Image src={`${API_BASE_URL}${instructorSignatureUrl}`} alt={isAr ? 'توقيع المدرّس' : 'Instructor signature'} width={240} height={90} unoptimized className="mx-auto h-10 max-w-full object-contain" />}
+                                    <p className="mt-1 truncate text-[10px] font-bold text-[#12305A]">{instructorName}</p>
+                                    <p className="mt-1 text-[9px] font-bold text-[#8B7355]">{isAr ? 'توقيع المدرّس' : 'Instructor signature'}</p>
+                                </div>
+                                <div className="text-center">
+                                    {template?.directorSignatureUrl && <Image src={`${API_BASE_URL}${template.directorSignatureUrl}`} alt={isAr ? 'توقيع المدير' : 'Director signature'} width={240} height={90} unoptimized className="mx-auto h-10 max-w-full object-contain" />}
+                                    <p className="mt-1 text-[10px] font-bold text-[#12305A]">{isAr ? 'إدارة الأكاديمية' : 'Academy Director'}</p>
+                                    <p className="mt-1 text-[9px] font-bold text-[#8B7355]">{isAr ? 'توقيع المدير' : 'Director signature'}</p>
+                                </div>
+                            </div>
+                            {template?.academyStampUrl && <Image src={`${API_BASE_URL}${template.academyStampUrl}`} alt={isAr ? 'ختم الأكاديمية' : 'Academy seal'} width={120} height={120} unoptimized className="mx-auto h-16 w-16 object-contain" />}
                             <div className="flex items-center justify-center gap-4 border-t border-dashed border-[#12305A]/15 pt-5">
                                 <div className="p-1.5 bg-white border border-[#12305A]/10 rounded shadow-sm shrink-0">
-                                    <QRCodeSVG url={verificationUrl} />
+                                    <QRCodeSVG url={verificationUrl} lang={lang} />
                                 </div>
                                 <div className="text-start min-w-0">
                                     <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
@@ -217,7 +248,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                         <span className="text-[#C6A15B] font-black text-xl">L</span>
                                     </div>
                                     <h1 className="text-2xl font-black text-[#12305A] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
-                                        laxa<span className="text-[#C6A15B]">lab</span>
+                                        {academyName || 'Laxalab Academy'}
                                     </h1>
                                 </div>
 
@@ -233,7 +264,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     className="text-[11px] font-bold uppercase tracking-[0.4em] mb-1"
                                     style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}
                                 >
-                                    {isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion'}
+                                    {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion')}
                                 </h2>
                             </div>
 
@@ -287,9 +318,9 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     className="text-[11px] leading-relaxed max-w-md mb-4"
                                     style={{ color: '#9ca3af', fontFamily: "'Georgia', 'Times New Roman', serif" }}
                                 >
-                                    {isAr
+                                    {certificateDescription || (isAr
                                         ? 'بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.'
-                                        : 'including all coursework, practical assignments, and assessments required for successful completion.'}
+                                        : 'Including all coursework, practical assignments, and assessments required for successful completion.')}
                                 </p>
 
                                 {/* Certificate Number */}
@@ -315,9 +346,12 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                             fontFamily: "'Georgia', 'Times New Roman', serif",
                                         }}
                                     >
-                                        {instructorName}
+                                        {instructorSignatureUrl
+                                            ? <Image src={`${API_BASE_URL}${instructorSignatureUrl}`} alt={isAr ? 'توقيع المدرّس' : 'Instructor signature'} width={300} height={100} unoptimized className="mx-auto h-12 max-w-full object-contain" />
+                                            : instructorName}
                                     </p>
                                     <div className="w-full h-[1px] bg-[#12305A]/20 mb-1" />
+                                    {instructorSignatureUrl && <p className="mb-1 text-[8px] font-semibold text-[#12305A]">{instructorName}</p>}
                                     <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
                                         {isAr ? 'المدرّس المعتمد' : 'Certified Instructor'}
                                     </p>
@@ -326,21 +360,26 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* Center: QR Code + Laxalab Seal */}
                                 <div className="flex flex-col items-center gap-1 shrink-0">
                                     <div className="p-1.5 bg-white border border-[#12305A]/10 rounded shadow-sm">
-                                        <QRCodeSVG url={verificationUrl} />
+                                        <QRCodeSVG url={verificationUrl} lang={lang} />
                                     </div>
+                                    {template?.academyStampUrl && <Image src={`${API_BASE_URL}${template.academyStampUrl}`} alt={isAr ? 'ختم الأكاديمية' : 'Academy seal'} width={100} height={100} unoptimized className="h-14 w-14 object-contain" />}
                                     <p className="text-[7px] font-mono font-bold tracking-[0.15em]" style={{ color: '#aaa' }}>
                                         {isAr ? 'امسح للتحقق' : 'SCAN TO VERIFY'}
                                     </p>
                                 </div>
 
-                                {/* Right: Date + Platform */}
+                                {/* Right: Director signature and issue date */}
                                 <div className="flex-1 text-center" dir={isAr ? 'rtl' : 'ltr'}>
-                                    <p className="text-[12px] font-bold mb-1" style={{ color: '#12305A', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
-                                        {formatDate(issueDate, lang)}
-                                    </p>
+                                    {template?.directorSignatureUrl
+                                        ? <Image src={`${API_BASE_URL}${template.directorSignatureUrl}`} alt={isAr ? 'توقيع المدير' : 'Director signature'} width={300} height={100} unoptimized className="mx-auto h-12 max-w-full object-contain" />
+                                        : <p className="text-[12px] font-bold mb-1" style={{ color: '#12305A', fontFamily: "'Georgia', 'Times New Roman', serif" }}>{isAr ? 'إدارة الأكاديمية' : 'Academy Director'}</p>}
                                     <div className="w-full h-[1px] bg-[#12305A]/20 mb-1" />
+                                    <p className="mb-1 text-[8px] font-semibold text-[#12305A]">{isAr ? 'المدير' : 'Director'}</p>
                                     <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#8B7355', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
                                         {isAr ? 'تاريخ الإصدار' : 'Date of Issue'}
+                                    </p>
+                                    <p className="mt-1 text-[10px] font-bold" style={{ color: '#12305A', fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                        {formatDate(issueDate, lang)}
                                     </p>
                                 </div>
                             </div>

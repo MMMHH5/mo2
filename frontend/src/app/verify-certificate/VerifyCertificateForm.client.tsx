@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { API_BASE_URL, getErrorMessage } from '@/lib/api';
@@ -15,7 +15,8 @@ interface CertificateInfo {
     verificationCode: string;
     issuingDate: string;
     verificationStatus: string;
-    student?: { email: string } | null;
+    student?: { id: string } | null;
+    holderName?: string;
     course?: { id: string; titleAr?: string | null; titleEn?: string | null } | null;
 }
 
@@ -36,7 +37,7 @@ export default function VerifyCertificateForm() {
     const isAr = locale === 'ar';
     const autoRan = useRef(false);
 
-    const verify = async (codeToVerify?: string) => {
+    const verify = useCallback(async (codeToVerify?: string) => {
         const targetCode = (codeToVerify || code).trim();
         if (!targetCode) return;
         setLoading(true);
@@ -52,7 +53,7 @@ export default function VerifyCertificateForm() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [code, isAr]);
 
     // Auto-verify if code is in URL
     useEffect(() => {
@@ -60,7 +61,7 @@ export default function VerifyCertificateForm() {
             autoRan.current = true;
             verify(initialCode);
         }
-    }, [initialCode]);
+    }, [initialCode, verify]);
 
     const cert = result?.certificate;
 
@@ -134,7 +135,7 @@ export default function VerifyCertificateForm() {
                 )}
 
                 {/* Result */}
-                {result && cert && (
+                {result && (
                     <div className="w-full max-w-lg mt-8">
                         <div className={`rounded-2xl border overflow-hidden ${
                             result.valid
@@ -159,7 +160,11 @@ export default function VerifyCertificateForm() {
                                     <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                                         {result.valid
                                             ? (isAr ? 'تم التحقق من صحة هذه الشهادة بنجاح' : 'This certificate has been successfully verified')
-                                            : (isAr ? 'لم يتم العثور على شهادة بهذا الرمز' : 'No certificate found with this code')}
+                                            : cert?.verificationStatus === 'REVOKED'
+                                                ? (isAr ? 'تم إلغاء هذه الشهادة ولم تعد سارية' : 'This certificate has been revoked and is no longer valid')
+                                                : cert?.verificationStatus === 'EXPIRED'
+                                                    ? (isAr ? 'انتهت صلاحية هذه الشهادة' : 'This certificate has expired')
+                                                    : (isAr ? 'لم يتم العثور على شهادة بهذا الرمز' : 'No certificate found with this code')}
                                     </p>
                                 </div>
                             </div>
@@ -173,7 +178,7 @@ export default function VerifyCertificateForm() {
                                                 {isAr ? 'الحاصل على الشهادة' : 'Recipient'}
                                             </p>
                                             <p className={`font-bold text-sm capitalize break-words ${dark ? 'text-white' : 'text-brand-navy'}`}>
-                                                {cert.student?.email?.split('@')[0] || '—'}
+                                                {cert.holderName || '—'}
                                             </p>
                                         </div>
                                         <div className={`rounded-xl p-4 border ${dark ? 'bg-brand-navy-dark border-white/5' : 'bg-gray-50 border-gray-100'}`}>

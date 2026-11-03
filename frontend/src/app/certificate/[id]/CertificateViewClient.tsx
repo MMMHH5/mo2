@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import CertificateBilingual from '@/components/CertificateBilingual';
+import CertificateBilingual, { type CertificateTemplateData } from '@/components/CertificateBilingual';
 import BackHomeButton from '@/components/BackHomeButton';
 import { API_BASE_URL } from '@/lib/api';
 
@@ -15,6 +15,8 @@ interface CertData {
     student: { id: string } | null;
     holderName?: string;
     instructorName?: string;
+    instructorSignatureUrl?: string | null;
+    template?: CertificateTemplateData;
     course: { id: string; titleAr: string | null; titleEn: string | null } | null;
 }
 
@@ -69,6 +71,32 @@ function CertificateViewInner({ id }: { id: string }) {
                     <p className="text-gray-600 dark:text-gray-400 mb-6">This certificate does not exist or has been revoked.</p>
                     <Link href="/verify-certificate" className="inline-flex items-center gap-2 bg-brand-navy dark:bg-white/10 text-white dark:text-white font-bold px-6 py-3 rounded-xl hover:bg-brand-charcoal dark:hover:bg-white/15 transition">
                         Verify Another Certificate
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (cert.verificationStatus !== 'VALID') {
+        const revoked = cert.verificationStatus === 'REVOKED';
+        const isAr = lang === 'ar';
+        return (
+            <div className="min-h-screen bg-gray-50 px-4 dark:bg-brand-navy-dark">
+                <BackHomeButton />
+                <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center text-center">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-red-500/10 text-red-500">
+                        <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                        </svg>
+                    </div>
+                    <h1 className="mb-2 text-2xl font-black text-brand-navy dark:text-white">
+                        {revoked ? (isAr ? 'الشهادة ملغاة' : 'Certificate revoked') : (isAr ? 'الشهادة منتهية' : 'Certificate expired')}
+                    </h1>
+                    <p className="mb-6 text-gray-600 dark:text-gray-400">
+                        {isAr ? 'لا يمكن عرض شهادة غير سارية. تحقق من حالتها باستخدام رمز التحقق.' : 'An inactive certificate cannot be displayed. Check its status using the verification code.'}
+                    </p>
+                    <Link href={`/verify-certificate?code=${encodeURIComponent(cert.verificationCode)}`} className="rounded-xl bg-brand-navy px-6 py-3 font-bold text-white hover:bg-brand-charcoal dark:bg-brand-gold dark:text-brand-navy-dark">
+                        {isAr ? 'التحقق من الشهادة' : 'Verify certificate'}
                     </Link>
                 </div>
             </div>
@@ -151,10 +179,12 @@ function CertificateViewInner({ id }: { id: string }) {
                 studentName={studentName}
                 courseName={courseName}
                 instructorName={instructorName}
+                instructorSignatureUrl={cert.instructorSignatureUrl}
                 issueDate={cert.issuingDate}
                 verificationCode={cert.verificationCode}
                 verificationUrl={verificationUrl}
                 lang={lang}
+                template={cert.template}
             />
 
             {/* Verification badge — no-print */}
