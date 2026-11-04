@@ -168,7 +168,7 @@ describe('resolveClassroom applies the schedule rules', () => {
 describe('LiveSessionsService', () => {
     const noop = { logAction: () => Promise.resolve() };
 
-    function service(prisma: any, manage: (id: string, actorId: string, role: any) => any = () => Promise.resolve({ id: 'o1', courseId: 'c1' })) {
+    function service(prisma: any, manage: (id: string, actorId: string, role: any) => any = () => Promise.resolve({ id: 'o1', courseId: 'c1', status: 'OPEN' })) {
         // A course lookup is part of writing a session: a pre-recorded course has
         // no meetings to schedule. Default it to live so the tests below stay
         // about the schedule itself.
@@ -223,6 +223,23 @@ describe('LiveSessionsService', () => {
             } as any, actor.actorId, actor.actorRole),
             /must be a Google Meet/,
         );
+    });
+
+    test('instructors cannot change schedules before a batch opens', async () => {
+        let created = false;
+        const prisma = {
+            liveSession: {
+                create: () => { created = true; return Promise.resolve({ id: 's1' }); },
+            },
+        };
+        await assert.rejects(
+            () => service(prisma, () => Promise.resolve({ id: 'o1', courseId: 'c1', status: 'ANNOUNCEMENT' }))
+                .create('o1', {
+                    titleAr: 'أ', titleEn: 'A', scheduledAt: '2026-10-07T19:00:00.000Z',
+                } as any, actor.actorId, actor.actorRole),
+            /open or started courses/,
+        );
+        assert.equal(created, false);
     });
 
     test('editing one field leaves the others alone', async () => {

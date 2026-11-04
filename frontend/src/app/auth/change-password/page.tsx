@@ -7,6 +7,7 @@ import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import BackHomeButton from '@/components/BackHomeButton';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function ChangePasswordPage() {
     return (
@@ -66,7 +67,7 @@ function ChangePasswordForm() {
             <BackHomeButton />
             <div className={`w-full max-w-md backdrop-blur-2xl p-6 sm:p-10 rounded-[2rem] relative z-10 transition-all duration-500 ${dark ? 'bg-brand-navy-dark/90 shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 hover:border-white/20' : 'bg-white shadow-xl border border-gray-200 hover:shadow-2xl'}`}>
                 <div className="text-center mb-8">
-                    <h1 className={`text-3xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>laxa<span className="text-brand-gold">lab</span></h1>
+                    <BrandLogo className="mx-auto h-10 w-auto" />
                     <p className={`mt-2 font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('recovery.mustChangeTitle')}</p>
                 </div>
 

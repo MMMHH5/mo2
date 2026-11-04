@@ -46,6 +46,7 @@ interface CourseModule {
     files?: LessonFile[] | null;
     links?: LessonLink[] | null;
     outcomes?: Outcome[] | null;
+    chapterId?: string | null;
 }
 interface CourseChapter {
     id: string;
@@ -116,7 +117,7 @@ interface CourseData {
 }
 
 type LessonKind = 'video' | 'pdf' | 'task' | 'resource';
-type DeckTab = 'overview' | 'notes' | 'sessions' | 'discussions' | 'quizzes' | 'batch' | 'direct';
+type DeckTab = 'overview' | 'notes' | 'sessions' | 'discussions' | 'quizzes' | 'final' | 'batch' | 'direct';
 
 interface Announcement {
     id: string;
@@ -137,6 +138,7 @@ interface ModuleQuiz {
     descriptionEn?: string | null;
     passScore?: number;
     isPublished?: boolean;
+    isFinal?: boolean;
     orderIndex?: number;
     moduleId?: string | null;
     questions?: unknown[];
@@ -232,11 +234,25 @@ export default function CoursePlayer({ courseId }: Props) {
                     api.get(`/lms/courses/${courseId}/my-notes`),
                 ]);
                 if (!active) return;
-                setCourse(c.data as CourseData);
-                setProgress(p.data as ProgressData);
+                const baseCourse = c.data as CourseData;
+                const incoming = p.data as ProgressData | undefined;
+                const openingModules = incoming?.modules ?? [];
+                const chapters = (baseCourse.chapters || []).map((chapter) => ({
+                    ...chapter,
+                    modules: openingModules.filter((module) => module.chapterId === chapter.id),
+                }));
+                const groupedIds = new Set(chapters.flatMap((chapter) => (chapter.modules || []).map((module) => module.id)));
+                const ungroupedModules = openingModules.filter((module) => !groupedIds.has(module.id));
+                setCourse({
+                    ...baseCourse,
+                    modules: openingModules,
+                    chapters: chapters.length
+                        ? [...chapters, ...(ungroupedModules.length ? [{ id: 'opening-lessons', modules: ungroupedModules }] : [])]
+                        : [],
+                });
+                setProgress(incoming as ProgressData);
                 // A live course opens on its schedule: the meeting times are what
                 // the student came for, and the lesson list below has no video.
-                const incoming = p.data as ProgressData | undefined;
                 if (incoming && (incoming.contentType ?? 'LIVE') !== 'RECORDED' && (incoming.liveSessions?.length ?? 0) > 0) {
                     setDeckTab('sessions');
                 }
@@ -262,12 +278,14 @@ export default function CoursePlayer({ courseId }: Props) {
                     setAnnouncements([]);
                 }
                 try {
-                    const qr = await api.get(`/quizzes/course/${courseId}`);
+                    const qr = await api.get(`/quizzes/course/${courseId}`, {
+                        params: incoming?.openingId ? { openingId: incoming.openingId } : undefined,
+                    });
                     if (active) setModuleQuizzes(qr.data || []);
                 } catch {
                     if (active) setModuleQuizzes([]);
                 }
-                const mods = flattenModules(c.data);
+                const mods = openingModules;
                 if (mods.length > 0) {
                     const completedIds = new Set((incoming?.modules ?? [])
                         .filter(module => module.completed)
@@ -677,6 +695,9 @@ export default function CoursePlayer({ courseId }: Props) {
                 : []),
             { key: 'discussions', label: isAr ? 'النقاش' : 'Discuss', icon: MessageCircle },
             { key: 'quizzes', label: isAr ? 'اختبار' : 'Quiz', icon: ClipboardList },
+            ...(moduleQuizzes.some((quiz) => quiz.isFinal)
+                ? [{ key: 'final' as DeckTab, label: isAr ? 'الاختبار النهائي' : 'Final exam', icon: Award }]
+                : []),
             { key: 'batch', label: t('player.tab_batch'), icon: MessagesSquare },
             { key: 'direct', label: t('player.tab_direct'), icon: MessageCircle },
         ];
@@ -776,7 +797,7 @@ export default function CoursePlayer({ courseId }: Props) {
                     {deckTab === 'discussions' && selected && (
                         <DiscussionForum moduleId={selected.id} courseId={courseId} />
                     )}
-                    {deckTab === 'quizzes' && progress?.openingId && (
+                    {deckTab === 'quizzes' && progress?.enrollmentId && (
                         <div className="space-y-4">
                             {moduleQuizzes.filter((q) => q.moduleId === selected?.id).length === 0 ? (
                                 <p className="text-sm text-ink-subtle text-center py-8">{isAr ? 'لا يوجد اختبارات لهذا الدرس بعد' : 'No quizzes for this lesson yet'}</p>
@@ -789,6 +810,31 @@ export default function CoursePlayer({ courseId }: Props) {
                                             enrollmentId={progress.enrollmentId}
                                             onComplete={(passed) => {
                                                 toast.success(passed ? (isAr ? 'نجحت في الاختبار!' : 'Quiz passed!') : (isAr ? 'حاول مرة أخرى' : 'Try again'));
+                                            }}
+                                        />
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+                    {deckTab === 'final' && progress?.enrollmentId && (
+                        <div className="space-y-4">
+                            {moduleQuizzes.filter((quiz) => quiz.isFinal).length === 0 ? (
+                                <p className="py-8 text-center text-sm text-ink-subtle">{isAr ? 'لا يوجد اختبار نهائي منشور لهذه الدورة بعد' : 'No published final exam for this course yet'}</p>
+                            ) : (
+                                moduleQuizzes.filter((quiz) => quiz.isFinal).map((quiz) => (
+                                    <div key={quiz.id}>
+                                        <div className="mb-3">
+                                            <p className="font-black text-ink">{isAr ? quiz.titleAr : quiz.titleEn}</p>
+                                            {(isAr ? quiz.descriptionAr : quiz.descriptionEn) && (
+                                                <p className="mt-1 whitespace-pre-wrap text-sm text-ink-muted">{isAr ? quiz.descriptionAr : quiz.descriptionEn}</p>
+                                            )}
+                                        </div>
+                                        <InteractiveQuiz
+                                            quizId={quiz.id}
+                                            enrollmentId={progress.enrollmentId}
+                                            onComplete={(passed) => {
+                                                toast.success(passed ? (isAr ? 'اجتزت الاختبار النهائي!' : 'Final exam passed!') : (isAr ? 'لم تجتز الاختبار بعد، يمكنك المحاولة مجددًا.' : 'Not passed yet. You can try again.'));
                                             }}
                                         />
                                     </div>
@@ -1432,9 +1478,4 @@ function NotesEditor({ initial, moduleId, onSave }: {
             </div>
         </div>
     );
-}
-
-function flattenModules(course: CourseData): CourseModule[] {
-    const chs: CourseChapter[] = course?.chapters?.length ? course.chapters : [{ id: 'root', titleAr: null, titleEn: null, modules: course?.modules || [] }];
-    return chs.flatMap(c => c.modules || []);
 }

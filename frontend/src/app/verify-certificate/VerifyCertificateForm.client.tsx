@@ -8,6 +8,7 @@ import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { formatDate } from '@/lib/format';
 import BackHomeButton from '@/components/BackHomeButton';
+import BrandLogo from '@/components/BrandLogo';
 import { Search, ShieldCheck, ShieldAlert, ExternalLink, Award } from 'lucide-react';
 
 interface CertificateInfo {
@@ -70,13 +71,8 @@ export default function VerifyCertificateForm() {
             <BackHomeButton />
             {/* Header */}
             <header className={`px-6 py-5 flex items-center justify-between border-b backdrop-blur-xl sticky top-0 z-50 ${dark ? 'border-white/5 bg-brand-navy-dark/80' : 'border-gray-200 bg-white/80'}`}>
-                <Link href="/" className="flex items-center gap-2">
-                    <div className="w-9 h-9 bg-gradient-to-br from-brand-gold to-brand-gold-dark rounded-lg flex items-center justify-center">
-                        <span className="text-black font-black text-sm">L</span>
-                    </div>
-                    <span className={`text-xl font-black tracking-tight ${dark ? 'text-white' : 'text-brand-navy'}`}>
-                        laxa<span className={dark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}>lab</span>
-                    </span>
+                <Link href="/" className="flex items-center">
+                    <BrandLogo className="h-8 w-auto" />
                 </Link>
                 <Link href="/login" className={`text-sm font-bold transition ${dark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-brand-navy'}`}>
                     {isAr ? 'تسجيل الدخول' : 'Sign in'}

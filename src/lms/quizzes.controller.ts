@@ -44,19 +44,61 @@ export class QuizzesController {
     return this.quizzes.remove(id);
   }
 
+  @ApiOperation({ summary: 'List course quizzes for an authorized instructor' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR)
+  @Get('manage/opening/:openingId')
+  listForInstructor(@Param('openingId') openingId: string, @Request() req: any) {
+    return this.quizzes.listForInstructor(openingId, req.user.userId, req.user.role);
+  }
+
+  @ApiOperation({ summary: 'Create a lesson or final quiz for an authorized instructor' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR)
+  @Post('manage/opening/:openingId')
+  createForInstructor(@Param('openingId') openingId: string, @Body() dto: any, @Request() req: any) {
+    if (!dto?.titleAr || !dto?.titleEn) throw new BadRequestException('titleAr and titleEn are required');
+    return this.quizzes.createForInstructor(dto, openingId, req.user.userId, req.user.role);
+  }
+
+  @ApiOperation({ summary: 'Update a course quiz for an authorized instructor' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR)
+  @Patch('manage/opening/:openingId/:id')
+  updateForInstructor(@Param('openingId') openingId: string, @Param('id') id: string, @Body() dto: any, @Request() req: any) {
+    return this.quizzes.updateForInstructor(id, dto, openingId, req.user.userId, req.user.role);
+  }
+
+  @ApiOperation({ summary: 'Delete a course quiz for an authorized instructor' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR)
+  @Delete('manage/opening/:openingId/:id')
+  removeForInstructor(@Param('openingId') openingId: string, @Param('id') id: string, @Request() req: any) {
+    return this.quizzes.removeForInstructor(id, openingId, req.user.userId, req.user.role);
+  }
+
   @ApiOperation({ summary: 'List quizzes for a course (with answers when includeUnpublished=true)' })
   @UseGuards(OptionalJwtAuthGuard)
   @Get('course/:courseId')
-  listByCourse(@Param('courseId') courseId: string, @Query('includeUnpublished') includeUnpublished?: string, @Request() req?: any) {
+  listByCourse(
+    @Param('courseId') courseId: string,
+    @Query('includeUnpublished') includeUnpublished?: string,
+    @Query('openingId') openingId?: string,
+    @Request() req?: any,
+  ) {
+    if (openingId && req?.user?.role === Role.STUDENT) {
+      return this.quizzes.listForEnrolledOpening(courseId, openingId, req.user.userId);
+    }
     // Only allow includeUnpublished for authenticated staff users
     const allowUnpublished = includeUnpublished === 'true' && req?.user?.role && ['ADMIN', 'COURSE_MANAGER'].includes(req.user.role);
     return this.quizzes.listByCourse(courseId, allowUnpublished);
   }
 
   @ApiOperation({ summary: 'Get a published quiz (answers stripped)' })
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
-  getOne(@Param('id') id: string) {
-    return this.quizzes.getPublic(id);
+  getOne(@Param('id') id: string, @Request() req: any) {
+    return this.quizzes.getPublic(id, req.user?.userId);
   }
 
   @ApiOperation({ summary: 'My best attempt for a quiz' })

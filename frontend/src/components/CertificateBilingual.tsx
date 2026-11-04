@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import QRCode from 'qrcode';
 import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 export interface CertificateTemplateData {
     academyNameAr: string;
@@ -105,9 +106,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
             <div className="no-print fixed top-0 inset-x-0 z-50 bg-brand-navy-dark/95 backdrop-blur-xl border-b border-white/10">
                 <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-brand-gold to-brand-gold-dark rounded-lg flex items-center justify-center">
-                            <span className="text-black font-black text-sm">L</span>
-                        </div>
+                        <BrandLogo className="h-8 w-8 rounded-lg" variant="mark" dark />
                         <span className="text-white font-bold text-sm hidden sm:inline">
                             {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion')}
                         </span>
@@ -140,9 +139,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                         <div className="absolute inset-x-0 top-0 h-1.5 bg-[#C6A15B]" />
                         <div className="p-6 pt-8 text-center space-y-5">
                             <div className="flex items-center justify-center gap-2">
-                                <div className="w-9 h-9 bg-[#12305A] rounded-lg flex items-center justify-center">
-                                    <span className="text-[#C6A15B] font-black text-lg">L</span>
-                                </div>
+                                <BrandLogo className="h-9 w-9 rounded-lg" variant="mark" dark />
                                 <span className="text-xl font-black text-[#12305A] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>{academyName || 'Laxalab Academy'}</span>
                             </div>
                             <div className="h-px mx-8 bg-gradient-to-r from-transparent via-[#C6A15B]/60 to-transparent" />
@@ -244,9 +241,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             <div className="text-center w-full">
                                 {/* Logo + Brand */}
                                 <div className={`flex items-center justify-center gap-3 mb-4 ${isAr ? 'flex-row-reverse' : ''}`}>
-                                    <div className="w-12 h-12 bg-[#12305A] rounded-lg flex items-center justify-center shadow-sm">
-                                        <span className="text-[#C6A15B] font-black text-xl">L</span>
-                                    </div>
+                                    <BrandLogo className="h-12 w-12 rounded-lg" variant="mark" dark />
                                     <h1 className="text-2xl font-black text-[#12305A] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
                                         {academyName || 'Laxalab Academy'}
                                     </h1>

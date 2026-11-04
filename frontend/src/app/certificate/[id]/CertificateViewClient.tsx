@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import CertificateBilingual, { type CertificateTemplateData } from '@/components/CertificateBilingual';
 import BackHomeButton from '@/components/BackHomeButton';
 import { API_BASE_URL } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 interface CertData {
     id: string;
@@ -115,13 +116,8 @@ function CertificateViewInner({ id }: { id: string }) {
             <div className="min-h-screen bg-gray-50 dark:bg-brand-navy-dark flex flex-col">
                 {/* Header */}
                 <header className="px-6 py-4 flex items-center justify-between border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-brand-navy-dark/80 backdrop-blur-xl sticky top-0 z-50">
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="w-9 h-9 bg-gradient-to-br from-brand-gold to-brand-gold-dark rounded-lg flex items-center justify-center">
-                            <span className="text-black font-black text-sm">L</span>
-                        </div>
-                        <span className="text-xl font-black text-brand-navy dark:text-white tracking-tight">
-                            laxa<span className="text-brand-gold-dark dark:text-brand-gold-light">lab</span>
-                        </span>
+                    <Link href="/" className="flex items-center">
+                        <BrandLogo className="h-8 w-auto" />
                     </Link>
                 </header>
 

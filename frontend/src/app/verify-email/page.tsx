@@ -7,6 +7,7 @@ import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import BackHomeButton from '@/components/BackHomeButton';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function VerifyEmailPage() {
     return (
@@ -49,7 +50,7 @@ function VerifyEmailForm() {
             </div>
             <BackHomeButton />
             <div className={`w-full max-w-md backdrop-blur-2xl p-6 sm:p-10 rounded-[2rem] relative z-10 transition-all duration-500 text-center ${dark ? 'bg-brand-navy-dark/90 shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-white/10 hover:border-white/20' : 'bg-white shadow-xl border border-gray-200 hover:shadow-2xl'}`}>
-                <h1 className={`text-3xl font-black mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>laxa<span className="text-brand-gold">lab</span></h1>
+                <BrandLogo className="mx-auto mb-4 h-10 w-auto" />
 
                 {state === 'ready' && (
                     <div className="space-y-4">

@@ -4,7 +4,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import { useAuth } from '@/lib/auth-context';
-import { api, getErrorMessage } from '@/lib/api';
+import { api, getErrorMessage, API_BASE_URL } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -17,6 +17,14 @@ import {
 import Link from 'next/link';
 import SelectField from '@/components/SelectField';
 import TwoFactorSettings from './TwoFactorSettings';
+import type {
+    BilingualText,
+    ProfileCertificate,
+    ProfileExperience,
+    ProfileLanguage,
+    ProfileLink,
+    ProfileQualification,
+} from '@/lib/public-instructor';
 
 interface MyProfile {
     id: string;
@@ -89,6 +97,16 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 type InfoRow = { icon: typeof Mail; label: string; value: string; dir?: 'auto' | 'ltr' };
+
+const asObject = (value: unknown): Record<string, unknown> =>
+    value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+
+const asProfileText = (value: unknown): string => typeof value === 'string' ? value.trim() : '';
+
+const readBilingual = (value: unknown): BilingualText => {
+    const pair = asObject(value);
+    return { ar: asProfileText(pair.ar), en: asProfileText(pair.en) };
+};
 
 /** Every profile field the edit modal writes, empty. */
 const EMPTY_FORM = {
@@ -261,7 +279,11 @@ function ProfileContent() {
     const saveProfile = async () => {
         setSaving(true);
         try {
-            await api.patch('/users/me', { metadata: form });
+            const { jobTitleAr, jobTitleEn, bioEn, experienceYears, specialty, ...personalForm } = form;
+            const metadata = isInstructor
+                ? personalForm
+                : { ...personalForm, specialty, jobTitleAr, jobTitleEn, bioEn, experienceYears };
+            await api.patch('/users/me', { metadata });
             toast.success(t('profile.saved'));
             setEditing(false);
             refetch();
@@ -348,21 +370,61 @@ function ProfileContent() {
     };
 
     const meta = (profile?.metadata ?? {}) as Record<string, string | undefined>;
+    const publicProfile = asObject((profile?.metadata as Record<string, unknown> | undefined)?.publicProfile);
+    const publicName = readBilingual(publicProfile.name);
+    const publicJobTitle = readBilingual(publicProfile.jobTitle);
+    const publicBio = readBilingual(publicProfile.bio);
+    const publicSpecialties = Array.isArray(publicProfile.specialties)
+        ? publicProfile.specialties.map(readBilingual).filter((item) => item.ar || item.en)
+        : [];
+    const publicExperiences = Array.isArray(publicProfile.experiences)
+        ? publicProfile.experiences as ProfileExperience[]
+        : [];
+    const publicQualifications = Array.isArray(publicProfile.qualifications)
+        ? publicProfile.qualifications as ProfileQualification[]
+        : [];
+    const publicLanguages = Array.isArray(publicProfile.languages)
+        ? publicProfile.languages as ProfileLanguage[]
+        : [];
+    const publicCertificates = Array.isArray(publicProfile.certificates)
+        ? publicProfile.certificates as ProfileCertificate[]
+        : [];
+    const publicLinks = Array.isArray(publicProfile.links)
+        ? publicProfile.links as ProfileLink[]
+        : [];
+    const avatarUrl = asProfileText(meta.avatarUrl);
+    const avatarSrc = avatarUrl
+        ? (/^https?:\/\//i.test(avatarUrl) ? avatarUrl : `${API_BASE_URL}${avatarUrl}`)
+        : null;
     const emailPrefix = user?.email?.split('@')[0] || profile?.email || '';
     // The one CV field that is not a string: the sanitiser stores years of
     // experience as a clamped number so it can be sorted and validated.
-    const cvYears = (profile?.metadata as Record<string, unknown> | undefined)?.experienceYears;
+    const cvYearsValue = publicProfile.experienceYears ?? (profile?.metadata as Record<string, unknown> | undefined)?.experienceYears;
+    const cvYears = typeof cvYearsValue === 'number' ? cvYearsValue : Number(cvYearsValue);
     const cvYearsLabel =
         typeof cvYears === 'number' && Number.isFinite(cvYears)
             ? `${cvYears} ${t('instructorProfile.years_suffix')}`
             : null;
+    const hasInstructorDetails = publicExperiences.length > 0
+        || publicQualifications.length > 0
+        || publicLanguages.length > 0
+        || publicCertificates.length > 0
+        || publicLinks.length > 0
+        || Boolean(cvYearsLabel);
 
     // The Arabic name leads; the English one sits under it because that is the
     // name the certificate prints, and having it visible here is how a student
     // notices it is set correctly.
-    const nameAr = meta.nameAr || meta.fullName || '';
-    const nameEn = meta.nameEn || '';
+    const nameAr = publicName.ar || meta.nameAr || meta.fullName || '';
+    const nameEn = publicName.en || meta.nameEn || '';
     const fullName = nameAr || nameEn || emailPrefix;
+    const instructorTitleAr = publicJobTitle.ar || asProfileText(meta.jobTitleAr);
+    const instructorTitleEn = publicJobTitle.en || asProfileText(meta.jobTitleEn);
+    const instructorBioAr = publicBio.ar || asProfileText(meta.bio);
+    const instructorBioEn = publicBio.en || asProfileText(meta.bioEn);
+    const instructorSpecialty = publicSpecialties[0]
+        ? localized(publicSpecialties[0].ar, publicSpecialties[0].en)
+        : asProfileText(meta.specialty);
     const initials = fullName.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase();
     const roleLabel = t('roles.' + (profile?.role || '').toLowerCase()) || profile?.role || '';
 
@@ -417,8 +479,8 @@ function ProfileContent() {
 
     return (
         <ProtectedRoute>
-            <div className="mx-auto w-full min-w-0 max-w-5xl space-y-5 sm:space-y-6 animate-fade-in">
-{error && <div className="p-4 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 rounded-xl font-semibold">{error}</div>}
+            <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 sm:space-y-6 animate-fade-in">
+                {error && <div role="alert" className="p-4 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 rounded-xl font-semibold">{error}</div>}
 
                 {loading || !profile ? (
                     <div className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 p-8 sm:p-16 rounded-2xl sm:rounded-3xl flex flex-col items-center gap-3 font-bold text-gray-500 dark:text-gray-400">
@@ -435,10 +497,10 @@ function ProfileContent() {
                             <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)', backgroundSize: '22px 22px' }} />
                             <div className="relative flex items-start gap-4 sm:gap-6 flex-wrap">
                                 <div className="relative shrink-0">
-                                    {meta.avatarUrl ? (
+                                    {avatarSrc ? (
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img
-                                            src={meta.avatarUrl}
+                                            src={avatarSrc}
                                             alt={fullName}
                                             className="w-24 h-24 lg:w-28 lg:h-28 rounded-full object-cover ring-4 ring-white/15 shadow-lg"
                                         />
@@ -508,7 +570,7 @@ function ProfileContent() {
                                     <dl className="flex flex-wrap gap-x-6 gap-y-2 mt-5 pt-5 border-t border-white/10">
                                         {(isInstructor
                                             ? [
-                                                { icon: Briefcase, label: t('profile.field_specialty'), value: meta.specialty },
+                                                { icon: Briefcase, label: t('profile.field_specialty'), value: instructorSpecialty },
                                                 { icon: Clock, label: t('instructorProfile.experience_years_label'), value: cvYearsLabel || '' },
                                                 { icon: Calendar, label: t('profile.member_since'), value: joinedLabel },
                                             ]
@@ -527,7 +589,7 @@ function ProfileContent() {
                                     </dl>
                                 </div>
                                 <button
-                                    onClick={startEdit}
+                                    onClick={() => isInstructor ? router.push('/dashboard/instructor-profile') : startEdit()}
                                     className="inline-flex items-center gap-2 text-sm font-bold text-brand-navy bg-brand-gold hover:bg-brand-gold/90 px-4 py-2.5 rounded-xl shadow-lg shadow-brand-gold/25 transition"
                                 >
                                     <Edit3 size={16} /> {t('profile.edit_profile')}
@@ -736,7 +798,7 @@ function ProfileContent() {
                                             </Link>
                                         )}
                                         <button
-                                            onClick={startEdit}
+                                            onClick={() => router.push('/dashboard/instructor-profile')}
                                             className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-gold to-brand-gold-dark px-4 py-2.5 text-sm font-black text-brand-navy transition hover:opacity-90"
                                         >
                                             <Edit3 size={16} /> {t('profile.edit_profile')}
@@ -744,13 +806,13 @@ function ProfileContent() {
                                     </div>
                                 </div>
 
-                                {!meta.jobTitleAr && !meta.jobTitleEn && !meta.bio && !meta.bioEn && !meta.specialty ? (
+                                {!instructorTitleAr && !instructorTitleEn && !instructorBioAr && !instructorBioEn && !instructorSpecialty && !hasInstructorDetails ? (
                                     <div className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-8 text-center dark:border-amber-500/30 dark:bg-amber-500/5">
                                         <Briefcase className="mx-auto mb-3 text-amber-500" size={28} />
                                         <p className="font-bold text-amber-800 dark:text-amber-300">{t('instructorProfile.profile_incomplete')}</p>
-                                        <button onClick={startEdit} className="mt-4 rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 dark:bg-white dark:text-brand-navy">
+                                        <Link href="/dashboard/instructor-profile" className="mt-4 inline-flex rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 dark:bg-white dark:text-brand-navy">
                                             {t('profile.edit_profile')}
-                                        </button>
+                                        </Link>
                                     </div>
                                 ) : (
                                     <div className="grid gap-5 lg:grid-cols-3">
@@ -760,30 +822,72 @@ function ProfileContent() {
                                                     <GraduationCap size={20} />
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-black text-brand-navy dark:text-white">{meta.jobTitleAr || meta.jobTitleEn || t('instructorProfile.not_filled')}</h3>
-                                                    <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{meta.specialty || t('profile.field_specialty')}</p>
+                                                    <h3 className="font-black text-brand-navy dark:text-white">{localized(instructorTitleAr, instructorTitleEn) || t('instructorProfile.not_filled')}</h3>
+                                                    <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{instructorSpecialty || t('profile.field_specialty')}</p>
                                                 </div>
                                             </div>
                                             <div className="mt-5 grid gap-5 sm:grid-cols-2">
                                                 <div>
                                                     <p className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('instructorProfile.job_title_label')} · عربي</p>
-                                                    <p className="font-semibold text-brand-navy dark:text-white" dir="rtl">{meta.jobTitleAr || '—'}</p>
+                                                    <p className="font-semibold text-brand-navy dark:text-white" dir="rtl">{instructorTitleAr || '—'}</p>
                                                 </div>
                                                 <div>
                                                     <p className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400" dir="ltr">{t('instructorProfile.job_title_label')} · English</p>
-                                                    <p className="font-semibold text-brand-navy dark:text-white" dir="ltr">{meta.jobTitleEn || '—'}</p>
+                                                    <p className="font-semibold text-brand-navy dark:text-white" dir="ltr">{instructorTitleEn || '—'}</p>
                                                 </div>
                                             </div>
-                                            {meta.bio && (
+                                            {instructorBioAr && (
                                                 <div className="mt-6 border-t border-gray-100 pt-5 dark:border-white/5">
                                                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('profile.field_bio')} · عربي</p>
-                                                    <p className="whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300" dir="rtl">{meta.bio}</p>
+                                                    <p className="whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300" dir="rtl">{instructorBioAr}</p>
                                                 </div>
                                             )}
-                                            {meta.bioEn && (
+                                            {instructorBioEn && (
                                                 <div className="mt-5 border-t border-gray-100 pt-5 dark:border-white/5">
                                                     <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400" dir="ltr">{t('instructorProfile.bio_en_label')}</p>
-                                                    <p className="whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300" dir="ltr">{meta.bioEn}</p>
+                                                    <p className="whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300" dir="ltr">{instructorBioEn}</p>
+                                                </div>
+                                            )}
+                                            {publicSpecialties.length > 0 && (
+                                                <div className="mt-5 border-t border-gray-100 pt-5 dark:border-white/5">
+                                                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('instructorProfile.sections_specialties')}</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {publicSpecialties.map((specialty, index) => (
+                                                            <span key={`${specialty.ar}-${specialty.en}-${index}`} className="rounded-full bg-brand-gold/10 px-3 py-1.5 text-xs font-bold text-brand-gold-dark dark:text-brand-gold-light">
+                                                                {localized(specialty.ar, specialty.en)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {(publicExperiences.length > 0 || publicQualifications.length > 0) && (
+                                                <div className="mt-5 grid gap-5 border-t border-gray-100 pt-5 sm:grid-cols-2 dark:border-white/5">
+                                                    {publicExperiences.length > 0 && (
+                                                        <div>
+                                                            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('instructorProfile.sections_experience')}</p>
+                                                            <ul className="space-y-3">
+                                                                {publicExperiences.map((item, index) => (
+                                                                    <li key={`${item.role}-${item.organisation}-${index}`} className="border-s-2 border-brand-gold/50 ps-3">
+                                                                        <p className="font-bold text-brand-navy dark:text-white">{item.role}</p>
+                                                                        <p className="text-sm text-gray-500 dark:text-gray-400">{[item.organisation, item.from, item.to].filter(Boolean).join(' · ')}</p>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                    {publicQualifications.length > 0 && (
+                                                        <div>
+                                                            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('instructorProfile.sections_qualifications')}</p>
+                                                            <ul className="space-y-3">
+                                                                {publicQualifications.map((item, index) => (
+                                                                    <li key={`${item.degree}-${item.institution}-${index}`}>
+                                                                        <p className="font-bold text-brand-navy dark:text-white">{item.degree}{item.field ? ` · ${item.field}` : ''}</p>
+                                                                        <p className="text-sm text-gray-500 dark:text-gray-400">{[item.institution, item.year].filter(Boolean).join(' · ')}</p>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -797,6 +901,36 @@ function ProfileContent() {
                                                 {t('instructorProfile.cv_hint')}
                                             </p>
                                         </div>
+                                        {(publicLanguages.length > 0 || publicCertificates.length > 0 || publicLinks.length > 0) && (
+                                            <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-brand-navy-dark lg:col-span-3">
+                                                <div className="grid gap-6 md:grid-cols-3">
+                                                    {publicLanguages.length > 0 && (
+                                                        <div>
+                                                            <h4 className="mb-3 font-black text-brand-navy dark:text-white">{t('instructorProfile.sections_languages')}</h4>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {publicLanguages.map((item, index) => <span key={`${item.name}-${index}`} className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-700 dark:bg-white/5 dark:text-gray-300">{item.name}{item.proficiency ? ` · ${item.proficiency}` : ''}</span>)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {publicCertificates.length > 0 && (
+                                                        <div>
+                                                            <h4 className="mb-3 font-black text-brand-navy dark:text-white">{t('instructorProfile.sections_certificates')}</h4>
+                                                            <ul className="space-y-2">
+                                                                {publicCertificates.map((item, index) => <li key={`${item.title}-${index}`} className="text-sm"><span className="font-bold text-brand-navy dark:text-white">{item.title}</span><span className="text-gray-500 dark:text-gray-400">{[item.issuer, item.year].filter(Boolean).length ? ` · ${[item.issuer, item.year].filter(Boolean).join(' · ')}` : ''}</span></li>)}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                    {publicLinks.length > 0 && (
+                                                        <div>
+                                                            <h4 className="mb-3 font-black text-brand-navy dark:text-white">{t('instructorProfile.sections_links')}</h4>
+                                                            <ul className="space-y-2">
+                                                                {publicLinks.map((item, index) => <li key={`${item.url}-${index}`}><a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-gold-dark hover:underline dark:text-brand-gold-light">{item.label}</a></li>)}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </section>
@@ -969,11 +1103,11 @@ function ProfileContent() {
 
             {/* Edit personal info modal */}
             {editing && profile && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-                    <div className="bg-brand-navy border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl max-h-[90vh] overflow-y-auto animate-scale-in">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fade-in">
+                    <div role="dialog" aria-modal="true" aria-labelledby="profile-edit-title" className="bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/10 rounded-3xl w-full max-w-2xl p-5 sm:p-8 shadow-2xl max-h-[92vh] overflow-y-auto animate-scale-in">
                         <div className="flex items-center justify-between mb-7">
-                            <h2 className="text-2xl font-black text-white">{t('profile.edit_title')}</h2>
-                            <button onClick={() => setEditing(false)} className="w-9 h-9 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition flex items-center justify-center" aria-label="Close">
+                            <h2 id="profile-edit-title" className="text-xl sm:text-2xl font-black text-brand-navy dark:text-white">{t('profile.edit_title')}</h2>
+                            <button onClick={() => setEditing(false)} className="w-9 h-9 rounded-lg text-gray-500 dark:text-gray-400 hover:text-brand-navy dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition flex items-center justify-center" aria-label="Close">
                                 <X size={20} />
                             </button>
                         </div>
@@ -1045,7 +1179,7 @@ function ProfileContent() {
                                         dir="auto"
                                     />
                                 </div>
-                                {isInstructor && <div>
+                                {!isInstructor && <div>
                                     <label className={labelCls}>{t('profile.field_specialty')}</label>
                                     <input
                                         type="text"
@@ -1137,63 +1271,6 @@ function ProfileContent() {
                                 />
                             </div>
 
-                            {isInstructor && <div className="pt-2 mt-2 border-t border-gray-200 dark:border-white/5">
-                                <h3 className="text-sm font-black text-brand-navy dark:text-white mb-1 flex items-center gap-2">
-                                    <Briefcase size={15} className="text-brand-gold" />
-                                    {t('instructorProfile.cv_heading')}
-                                </h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                                    {t('instructorProfile.cv_hint')}
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className={labelCls}>{t('instructorProfile.job_title_label')}</label>
-                                        <input
-                                            type="text"
-                                            value={form.jobTitleAr}
-                                            onChange={(e) => setForm({ ...form, jobTitleAr: e.target.value })}
-                                            className={inputCls}
-                                            dir="auto"
-                                            placeholder={t('instructorProfile.job_title_ar_ph')}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className={labelCls} dir="ltr">{t('instructorProfile.job_title_label')} <span className="opacity-60">(EN)</span></label>
-                                        <input
-                                            type="text"
-                                            value={form.jobTitleEn}
-                                            onChange={(e) => setForm({ ...form, jobTitleEn: e.target.value })}
-                                            className={inputCls}
-                                            dir="ltr"
-                                            placeholder={t('instructorProfile.job_title_en_ph')}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label className={labelCls} htmlFor="pf-years">{t('instructorProfile.experience_years_label')}</label>
-                                    <input
-                                        id="pf-years"
-                                        type="number"
-                                        min={0}
-                                        max={80}
-                                        value={form.experienceYears}
-                                        onChange={(e) => setForm({ ...form, experienceYears: e.target.value })}
-                                        className={inputCls}
-                                        placeholder={t('instructorProfile.experience_years_ph')}
-                                    />
-                                </div>
-                                <div className="mt-4">
-                                    <label className={labelCls} dir="ltr">{t('instructorProfile.bio_en_label')}</label>
-                                    <textarea
-                                        value={form.bioEn}
-                                        onChange={(e) => setForm({ ...form, bioEn: e.target.value })}
-                                        rows={3}
-                                        className={inputCls}
-                                        dir="ltr"
-                                        placeholder={t('instructorProfile.bio_en_ph')}
-                                    />
-                                </div>
-                            </div>}
                         </div>
 
                         <div className="flex gap-4 mt-8">
@@ -1207,7 +1284,7 @@ function ProfileContent() {
                             <button
                                 onClick={() => setEditing(false)}
                                 disabled={saving}
-                                className="flex-1 bg-white/5 text-gray-300 hover:bg-white/10 py-3 font-bold rounded-xl transition"
+                                className="flex-1 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 py-3 font-bold rounded-xl transition"
                             >
                                 {t('common.cancel')}
                             </button>

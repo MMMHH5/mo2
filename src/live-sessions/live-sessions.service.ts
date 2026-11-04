@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { PrismaService } from '../prisma/prisma.service';
 import { CoursesService } from '../courses/courses.service';
 import { AuditService } from '../audit/audit.service';
-import { Role } from '@prisma/client';
+import { CourseOpeningStatus, Role } from '@prisma/client';
 import { normalizeMeetLink } from '../common/meeting-links';
 import { assertLiveSessionsAllowed } from '../common/course-content-type';
 import { CreateLiveSessionDto } from './dto/live-session.dto';
@@ -48,6 +48,7 @@ export class LiveSessionsService {
     async create(openingId: string, dto: CreateLiveSessionDto, actorId: string, actorRole: any) {
         const opening = await this.courses.assertCanManageOpening(openingId, actorId, actorRole, 'canManageSessions');
         await this.assertCourseIsLive(opening.courseId);
+        this.assertInstructorCanEditSchedule(opening, actorRole);
 
         const scheduledAt = new Date(dto.scheduledAt);
         const created = await this.prisma.liveSession.create({
@@ -79,7 +80,8 @@ export class LiveSessionsService {
         actorId: string,
         actorRole: any,
     ) {
-        await this.courses.assertCanManageOpening(openingId, actorId, actorRole, 'canManageSessions');
+        const opening = await this.courses.assertCanManageOpening(openingId, actorId, actorRole, 'canManageSessions');
+        this.assertInstructorCanEditSchedule(opening, actorRole);
         const existing = await this.assertBelongsToOpening(sessionId, openingId);
 
         const data: Record<string, unknown> = {};
@@ -100,7 +102,8 @@ export class LiveSessionsService {
     }
 
     async remove(openingId: string, sessionId: string, actorId: string, actorRole: any) {
-        await this.courses.assertCanManageOpening(openingId, actorId, actorRole, 'canManageSessions');
+        const opening = await this.courses.assertCanManageOpening(openingId, actorId, actorRole, 'canManageSessions');
+        this.assertInstructorCanEditSchedule(opening, actorRole);
         const existing = await this.assertBelongsToOpening(sessionId, openingId);
 
         await this.prisma.liveSession.delete({ where: { id: existing.id } });
@@ -238,6 +241,19 @@ export class LiveSessionsService {
         assertLiveSessionsAllowed(course?.contentType);
     }
 
+    private assertInstructorCanEditSchedule(
+        opening: { status: CourseOpeningStatus },
+        actorRole: Role,
+    ) {
+        if (
+            actorRole === Role.INSTRUCTOR &&
+            opening.status !== CourseOpeningStatus.OPEN &&
+            opening.status !== CourseOpeningStatus.STARTED
+        ) {
+            throw new ForbiddenException('Instructors can only edit schedules for open or started courses');
+        }
+    }
+
     /**
      * A session is addressed inside its batch, so the id has to belong to the
      * batch in the path. Without this, an instructor of batch A could edit (or
@@ -250,4 +266,5 @@ export class LiveSessionsService {
         }
         return session;
     }
+
 }

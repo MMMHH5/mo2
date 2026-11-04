@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import BlogPost from './BlogPost.client';
+import JsonLd from '@/components/JsonLd';
 import { API_BASE_URL, SITE_URL } from '@/lib/deployment-urls';
 
 export const dynamic = 'force-dynamic';
@@ -90,10 +91,7 @@ export default async function BlogPostPage({ params }: Props) {
     return (
         <>
             {jsonLd && (
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-                />
+                <JsonLd data={jsonLd} />
             )}
             <BlogPost slug={slug} />
         </>

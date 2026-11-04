@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, Request, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Param, Query, Body, Request, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { LessonsService } from './lessons.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,6 +24,30 @@ export class LessonsController {
   @Get('courses/:courseId/my-progress')
   myProgress(@Param('courseId') courseId: string, @Request() req: any) {
     return this.lessons.courseProgress(courseId, req.user.userId);
+  }
+
+  @ApiOperation({ summary: 'List isolated learning content for an open course batch' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.COURSE_MANAGER, Role.ADMIN)
+  @Get('openings/:openingId/modules')
+  openingModules(@Param('openingId') openingId: string, @Request() req: any) {
+    return this.lessons.openingModulesForInstructor(openingId, req.user.userId, req.user.role);
+  }
+
+  @ApiOperation({ summary: 'Add a lesson to an open course batch only' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.COURSE_MANAGER, Role.ADMIN)
+  @Post('openings/:openingId/modules')
+  createOpeningModule(@Param('openingId') openingId: string, @Body() dto: any, @Request() req: any) {
+    return this.lessons.createOpeningModule(openingId, dto, req.user.userId, req.user.role);
+  }
+
+  @ApiOperation({ summary: 'Edit lesson content for one open course batch' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.COURSE_MANAGER, Role.ADMIN)
+  @Patch('openings/:openingId/modules/:moduleId')
+  updateOpeningModule(@Param('openingId') openingId: string, @Param('moduleId') moduleId: string, @Body() dto: any, @Request() req: any) {
+    return this.lessons.updateOpeningModule(openingId, moduleId, dto, req.user.userId, req.user.role);
   }
 
   @ApiOperation({ summary: 'Mark a module complete' })

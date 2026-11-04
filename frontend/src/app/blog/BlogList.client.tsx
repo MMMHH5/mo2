@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
+import BrandLogo from '@/components/BrandLogo';
 
 interface BlogPostSummary {
     id: string;
@@ -40,8 +41,8 @@ export default function BlogList() {
     return (
         <div className={`min-h-screen pb-16 ${dark ? 'bg-brand-navy-dark' : 'bg-gray-50'}`}>
             <header className={`px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4 flex-wrap border-b backdrop-blur-md ${dark ? 'border-white/10 bg-brand-navy-dark/80' : 'border-gray-200 bg-white/80'}`}>
-                <Link href="/" className={`text-xl md:text-2xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>
-                    laxa<span className="text-brand-gold">lab</span>
+                <Link href="/" className="flex shrink-0 items-center">
+                    <BrandLogo className="h-8 w-auto" />
                 </Link>
                 <nav className={`flex items-center gap-4 md:gap-6 text-xs md:text-sm font-bold ${dark ? 'text-gray-300' : 'text-gray-600'}`}>
                     <Link href="/courses" className="hover:text-brand-gold transition">{isAr ? 'الدورات' : 'Courses'}</Link>

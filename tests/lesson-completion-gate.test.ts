@@ -35,11 +35,20 @@ function makeHarness(h: {
                 return { contentType: h.contentType ?? 'LIVE' };
             },
         },
+        courseOpening: {
+            findUnique: async () => null,
+        },
         enrollment: {
             findUnique: async (args: any) => {
                 calls.push({ model: 'enrollment', op: 'findUnique', args });
                 if (h.enrolled === false) return null;
-                return h.enrollment ?? { id: 'enr-1', studentId: 'stu-1', courseId: 'crs-1', openingId: 'opn-1' };
+                return h.enrollment ?? {
+                    id: 'enr-1',
+                    studentId: 'stu-1',
+                    courseId: 'crs-1',
+                    openingId: 'opn-1',
+                    status: 'APPROVED',
+                };
             },
         },
         module: {
@@ -192,7 +201,7 @@ describe('lesson completion gate', () => {
     test('a legacy enrollment with no opening does not inherit every opening’s assignments', async () => {
         const h = makeHarness({
             modules: [module1],
-            enrollment: { id: 'enr-1', studentId: 'stu-1', courseId: 'crs-1', openingId: null },
+            enrollment: { id: 'enr-1', studentId: 'stu-1', courseId: 'crs-1', openingId: null, status: 'APPROVED' },
         });
 
         await h.service.markComplete('enr-1', 'mod-1', 'stu-1');

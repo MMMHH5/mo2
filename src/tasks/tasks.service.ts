@@ -127,8 +127,8 @@ export class TasksService {
         ]);
         if (!module) throw new BadRequestException('Module not found');
         if (!opening) throw new NotFoundException('Opening not found');
-        if (module.courseId !== opening.courseId) {
-            throw new BadRequestException('Module does not belong to this course');
+        if (module.courseId !== opening.courseId || (module.openingId && module.openingId !== openingId)) {
+            throw new BadRequestException('Module does not belong to this course opening');
         }
     }
 

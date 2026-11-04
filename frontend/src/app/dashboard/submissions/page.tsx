@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -87,24 +87,30 @@ export default function SubmissionsInboxPage() {
 
     const [items, setItems] = useState<InboxSubmission[]>([]);
     const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     /** Bumped after a grade is saved, to pull the first page again. */
     const [reload, setReload] = useState(0);
+    const requestKey = `${courseId}:${ungradedOnly}:${reload}`;
+    const [settledRequestKey, setSettledRequestKey] = useState<string | null>(null);
+    const loading = settledRequestKey !== requestKey;
 
     // Course titles seen so far, so a filter stays listed after it narrows the
     // result set to nothing. Without this the <select> loses its own selected
     // option and falls back to "all courses" while the request is still scoped
     // to that course — a filter that looks off but is not.
-    const courseCatalog = useRef(new Map<string, CourseOption>());
+    const [courseCatalog, setCourseCatalog] = useState<Map<string, CourseOption>>(() => new Map());
     const recordCourses = (rows: InboxSubmission[]) => {
-        for (const s of rows) {
-            const c = s.task.opening?.course;
-            if (c && !courseCatalog.current.has(c.id)) {
-                courseCatalog.current.set(c.id, { id: c.id, titleAr: c.titleAr, titleEn: c.titleEn });
+        setCourseCatalog((previous) => {
+            const next = new Map(previous);
+            for (const s of rows) {
+                const c = s.task.opening?.course;
+                if (c && !next.has(c.id)) {
+                    next.set(c.id, { id: c.id, titleAr: c.titleAr, titleEn: c.titleEn });
+                }
             }
-        }
+            return next;
+        });
     };
 
     const buildUrl = (skip: number) => {
@@ -120,24 +126,23 @@ export default function SubmissionsInboxPage() {
     // endpoint is what decides which batches this instructor may read at all.
     useEffect(() => {
         const ctrl = new AbortController();
-        setLoading(true);
-        setError(null);
         api.get<InboxResponse>(buildUrl(0), { signal: ctrl.signal })
             .then((res) => {
                 recordCourses(res.data.items ?? []);
                 setItems(res.data.items ?? []);
                 setTotal(res.data.total ?? 0);
+                setError(null);
             })
             .catch((err) => {
                 if (ctrl.signal.aborted) return;
                 setError(getErrorMessage(err) || t('submissionsInbox.load_fail'));
             })
             .finally(() => {
-                if (!ctrl.signal.aborted) setLoading(false);
+                if (!ctrl.signal.aborted) setSettledRequestKey(requestKey);
             });
         return () => ctrl.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [courseId, ungradedOnly, reload, t]);
+    }, [courseId, ungradedOnly, reload, requestKey, t]);
 
     const loadMore = async () => {
         setLoadingMore(true);
@@ -160,10 +165,10 @@ export default function SubmissionsInboxPage() {
     // the endpoint scopes by the two instructor columns. Titles accumulate in
     // `courseCatalog` as pages arrive so the active filter never disappears.
     const courseOptions = useMemo(() => {
-        return [...courseCatalog.current.values()].sort((a, b) =>
+        return [...courseCatalog.values()].sort((a, b) =>
             (pick(a, 'title') || '').localeCompare(pick(b, 'title') || '', isAr ? 'ar' : 'en'),
         );
-    }, [items, isAr, pick]);
+    }, [courseCatalog, isAr, pick]);
 
     // The free-text box filters what has been loaded rather than the whole
     // table: the student's name lives in `User.metadata`, which is a JSON blob
@@ -277,7 +282,7 @@ export default function SubmissionsInboxPage() {
                     </label>
                 </div>
 
-                {error && (
+                {!loading && error && (
                     <div className="p-4 bg-danger-soft border border-danger/20 text-danger rounded-xl font-bold">
                         {error}
                     </div>

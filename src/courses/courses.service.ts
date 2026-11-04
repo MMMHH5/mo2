@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { Prisma, CourseContentType, CourseOpeningStatus, DeliveryMode, Role } from '@prisma/client';
+import { Prisma, CourseContentType, CourseOpeningStatus, DeliveryMode, EnrollmentStatus, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CertificatesService } from '../certificates/certificates.service';
@@ -392,15 +392,23 @@ export class CoursesService {
                     orderBy: { createdAt: 'desc' },
                     include: this.openingInclude,
                 },
-                _count: { select: { enrollments: true, modules: true } },
+                _count: {
+                    select: {
+                        enrollments: true,
+                        modules: { where: { openingId: null } },
+                    },
+                },
                 modules: {
+                    where: { openingId: null },
                     orderBy: { orderIndex: 'asc' },
                     include: { outcomes: { orderBy: { createdAt: 'asc' } } },
                 },
                 chapters: {
+                    where: { openingId: null },
                     orderBy: { orderIndex: 'asc' },
                     include: {
                         modules: {
+                            where: { openingId: null },
                             orderBy: { orderIndex: 'asc' },
                             include: { outcomes: { orderBy: { createdAt: 'asc' } } },
                         },
@@ -547,7 +555,7 @@ export class CoursesService {
                 select: { id: true },
             }),
             this.prisma.enrollment.findFirst({
-                where: { courseId: course.id, studentId: viewer.userId },
+                where: { courseId: course.id, studentId: viewer.userId, status: EnrollmentStatus.APPROVED },
                 select: { id: true },
             }),
         ]);
@@ -717,10 +725,25 @@ export class CoursesService {
             actorRole,
             ['canReadContent', 'canManageTasks'],
         );
-        return this.prisma.module.findMany({
-            where: { courseId: opening.courseId },
+        const modules = await this.prisma.module.findMany({
+            where: {
+                courseId: opening.courseId,
+                OR: [{ openingId: null }, { openingId }],
+            },
             orderBy: { orderIndex: 'asc' },
-            select: { id: true, titleAr: true, titleEn: true, orderIndex: true },
+            include: {
+                outcomes: { orderBy: { createdAt: 'asc' } },
+                openingContents: { where: { openingId } },
+            },
+        });
+        return modules.flatMap((module) => {
+            const { openingContents, ...base } = module;
+            const override = openingContents[0];
+            if (override?.isHidden) return [];
+            const content = override?.content && typeof override.content === 'object' && !Array.isArray(override.content)
+                ? override.content as Record<string, unknown>
+                : {};
+            return [{ ...base, ...content, outcomes: content.outcomes ?? base.outcomes }];
         });
     }
 

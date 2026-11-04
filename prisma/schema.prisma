@@ -366,6 +366,10 @@ model CourseOpening {
   calendarEvents   CalendarEvent[]
   refundRequests   RefundRequest[]
   liveSessions     LiveSession[]
+  chapters         Chapter[]
+  modules          Module[]
+  quizzes          Quiz[]
+  moduleContents   OpeningModuleContent[]
   instructorGrants OpeningInstructorGrant[]
   financeExpenses  FinanceExpense[]
 
@@ -467,8 +471,12 @@ model Chapter {
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  openingId String?
+  opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: Cascade)
 
   modules Module[]
+
+  @@index([openingId])
 }
 
 model Module {
@@ -493,6 +501,8 @@ model Module {
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  openingId String?
+  opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: Cascade)
 
   // Optional grouping: a lesson belongs to a chapter of the course syllabus.
   chapterId String?
@@ -505,6 +515,25 @@ model Module {
   lessonNotes      LessonNote[]
   discussions      DiscussionPost[]
   learningSessions LearningSession[]
+  openingContents  OpeningModuleContent[]
+
+  @@index([openingId])
+}
+
+model OpeningModuleContent {
+  id        String   @id @default(uuid())
+  content   Json
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  openingId String
+  opening   CourseOpening @relation(fields: [openingId], references: [id], onDelete: Cascade)
+  moduleId  String
+  module    Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([openingId, moduleId])
+  @@index([openingId])
 }
 
 model LearningOutcome {
@@ -1462,12 +1491,15 @@ model Quiz {
   descriptionEn String?
   passScore     Int      @default(60)
   isPublished   Boolean  @default(true)
+  isFinal       Boolean  @default(false)
   orderIndex    Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   courseId String
   course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  openingId String?
+  opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: Cascade)
   moduleId String?
   module   Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
@@ -1475,6 +1507,7 @@ model Quiz {
   attempts  QuizAttempt[]
 
   @@index([courseId])
+  @@index([openingId])
 }
 
 model QuizQuestion {

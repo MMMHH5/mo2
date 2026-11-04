@@ -1,0 +1,457 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { api, getErrorMessage } from '@/lib/api';
+import { useI18n } from '@/lib/i18n-context';
+import { BookOpenCheck, Check, CircleHelp, FilePlus2, Loader, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
+
+type QuestionType = 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+
+interface QuizOption {
+    textAr: string;
+    textEn: string;
+    isCorrect: boolean;
+}
+
+interface QuizQuestion {
+    id?: string;
+    type: QuestionType;
+    textAr: string;
+    textEn: string;
+    explanationAr: string;
+    explanationEn: string;
+    options: QuizOption[];
+    correctIndex?: number;
+}
+
+interface CourseQuiz {
+    id: string;
+    titleAr: string;
+    titleEn: string;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+    moduleId?: string | null;
+    isFinal?: boolean;
+    isPublished: boolean;
+    passScore: number;
+    questions: QuizQuestion[];
+}
+
+interface Lesson {
+    id: string;
+    titleAr?: string | null;
+    titleEn?: string | null;
+}
+
+interface Props {
+    openingId: string;
+    courseId: string;
+    lessons: Lesson[];
+}
+
+const makeQuestion = (): QuizQuestion => ({
+    type: 'SINGLE_CHOICE',
+    textAr: '',
+    textEn: '',
+    explanationAr: '',
+    explanationEn: '',
+    options: [
+        { textAr: '', textEn: '', isCorrect: true },
+        { textAr: '', textEn: '', isCorrect: false },
+        { textAr: '', textEn: '', isCorrect: false },
+        { textAr: '', textEn: '', isCorrect: false },
+    ],
+    correctIndex: 0,
+});
+
+export default function InstructorQuizManager({ openingId, courseId, lessons }: Props) {
+    const { locale } = useI18n();
+    const isAr = locale === 'ar';
+    const [quizzes, setQuizzes] = useState<CourseQuiz[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [draft, setDraft] = useState<CourseQuiz | null>(null);
+    const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
+    const lessonNames = useMemo(() => new Map(lessons.map((lesson) => [
+        lesson.id,
+        (isAr ? lesson.titleAr : lesson.titleEn) || lesson.titleAr || lesson.titleEn || (isAr ? 'درس' : 'Lesson'),
+    ])), [isAr, lessons]);
+
+    const refresh = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await api.get(`/quizzes/manage/opening/${openingId}`);
+            setQuizzes(response.data);
+        } catch (error) {
+            setNotice({ text: getErrorMessage(error) || (isAr ? 'تعذر تحميل الاختبارات.' : 'Could not load quizzes.'), error: true });
+        } finally {
+            setLoading(false);
+        }
+    }, [openingId, isAr]);
+
+    useEffect(() => {
+        let active = true;
+        const loadQuizzes = async () => {
+            try {
+                const response = await api.get(`/quizzes/manage/opening/${openingId}`);
+                if (active) setQuizzes(response.data);
+            } catch (error) {
+                if (active) setNotice({ text: getErrorMessage(error) || (isAr ? 'تعذر تحميل الاختبارات.' : 'Could not load quizzes.'), error: true });
+            } finally {
+                if (active) setLoading(false);
+            }
+        };
+        void loadQuizzes();
+        return () => { active = false; };
+    }, [openingId, isAr]);
+
+    const startNew = () => {
+        setEditingId(null);
+        setDraft({
+            id: '',
+            titleAr: '',
+            titleEn: '',
+            descriptionAr: '',
+            descriptionEn: '',
+            moduleId: lessons[0]?.id ?? '',
+            isFinal: false,
+            isPublished: false,
+            passScore: 60,
+            questions: [makeQuestion()],
+        });
+        setNotice(null);
+    };
+
+    const startEdit = (quiz: CourseQuiz) => {
+        setEditingId(quiz.id);
+        setDraft({
+            ...quiz,
+            questions: quiz.questions.map((question) => {
+                const options = (question.options as unknown[]).map((rawOption, index) => {
+                    if (typeof rawOption === 'string') {
+                        return { textAr: rawOption, textEn: rawOption, isCorrect: question.correctIndex === index };
+                    }
+                    const option = rawOption as QuizOption;
+                    return { ...option, isCorrect: !!option.isCorrect || question.correctIndex === index };
+                });
+                return {
+                    ...question,
+                    type: question.type || 'SINGLE_CHOICE',
+                    explanationAr: question.explanationAr || '',
+                    explanationEn: question.explanationEn || '',
+                    options,
+                };
+            }),
+        });
+        setNotice(null);
+    };
+
+    const setQuestion = (index: number, patch: Partial<QuizQuestion>) => {
+        setDraft((current) => current && ({
+            ...current,
+            questions: current.questions.map((question, i) => i === index ? { ...question, ...patch } : question),
+        }));
+    };
+
+    const setOption = (questionIndex: number, optionIndex: number, patch: Partial<QuizOption>) => {
+        setDraft((current) => current && ({
+            ...current,
+            questions: current.questions.map((question, i) => i === questionIndex
+                ? { ...question, options: question.options.map((option, j) => j === optionIndex ? { ...option, ...patch } : option) }
+                : question),
+        }));
+    };
+
+    const changeQuestionType = (index: number, type: QuestionType) => {
+        const question = draft?.questions[index];
+        if (!question) return;
+        let options = type === 'TRUE_FALSE'
+            ? [
+                { textAr: 'صح', textEn: 'True', isCorrect: true },
+                { textAr: 'خطأ', textEn: 'False', isCorrect: false },
+            ]
+            : question.options.length >= 2
+                ? question.options
+                : [...question.options, { textAr: '', textEn: '', isCorrect: false }];
+        if (type !== 'MULTIPLE_CHOICE' && type !== 'TRUE_FALSE') {
+            const correct = options.findIndex((option) => option.isCorrect);
+            options = options.map((option, optionIndex) => ({ ...option, isCorrect: optionIndex === (correct < 0 ? 0 : correct) }));
+        }
+        setQuestion(index, { type, options, correctIndex: question.correctIndex ?? 0 });
+    };
+
+    const save = async (event: React.FormEvent) => {
+        event.preventDefault();
+        if (!draft) return;
+        if (!draft.isFinal && (!draft.moduleId || !lessons.some((lesson) => lesson.id === draft.moduleId))) {
+            setNotice({ text: isAr ? 'اختر الدرس المرتبط بالاختبار.' : 'Select the lesson for this quiz.', error: true });
+            return;
+        }
+        if (draft.questions.length === 0 || draft.questions.some((question) =>
+            !question.textAr.trim() || !question.textEn.trim() ||
+            question.options.length < 2 ||
+            question.options.some((option) => !option.textAr.trim() || !option.textEn.trim()) ||
+            !question.options.some((option) => option.isCorrect),
+        )) {
+            setNotice({ text: isAr ? 'أكمل نص كل سؤال وخياراته وحدد إجابة صحيحة واحدة على الأقل.' : 'Complete each question and its options, and select at least one correct answer.', error: true });
+            return;
+        }
+
+        const payload = {
+            courseId,
+            titleAr: draft.titleAr.trim(),
+            titleEn: draft.titleEn.trim(),
+            descriptionAr: draft.descriptionAr || null,
+            descriptionEn: draft.descriptionEn || null,
+            moduleId: draft.isFinal ? null : draft.moduleId,
+            isFinal: !!draft.isFinal,
+            isPublished: !!draft.isPublished,
+            passScore: Math.min(100, Math.max(1, Number(draft.passScore) || 60)),
+            questions: draft.questions.map((question, orderIndex) => ({
+                type: question.type,
+                textAr: question.textAr.trim(),
+                textEn: question.textEn.trim(),
+                explanationAr: question.explanationAr || null,
+                explanationEn: question.explanationEn || null,
+                options: question.options.map((option) => ({ ...option })),
+                correctIndex: question.type === 'SINGLE_CHOICE'
+                    ? question.options.findIndex((option) => option.isCorrect)
+                    : null,
+                orderIndex,
+            })),
+        };
+        if (!payload.titleAr || !payload.titleEn) {
+            setNotice({ text: isAr ? 'أدخل عنوان الاختبار بالعربية والإنجليزية.' : 'Enter the quiz title in Arabic and English.', error: true });
+            return;
+        }
+
+        setSaving(true);
+        setNotice(null);
+        try {
+            if (editingId) await api.patch(`/quizzes/manage/opening/${openingId}/${editingId}`, payload);
+            else await api.post(`/quizzes/manage/opening/${openingId}`, payload);
+            setDraft(null);
+            setEditingId(null);
+            setNotice({ text: isAr ? 'تم حفظ الاختبار بنجاح.' : 'Quiz saved successfully.', error: false });
+            await refresh();
+        } catch (error) {
+            setNotice({ text: getErrorMessage(error) || (isAr ? 'تعذر حفظ الاختبار.' : 'Could not save the quiz.'), error: true });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const removeQuiz = async (quiz: CourseQuiz) => {
+        if (!confirm(isAr ? `هل تريد حذف «${quiz.titleAr}»؟` : `Delete "${quiz.titleEn}"?`)) return;
+        try {
+            await api.delete(`/quizzes/manage/opening/${openingId}/${quiz.id}`);
+            setNotice({ text: isAr ? 'تم حذف الاختبار.' : 'Quiz deleted.', error: false });
+            await refresh();
+        } catch (error) {
+            setNotice({ text: getErrorMessage(error) || (isAr ? 'تعذر حذف الاختبار.' : 'Could not delete the quiz.'), error: true });
+        }
+    };
+
+    const text = (ar: string, en: string) => isAr ? ar : en;
+    const inputClass = 'w-full rounded-xl border border-white/10 bg-black/20 px-3.5 py-2.5 text-sm text-white outline-none focus:border-brand-gold/60 placeholder:text-gray-500';
+
+    return (
+        <section className="space-y-5">
+            <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/5 bg-brand-navy-dark p-5 sm:p-6">
+                <div className="flex items-start gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-light">
+                        <BookOpenCheck size={22} />
+                    </span>
+                    <div>
+                        <h3 className="text-lg font-black text-white">{text('إدارة الاختبارات', 'Quiz management')}</h3>
+                        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-400">
+                            {text('أنشئ اختبارات مرتبطة بأي درس أو اختبارًا نهائيًا للدورة. تظهر الاختبارات المنشورة للطلاب فقط.', 'Create quizzes for any lesson or a final exam for the course. Only published quizzes are visible to students.')}
+                        </p>
+                    </div>
+                </div>
+                <button onClick={startNew} className="inline-flex items-center gap-2 rounded-xl bg-brand-gold px-4 py-2.5 text-sm font-black text-black transition hover:brightness-110">
+                    <Plus size={17} /> {text('إنشاء اختبار', 'Create quiz')}
+                </button>
+            </header>
+
+            {notice && (
+                <p role="status" className={`rounded-xl border px-4 py-3 text-sm font-semibold ${notice.error ? 'border-red-400/20 bg-red-500/10 text-red-300' : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300'}`}>
+                    {notice.text}
+                </p>
+            )}
+
+            {draft && (
+                <form onSubmit={save} className="space-y-5 rounded-2xl border border-brand-gold/20 bg-brand-navy-dark p-4 sm:p-6">
+                    <div className="flex items-center justify-between gap-3">
+                        <h4 className="text-base font-black text-white">{editingId ? text('تعديل الاختبار', 'Edit quiz') : text('اختبار جديد', 'New quiz')}</h4>
+                        <button type="button" onClick={() => setDraft(null)} aria-label={text('إغلاق', 'Close')} className="rounded-lg p-2 text-gray-400 hover:bg-white/5 hover:text-white"><X size={18} /></button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('العنوان بالعربية', 'Title in Arabic')}
+                            <input className={inputClass} value={draft.titleAr} onChange={(event) => setDraft({ ...draft, titleAr: event.target.value })} required />
+                        </label>
+                        <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('العنوان بالإنجليزية', 'Title in English')}
+                            <input className={inputClass} value={draft.titleEn} onChange={(event) => setDraft({ ...draft, titleEn: event.target.value })} required />
+                        </label>
+                        <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('الوصف بالعربية', 'Description in Arabic')}
+                            <textarea className={inputClass} rows={2} value={draft.descriptionAr || ''} onChange={(event) => setDraft({ ...draft, descriptionAr: event.target.value })} />
+                        </label>
+                        <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('الوصف بالإنجليزية', 'Description in English')}
+                            <textarea className={inputClass} rows={2} value={draft.descriptionEn || ''} onChange={(event) => setDraft({ ...draft, descriptionEn: event.target.value })} />
+                        </label>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                        <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('نوع الاختبار', 'Quiz type')}
+                            <select className={inputClass} value={draft.isFinal ? 'final' : 'lesson'} onChange={(event) => setDraft({ ...draft, isFinal: event.target.value === 'final', moduleId: event.target.value === 'final' ? '' : (draft.moduleId || lessons[0]?.id || '') })}>
+                                <option value="lesson">{text('اختبار درس', 'Lesson quiz')}</option>
+                                <option value="final">{text('اختبار نهائي للدورة', 'Course final exam')}</option>
+                            </select>
+                        </label>
+                        {!draft.isFinal && (
+                            <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('الدرس', 'Lesson')}
+                                <select className={inputClass} value={draft.moduleId || ''} onChange={(event) => setDraft({ ...draft, moduleId: event.target.value })} required>
+                                    <option value="">{text('اختر درسًا', 'Choose a lesson')}</option>
+                                    {lessons.map((lesson) => <option key={lesson.id} value={lesson.id}>{lessonNames.get(lesson.id)}</option>)}
+                                </select>
+                            </label>
+                        )}
+                        <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('درجة النجاح (%)', 'Passing score (%)')}
+                            <input className={inputClass} type="number" min={1} max={100} value={draft.passScore} onChange={(event) => setDraft({ ...draft, passScore: Number(event.target.value) })} />
+                        </label>
+                    </div>
+
+                    <label className="flex w-fit cursor-pointer items-center gap-2 text-sm font-bold text-gray-300">
+                        <input type="checkbox" className="h-4 w-4 accent-brand-gold" checked={draft.isPublished} onChange={(event) => setDraft({ ...draft, isPublished: event.target.checked })} />
+                        {text('نشر الاختبار وإتاحته للطلاب', 'Publish and make available to students')}
+                    </label>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h5 className="font-black text-white">{text('الأسئلة', 'Questions')}</h5>
+                            <button type="button" onClick={() => setDraft({ ...draft, questions: [...draft.questions, makeQuestion()] })} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-gray-200 hover:bg-white/5">
+                                <FilePlus2 size={15} /> {text('إضافة سؤال', 'Add question')}
+                            </button>
+                        </div>
+                        {draft.questions.map((question, qi) => (
+                            <article key={qi} className="space-y-4 rounded-xl border border-white/10 bg-black/10 p-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <h6 className="font-bold text-white">{text('السؤال', 'Question')} {qi + 1}</h6>
+                                    {draft.questions.length > 1 && <button type="button" onClick={() => setDraft({ ...draft, questions: draft.questions.filter((_, i) => i !== qi) })} className="rounded-lg p-2 text-red-300 hover:bg-red-500/10" aria-label={text('حذف السؤال', 'Remove question')}><Trash2 size={16} /></button>}
+                                </div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('نص السؤال بالعربية', 'Question in Arabic')}
+                                        <textarea className={inputClass} rows={2} value={question.textAr} onChange={(event) => setQuestion(qi, { textAr: event.target.value })} required />
+                                    </label>
+                                    <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('نص السؤال بالإنجليزية', 'Question in English')}
+                                        <textarea className={inputClass} rows={2} value={question.textEn} onChange={(event) => setQuestion(qi, { textEn: event.target.value })} required />
+                                    </label>
+                                </div>
+                                <label className="block max-w-sm space-y-1.5 text-xs font-bold text-gray-300">{text('نمط الإجابة', 'Answer type')}
+                                    <select className={inputClass} value={question.type} onChange={(event) => changeQuestionType(qi, event.target.value as QuestionType)}>
+                                        <option value="SINGLE_CHOICE">{text('اختيار واحد', 'Single choice')}</option>
+                                        <option value="MULTIPLE_CHOICE">{text('اختيارات متعددة', 'Multiple choice')}</option>
+                                        <option value="TRUE_FALSE">{text('صح أو خطأ', 'True or false')}</option>
+                                    </select>
+                                </label>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-bold text-gray-300">{text(question.type === 'MULTIPLE_CHOICE' ? 'حدد كل الإجابات الصحيحة' : 'حدد الإجابة الصحيحة', question.type === 'MULTIPLE_CHOICE' ? 'Select all correct answers' : 'Select the correct answer')}</p>
+                                    {question.options.map((option, oi) => (
+                                        <div key={oi} className="grid items-center gap-2 sm:grid-cols-[24px_1fr_1fr]">
+                                            <input
+                                                aria-label={text(`الخيار ${oi + 1} صحيح`, `Option ${oi + 1} is correct`)}
+                                                type={question.type === 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'}
+                                                name={`correct-${qi}`}
+                                                className="h-4 w-4 accent-brand-gold"
+                                                checked={option.isCorrect}
+                                                onChange={(event) => {
+                                                    if (question.type === 'MULTIPLE_CHOICE') setOption(qi, oi, { isCorrect: event.target.checked });
+                                                    else setQuestion(qi, { correctIndex: oi, options: question.options.map((item, index) => ({ ...item, isCorrect: index === oi })) });
+                                                }}
+                                            />
+                                            <input className={inputClass} aria-label={text(`الخيار ${oi + 1} بالعربية`, `Option ${oi + 1} in Arabic`)} value={option.textAr} onChange={(event) => setOption(qi, oi, { textAr: event.target.value })} readOnly={question.type === 'TRUE_FALSE'} required />
+                                            <input className={inputClass} aria-label={text(`الخيار ${oi + 1} بالإنجليزية`, `Option ${oi + 1} in English`)} value={option.textEn} onChange={(event) => setOption(qi, oi, { textEn: event.target.value })} readOnly={question.type === 'TRUE_FALSE'} required />
+                                        </div>
+                                    ))}
+                                    {question.type !== 'TRUE_FALSE' && question.options.length < 6 && (
+                                        <button type="button" onClick={() => setQuestion(qi, { options: [...question.options, { textAr: '', textEn: '', isCorrect: false }] })} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-brand-gold-light hover:bg-white/5">
+                                            <Plus size={14} /> {text('إضافة خيار', 'Add option')}
+                                        </button>
+                                    )}
+                                    {question.type !== 'TRUE_FALSE' && question.options.length > 2 && (
+                                        <button type="button" onClick={() => {
+                                            let options = question.options.slice(0, -1);
+                                            if (!options.some((option) => option.isCorrect)) {
+                                                options = options.map((option, index) => ({ ...option, isCorrect: index === 0 }));
+                                            }
+                                            setQuestion(qi, { options });
+                                        }} className="ms-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-400 hover:bg-white/5">
+                                            <X size={14} /> {text('إزالة آخر خيار', 'Remove last option')}
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('تفسير الإجابة بالعربية (اختياري)', 'Explanation in Arabic (optional)')}
+                                        <textarea className={inputClass} rows={2} value={question.explanationAr} onChange={(event) => setQuestion(qi, { explanationAr: event.target.value })} />
+                                    </label>
+                                    <label className="space-y-1.5 text-xs font-bold text-gray-300">{text('تفسير الإجابة بالإنجليزية (اختياري)', 'Explanation in English (optional)')}
+                                        <textarea className={inputClass} rows={2} value={question.explanationEn} onChange={(event) => setQuestion(qi, { explanationEn: event.target.value })} />
+                                    </label>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-white/5 pt-4">
+                        <button type="button" onClick={() => setDraft(null)} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-bold text-gray-300 hover:bg-white/5">{text('إلغاء', 'Cancel')}</button>
+                        <button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-brand-gold px-5 py-2.5 text-sm font-black text-black disabled:opacity-60">
+                            {saving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
+                            {text('حفظ الاختبار', 'Save quiz')}
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {loading ? (
+                <div className="flex justify-center rounded-2xl border border-white/5 bg-brand-navy-dark p-10"><Loader className="animate-spin text-brand-gold-light" /></div>
+            ) : quizzes.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-brand-navy-dark px-5 py-12 text-center">
+                    <CircleHelp className="mx-auto mb-3 text-gray-500" size={32} />
+                    <p className="font-bold text-gray-300">{text('لا توجد اختبارات لهذه الدورة بعد.', 'No quizzes have been created for this course yet.')}</p>
+                    <p className="mt-1 text-sm text-gray-500">{text('ابدأ بإنشاء اختبار لدرس أو اختبار نهائي.', 'Create a lesson quiz or a final exam to get started.')}</p>
+                </div>
+            ) : (
+                <div className="grid gap-3 lg:grid-cols-2">
+                    {quizzes.map((quiz) => (
+                        <article key={quiz.id} className="rounded-2xl border border-white/5 bg-brand-navy-dark p-5">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="mb-2 flex flex-wrap gap-2">
+                                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${quiz.isFinal ? 'bg-purple-400/10 text-purple-200' : 'bg-brand-gold/10 text-brand-gold-light'}`}>
+                                            {quiz.isFinal ? text('اختبار نهائي', 'Final exam') : lessonNames.get(quiz.moduleId || '') || text('اختبار درس', 'Lesson quiz')}
+                                        </span>
+                                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${quiz.isPublished ? 'bg-emerald-400/10 text-emerald-300' : 'bg-gray-400/10 text-gray-400'}`}>
+                                            {quiz.isPublished ? text('منشور', 'Published') : text('مسودة', 'Draft')}
+                                        </span>
+                                    </div>
+                                    <h4 className="truncate font-black text-white">{isAr ? quiz.titleAr : quiz.titleEn}</h4>
+                                    {(isAr ? quiz.descriptionAr : quiz.descriptionEn) && <p className="mt-1 line-clamp-2 text-sm text-gray-400">{isAr ? quiz.descriptionAr : quiz.descriptionEn}</p>}
+                                    <p className="mt-3 text-xs font-bold text-gray-500">{quiz.questions.length} {text('سؤال', 'questions')} · {text('درجة النجاح', 'Pass score')} {quiz.passScore}%</p>
+                                </div>
+                                <div className="flex shrink-0 gap-1">
+                                    <button type="button" onClick={() => startEdit(quiz)} className="rounded-lg p-2 text-gray-300 hover:bg-white/5 hover:text-brand-gold-light" aria-label={text('تعديل', 'Edit')}><Pencil size={16} /></button>
+                                    <button type="button" onClick={() => void removeQuiz(quiz)} className="rounded-lg p-2 text-gray-300 hover:bg-red-500/10 hover:text-red-300" aria-label={text('حذف', 'Delete')}><Trash2 size={16} /></button>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex items-center gap-1 text-xs text-gray-500">
+                                <Check size={13} className="text-emerald-400" />
+                                {text('الإجابات محفوظة بشكل آمن ولا تظهر للطلاب قبل التقييم.', 'Answer keys stay private and are never sent to students.')}
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            )}
+        </section>
+    );
+}

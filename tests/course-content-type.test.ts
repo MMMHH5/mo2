@@ -353,7 +353,7 @@ describe('LiveSessionsService refuses to schedule a meeting for a recorded cours
         };
         const svc = new LiveSessionsService(
             prisma as any,
-            { assertCanManageOpening: () => Promise.resolve({ id: 'o1', courseId: 'c1' }) } as any,
+            { assertCanManageOpening: () => Promise.resolve({ id: 'o1', courseId: 'c1', status: 'OPEN' }) } as any,
             { logAction: () => Promise.resolve() } as any,
         );
         await assert.rejects(
@@ -371,7 +371,7 @@ describe('LiveSessionsService refuses to schedule a meeting for a recorded cours
         };
         const svc = new LiveSessionsService(
             prisma as any,
-            { assertCanManageOpening: () => Promise.resolve({ id: 'o1', courseId: 'c1' }) } as any,
+            { assertCanManageOpening: () => Promise.resolve({ id: 'o1', courseId: 'c1', status: 'OPEN' }) } as any,
             { logAction: () => Promise.resolve() } as any,
         );
         await svc.create('o1', { titleAr: 'أ', titleEn: 'A', scheduledAt: '2026-10-07' } as any, 'i1', 'INSTRUCTOR' as any);

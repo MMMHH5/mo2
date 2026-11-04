@@ -4,6 +4,7 @@ import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import ThemeToggle from '@/components/ThemeToggle';
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 
 export interface LegalSection {
     titleAr: string;
@@ -46,8 +47,8 @@ export default function LegalPage({ titleAr, titleEn, introAr, introEn, updatedA
     return (
         <div className={`min-h-screen ${bgRoot}`}>
             <header className={`px-4 md:px-8 py-4 md:py-6 flex items-center justify-between gap-4 flex-wrap ${headerCls}`}>
-                <Link href="/" className={`text-xl md:text-2xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>
-                    laxa<span className="text-brand-gold">lab</span>
+                <Link href="/" className="flex shrink-0 items-center">
+                    <BrandLogo className="h-8 w-auto" />
                 </Link>
                 <nav className={`flex items-center gap-4 md:gap-6 text-xs md:text-sm font-bold ${navTextCls}`}>
                     <Link href="/courses" className={navLinkCls}>{isAr ? 'الدورات' : 'Courses'}</Link>

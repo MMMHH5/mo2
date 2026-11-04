@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
@@ -13,7 +13,9 @@ import LessonExplorer from '@/components/LessonExplorer';
 import InstructorAnnouncements from '@/components/InstructorAnnouncements';
 import AcademicCalendar from '@/components/AcademicCalendar';
 import LiveSessionManager from '@/components/LiveSessionManager';
-import { Settings2, ClipboardList, MessagesSquare, BarChart3, Flag, Users, BookOpen, Hash, ArrowLeft, Megaphone, Calendar, Video } from 'lucide-react';
+import InstructorQuizManager from '@/components/InstructorQuizManager';
+import { Settings2, ClipboardList, MessagesSquare, BarChart3, Flag, Users, BookOpen, Hash, ArrowLeft, Megaphone, Calendar, Video, Pencil } from 'lucide-react';
+import OpeningContentEditor from '@/components/OpeningContentEditor';
 
 interface MyOpening {
     id: string;
@@ -70,9 +72,9 @@ interface SyllabusData {
     chapters?: { titleAr?: string | null; titleEn?: string | null; modules?: ModuleData[] | null }[] | null;
 }
 
-type Tab = 'roster' | 'tasks' | 'announcements' | 'calendar' | 'sessions' | 'content' | 'chat' | 'analytics';
+type Tab = 'roster' | 'tasks' | 'announcements' | 'calendar' | 'sessions' | 'content' | 'quizzes' | 'chat' | 'analytics';
 
-const VALID_TABS: Tab[] = ['roster', 'tasks', 'announcements', 'calendar', 'sessions', 'content', 'chat', 'analytics'];
+const VALID_TABS: Tab[] = ['roster', 'tasks', 'announcements', 'calendar', 'sessions', 'content', 'quizzes', 'chat', 'analytics'];
 
 const statusColors: Record<string, string> = {
     DRAFT: 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
@@ -97,6 +99,7 @@ export default function TeachingWorkspacePage() {
 
     const urlTab = searchParams?.get('tab') as Tab | null;
     const [lastTab, setLastTab] = useState<Tab>(urlTab && VALID_TABS.includes(urlTab) ? urlTab : 'roster');
+    const [editingOpeningContent, setEditingOpeningContent] = useState(false);
     const requestedTab: Tab = urlTab && VALID_TABS.includes(urlTab) ? urlTab : lastTab;
 
     const setTab = (key: Tab) => {
@@ -122,6 +125,8 @@ export default function TeachingWorkspacePage() {
     // A recorded course has no meeting schedule to manage: the tab is hidden, and
     // a direct ?tab=sessions link must not resurrect what the button cannot open.
     const isRecorded = opening?.course.contentType === 'RECORDED';
+    const canManageOpeningContent = !!opening?.access.canReadContent && ['OPEN', 'STARTED'].includes(opening.status);
+    const canManageQuizzes = canManageOpeningContent;
     const availableTabs: Tab[] = opening ? [
         ...(opening.access.canGrade ? ['roster' as const] : []),
         ...(opening.access.canManageTasks || opening.access.canGrade ? ['tasks' as const] : []),
@@ -129,6 +134,7 @@ export default function TeachingWorkspacePage() {
         ...(opening.access.isPrimaryInstructor ? ['calendar' as const, 'chat' as const] : []),
         ...(!isRecorded && opening.access.canManageSessions ? ['sessions' as const] : []),
         ...(opening.access.canReadContent ? ['content' as const] : []),
+        ...(canManageQuizzes ? ['quizzes' as const] : []),
         ...(opening.access.canViewAnalytics ? ['analytics' as const] : []),
     ] : VALID_TABS;
     const tab: Tab = availableTabs.includes(requestedTab)
@@ -138,6 +144,10 @@ export default function TeachingWorkspacePage() {
     const { data: syllabusData } = useFetchData<SyllabusData>(
         opening?.access.canReadContent ? `/lms/courses/${opening.course.id}/syllabus` : null,
     );
+    const quizLessons = useMemo(() => {
+        const all = [...(modulesData || []), ...(syllabusData?.chapters || []).flatMap((chapter) => chapter.modules || [])];
+        return [...new Map(all.map((module) => [module.id, module])).values()];
+    }, [modulesData, syllabusData]);
 
     const studentCount = rosterData?.enrollments?.length;
     const taskCount = Array.isArray(tasksData) ? tasksData.length : null;
@@ -206,6 +216,9 @@ export default function TeachingWorkspacePage() {
                             <Flag size={15} /> {t('teaching.request_close_btn')}
                         </a>
                     )}
+                    {tab === 'quizzes' && opening && canManageQuizzes && (
+                        <InstructorQuizManager openingId={opening.id} courseId={opening.course.id} lessons={quizLessons} />
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
@@ -223,6 +236,7 @@ export default function TeachingWorkspacePage() {
                         tab is not offered at all rather than shown empty. */}
                     {availableTabs.includes('sessions') && tabBtn('sessions', <Video size={16} />, isAr ? 'الجلسات' : 'Sessions')}
                     {availableTabs.includes('content') && tabBtn('content', <BookOpen size={16} />, isAr ? 'المحتوى' : 'Content')}
+                    {availableTabs.includes('quizzes') && tabBtn('quizzes', <ClipboardList size={16} />, isAr ? 'الاختبارات' : 'Quizzes')}
                     {availableTabs.includes('chat') && tabBtn('chat', <MessagesSquare size={16} />, isAr ? 'الدردشة' : 'Chat')}
                     {availableTabs.includes('analytics') && tabBtn('analytics', <BarChart3 size={16} />, isAr ? 'الإحصائيات' : 'Analytics')}
                 </div>
@@ -247,13 +261,31 @@ export default function TeachingWorkspacePage() {
                     </div>
                 )}
                 {tab === 'content' && opening && !!openingId && (
-                    <LessonExplorer
-                        courseId={opening.course.id}
-                        modules={modulesData || []}
-                        chapters={syllabusData?.chapters}
-                        openingId={String(openingId)}
-                        mode="instructor"
-                    />
+                    <div className="space-y-4">
+                        {canManageOpeningContent && (
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingOpeningContent((current) => !current)}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-brand-gold/30 bg-brand-navy-dark px-4 py-2.5 text-sm font-bold text-brand-gold-light hover:bg-brand-gold/10"
+                                >
+                                    <Pencil size={15} />
+                                    {editingOpeningContent
+                                        ? (isAr ? 'العودة لمحتوى الدروس والواجبات' : 'Back to lessons and tasks')
+                                        : (isAr ? 'تعديل محتوى هذه الدفعة' : 'Edit this batch content')}
+                                </button>
+                            </div>
+                        )}
+                        {editingOpeningContent && canManageOpeningContent
+                            ? <OpeningContentEditor openingId={opening.id} />
+                            : <LessonExplorer
+                                courseId={opening.course.id}
+                                modules={modulesData || []}
+                                chapters={syllabusData?.chapters}
+                                openingId={String(openingId)}
+                                mode="instructor"
+                            />}
+                    </div>
                 )}
                 {tab === 'chat' && opening && (
                     <div className="bg-brand-navy-dark border border-white/5 rounded-2xl p-6">

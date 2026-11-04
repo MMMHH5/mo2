@@ -47,3 +47,12 @@ rotate-*.mjs
 
 # railway
 frontend/.env.production
+
+# Flutter tooling and machine-local Android configuration
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/local.properties
+**/.idea/
+**/*.iml
+**/Flutter/ephemeral/

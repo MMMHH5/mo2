@@ -8,6 +8,7 @@ import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import BackHomeButton from '@/components/BackHomeButton';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function TwoFactorSetupPage() {
     return (
@@ -101,7 +102,7 @@ function SetupForm() {
 
             <div className={cardCls}>
                 <div className="text-center mb-6">
-                    <h1 className={`text-3xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>laxa<span className="text-brand-gold">lab</span></h1>
+                    <BrandLogo className="mx-auto h-10 w-auto" />
                     <p className={`mt-2 font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('twoFactorSetup.title')}</p>
                 </div>
 

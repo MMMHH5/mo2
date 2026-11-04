@@ -173,8 +173,14 @@ export class PublicController {
                         _count: { select: { enrollments: true } },
                     },
                 },
-                _count: { select: { enrollments: true, modules: true } },
+                _count: {
+                    select: {
+                        enrollments: true,
+                        modules: { where: { openingId: null } },
+                    },
+                },
                 chapters: {
+                    where: { openingId: null },
                     orderBy: { orderIndex: 'asc' },
                     select: {
                         id: true,
@@ -182,12 +188,14 @@ export class PublicController {
                         titleEn: true,
                         orderIndex: true,
                         modules: {
+                            where: { openingId: null },
                             orderBy: { orderIndex: 'asc' },
                             select: OUTLINE_LESSON_SELECT,
                         },
                     },
                 },
                 modules: {
+                    where: { openingId: null },
                     orderBy: { orderIndex: 'asc' },
                     select: OUTLINE_LESSON_SELECT,
                 },

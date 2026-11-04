@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, ShieldCheck, Download, Eye } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 
 interface CertificateData {
     id: string;
@@ -56,13 +57,8 @@ export default function CertificateDetailPage() {
                             <div className="absolute inset-5 border border-white/[0.03] rounded-xl pointer-events-none" />
 
                             <div className="relative">
-                                <div className="flex items-center justify-center gap-3 mb-6">
-                                    <div className="w-14 h-14 bg-brand-navy rounded-2xl flex items-center justify-center border border-white/10">
-                                        <span className="text-brand-gold-light font-black text-2xl">L</span>
-                                    </div>
-                                    <h2 className="text-2xl font-black text-white tracking-tight">
-                                        laxa<span className="text-brand-gold-light">lab</span>
-                                    </h2>
+                                <div className="mb-6 flex items-center justify-center">
+                                    <BrandLogo className="h-10 w-auto" dark />
                                 </div>
 
                                 <p className="text-sm uppercase tracking-[0.3em] text-gray-400 font-bold mb-4">

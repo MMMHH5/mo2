@@ -175,11 +175,6 @@ export default function InstructorProfilePage() {
         });
     }, [profile]);
 
-    const set = useCallback(
-        <K extends keyof ProfileForm>(key: K, value: ProfileForm[K]) =>
-            setForm((f) => ({ ...f, [key]: value })),
-        [],
-    );
     const setField = useCallback(
         (key: keyof ProfileForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
             setForm((f) => ({ ...f, [key]: e.target.value })),
@@ -284,24 +279,51 @@ export default function InstructorProfilePage() {
         [form.specialties],
     );
 
-    const inputCls = 'w-full px-4 py-3 bg-brand-navy border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 outline-none transition';
-    const labelCls = 'block text-sm font-bold text-gray-300 mb-1.5';
-    const cardCls = 'bg-brand-navy-dark border border-white/5 rounded-2xl p-4 sm:p-6 lg:p-7';
-    const sectionTitle = 'text-lg font-black text-white mb-1';
-    const hintCls = 'text-sm text-gray-400 mb-5';
+    const inputCls = 'w-full px-4 py-3 bg-white dark:bg-brand-navy border border-gray-300 dark:border-white/10 rounded-xl text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold/40 focus:border-brand-gold/40 outline-none transition';
+    const labelCls = 'block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5';
+    const cardCls = 'bg-white dark:bg-brand-navy-dark border border-gray-200 dark:border-white/5 rounded-2xl p-4 sm:p-6 lg:p-7 shadow-sm';
+    const sectionTitle = 'text-lg font-black text-brand-navy dark:text-white mb-1';
+    const hintCls = 'text-sm text-gray-500 dark:text-gray-400 mb-5';
+
+    if (loading) {
+        return (
+            <ProtectedRoute allowedRoles={['INSTRUCTOR', 'COURSE_MANAGER']}>
+                <div className="flex min-h-[50vh] items-center justify-center">
+                    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-6 py-5 font-bold text-gray-600 shadow-sm dark:border-white/10 dark:bg-brand-navy-dark dark:text-gray-300">
+                        <Loader size={18} className="animate-spin text-brand-gold-dark dark:text-brand-gold-light" />
+                        {t('profile.loading')}
+                    </div>
+                </div>
+            </ProtectedRoute>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <ProtectedRoute allowedRoles={['INSTRUCTOR', 'COURSE_MANAGER']}>
+                <div className="mx-auto max-w-2xl rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-500/20 dark:bg-red-500/10">
+                    <p role="alert" className="font-bold text-red-700 dark:text-red-300">{error || t('common.error')}</p>
+                    <button onClick={() => void refetch()} className="mt-4 rounded-xl bg-brand-navy px-4 py-2.5 text-sm font-bold text-white dark:bg-white dark:text-brand-navy">
+                        {t('admin.refresh')}
+                    </button>
+                </div>
+            </ProtectedRoute>
+        );
+    }
 
     return (
         <ProtectedRoute allowedRoles={['INSTRUCTOR', 'COURSE_MANAGER']}>
-            <div className="min-w-0 bg-gray-50 dark:bg-brand-navy space-y-5 sm:space-y-6 animate-fade-in p-3 sm:p-4 lg:p-8">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="mx-auto w-full max-w-7xl min-w-0 space-y-5 sm:space-y-6 animate-fade-in">
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-black text-brand-navy dark:text-white tracking-tight flex items-center gap-2 sm:gap-3">
                             <BadgeCheck className="text-brand-gold-dark dark:text-brand-gold-light shrink-0" size={26} />
                             {t('instructorProfile.studio_title')}
                         </h1>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mt-2 max-w-2xl">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mt-2 max-w-2xl leading-6">
                             {t('instructorProfile.studio_subtitle')}
                         </p>
+                        <p className="mt-2 text-xs font-semibold text-gray-500 dark:text-gray-400" dir="ltr">{profile.email}</p>
                     </div>
                     {profile?.id && (
                         <Link
@@ -328,13 +350,13 @@ export default function InstructorProfilePage() {
                     </div>
                 )}
 
-                <div className="grid min-w-0 grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-6 items-start lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,0.9fr)]">
                     {/* ================= EDIT ================= */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="min-w-0 space-y-5 sm:space-y-6">
                         {/* Photo — optional */}
                         <section className={cardCls}>
                             <h2 className={`${sectionTitle} flex items-center gap-2`}>
-                                <Camera size={18} className="text-brand-gold-light" />
+                                <Camera size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
                                 {t('instructorProfile.sections_identity')}
                             </h2>
                             <p className={hintCls}>{t('instructorProfile.sections_identity_hint')}</p>
@@ -349,7 +371,7 @@ export default function InstructorProfilePage() {
                                             className="w-24 h-24 rounded-2xl object-cover border-2 border-brand-gold/30"
                                         />
                                     ) : (
-                                        <div className="w-24 h-24 rounded-2xl bg-brand-navy border-2 border-dashed border-white/15 flex items-center justify-center text-gray-500">
+                                        <div className="w-24 h-24 rounded-2xl bg-gray-50 dark:bg-brand-navy border-2 border-dashed border-gray-300 dark:border-white/15 flex items-center justify-center text-gray-500">
                                             <Camera size={26} />
                                         </div>
                                     )}
@@ -365,7 +387,7 @@ export default function InstructorProfilePage() {
                                     <button
                                         onClick={() => fileRef.current?.click()}
                                         disabled={uploading}
-                                        className="inline-flex items-center gap-2 bg-brand-gold/10 text-brand-gold-light border border-brand-gold/25 font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-brand-gold hover:text-black transition-all disabled:opacity-50"
+                                        className="inline-flex items-center gap-2 bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light border border-brand-gold/25 font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-brand-gold hover:text-black transition-all disabled:opacity-50"
                                     >
                                         {uploading ? <Loader size={15} className="animate-spin" /> : <Camera size={15} />}
                                         {t('instructorProfile.photo_label')}
@@ -459,7 +481,7 @@ export default function InstructorProfilePage() {
 
                             <div className="space-y-3">
                                 {form.specialties.map((item, index) => (
-                                    <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5">
+                                    <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/5">
                                         <div className="flex-1 min-w-[140px]">
                                             <label className="block text-xs font-bold text-gray-400 mb-1">AR</label>
                                             <input
@@ -497,7 +519,7 @@ export default function InstructorProfilePage() {
                             <button
                                 type="button"
                                 onClick={() => editList('specialties', (items) => [...items, { ar: '', en: '' }])}
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light hover:text-brand-gold transition"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light hover:text-brand-gold transition"
                             >
                                 <Plus size={16} /> {t('instructorProfile.add_specialty')}
                             </button>
@@ -506,16 +528,16 @@ export default function InstructorProfilePage() {
                         {/* Experience */}
                         <section className={cardCls}>
                             <h2 className={`${sectionTitle} flex items-center gap-2`}>
-                                <Briefcase size={18} className="text-brand-gold-light" />
+                                <Briefcase size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
                                 {t('instructorProfile.sections_experience')}
                             </h2>
                             <p className={hintCls}>{t('instructorProfile.sections_experience_hint')}</p>
 
                             <div className="space-y-4">
                                 {form.experiences.map((item, index) => (
-                                    <div key={index} className="p-4 bg-white/[0.03] rounded-xl border border-white/5 space-y-3">
+                                    <div key={index} className="p-4 bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/5 space-y-3">
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="text-xs font-black text-brand-gold-light">#{index + 1}</span>
+                                            <span className="text-xs font-black text-brand-gold-dark dark:text-brand-gold-light">#{index + 1}</span>
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     type="button"
@@ -617,7 +639,7 @@ export default function InstructorProfilePage() {
                                     ...items,
                                     { role: '', organisation: '', from: '', to: '', description: '' },
                                 ])}
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light hover:text-brand-gold transition"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light hover:text-brand-gold transition"
                             >
                                 <Plus size={16} /> {t('instructorProfile.add_experience')}
                             </button>
@@ -626,14 +648,14 @@ export default function InstructorProfilePage() {
                         {/* Qualifications */}
                         <section className={cardCls}>
                             <h2 className={`${sectionTitle} flex items-center gap-2`}>
-                                <GraduationCap size={18} className="text-brand-gold-light" />
+                                <GraduationCap size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
                                 {t('instructorProfile.sections_qualifications')}
                             </h2>
                             <p className={hintCls}>{t('instructorProfile.sections_qualifications_hint')}</p>
 
                             <div className="space-y-4">
                                 {form.qualifications.map((item, index) => (
-                                    <div key={index} className="p-4 bg-white/[0.03] rounded-xl border border-white/5 space-y-3">
+                                    <div key={index} className="p-4 bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/5 space-y-3">
                                         <div className="flex items-center justify-end">
                                             <button
                                                 type="button"
@@ -698,7 +720,7 @@ export default function InstructorProfilePage() {
                             <button
                                 type="button"
                                 onClick={() => editList('qualifications', (items) => [...items, { degree: '' }])}
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light hover:text-brand-gold transition"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light hover:text-brand-gold transition"
                             >
                                 <Plus size={16} /> {t('instructorProfile.add_qualification')}
                             </button>
@@ -707,14 +729,14 @@ export default function InstructorProfilePage() {
                         {/* Languages */}
                         <section className={cardCls}>
                             <h2 className={`${sectionTitle} flex items-center gap-2`}>
-                                <Languages size={18} className="text-brand-gold-light" />
+                                <Languages size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
                                 {t('instructorProfile.sections_languages')}
                             </h2>
                             <p className={hintCls}>{t('instructorProfile.sections_languages_hint')}</p>
 
                             <div className="space-y-3">
                                 {form.languages.map((item, index) => (
-                                    <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5">
+                                    <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/5">
                                         <div className="flex-1 min-w-[150px]">
                                             <label className={labelCls}>{t('instructorProfile.language_name')}</label>
                                             <input
@@ -754,7 +776,7 @@ export default function InstructorProfilePage() {
                             <button
                                 type="button"
                                 onClick={() => editList('languages', (items) => [...items, { name: '' }])}
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light hover:text-brand-gold transition"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light hover:text-brand-gold transition"
                             >
                                 <Plus size={16} /> {t('instructorProfile.add_language')}
                             </button>
@@ -763,14 +785,14 @@ export default function InstructorProfilePage() {
                         {/* Certificates */}
                         <section className={cardCls}>
                             <h2 className={`${sectionTitle} flex items-center gap-2`}>
-                                <Award size={18} className="text-brand-gold-light" />
+                                <Award size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
                                 {t('instructorProfile.sections_certificates')}
                             </h2>
                             <p className={hintCls}>{t('instructorProfile.sections_certificates_hint')}</p>
 
                             <div className="space-y-3">
                                 {form.certificates.map((item, index) => (
-                                    <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5">
+                                    <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/5">
                                         <div className="flex-1 min-w-[150px]">
                                             <label className={labelCls}>{t('instructorProfile.certificate_title')}</label>
                                             <input
@@ -821,7 +843,7 @@ export default function InstructorProfilePage() {
                             <button
                                 type="button"
                                 onClick={() => editList('certificates', (items) => [...items, { title: '' }])}
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light hover:text-brand-gold transition"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light hover:text-brand-gold transition"
                             >
                                 <Plus size={16} /> {t('instructorProfile.add_certificate')}
                             </button>
@@ -830,7 +852,7 @@ export default function InstructorProfilePage() {
                         {/* Links */}
                         <section className={cardCls}>
                             <h2 className={`${sectionTitle} flex items-center gap-2`}>
-                                <Link2 size={18} className="text-brand-gold-light" />
+                                <Link2 size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
                                 {t('instructorProfile.sections_links')}
                             </h2>
                             <p className={hintCls}>{t('instructorProfile.sections_links_hint')}</p>
@@ -839,7 +861,7 @@ export default function InstructorProfilePage() {
                                 {form.links.map((item, index) => {
                                     const bad = Boolean(item.url) && !/^https:\/\//i.test(item.url.trim());
                                     return (
-                                        <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5">
+                                        <div key={index} className="flex flex-wrap items-end gap-3 p-3 bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/5">
                                             <div className="flex-1 min-w-[130px]">
                                                 <label className={labelCls}>{t('instructorProfile.link_label')}</label>
                                                 <input
@@ -882,14 +904,14 @@ export default function InstructorProfilePage() {
                             <button
                                 type="button"
                                 onClick={() => editList('links', (items) => [...items, { label: '', url: '' }])}
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-light hover:text-brand-gold transition"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-gold-dark dark:text-brand-gold-light hover:text-brand-gold transition"
                             >
                                 <Plus size={16} /> {t('instructorProfile.add_link')}
                             </button>
                         </section>
 
                         {/* Save */}
-                        <section className={cardCls}>
+                        <section className={`${cardCls} sticky bottom-3 z-10 shadow-xl`}>
                             <div className="flex flex-wrap items-center gap-3">
                                 <button
                                     onClick={save}
@@ -907,7 +929,7 @@ export default function InstructorProfilePage() {
                     {/* ================= PREVIEW ================= */}
                     <div className="space-y-6">
                         <section className={cardCls}>
-                            <h3 className="text-base font-black text-white flex items-center gap-2 mb-1">
+                            <h3 className="text-base font-black text-brand-navy dark:text-white flex items-center gap-2 mb-1">
                                 <Eye size={16} className="text-brand-gold-light" />
                                 {t('instructorProfile.preview_heading')}
                             </h3>
@@ -1016,7 +1038,7 @@ export default function InstructorProfilePage() {
                         </section>
 
                         <section className={cardCls}>
-                            <h3 className="text-base font-black text-white mb-1">{t('instructorProfile.completion_heading')}</h3>
+                            <h3 className="text-base font-black text-brand-navy dark:text-white mb-1">{t('instructorProfile.completion_heading')}</h3>
                             <div className="flex items-center gap-3 mt-4 mb-5">
                                 <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                                     <div
@@ -1035,7 +1057,7 @@ export default function InstructorProfilePage() {
                                         {s.done
                                             ? <Check size={15} className="text-emerald-400 shrink-0" />
                                             : <Sparkles size={15} className="text-brand-gold-light shrink-0" />}
-                                        <span className={`text-sm ${s.done ? 'text-gray-400 line-through' : 'text-white font-bold'}`}>
+                                        <span className={`text-sm ${s.done ? 'text-gray-400 line-through' : 'text-brand-navy dark:text-white font-bold'}`}>
                                             {s.label}
                                         </span>
                                         <span className={`ms-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${

@@ -5,6 +5,7 @@ import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import PublicMobileMenu from '@/components/PublicMobileMenu';
 import ThemeToggle from '@/components/ThemeToggle';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function NotFound() {
     const { t } = useI18n();
@@ -13,14 +14,7 @@ export default function NotFound() {
     return (
         <div className={`min-h-screen ${dark ? 'bg-brand-navy-dark' : 'bg-white'} flex flex-col`}>
             <header className={`px-8 py-6 flex items-center justify-between border-b ${dark ? 'border-white/5 bg-brand-navy-dark/80' : 'border-gray-200 bg-white/80'} backdrop-blur-md sticky top-0 z-40`}>
-                <div className="flex items-center gap-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${dark ? 'bg-brand-navy shadow-black/30' : 'bg-brand-mist'}`}>
-                        <span className="text-brand-gold font-black text-xl">L</span>
-                    </div>
-                    <h1 className={`text-2xl font-black tracking-tight ${dark ? 'text-white' : 'text-brand-navy'}`}>
-                        laxa<span className="text-brand-gold">lab</span>
-                    </h1>
-                </div>
+                <BrandLogo className="h-9 w-auto" />
                 <div className="flex items-center gap-4">
                     <ThemeToggle />
                     <PublicMobileMenu />
