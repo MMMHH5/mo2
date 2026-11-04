@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { Mail, Phone, Clock, MessageSquare, CheckCircle2, Play, Camera, Send, Hash, Globe } from 'lucide-react';
+import { Mail, Phone, Clock, MessageSquare, CheckCircle2, Play, Camera, Send, Hash, Globe, MessageCircle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import MarketingShell from '@/components/MarketingShell';
 import { api, getErrorMessage } from '@/lib/api';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, SUPPORT_WHATSAPP_URL } from '@/lib/contact-details';
 
 export default function ContactContent() {
     const { t, locale } = useI18n();
@@ -163,6 +164,21 @@ export default function ContactContent() {
                 </div>
 
                 <aside className="space-y-5">
+                    <div className={`rounded-3xl border shadow-sm p-7 ${dark ? 'bg-brand-navy-dark border-white/10' : 'bg-white border-gray-200'}`}>
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/10 text-brand-gold-dark'}`}>
+                            <Phone size={22} />
+                        </div>
+                        <h3 className={`font-bold mb-1 ${dark ? 'text-white' : 'text-brand-navy'}`}>{isAr ? 'اتصل أو راسلنا واتساب' : 'Call or WhatsApp us'}</h3>
+                        <p dir="ltr" className={`mb-4 text-sm font-bold ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{SUPPORT_PHONE_DISPLAY}</p>
+                        <div className="flex flex-wrap gap-2">
+                            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="inline-flex items-center gap-2 rounded-xl bg-brand-navy px-3 py-2.5 text-sm font-black text-white transition hover:bg-brand-navy-light">
+                                <Phone size={16} /> {isAr ? 'اتصال' : 'Call'}
+                            </a>
+                            <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-black text-white transition hover:bg-emerald-700">
+                                <MessageCircle size={16} /> WhatsApp
+                            </a>
+                        </div>
+                    </div>
                     <div className={`rounded-3xl border shadow-sm p-7 ${dark ? 'bg-brand-navy-dark border-white/10' : 'bg-white border-gray-200'}`}>
                         <div className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-4 ${dark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/10 text-brand-gold-dark'}`}>
                             <Mail size={22} />

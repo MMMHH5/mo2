@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, MapPin, Route } from 'lucide-react';
+import { BookOpen, Award, Shield, Users, GraduationCap, ChevronRight, Sparkles, PlayCircle, Play, Camera, Send, Hash, Globe, Mail, Clock, Target, MapPin, Route, Phone, MessageCircle } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { useFetchData } from '@/lib/useFetchData';
@@ -9,6 +9,7 @@ import { formatNumber } from '@/lib/format';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import MarketingShell from '@/components/MarketingShell';
 import CourseCard, { type PublicCourse } from '@/components/CourseCard';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, SUPPORT_WHATSAPP_URL } from '@/lib/contact-details';
 
 interface HomeLearningPath {
   id: string;
@@ -149,7 +150,7 @@ export default function Home() {
             <p className={`max-w-xl mx-auto text-lg leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('landing.why_desc')}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             {[
               { icon: BookOpen, titleKey: 'landing.feature_1_title', descKey: 'landing.feature_1_desc' },
               { icon: Shield, titleKey: 'landing.feature_2_title', descKey: 'landing.feature_2_desc' },
@@ -353,6 +354,22 @@ export default function Home() {
               <p className={`text-sm font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
                 {isAr ? 'طوال أيام الأسبوع: 24 ساعة' : 'Open 24 hours, 7 days a week'}
               </p>
+            </div>
+
+            <div className={`border rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${cardCls}`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${featIconCls}`}>
+                <Phone size={22} />
+              </div>
+              <h4 className={`text-lg font-black mb-2 ${cardTitleCls}`}>{isAr ? 'اتصل أو راسلنا واتساب' : 'Call or WhatsApp us'}</h4>
+              <p dir="ltr" className={`mb-4 text-sm font-bold ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{SUPPORT_PHONE_DISPLAY}</p>
+              <div className="flex flex-wrap gap-2">
+                <a href={`tel:${SUPPORT_PHONE_TEL}`} className="inline-flex items-center gap-2 rounded-xl bg-brand-navy px-3 py-2 text-sm font-black text-white transition hover:bg-brand-navy-light">
+                  <Phone size={15} /> {isAr ? 'اتصال' : 'Call'}
+                </a>
+                <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white transition hover:bg-emerald-700">
+                  <MessageCircle size={15} /> WhatsApp
+                </a>
+              </div>
             </div>
 
             <div className={`border rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${cardCls}`}>

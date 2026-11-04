@@ -1,0 +1,3 @@
+export const SUPPORT_PHONE_DISPLAY = '+967 730 451 014';
+export const SUPPORT_PHONE_TEL = '+967730451014';
+export const SUPPORT_WHATSAPP_URL = 'https://wa.me/967730451014';
