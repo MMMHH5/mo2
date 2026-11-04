@@ -7,7 +7,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     constructor() {
         const clientID = process.env.GOOGLE_CLIENT_ID?.trim();
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
-        const callbackURL = process.env.GOOGLE_CALLBACK_URL?.trim() || 'http://localhost:3001/auth/google/callback';
+        const callbackURL = process.env.GOOGLE_CALLBACK_URL?.trim()
+            || (process.env.NODE_ENV === 'production'
+                ? 'https://laxalab-api-public.onrender.com/auth/google/callback'
+                : 'http://localhost:3001/auth/google/callback');
 
         super({
             clientID: clientID || 'google-oauth-not-configured',
