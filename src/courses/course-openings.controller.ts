@@ -1,6 +1,7 @@
 import { Controller, Get, Patch, Param, Body, Delete, UseGuards, Request, Ip, Post, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
+import { OpeningActivityService } from './opening-activity.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -18,7 +19,10 @@ const STAFF_ROLES = [Role.ADMIN, Role.COURSE_MANAGER, Role.INSTRUCTOR];
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('openings')
 export class CourseOpeningsController {
-    constructor(private readonly coursesService: CoursesService) { }
+    constructor(
+        private readonly coursesService: CoursesService,
+        private readonly openingActivity: OpeningActivityService,
+    ) { }
 
     @ApiOperation({ summary: 'My assigned openings (instructors: openings they teach; staff: all)' })
     @Roles(Role.INSTRUCTOR, Role.ADMIN, Role.COURSE_MANAGER)
@@ -32,6 +36,14 @@ export class CourseOpeningsController {
     @Get(':id/modules')
     modules(@Param('id') id: string, @Request() req: any) {
         return this.coursesService.listOpeningModules(id, req.user.userId, req.user.role);
+    }
+
+    @ApiOperation({ summary: 'Opening content, learner activity, submissions, quiz results, and instructor changes' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CONTENT_READ)
+    @Get(':id/oversight')
+    oversight(@Param('id') id: string) {
+        return this.openingActivity.getOpeningOversight(id);
     }
 
     @ApiOperation({ summary: 'List secondary instructor permissions for an opening' })

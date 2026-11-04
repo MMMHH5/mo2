@@ -1291,6 +1291,7 @@
         "no_users": "لا يوجد مستخدمون",
         "openings_heading": "إدارة الفتحات",
         "openings_subtitle": "أدر الدفعات والنشر والأسعار عبر الدورات.",
+        "opening_oversight_tooltip": "متابعة محتوى الدفعة ونشاط المدرّس والطلاب",
         "platform_info": "معلومات المنصة",
         "platform_info_desc": "إعدادات التشغيل وتفاصيل الاتصال.",
         "published_short": "منشور",

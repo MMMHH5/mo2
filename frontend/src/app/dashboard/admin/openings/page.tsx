@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag, Award, X, BookOpen, FileText, Video } from 'lucide-react';
+import { Pencil, Trash2, Users, Search, PlusCircle, CalendarClock, Megaphone, Unlock, Play, Flag, Award, X, BookOpen, FileText, Video, Activity } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, type Tone } from '../components';
 import CertificateApprovalModal from '@/components/CertificateApprovalModal';
 import OpeningRosterModal from '@/components/admin/OpeningRosterModal';
@@ -345,6 +345,14 @@ export default function AdminOpeningsPage() {
                                             >
                                                 <Users size={18} />
                                             </button>
+                                            <Link
+                                                href={`/dashboard/admin/openings/${o.id}`}
+                                                className="admin-action-btn text-violet-600 hover:bg-violet-500/10 dark:text-violet-400 tooltip"
+                                                title={t('admin.opening_oversight_tooltip')}
+                                                aria-label={t('admin.opening_oversight_tooltip')}
+                                            >
+                                                <Activity size={18} />
+                                            </Link>
                                             {o.status === 'ENDED' && (
                                                 <>
                                                     <button

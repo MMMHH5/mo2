@@ -2,10 +2,15 @@ import { Injectable, BadRequestException, ForbiddenException, NotFoundException 
 import { CourseOpeningStatus, EnrollmentStatus, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GamificationService } from '../gamification/gamification.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class QuizzesService {
-  constructor(private prisma: PrismaService, private gamification: GamificationService) {}
+  constructor(
+    private prisma: PrismaService,
+    private gamification: GamificationService,
+    private audit?: AuditService,
+  ) {}
 
   private stripAnswers(quiz: any) {
     if (!quiz) return quiz;
@@ -32,7 +37,7 @@ export class QuizzesService {
     };
   }
 
-  async create(data: any) {
+  async create(data: any, actorId?: string) {
     const { questions = [], courseId, moduleId, openingId, ...quizData } = data;
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Course not found');
@@ -47,7 +52,7 @@ export class QuizzesService {
         throw new BadRequestException('Module does not belong to this course opening');
       }
     }
-    return this.prisma.quiz.create({
+    const created = await this.prisma.quiz.create({
       data: {
         ...quizData,
         courseId,
@@ -59,9 +64,18 @@ export class QuizzesService {
       },
       include: { questions: { orderBy: { orderIndex: 'asc' } } },
     });
+    if (created.openingId && actorId) {
+      await this.audit?.logOpeningActivity?.(created.openingId, actorId, 'quiz_created', {
+        entityType: 'quiz',
+        entityId: created.id,
+        titleAr: created.titleAr,
+        questionCount: created.questions.length,
+      });
+    }
+    return created;
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, data: any, actorId?: string) {
     const quiz = await this.prisma.quiz.findUnique({ where: { id } });
     if (!quiz) throw new NotFoundException('Quiz not found');
     const { questions, courseId, moduleId, openingId: _openingId, ...quizData } = data;
@@ -96,11 +110,32 @@ export class QuizzesService {
         data: { ...quizData, moduleId: nextModuleId },
       });
     }
-    return this.prisma.quiz.findUnique({ where: { id }, include: { questions: { orderBy: { orderIndex: 'asc' } } } });
+    const updated = await this.prisma.quiz.findUnique({ where: { id }, include: { questions: { orderBy: { orderIndex: 'asc' } } } });
+    if (quiz.openingId && actorId && updated) {
+      await this.audit?.logOpeningActivity?.(quiz.openingId, actorId, 'quiz_updated', {
+        entityType: 'quiz',
+        entityId: quiz.id,
+        titleAr: updated.titleAr,
+        questionCount: updated.questions.length,
+        changedFields: Object.keys(data).filter((key) => key !== 'questions'),
+        questionsChanged: Array.isArray(questions),
+      });
+    }
+    return updated;
   }
 
-  async remove(id: string) {
+  async remove(id: string, actorId?: string) {
+    const quiz = await this.prisma.quiz.findUnique({ where: { id }, select: { id: true, openingId: true, titleAr: true, titleEn: true } });
+    if (!quiz) throw new NotFoundException('Quiz not found');
     await this.prisma.quiz.delete({ where: { id } });
+    if (quiz.openingId && actorId) {
+      await this.audit?.logOpeningActivity?.(quiz.openingId, actorId, 'quiz_deleted', {
+        entityType: 'quiz',
+        entityId: quiz.id,
+        quizTitleAr: quiz.titleAr,
+        quizTitleEn: quiz.titleEn,
+      });
+    }
     return { ok: true };
   }
 
@@ -142,7 +177,7 @@ export class QuizzesService {
         throw new BadRequestException('Lesson does not belong to this opening');
       }
     }
-    return this.create({ ...data, courseId: opening.courseId, openingId });
+    return this.create({ ...data, courseId: opening.courseId, openingId }, actorId);
   }
 
   async updateForInstructor(id: string, data: any, openingId: string, actorId: string, role: Role) {
@@ -151,7 +186,7 @@ export class QuizzesService {
     if (!quiz) throw new NotFoundException('Quiz not found');
     if (quiz.openingId !== openingId) throw new NotFoundException('Quiz not found in this opening');
     if (data.courseId && data.courseId !== quiz.courseId) throw new BadRequestException('Quiz course cannot be changed');
-    return this.update(id, data);
+    return this.update(id, data, actorId);
   }
 
   async removeForInstructor(id: string, openingId: string, actorId: string, role: Role) {
@@ -159,7 +194,7 @@ export class QuizzesService {
     const quiz = await this.prisma.quiz.findUnique({ where: { id }, select: { openingId: true } });
     if (!quiz) throw new NotFoundException('Quiz not found');
     if (quiz.openingId !== openingId) throw new NotFoundException('Quiz not found in this opening');
-    return this.remove(id);
+    return this.remove(id, actorId);
   }
 
   async listByOpening(openingId: string, includeUnpublished: boolean) {
@@ -275,6 +310,17 @@ export class QuizzesService {
       update: { score: bestScore, passed, answers: answers as object },
       create: { quizId, enrollmentId, score: result.score, passed: result.passed, answers: answers as object },
     });
+    if (quiz.openingId) {
+      await this.audit?.logOpeningActivity?.(quiz.openingId, studentId, 'quiz_attempt', {
+        entityType: 'quiz_attempt',
+        entityId: attempt.id,
+        quizId: quiz.id,
+        quizTitleAr: quiz.titleAr,
+        quizTitleEn: quiz.titleEn,
+        score: result.score,
+        passed: result.passed,
+      });
+    }
 
     if (result.passed) {
       try {

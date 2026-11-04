@@ -170,6 +170,11 @@ export class TasksService {
             },
         });
         await this.audit.logAction(`Created task "${dto.titleAr}" for Opening ${openingId}`, undefined, actorId);
+        await this.audit.logOpeningActivity?.(openingId, actorId, 'task_created', {
+            entityType: 'task',
+            entityId: task.id,
+            titleAr: task.titleAr,
+        });
         return task;
     }
 
@@ -313,7 +318,13 @@ export class TasksService {
                 links: dto.links !== undefined ? (dto.links?.length ? dto.links as any : null) : task.links,
             },
         });
-        await this.audit.logAction(`Updated task ${taskId}`, undefined, actorId);
+        await this.audit.logAction(`Updated task ${taskId} (Opening ${task.openingId})`, undefined, actorId);
+        await this.audit.logOpeningActivity?.(task.openingId, actorId, 'task_updated', {
+            entityType: 'task',
+            entityId: taskId,
+            titleAr: updated.titleAr,
+            changedFields: Object.keys(dto),
+        });
         return updated;
     }
 
@@ -321,6 +332,11 @@ export class TasksService {
         const task = await this.getTaskOrThrow(taskId);
         await this.assertCanManageOpening(task.openingId, actorId, actorRole);
         await this.audit.logAction(`Deleted task ${taskId} (Opening ${task.openingId})`, undefined, actorId);
+        await this.audit.logOpeningActivity?.(task.openingId, actorId, 'task_deleted', {
+            entityType: 'task',
+            entityId: taskId,
+            titleAr: task.titleAr,
+        });
         return this.prisma.courseTask.delete({ where: { id: taskId } });
     }
 
@@ -395,7 +411,19 @@ export class TasksService {
                 ...submittedFile,
             },
         });
-        await this.audit.logAction(`Student ${studentId} submitted Task ${taskId}`, undefined, studentId);
+        await this.audit.logAction(`Student ${studentId} submitted Task ${taskId} (Opening ${task.openingId})`, undefined, studentId);
+        await this.audit.logOpeningActivity?.(task.openingId, studentId, 'task_submission', {
+            entityType: 'task_submission',
+            entityId: submission.id,
+            taskId,
+            taskTitleAr: task.titleAr,
+            attachmentUrl: submission.attachmentUrl,
+            attachmentName: submission.attachmentName,
+            attachmentType: submission.attachmentType,
+            attachmentSize: submission.attachmentSize,
+            score: submission.score,
+            maxScore: task.maxScore,
+        });
         return submission;
     }
 
@@ -601,7 +629,15 @@ export class TasksService {
                 notes: notes !== undefined ? (notes.trim() ? notes.trim() : null) : submission.notes,
             },
         });
-        await this.audit.logAction(`Graded submission ${submissionId} for Task ${submission.taskId}`, undefined, actorId);
+        await this.audit.logAction(`Graded submission ${submissionId} for Task ${submission.taskId} (Opening ${submission.task.openingId})`, undefined, actorId);
+        await this.audit.logOpeningActivity?.(submission.task.openingId, actorId, 'submission_graded', {
+            entityType: 'task_submission',
+            entityId: submission.id,
+            taskId: submission.taskId,
+            titleAr: submission.task.titleAr,
+            score: updated.score,
+            maxScore: submission.task.maxScore,
+        });
         await this.notifications.notify({
             userId: submission.enrollment.studentId,
             type: 'task.graded',

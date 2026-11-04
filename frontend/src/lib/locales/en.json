@@ -1291,6 +1291,7 @@
         "no_users": "No users found",
         "openings_heading": "Openings Management",
         "openings_subtitle": "Manage batches, publishing and pricing across courses.",
+        "opening_oversight_tooltip": "Review batch content and instructor and student activity",
         "platform_info": "Platform Information",
         "platform_info_desc": "Runtime configuration and connection details.",
         "published_short": "Published",

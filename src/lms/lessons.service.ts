@@ -3,10 +3,15 @@ import { CourseContentType, CourseOpeningStatus, DeliveryMode, EnrollmentStatus,
 import { PrismaService } from '../prisma/prisma.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { Classroom, resolveClassroom } from '../common/classroom';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class LessonsService {
-  constructor(private prisma: PrismaService, private gamification: GamificationService) {}
+  constructor(
+    private prisma: PrismaService,
+    private gamification: GamificationService,
+    private audit?: AuditService,
+  ) {}
 
   async syllabus(courseId: string) {
     const course = await this.prisma.course.findUnique({
@@ -132,11 +137,20 @@ export class LessonsService {
     const existing = current?.content && typeof current.content === 'object' && !Array.isArray(current.content)
       ? current.content as Record<string, unknown>
       : {};
-    return this.prisma.openingModuleContent.upsert({
+    const updated = await this.prisma.openingModuleContent.upsert({
       where: { openingId_moduleId: { openingId, moduleId } },
       create: { openingId, moduleId, content: { ...this.moduleContent(module), ...content } as Prisma.InputJsonValue },
       update: { content: { ...existing, ...content } as Prisma.InputJsonValue },
     });
+    await this.audit?.logOpeningActivity?.(openingId, actorId, 'lesson_updated', {
+      entityType: 'lesson',
+      entityId: moduleId,
+      titleAr: typeof content.titleAr === 'string' ? content.titleAr : module.titleAr,
+      changedFields: Object.keys(content),
+      filesCount: Array.isArray(content.files) ? content.files.length : null,
+      linksCount: Array.isArray(content.links) ? content.links.length : null,
+    });
+    return updated;
   }
 
   private moduleContent(module: {
@@ -197,7 +211,7 @@ export class LessonsService {
     this.validateLearningContentArrays(learningContent);
     const count = await this.prisma.module.count({ where: { courseId: opening.courseId, OR: [{ openingId: null }, { openingId }] } });
     const outcomes = learningContent.outcomes as { descriptionAr: string; descriptionEn: string }[];
-    return this.prisma.module.create({
+    const created = await this.prisma.module.create({
       data: {
         titleAr: data.titleAr.trim(),
         titleEn: data.titleEn.trim(),
@@ -213,6 +227,14 @@ export class LessonsService {
         outcomes: { create: outcomes },
       },
     });
+    await this.audit?.logOpeningActivity?.(openingId, actorId, 'lesson_created', {
+      entityType: 'lesson',
+      entityId: created.id,
+      titleAr: created.titleAr,
+      filesCount: Array.isArray(learningContent.files) ? learningContent.files.length : 0,
+      linksCount: Array.isArray(learningContent.links) ? learningContent.links.length : 0,
+    });
+    return created;
   }
 
   /**

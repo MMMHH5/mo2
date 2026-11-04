@@ -61,6 +61,27 @@ export class AuditService {
         }
     }
 
+    async logOpeningActivity(
+        openingId: string,
+        userId: string,
+        action: string,
+        details?: Prisma.InputJsonValue,
+    ): Promise<void> {
+        try {
+            await this.prisma.auditLog.create({
+                data: {
+                    action,
+                    userId,
+                    targetType: 'OPENING_ACTIVITY',
+                    targetId: openingId,
+                    details,
+                },
+            });
+        } catch (error) {
+            this.logger.error(`Failed to record opening activity: ${action}`, error);
+        }
+    }
+
     async resolveAdminActivityTargetLabel(targetType: string, targetId: string): Promise<string | undefined> {
         try {
             if (targetType === 'تسجيل طالب أو إيصال') {

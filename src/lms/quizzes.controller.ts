@@ -21,9 +21,9 @@ export class QuizzesController {
   @Roles(Role.ADMIN, Role.COURSE_MANAGER)
   @RequirePermissions(PERMISSIONS.COURSES_WRITE)
   @Post()
-  create(@Body() dto: any) {
+  create(@Body() dto: any, @Request() req: any) {
     if (!dto?.courseId || !dto?.titleAr || !dto?.titleEn) throw new BadRequestException('courseId, titleAr and titleEn are required');
-    return this.quizzes.create(dto);
+    return this.quizzes.create(dto, req.user.userId);
   }
 
   @ApiOperation({ summary: 'Update a quiz (Admins/Course Managers)' })
@@ -31,8 +31,8 @@ export class QuizzesController {
   @Roles(Role.ADMIN, Role.COURSE_MANAGER)
   @RequirePermissions(PERMISSIONS.COURSES_WRITE)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: any) {
-    return this.quizzes.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: any, @Request() req: any) {
+    return this.quizzes.update(id, dto, req.user.userId);
   }
 
   @ApiOperation({ summary: 'Delete a quiz (Admins/Course Managers)' })
@@ -40,8 +40,8 @@ export class QuizzesController {
   @Roles(Role.ADMIN, Role.COURSE_MANAGER)
   @RequirePermissions(PERMISSIONS.COURSES_DELETE)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.quizzes.remove(id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    return this.quizzes.remove(id, req.user.userId);
   }
 
   @ApiOperation({ summary: 'List course quizzes for an authorized instructor' })
