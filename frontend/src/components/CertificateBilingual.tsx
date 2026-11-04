@@ -15,6 +15,8 @@ export interface CertificateTemplateData {
     descriptionEn: string;
     directorSignatureUrl: string | null;
     academyStampUrl: string | null;
+    designKey?: 'classic' | 'royal' | 'modern';
+    layout?: Record<string, { x: number; y: number }>;
 }
 
 export interface CertificateProps {
@@ -73,6 +75,11 @@ export default function CertificateBilingual({ studentName, courseName, instruct
     const academyName = isAr ? template?.academyNameAr : template?.academyNameEn;
     const certificateTitle = isAr ? template?.titleAr : template?.titleEn;
     const certificateDescription = isAr ? template?.descriptionAr : template?.descriptionEn;
+    const layoutOffset = (key: string, axis: 'x' | 'y', baseline: number) => {
+        const point = template?.layout?.[key];
+        const value = point?.[axis] ?? baseline;
+        return (value - baseline) * 5.6;
+    };
     const [scale, setScale] = useState(1);
     const certRef = useRef<HTMLDivElement>(null);
 
@@ -211,7 +218,15 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                     >
 
                         {/* === DECORATIVE BORDER === */}
-                        <div className="absolute inset-0 border-[8px] border-[#12305A]" />
+                        <div
+                            className="absolute"
+                            style={{
+                                inset: 0,
+                                borderStyle: 'solid',
+                                borderWidth: template?.designKey === 'royal' ? 14 : template?.designKey === 'modern' ? 4 : 8,
+                                borderColor: template?.designKey === 'modern' ? '#C6A15B' : '#12305A',
+                            }}
+                        />
                         <div className="absolute border-[2px] border-[#C6A15B]" style={{ inset: '10px' }} />
                         <div className="absolute border border-[#12305A]/10" style={{ inset: '16px' }} />
 
@@ -238,7 +253,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                         >
 
                             {/* ===== TOP SECTION: Logo + Title ===== */}
-                            <div className="text-center w-full">
+                            <div className="text-center w-full" style={{ transform: `translate(${layoutOffset('brand', 'x', 50)}px, ${layoutOffset('brand', 'y', 9) + layoutOffset('title', 'y', 19)}px)` }}>
                                 {/* Logo + Brand */}
                                 <div className={`flex items-center justify-center gap-3 mb-4 ${isAr ? 'flex-row-reverse' : ''}`}>
                                     <BrandLogo className="h-12 w-12 rounded-lg" variant="mark" dark />
@@ -264,7 +279,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             </div>
 
                             {/* ===== MIDDLE SECTION: Body ===== */}
-                            <div className={`text-center flex-1 flex flex-col items-center justify-center w-full max-w-xl ${isAr ? 'direction-rtl' : ''}`} dir={isAr ? 'rtl' : 'ltr'}>
+                            <div className={`text-center flex-1 flex flex-col items-center justify-center w-full max-w-xl ${isAr ? 'direction-rtl' : ''}`} dir={isAr ? 'rtl' : 'ltr'} style={{ transform: `translate(${layoutOffset('recipient', 'x', 50) + layoutOffset('course', 'x', 50)}px, ${(layoutOffset('recipient', 'y', 43) + layoutOffset('course', 'y', 58)) / 2}px)` }}>
 
                                 {/* "This is to certify that" */}
                                 <p
@@ -330,7 +345,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             </div>
 
                             {/* ===== BOTTOM SECTION: Signatures + QR + Date ===== */}
-                            <div className={`w-full flex items-end justify-between gap-6 ${isAr ? 'flex-row-reverse' : ''}`} dir="ltr">
+                            <div className={`w-full flex items-end justify-between gap-6 ${isAr ? 'flex-row-reverse' : ''}`} dir="ltr" style={{ transform: `translate(${layoutOffset('signatures', 'x', 50) + layoutOffset('qr', 'x', 87) - 37}px, ${layoutOffset('signatures', 'y', 87)}px)` }}>
 
                                 {/* Left: Instructor Signature */}
                                 <div className="flex-1 text-center" dir={isAr ? 'rtl' : 'ltr'}>

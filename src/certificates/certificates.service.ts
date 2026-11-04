@@ -60,12 +60,28 @@ export class CertificatesService {
             descriptionEn: template.descriptionEn,
             directorSignatureUrl: template.directorSignatureUrl,
             academyStampUrl: template.academyStampUrl,
+            designKey: template.designKey,
+            layout: template.layout,
         };
     }
 
     async updateTemplate(input: Record<string, unknown>, actorId: string) {
-        const data: Partial<typeof CERTIFICATE_TEMPLATE_DEFAULTS> = {};
+        const data: Record<string, any> = {};
         for (const [key, value] of Object.entries(input)) {
+            if (key === 'designKey') {
+                if (typeof value !== 'string' || !['classic', 'royal', 'modern'].includes(value)) {
+                    throw new BadRequestException('Unsupported certificate design');
+                }
+                data.designKey = value;
+                continue;
+            }
+            if (key === 'layout') {
+                if (!value || typeof value !== 'object' || Array.isArray(value)) {
+                    throw new BadRequestException('Certificate layout must be an object');
+                }
+                data.layout = value;
+                continue;
+            }
             if (!(key in TEMPLATE_TEXT_LIMITS)) {
                 throw new BadRequestException(`Unsupported certificate template field: ${key}`);
             }
@@ -90,6 +106,27 @@ export class CertificatesService {
         });
         await this.audit.logAction('Updated certificate template', undefined, actorId);
         return updated;
+    }
+
+    async listTemplatePresets() {
+        return this.prisma.certificateTemplatePreset.findMany({ orderBy: { updatedAt: 'desc' } });
+    }
+
+    async saveTemplatePreset(name: string, designKey: string, layout: Record<string, unknown>, actorId: string) {
+        const cleanName = name.trim();
+        if (!cleanName || cleanName.length > 80) throw new BadRequestException('Preset name must contain between 1 and 80 characters');
+        if (!['classic', 'royal', 'modern'].includes(designKey)) throw new BadRequestException('Unsupported certificate design');
+        const preset = await this.prisma.certificateTemplatePreset.create({
+            data: { name: cleanName, designKey, layout: layout as any, createdById: actorId },
+        });
+        await this.audit.logAction(`Created certificate template preset ${cleanName}`, undefined, actorId);
+        return preset;
+    }
+
+    async deleteTemplatePreset(id: string, actorId: string) {
+        await this.prisma.certificateTemplatePreset.delete({ where: { id } });
+        await this.audit.logAction(`Deleted certificate template preset ${id}`, undefined, actorId);
+        return { id, deleted: true };
     }
 
     async setTemplateAsset(kind: CertificateAssetKind, url: string | null, actorId: string) {

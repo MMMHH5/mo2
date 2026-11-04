@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Award, Check, ChevronDown, ExternalLink, FileBadge, ImagePlus, LoaderCircle, PenLine, Save, ShieldCheck, Stamp, Trash2, Upload } from 'lucide-react';
+import { Award, Check, ChevronDown, ExternalLink, FileBadge, GripVertical, ImagePlus, LayoutTemplate, LoaderCircle, Palette, PenLine, Save, ShieldCheck, Stamp, Trash2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 
 type AssetKind = 'teacherSignature' | 'directorSignature' | 'academyStamp';
+type CertificateLayout = Record<string, { x: number; y: number }>;
+type CertificatePreset = { id: string; name: string; designKey: 'classic' | 'royal' | 'modern'; layout: CertificateLayout };
 type CertificateTemplate = {
     academyNameAr: string;
     academyNameEn: string;
@@ -18,6 +20,8 @@ type CertificateTemplate = {
     descriptionEn: string;
     directorSignatureUrl: string | null;
     academyStampUrl: string | null;
+    designKey: 'classic' | 'royal' | 'modern';
+    layout: CertificateLayout;
 };
 type InstructorRow = {
     id: string;
@@ -58,6 +62,8 @@ const EMPTY_TEMPLATE: CertificateTemplate = {
     descriptionEn: 'Including all coursework, practical assignments, and assessments required for successful completion.',
     directorSignatureUrl: null,
     academyStampUrl: null,
+    designKey: 'classic',
+    layout: { brand: { x: 50, y: 9 }, title: { x: 50, y: 19 }, recipient: { x: 50, y: 43 }, course: { x: 50, y: 58 }, description: { x: 50, y: 69 }, signatures: { x: 50, y: 87 }, qr: { x: 87, y: 87 } },
 };
 
 function SignaturePad({
@@ -231,6 +237,8 @@ export default function AdminCertificatesPage() {
     const { locale } = useI18n();
     const isAr = locale === 'ar';
     const [template, setTemplate] = useState<CertificateTemplate>(EMPTY_TEMPLATE);
+    const [presets, setPresets] = useState<CertificatePreset[]>([]);
+    const [presetName, setPresetName] = useState('');
     const [overview, setOverview] = useState<Overview | null>(null);
     const [selectedInstructorId, setSelectedInstructorId] = useState('');
     const [records, setRecords] = useState<Record<string, CourseCertificates>>({});
@@ -244,11 +252,13 @@ export default function AdminCertificatesPage() {
         setLoading(true);
         setError('');
         try {
-            const [settingsResponse, overviewResponse] = await Promise.all([
+            const [settingsResponse, overviewResponse, presetsResponse] = await Promise.all([
                 api.get<CertificateTemplate>('/certificates/template'),
                 api.get<Overview>('/certificates/management'),
+                api.get<CertificatePreset[]>('/certificates/templates'),
             ]);
-            setTemplate({ ...EMPTY_TEMPLATE, ...settingsResponse.data });
+            setTemplate({ ...EMPTY_TEMPLATE, ...settingsResponse.data, layout: settingsResponse.data.layout && typeof settingsResponse.data.layout === 'object' ? { ...EMPTY_TEMPLATE.layout, ...(settingsResponse.data.layout as CertificateLayout) } : EMPTY_TEMPLATE.layout });
+            setPresets(presetsResponse.data);
             setOverview(overviewResponse.data);
             setSelectedInstructorId((current) => overviewResponse.data.instructors.some((instructor) => instructor.id === current)
                 ? current
@@ -281,6 +291,8 @@ export default function AdminCertificatesPage() {
                 titleEn: template.titleEn,
                 descriptionAr: template.descriptionAr,
                 descriptionEn: template.descriptionEn,
+                designKey: template.designKey,
+                layout: template.layout,
             });
             setTemplate((current) => ({ ...current, ...response.data }));
             toast.success(isAr ? 'تم حفظ تصميم الشهادة.' : 'Certificate design saved.');
@@ -349,6 +361,46 @@ export default function AdminCertificatesPage() {
             toast.error(getErrorMessage(requestError) || (isAr ? 'تعذرت إزالة الصورة.' : 'Could not remove the image.'));
         } finally {
             setBusyAsset(null);
+        }
+    };
+
+    const moveLayoutItem = (key: keyof CertificateLayout, event: React.DragEvent<HTMLDivElement>) => {
+        const canvas = event.currentTarget.parentElement;
+        if (!canvas) return;
+        const bounds = canvas.getBoundingClientRect();
+        const x = Math.max(8, Math.min(92, ((event.clientX - bounds.left) / bounds.width) * 100));
+        const y = Math.max(6, Math.min(94, ((event.clientY - bounds.top) / bounds.height) * 100));
+        setTemplate((current) => ({ ...current, layout: { ...current.layout, [key]: { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 } } }));
+    };
+
+    const savePreset = async () => {
+        const name = presetName.trim();
+        if (!name) {
+            toast.error(isAr ? 'أدخل اسم القالب.' : 'Enter a template name.');
+            return;
+        }
+        try {
+            const response = await api.post<CertificatePreset>('/certificates/templates', { name, designKey: template.designKey, layout: template.layout });
+            setPresets((current) => [response.data, ...current]);
+            setPresetName('');
+            toast.success(isAr ? 'تم حفظ قالب الشهادة.' : 'Certificate template saved.');
+        } catch (requestError) {
+            toast.error(getErrorMessage(requestError) || (isAr ? 'تعذر حفظ القالب.' : 'Could not save the template.'));
+        }
+    };
+
+    const applyPreset = async (preset: CertificatePreset) => {
+        setTemplate((current) => ({ ...current, designKey: preset.designKey, layout: preset.layout }));
+        toast.success(isAr ? 'تم تطبيق القالب في المعاينة.' : 'Template applied to the preview.');
+    };
+
+    const deletePreset = async (id: string) => {
+        try {
+            await api.delete(`/certificates/templates/${id}`);
+            setPresets((current) => current.filter((preset) => preset.id !== id));
+            toast.success(isAr ? 'تم حذف القالب.' : 'Template deleted.');
+        } catch (requestError) {
+            toast.error(getErrorMessage(requestError) || (isAr ? 'تعذر حذف القالب.' : 'Could not delete the template.'));
         }
     };
 
@@ -480,6 +532,83 @@ export default function AdminCertificatesPage() {
                         </button>
                     </div>
                 </form>
+            </section>
+
+            <section className="rounded-3xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
+                <div className="mb-5 flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light"><LayoutTemplate size={19} /></span>
+                    <div>
+                        <h2 className="text-xl font-black text-brand-navy dark:text-white">{isAr ? 'مصمم الشهادة الاحترافي' : 'Professional certificate designer'}</h2>
+                        <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{isAr ? 'اسحب العناصر لتغيير مواقعها، واختر شكلاً بصرياً واحفظه كقالب قابل لإعادة الاستخدام.' : 'Drag elements to reposition them, choose a visual style, and save reusable templates.'}</p>
+                    </div>
+                </div>
+
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                    <div className="overflow-auto rounded-2xl bg-slate-200 p-3 dark:bg-black/20 sm:p-5">
+                        <div
+                            className={`relative mx-auto aspect-[1.414/1] w-full max-w-[760px] overflow-hidden bg-white shadow-2xl ${template.designKey === 'royal' ? 'ring-[10px] ring-[#172b4d] ring-inset outline outline-1 outline-[#c6a15b]' : template.designKey === 'modern' ? 'rounded-lg' : 'border-[12px] border-[#12305A]'}`}
+                            onDragOver={(event) => event.preventDefault()}
+                        >
+                            <div className="absolute inset-3 border border-[#c6a15b]/60" />
+                            <div className="absolute inset-[18px] border border-[#12305a]/15" />
+                            {(['brand', 'title', 'recipient', 'course', 'description', 'signatures', 'qr'] as const).map((key) => {
+                                const pos = template.layout[key] ?? EMPTY_TEMPLATE.layout[key];
+                                const labels: Record<typeof key, string> = {
+                                    brand: isAr ? template.academyNameAr || 'اسم الأكاديمية' : template.academyNameEn || 'Academy',
+                                    title: isAr ? template.titleAr || 'عنوان الشهادة' : template.titleEn || 'Certificate title',
+                                    recipient: 'Student Name',
+                                    course: 'Course Name',
+                                    description: isAr ? 'نص الاعتماد والشهادة' : 'Accreditation wording',
+                                    signatures: isAr ? 'التوقيعات والختم' : 'Signatures & seal',
+                                    qr: 'QR',
+                                };
+                                return (
+                                    <div
+                                        key={key}
+                                        draggable
+                                        onDragStart={(event) => event.dataTransfer.setData('text/plain', key)}
+                                        onDragEnd={(event) => moveLayoutItem(key, event)}
+                                        className={`absolute z-10 cursor-move select-none border border-dashed border-brand-gold/80 bg-white/90 px-2 py-1 text-center shadow-sm transition hover:bg-white ${key === 'recipient' ? 'text-xl font-serif font-bold text-[#12305A]' : key === 'course' ? 'text-base font-bold text-[#12305A]' : 'text-xs text-gray-600'}`}
+                                        style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)', minWidth: key === 'qr' ? 46 : 120 }}
+                                        title={isAr ? 'اسحب لتغيير المكان' : 'Drag to reposition'}
+                                    >
+                                        <GripVertical className="mr-auto inline-block text-brand-gold-dark" size={12} /> {labels[key]}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <aside className="space-y-5">
+                        <div>
+                            <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-brand-navy dark:text-white"><Palette size={16} /> {isAr ? 'نمط التصميم' : 'Design style'}</h3>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(['classic', 'royal', 'modern'] as const).map((design) => (
+                                    <button key={design} type="button" onClick={() => setTemplate((current) => ({ ...current, designKey: design }))} className={`rounded-xl border p-3 text-xs font-bold transition ${template.designKey === design ? 'border-brand-gold bg-brand-gold/10 text-brand-navy dark:text-white' : 'border-gray-200 text-gray-500 dark:border-white/10'}`}>
+                                        {design === 'classic' ? (isAr ? 'كلاسيكي' : 'Classic') : design === 'royal' ? (isAr ? 'ملكي' : 'Royal') : (isAr ? 'عصري' : 'Modern')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="mb-3 text-sm font-black text-brand-navy dark:text-white">{isAr ? 'قوالب محفوظة' : 'Saved templates'}</h3>
+                            <div className="max-h-44 space-y-2 overflow-y-auto">
+                                {presets.map((preset) => (
+                                    <div key={preset.id} className="flex items-center gap-2 rounded-xl border border-gray-200 p-2 dark:border-white/10">
+                                        <button type="button" onClick={() => void applyPreset(preset)} className="min-w-0 flex-1 truncate text-left text-xs font-bold text-brand-navy dark:text-white">{preset.name}</button>
+                                        <button type="button" onClick={() => void deletePreset(preset.id)} aria-label={isAr ? 'حذف القالب' : 'Delete template'} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"><Trash2 size={14} /></button>
+                                    </div>
+                                ))}
+                                {presets.length === 0 && <p className="rounded-xl border border-dashed border-gray-300 p-4 text-center text-xs text-gray-400 dark:border-white/10">{isAr ? 'لا توجد قوالب محفوظة' : 'No saved templates'}</p>}
+                            </div>
+                            <div className="mt-3 flex gap-2">
+                                <input value={presetName} onChange={(event) => setPresetName(event.target.value)} maxLength={80} placeholder={isAr ? 'اسم قالب جديد' : 'New template name'} className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2.5 text-xs outline-none focus:border-brand-gold dark:border-white/10 dark:bg-white/5 dark:text-white" />
+                                <button type="button" onClick={() => void savePreset()} className="rounded-xl bg-brand-navy px-3 text-white dark:bg-brand-gold dark:text-brand-navy"><Save size={15} /></button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
             </section>
 
             <section className="space-y-4">

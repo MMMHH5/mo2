@@ -183,13 +183,13 @@ model User {
   updatedAt          DateTime  @updatedAt
 
   // Relations
-  coursesTaught                  Course[]                 @relation("InstructorCourses")
-  openingsTaught                 CourseOpening[]          @relation("OpeningInstructors")
-  openingInstructorGrants        OpeningInstructorGrant[] @relation("OpeningInstructor")
-  openingInstructorGrantsCreated OpeningInstructorGrant[] @relation("OpeningInstructorGrantor")
+  coursesTaught                  Course[]                        @relation("InstructorCourses")
+  openingsTaught                 CourseOpening[]                 @relation("OpeningInstructors")
+  openingInstructorGrants        OpeningInstructorGrant[]        @relation("OpeningInstructor")
+  openingInstructorGrantsCreated OpeningInstructorGrant[]        @relation("OpeningInstructorGrantor")
   enrollments                    Enrollment[]
   certificates                   Certificate[]
-  certificatesSigned             Certificate[]              @relation("CertificateInstructor")
+  certificatesSigned             Certificate[]                   @relation("CertificateInstructor")
   certificateInstructorSignature CertificateInstructorSignature?
 
   // Certificates this staff member released on paper. Named separately from
@@ -285,8 +285,8 @@ model Course {
   lifetimeAccess        Boolean @default(false)
   communityAccess       Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
   archivedAt DateTime?
 
   instructorId String
@@ -315,7 +315,7 @@ model Course {
   learningPathCourses LearningPathCourse[]
   learningSessions    LearningSession[]
   refundRequests      RefundRequest[]
-  courseInterests    CourseInterest[]
+  courseInterests     CourseInterest[]
 
   @@index([archivedAt])
 }
@@ -360,8 +360,8 @@ model CourseOpening {
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   // The instructor teaching THIS opening/batch
-  instructorId String
-  instructor   User   @relation("OpeningInstructors", fields: [instructorId], references: [id], onDelete: Restrict)
+  instructorId           String
+  instructor             User     @relation("OpeningInstructors", fields: [instructorId], references: [id], onDelete: Restrict)
   instructorSharePercent Decimal? @db.Decimal(5, 2)
 
   enrollments      Enrollment[]
@@ -380,7 +380,7 @@ model CourseOpening {
   moduleContents   OpeningModuleContent[]
   instructorGrants OpeningInstructorGrant[]
   financeExpenses  FinanceExpense[]
-  evaluations        CourseEvaluation[]
+  evaluations      CourseEvaluation[]
 
   @@index([archivedAt])
 }
@@ -478,8 +478,8 @@ model Chapter {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   openingId String?
   opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: Cascade)
 
@@ -508,8 +508,8 @@ model Module {
   files Json? // Array of { url: string; nameAr?: string; nameEn?: string }
   links Json? // Array of { url: string; labelAr?: string; labelEn?: string }
 
-  courseId String
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   openingId String?
   opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: Cascade)
 
@@ -592,14 +592,14 @@ model Enrollment {
   openingId String?
   opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: SetNull)
 
-  grades         Grade[]
-  submissions    TaskSubmission[]
-  payments       Payment[]
-  lessonProgress LessonProgress[]
+  grades           Grade[]
+  submissions      TaskSubmission[]
+  payments         Payment[]
+  lessonProgress   LessonProgress[]
   courseEvaluation CourseEvaluation?
-  lessonNotes    LessonNote[]
-  quizAttempts   QuizAttempt[]
-  attendance     SessionAttendance[]
+  lessonNotes      LessonNote[]
+  quizAttempts     QuizAttempt[]
+  attendance       SessionAttendance[]
 
   // A student can only enroll in a specific course once (or have one active record)
   @@unique([studentId, courseId])
@@ -666,7 +666,7 @@ model Certificate {
   student   User   @relation(fields: [studentId], references: [id], onDelete: Restrict)
 
   instructorId String?
-  instructor   User? @relation("CertificateInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+  instructor   User?   @relation("CertificateInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
 
   // A paper certificate leaves the system once it is printed, so the handover
   // has to be auditable: when it happened and which staff member released it.
@@ -683,17 +683,29 @@ model Certificate {
 }
 
 model CertificateTemplate {
-  id                    String   @id @default("singleton")
-  academyNameAr         String   @default("أكاديمية Laxalab")
-  academyNameEn         String   @default("Laxalab Academy")
-  titleAr               String   @default("شهادة إتمام الدورة")
-  titleEn               String   @default("Certificate of Completion")
-  descriptionAr         String   @default("بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.") @db.Text
-  descriptionEn         String   @default("Including all coursework, practical assignments, and assessments required for successful completion.") @db.Text
-  directorSignatureUrl  String?
-  academyStampUrl       String?
-  updatedAt             DateTime @updatedAt
-  updatedById           String?
+  id                   String   @id @default("singleton")
+  academyNameAr        String   @default("أكاديمية Laxalab")
+  academyNameEn        String   @default("Laxalab Academy")
+  titleAr              String   @default("شهادة إتمام الدورة")
+  titleEn              String   @default("Certificate of Completion")
+  descriptionAr        String   @default("بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.") @db.Text
+  descriptionEn        String   @default("Including all coursework, practical assignments, and assessments required for successful completion.") @db.Text
+  directorSignatureUrl String?
+  academyStampUrl      String?
+  designKey            String   @default("classic")
+  layout               Json     @default("{}")
+  updatedAt            DateTime @updatedAt
+  updatedById          String?
+}
+
+model CertificateTemplatePreset {
+  id          String   @id @default(uuid())
+  name        String
+  designKey   String   @default("classic")
+  layout      Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String?
 }
 
 model CertificateInstructorSignature {
@@ -760,12 +772,12 @@ model OperationsSetting {
 /// Which admin accounts may open the operations page.
 ///
 model HomepageSettings {
-  id            String   @id @default("singleton")
+  id            String    @id @default("singleton")
   draft         Json
   published     Json?
   updatedById   String?
   publishedById String?
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime  @updatedAt
   publishedAt   DateTime?
 }
 
@@ -1352,20 +1364,20 @@ model FinanceExpense {
 // into PROCESSING, then confirm after manually transferring the money outside
 // the system. The request keeps the payout audit trail with the payment status.
 model RefundRequest {
-  id            String       @id @default(uuid())
-  status        RefundStatus @default(PENDING)
-  amount        Decimal      @db.Decimal(10, 2)
-  currency      String       @default("SAR")
-  method        RefundMethod
-  accountName   String
-  accountNumber String
-  studentNote   String?
-  reviewerNote  String?
-  reviewedAt    DateTime?
-  completedAt   DateTime?
+  id              String       @id @default(uuid())
+  status          RefundStatus @default(PENDING)
+  amount          Decimal      @db.Decimal(10, 2)
+  currency        String       @default("SAR")
+  method          RefundMethod
+  accountName     String
+  accountNumber   String
+  studentNote     String?
+  reviewerNote    String?
+  reviewedAt      DateTime?
+  completedAt     DateTime?
   payoutReference String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   studentId String
   student   User   @relation("RefundRequests", fields: [studentId], references: [id], onDelete: Restrict)
@@ -1379,8 +1391,8 @@ model RefundRequest {
   paymentId String?  @unique
   payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
-  reviewedById String?
-  reviewedBy   User?   @relation("RefundReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedById  String?
+  reviewedBy    User?   @relation("RefundReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
   completedById String?
   completedBy   User?   @relation("RefundCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
 
@@ -1532,12 +1544,12 @@ model Quiz {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  courseId String
-  course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   openingId String?
   opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: Cascade)
-  moduleId String?
-  module   Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId  String?
+  module    Module?        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   questions QuizQuestion[]
   attempts  QuizAttempt[]

@@ -38,6 +38,30 @@ export class CertificatesController {
         return this.certificatesService.getTemplate();
     }
 
+    @ApiOperation({ summary: 'List saved certificate design presets' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
+    @Get('templates')
+    listTemplates() {
+        return this.certificatesService.listTemplatePresets();
+    }
+
+    @ApiOperation({ summary: 'Save a named certificate design preset' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
+    @Post('templates')
+    saveTemplate(@Body() body: { name?: string; designKey?: string; layout?: Record<string, unknown> }, @Request() req: any) {
+        return this.certificatesService.saveTemplatePreset(String(body.name ?? ''), String(body.designKey ?? 'classic'), body.layout ?? {}, req.user.userId);
+    }
+
+    @ApiOperation({ summary: 'Delete a saved certificate design preset' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
+    @Delete('templates/:id')
+    deleteTemplate(@Param('id') id: string, @Request() req: any) {
+        return this.certificatesService.deleteTemplatePreset(id, req.user.userId);
+    }
+
     @ApiOperation({ summary: 'Update certificate text and branding (admin / course manager)' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
     @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
