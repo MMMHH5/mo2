@@ -1,7 +1,7 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { BookOpen, Search, SlidersHorizontal, X, Sparkles, AlertTriangle, Route, Bell } from 'lucide-react';
+import { AlertTriangle, BookOpen, Sparkles, Bell, Route } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
@@ -15,7 +15,6 @@ import PaymentMethods, { type PaymentGateway } from '@/components/payment/Paymen
 import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
 import EnrollSteps from '@/components/payment/EnrollSteps';
 import LoginPromptModal from '@/components/LoginPromptModal';
-import LearningPathList from '@/components/LearningPathList';
 
 interface Opening {
     id: string;
@@ -30,7 +29,7 @@ interface BrowseLearningPath {
     descriptionAr?: string | null;
     descriptionEn?: string | null;
     showCourses?: boolean;
-    courses?: { course?: { id: string } | null }[];
+    courses?: { orderIndex?: number; course?: { id: string } | null }[];
 }
 
 type Course = PublicCourse;
@@ -43,7 +42,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const { user } = useAuth();
     const router = useRouter();
     const { data: courses, loading, error } = useFetchData<Course[]>('/public/courses');
-    const { data: learningPaths, error: learningPathsError } = useFetchData<BrowseLearningPath[]>('/learning-paths');
+    const { data: learningPaths, loading: pathsLoading, error: learningPathsError } = useFetchData<BrowseLearningPath[]>('/learning-paths');
     const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
@@ -61,57 +60,29 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const [interestValue, setInterestValue] = useState('');
     const [interestSubmitting, setInterestSubmitting] = useState(false);
 
-    const [query, setQuery] = useState('');
-    const [learningPathId, setLearningPathId] = useState('');
-    const [level, setLevel] = useState('');
-    const [contentType, setContentType] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
-
-    const levelLabel = (lvl?: string | null) => t(`course.level_${String(lvl || 'BEGINNER').toLowerCase()}`);
     const openOpening = (course: Course): Opening | undefined => course.openings?.find(o => o.status === 'OPEN');
     const announcedOpening = (course: Course): Opening | undefined => course.openings?.find(o => o.status === 'ANNOUNCEMENT');
     const currentOpening = (course: Course): Opening | undefined => openOpening(course) ?? announcedOpening(course);
 
-    const selectedPathCourseIds = useMemo(() => {
-        const path = learningPaths?.find((item) => item.id === learningPathId && item.showCourses !== false);
-        return new Set((path?.courses ?? []).map((item) => item.course?.id).filter((id): id is string => !!id));
-    }, [learningPaths, learningPathId]);
     const filterableLearningPaths = useMemo(
         () => (learningPaths ?? []).filter((path) => path.showCourses !== false),
         [learningPaths],
     );
-    const selectedLearningPath = filterableLearningPaths.find((path) => path.id === learningPathId);
-
-    const filteredCourses = useMemo(() => {
-        if (!courses) return courses;
-        const q = query.trim().toLowerCase();
-        return courses.filter((course) => {
-            if (learningPathId && !selectedPathCourseIds.has(course.id)) return false;
-            if (level && (course.level ?? 'BEGINNER') !== level) return false;
-            // Live vs pre-recorded is not a nice-to-have detail: it is the first
-            // question a student has ("when do we meet?" / "can I watch now?").
-            // A course with no type yet is left out of both buckets rather than
-            // filed under a guess.
-            if (contentType && (course.contentType ?? '') !== contentType) return false;
-            if (q) {
-                const haystack = [
-                    course.titleAr, course.titleEn,
-                    course.excerptAr, course.excerptEn,
-                    course.categoryAr, course.categoryEn,
-                ].filter(Boolean).join(' ').toLowerCase();
-                if (!haystack.includes(q)) return false;
-            }
-            return true;
-        });
-    }, [courses, query, learningPathId, selectedPathCourseIds, level, contentType]);
+    const [selectedPathId, setSelectedPathId] = useState('');
+    const selectedLearningPath = filterableLearningPaths.find((path) => path.id === selectedPathId);
     const openCourses = useMemo(
         () => (courses ?? []).filter((course) => course.openings?.some((opening) => opening.status === 'OPEN')),
         [courses],
     );
-
-    const hasFilters = !!query.trim() || !!learningPathId || !!level || !!contentType;
-
-    const clearFilters = () => { setQuery(''); setLearningPathId(''); setLevel(''); setContentType(''); };
+    const selectedPathCourses = useMemo(() => {
+        if (!selectedLearningPath || !courses) return [];
+        return [...(selectedLearningPath.courses ?? [])]
+            .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
+            .flatMap((item) => {
+                const course = courses.find((candidate) => candidate.id === item.course?.id);
+                return course ? [course] : [];
+            });
+    }, [courses, selectedLearningPath]);
 
     const handleEnrollClick = (course: Course) => {
         const opening = currentOpening(course);
@@ -243,13 +214,11 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                     {!loading && courses && (
                         <div className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-black shadow-sm shrink-0 ${isDark ? 'bg-white/5 border border-white/10 text-white' : 'bg-white border border-brand-mist text-brand-navy'}`}>
                             <BookOpen size={15} className={isDark ? 'text-brand-gold-light' : 'text-brand-gold-dark'} />
-                            {formatNumber(filteredCourses?.length ?? 0, locale)} {t('explore.count_label')}
+                            {formatNumber(openCourses.length, locale)} {t('explore.count_label')}
                         </div>
                     )}
                 </div>
             )}
-
-            <LearningPathList variant="featured" />
 
             <section aria-labelledby="open-courses-heading" className="space-y-6">
                 <div>
@@ -262,6 +231,8 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
                         {[0, 1, 2].map((item) => <div key={item} className={`h-80 animate-pulse rounded-3xl ${isDark ? 'bg-white/5' : 'bg-brand-mist/60'}`} />)}
                     </div>
+                ) : error ? (
+                    <div role="alert" className={`rounded-xl border p-4 text-sm font-semibold ${isDark ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>{error}</div>
                 ) : openCourses.length > 0 ? (
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
                         {openCourses.map((course) => (
@@ -280,135 +251,95 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                 )}
             </section>
 
-            <div>
-                <h2 className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>{t('explore.catalog_heading')}</h2>
-                <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('explore.catalog_description')}</p>
-            </div>
-
-            {/* Toolbar */}
-            <div className={`rounded-2xl border p-4 sticky top-[72px] md:top-20 z-30 backdrop-blur-md space-y-4 ${isDark ? 'bg-brand-navy-dark/90 border-white/10 shadow-lg shadow-black/20' : 'bg-white/90 border-brand-mist shadow-sm'}`}>
-                <div className="flex flex-col md:flex-row gap-3">
-                    <div className="flex-1 relative">
-                        <Search size={18} className={`absolute start-4 top-1/2 -translate-y-1/2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
-                        <input
-                            type="search"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t('explore.search_placeholder')}
-                            className={`w-full ps-12 pe-4 py-3 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-brand-gold/50 transition ${isDark ? 'bg-white/5 border border-white/10 text-white placeholder:text-gray-500' : 'bg-gray-50 border border-brand-mist text-brand-charcoal placeholder:text-gray-500'}`}
-                        />
+            {filterableLearningPaths.length > 0 && (
+                <section aria-labelledby="learning-paths-heading" className="space-y-5">
+                    <div>
+                        <h2 id="learning-paths-heading" className={`flex items-center gap-2 text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>
+                            <Route size={23} className="text-brand-gold-dark dark:text-brand-gold-light" />
+                            {locale === 'ar' ? 'تصفح الدورات حسب المسار' : 'Browse courses by learning path'}
+                        </h2>
+                        <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {locale === 'ar' ? 'اختر مسارًا لعرض الدورات المرتبطة به.' : 'Choose a path to see its courses.'}
+                        </p>
                     </div>
-                    <button
-                        onClick={() => setShowFilters((v) => !v)}
-                        className={`md:hidden inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition cursor-pointer ${isDark ? 'bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light' : 'bg-brand-navy text-white'}`}
-                    >
-                        <SlidersHorizontal size={16} /> {t('common.filter')}
-                    </button>
-                    <div className={`${showFilters ? 'flex' : 'hidden'} md:flex flex-col md:flex-row gap-3 md:w-auto w-full`}>
-                        <div className="flex-1 relative">
-                            <select value={learningPathId} onChange={(e) => setLearningPathId(e.target.value)} className={selectCls}>
-                                <option value="">{locale === 'ar' ? 'كل المسارات' : 'All learning paths'}</option>
-                                {filterableLearningPaths.map((path) => (
-                                    <option key={path.id} value={path.id}>{pick(path, 'title')}</option>
-                                ))}
-                            </select>
+                    {pathsLoading ? (
+                        <div className="flex gap-3 overflow-hidden" aria-label={locale === 'ar' ? 'جارٍ تحميل المسارات' : 'Loading learning paths'}>
+                            {[0, 1, 2].map((item) => <div key={item} className={`h-12 w-44 shrink-0 animate-pulse rounded-full ${isDark ? 'bg-white/10' : 'bg-brand-mist/70'}`} />)}
                         </div>
-                        <select value={level} onChange={(e) => setLevel(e.target.value)} className={selectCls}>
-                            <option value="">{t('explore.all_levels')}</option>
-                            {['BEGINNER', 'INTERMEDIATE', 'ADVANCED'].map((lvl) => (
-                                <option key={lvl} value={lvl}>{levelLabel(lvl)}</option>
-                            ))}
-                        </select>
-                        <select value={contentType} onChange={(e) => setContentType(e.target.value)} className={selectCls}>
-                            <option value="">{t('explore.all_types')}</option>
-                            <option value="LIVE">{t('course.content_type_live')}</option>
-                            <option value="RECORDED">{t('course.content_type_recorded')}</option>
-                        </select>
-                    </div>
-                </div>
-                {hasFilters && (
-                    <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${isDark ? 'text-white bg-brand-gold/15 ring-1 ring-brand-gold/25' : 'text-brand-navy bg-brand-gold/15'}`}>
-                            <SlidersHorizontal size={12} /> {t('common.filter')}: {formatNumber(filteredCourses?.length ?? 0, locale)}
-                        </span>
-                        <button onClick={clearFilters} className={`inline-flex items-center gap-1 text-xs font-bold transition cursor-pointer ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-brand-navy'}`}>
-                            <X size={12} /> {t('common.cancel')}
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {error && <div className={`p-4 rounded-lg font-semibold ${isDark ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-red-50 text-red-600'}`}>{error}</div>}
-            {learningPathsError && (
-                <div role="alert" className={`rounded-xl border p-4 text-sm font-semibold ${isDark ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                    {learningPathsError}
-                </div>
+                    ) : learningPathsError ? (
+                        <div role="alert" className={`rounded-xl border p-4 text-sm font-semibold ${isDark ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                            {learningPathsError}
+                        </div>
+                    ) : (
+                        <div className="flex gap-3 overflow-x-auto pb-2" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+                            {filterableLearningPaths.map((path) => {
+                                const isSelected = selectedPathId === path.id;
+                                return (
+                                    <button
+                                        key={path.id}
+                                        type="button"
+                                        aria-pressed={isSelected}
+                                        onClick={() => setSelectedPathId(isSelected ? '' : path.id)}
+                                        className={`shrink-0 rounded-full border px-5 py-3 text-sm font-bold transition ${
+                                            isSelected
+                                                ? 'border-brand-gold bg-brand-gold text-brand-navy-dark shadow-md'
+                                                : isDark
+                                                    ? 'border-white/10 bg-white/5 text-gray-200 hover:border-brand-gold/50 hover:text-brand-gold-light'
+                                                    : 'border-brand-mist bg-white text-brand-navy hover:border-brand-gold hover:text-brand-gold-dark'
+                                        }`}
+                                    >
+                                        {pick(path, 'title')}
+                                        <span className="ms-2 opacity-70">{path.courses?.length ?? 0}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
             )}
 
             {selectedLearningPath && (
-                <div className={`flex items-start gap-4 rounded-2xl border p-5 ${isDark ? 'border-brand-gold/20 bg-brand-gold/5' : 'border-brand-gold/30 bg-brand-gold/5'}`}>
-                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isDark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/20 text-brand-gold-dark'}`}>
-                        <Route size={21} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                        <h2 className={`font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>
-                            {pick(selectedLearningPath, 'title')}
-                        </h2>
-                        {pick(selectedLearningPath, 'description') && (
-                            <p className={`mt-1 text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                {pick(selectedLearningPath, 'description')}
-                            </p>
-                        )}
-                        <p className={`mt-2 text-xs font-bold ${isDark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}>
-                            {formatNumber(selectedPathCourseIds.size, locale)} {locale === 'ar' ? 'دورة في هذا المسار' : 'courses in this path'}
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {loading ? (
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-8">
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className={`rounded-3xl overflow-hidden animate-pulse ${isDark ? 'bg-brand-navy border border-white/5' : 'bg-white border border-brand-mist'}`}>
-                            <div className={`h-52 ${isDark ? 'bg-white/10' : 'bg-brand-mist/70'}`} />
-                            <div className="p-6 space-y-3">
-                                <div className={`h-4 w-1/3 rounded-full ${isDark ? 'bg-white/10' : 'bg-brand-mist'}`} />
-                                <div className={`h-6 w-3/4 rounded-full ${isDark ? 'bg-white/10' : 'bg-brand-mist'}`} />
-                                <div className={`h-4 w-full rounded-full ${isDark ? 'bg-white/5' : 'bg-brand-mist/60'}`} />
-                                <div className={`h-4 w-2/3 rounded-full ${isDark ? 'bg-white/5' : 'bg-brand-mist/60'}`} />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-                    {filteredCourses?.map((course) => (
-                        <CourseCard
-                            key={course.id}
-                            course={course}
-                            isDark={isDark}
-                            onEnroll={handleEnrollClick}
-                            onReserve={handleReserveClick}
-                            onNotify={setInterestCourse}
-                            learningPathNames={(learningPaths ?? [])
-                                .filter((path) => path.showCourses !== false && path.courses?.some((item) => item.course?.id === course.id))
-                                .map((path) => pick(path, 'title'))
-                                .filter((name): name is string => !!name)}
-                        />
-                    ))}
-
-                    {filteredCourses?.length === 0 && (
-                        <div className={`col-span-full py-20 text-center rounded-3xl border border-dashed ${isDark ? 'bg-brand-navy border-white/10 text-gray-400' : 'bg-white border-brand-mist text-gray-500 border-2 border-dashed border-brand-mist/70'}`}>
-                            <BookOpen size={48} className={`mx-auto mb-4 ${isDark ? 'text-brand-gold-light/50' : 'text-brand-gold-dark/50'}`} />
-                            <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-brand-navy'}`}>{hasFilters ? t('explore.no_results') : t('explore.no_courses')}</p>
-                            {hasFilters && (
-                                <button onClick={clearFilters} className={`mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition cursor-pointer ${isDark ? 'bg-brand-gold text-brand-navy-dark hover:bg-brand-gold-light' : 'bg-brand-navy text-white hover:bg-brand-charcoal'}`}>
-                                    <X size={15} /> {t('common.cancel')}
-                                </button>
+                <section aria-labelledby="selected-path-heading" className="space-y-5">
+                    <div className={`flex items-start gap-4 rounded-2xl border p-5 ${isDark ? 'border-brand-gold/20 bg-brand-gold/5' : 'border-brand-gold/30 bg-brand-gold/5'}`}>
+                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isDark ? 'bg-brand-gold/15 text-brand-gold-light' : 'bg-brand-gold/20 text-brand-gold-dark'}`}>
+                            <Route size={21} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <h2 id="selected-path-heading" className={`font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>{pick(selectedLearningPath, 'title')}</h2>
+                            {pick(selectedLearningPath, 'description') && (
+                                <p className={`mt-1 text-sm leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{pick(selectedLearningPath, 'description')}</p>
                             )}
+                            <p className={`mt-2 text-xs font-bold ${isDark ? 'text-brand-gold-light' : 'text-brand-gold-dark'}`}>
+                                {formatNumber(selectedPathCourses.length, locale)} {locale === 'ar' ? 'دورة في هذا المسار' : 'courses in this path'}
+                            </p>
                         </div>
+                    </div>
+                    {loading ? (
+                        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+                            {[0, 1, 2].map((item) => <div key={item} className={`h-80 animate-pulse rounded-3xl ${isDark ? 'bg-white/5' : 'bg-brand-mist/60'}`} />)}
+                        </div>
+                    ) : error ? (
+                        <div role="alert" className={`rounded-xl border p-4 text-sm font-semibold ${isDark ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>{error}</div>
+                    ) : selectedPathCourses.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+                            {selectedPathCourses.map((course) => (
+                                <CourseCard
+                                    key={`path-${selectedLearningPath.id}-${course.id}`}
+                                    course={course}
+                                    isDark={isDark}
+                                    onEnroll={handleEnrollClick}
+                                    onReserve={handleReserveClick}
+                                    onNotify={setInterestCourse}
+                                    learningPathNames={[pick(selectedLearningPath, 'title')].filter((name): name is string => !!name)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className={`rounded-2xl border border-dashed p-6 text-center font-semibold ${isDark ? 'border-white/10 text-gray-400' : 'border-brand-mist text-gray-500'}`}>
+                            {locale === 'ar' ? 'لا توجد دورات منشورة في هذا المسار حاليًا.' : 'There are no published courses in this path yet.'}
+                        </p>
                     )}
-                </div>
+                </section>
             )}
 
             {/* Login Prompt Modal (guests only) */}
