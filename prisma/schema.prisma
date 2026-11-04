@@ -31,6 +31,11 @@ enum CourseOpeningStatus {
   ENDED
 }
 
+enum CourseInterestStatus {
+  PENDING
+  CONTACTED
+}
+
 enum CertificateStatus {
   VALID
   REVOKED
@@ -310,6 +315,7 @@ model Course {
   learningPathCourses LearningPathCourse[]
   learningSessions    LearningSession[]
   refundRequests      RefundRequest[]
+  courseInterests    CourseInterest[]
 
   @@index([archivedAt])
 }
@@ -521,6 +527,22 @@ model Module {
   openingContents  OpeningModuleContent[]
 
   @@index([openingId])
+}
+
+model CourseInterest {
+  id            String               @id @default(uuid())
+  contactMethod ContactMethod
+  contactValue  String
+  status        CourseInterestStatus @default(PENDING)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, contactMethod, contactValue])
+  @@index([status, createdAt])
+  @@index([courseId, createdAt])
 }
 
 model OpeningModuleContent {

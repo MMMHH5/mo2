@@ -68,7 +68,7 @@ export default function Home() {
     const pool = activePathId
       ? (homeCourses ?? []).filter(course => activePathCourseIds.has(course.id))
       : (homeCourses ?? []);
-    return pool.slice(0, 3);
+    return pool.filter((course) => course.openings?.some((opening) => opening.status === 'OPEN')).slice(0, 3);
   }, [homeCourses, activePathId, activePathCourseIds]);
 
   const aboutValues = [

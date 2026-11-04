@@ -1,7 +1,7 @@
 "use client";
 
 import { useFetchData } from '@/lib/useFetchData';
-import { BookOpen, Search, SlidersHorizontal, X, Sparkles, AlertTriangle, Route } from 'lucide-react';
+import { BookOpen, Search, SlidersHorizontal, X, Sparkles, AlertTriangle, Route, Bell } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
@@ -56,6 +56,10 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const [couponCode, setCouponCode] = useState('');
     const [coupon, setCoupon] = useState<{ name: string; amountOff: number; finalAmount: number } | null>(null);
     const [couponChecking, setCouponChecking] = useState(false);
+    const [interestCourse, setInterestCourse] = useState<Course | null>(null);
+    const [interestMethod, setInterestMethod] = useState<'EMAIL' | 'PHONE'>('EMAIL');
+    const [interestValue, setInterestValue] = useState('');
+    const [interestSubmitting, setInterestSubmitting] = useState(false);
 
     const [query, setQuery] = useState('');
     const [learningPathId, setLearningPathId] = useState('');
@@ -100,6 +104,10 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             return true;
         });
     }, [courses, query, learningPathId, selectedPathCourseIds, level, contentType]);
+    const openCourses = useMemo(
+        () => (courses ?? []).filter((course) => course.openings?.some((opening) => opening.status === 'OPEN')),
+        [courses],
+    );
 
     const hasFilters = !!query.trim() || !!learningPathId || !!level || !!contentType;
 
@@ -132,6 +140,25 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             router.push('/dashboard/my-courses');
         } catch (err) {
             toast.error(getErrorMessage(err) || t('courseDetail.reserve_failed'));
+        }
+    };
+
+    const handleInterestSubmit = async () => {
+        if (!interestCourse || !interestValue.trim()) return;
+        setInterestSubmitting(true);
+        try {
+            await api.post('/public/course-interests', {
+                courseId: interestCourse.id,
+                contactMethod: interestMethod,
+                contactValue: interestValue.trim(),
+            });
+            toast.success(t('explore.notify_success'));
+            setInterestCourse(null);
+            setInterestValue('');
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('explore.notify_failed'));
+        } finally {
+            setInterestSubmitting(false);
         }
     };
 
@@ -223,6 +250,40 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             )}
 
             <LearningPathList variant="featured" />
+
+            <section aria-labelledby="open-courses-heading" className="space-y-6">
+                <div>
+                    <h2 id="open-courses-heading" className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>
+                        {t('explore.open_now_heading')}
+                    </h2>
+                    <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('explore.open_now_description')}</p>
+                </div>
+                {loading ? (
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+                        {[0, 1, 2].map((item) => <div key={item} className={`h-80 animate-pulse rounded-3xl ${isDark ? 'bg-white/5' : 'bg-brand-mist/60'}`} />)}
+                    </div>
+                ) : openCourses.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+                        {openCourses.map((course) => (
+                            <CourseCard
+                                key={`open-${course.id}`}
+                                course={course}
+                                isDark={isDark}
+                                onEnroll={handleEnrollClick}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <p className={`rounded-2xl border border-dashed p-6 text-center font-semibold ${isDark ? 'border-white/10 text-gray-400' : 'border-brand-mist text-gray-500'}`}>
+                        {t('explore.no_open_courses')}
+                    </p>
+                )}
+            </section>
+
+            <div>
+                <h2 className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>{t('explore.catalog_heading')}</h2>
+                <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('explore.catalog_description')}</p>
+            </div>
 
             {/* Toolbar */}
             <div className={`rounded-2xl border p-4 sticky top-[72px] md:top-20 z-30 backdrop-blur-md space-y-4 ${isDark ? 'bg-brand-navy-dark/90 border-white/10 shadow-lg shadow-black/20' : 'bg-white/90 border-brand-mist shadow-sm'}`}>
@@ -328,6 +389,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                             isDark={isDark}
                             onEnroll={handleEnrollClick}
                             onReserve={handleReserveClick}
+                            onNotify={setInterestCourse}
                             learningPathNames={(learningPaths ?? [])
                                 .filter((path) => path.showCourses !== false && path.courses?.some((item) => item.course?.id === course.id))
                                 .map((path) => pick(path, 'title'))
@@ -355,6 +417,56 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                 onClose={() => setShowLoginPrompt(false)}
                 redirectTo={pendingCourse ? `/courses/${pendingCourse.id}` : undefined}
             />
+
+            {interestCourse && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-charcoal/60 p-4 backdrop-blur-sm">
+                    <form
+                        onSubmit={(event) => { event.preventDefault(); void handleInterestSubmit(); }}
+                        className={`w-full max-w-md space-y-5 rounded-3xl p-6 shadow-2xl ${isDark ? 'border border-white/10 bg-brand-navy' : 'bg-white'}`}
+                    >
+                        <div className="flex items-start gap-3">
+                            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-gold/15 text-brand-gold-dark dark:text-brand-gold-light"><Bell size={20} /></span>
+                            <div>
+                                <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>{t('explore.notify_title')}</h2>
+                                <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{pick(interestCourse, 'title')}</p>
+                            </div>
+                        </div>
+                        <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{t('explore.notify_description')}</p>
+                        <label className="block space-y-2">
+                            <span className={`text-sm font-bold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{t('explore.notify_contact_method')}</span>
+                            <select
+                                value={interestMethod}
+                                onChange={(event) => setInterestMethod(event.target.value as 'EMAIL' | 'PHONE')}
+                                className={selectCls}
+                            >
+                                <option value="EMAIL">{t('explore.notify_email')}</option>
+                                <option value="PHONE">{t('explore.notify_phone')}</option>
+                            </select>
+                        </label>
+                        <label className="block space-y-2">
+                            <span className={`text-sm font-bold ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{interestMethod === 'EMAIL' ? t('explore.notify_email') : t('explore.notify_phone')}</span>
+                            <input
+                                required
+                                type={interestMethod === 'EMAIL' ? 'email' : 'tel'}
+                                autoComplete={interestMethod === 'EMAIL' ? 'email' : 'tel'}
+                                value={interestValue}
+                                onChange={(event) => setInterestValue(event.target.value)}
+                                dir="ltr"
+                                className={selectCls}
+                                placeholder={interestMethod === 'EMAIL' ? 'name@example.com' : '+967...'}
+                            />
+                        </label>
+                        <div className="flex justify-end gap-3">
+                            <button type="button" onClick={() => setInterestCourse(null)} className={`rounded-xl px-4 py-2.5 text-sm font-bold ${isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-brand-navy'}`}>
+                                {t('common.cancel')}
+                            </button>
+                            <button type="submit" disabled={interestSubmitting || !interestValue.trim()} className="inline-flex items-center gap-2 rounded-xl bg-brand-gold px-4 py-2.5 text-sm font-black text-brand-navy-dark disabled:opacity-50">
+                                <Bell size={15} /> {interestSubmitting ? t('common.processing') : t('explore.notify_me')}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {/* Enrollment Modal with Receipt Upload */}
             {selectedCourse && (

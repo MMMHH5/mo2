@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
     BookOpen,
+    Bell,
     CheckCircle2,
     ChevronDown,
     Clock,
@@ -76,6 +77,7 @@ interface CourseCardProps {
     /** Omit to render a single "view details" call to action. */
     onEnroll?: (course: PublicCourse) => void;
     onReserve?: (course: PublicCourse) => void;
+    onNotify?: (course: PublicCourse) => void;
     /** The home page renders fewer, taller cards. */
     variant?: 'default' | 'featured';
     className?: string;
@@ -90,6 +92,7 @@ export default function CourseCard({
     isDark = false,
     onEnroll,
     onReserve,
+    onNotify,
     variant = 'default',
     className = '',
     learningPathNames = [],
@@ -105,6 +108,7 @@ export default function CourseCard({
     const current = openOpening ?? announcedOpening;
     const isOpen = !!openOpening;
     const announced = !isOpen && !!announcedOpening;
+    const closed = !isOpen && !announced && (course.openings?.length ?? 0) > 0;
 
     const levelLabel = t(`course.level_${String(course.level || 'BEGINNER').toLowerCase()}`);
     // A course created before the content type existed has none, so the badge is
@@ -134,7 +138,7 @@ export default function CourseCard({
         : 0;
 
     const count = (key: string, n: number) => t(key).replace('{n}', formatNumber(n, locale));
-    const hasSecondCta = isOpen ? !!onEnroll : announced ? !!onReserve : false;
+    const hasSecondCta = isOpen ? !!onEnroll : announced ? !!onReserve : closed && !!onNotify;
 
     return (
         <article
@@ -185,6 +189,11 @@ export default function CourseCard({
                     {announced && (
                         <span className="flex items-center gap-1 rounded-full bg-brand-gold px-3 py-1 text-xs font-black text-ink-on-gold shadow-sm">
                             <Sparkles size={12} /> {t('explore.announced_pill')}
+                        </span>
+                    )}
+                    {closed && (
+                        <span className="flex items-center gap-1 rounded-full bg-gray-600 px-3 py-1 text-xs font-black text-white shadow-sm">
+                            <Lock size={12} /> {t('explore.closed_pill')}
                         </span>
                     )}
                 </div>
@@ -373,7 +382,20 @@ export default function CourseCard({
                             <Unlock size={16} /> {t('courseDetail.reserve_seat')}
                         </button>
                     )}
-                    {!isOpen && !announced && (
+                    {closed && onNotify && (
+                        <button
+                            type="button"
+                            onClick={() => onNotify(course)}
+                            className={`flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all cursor-pointer ${
+                                isDark
+                                    ? 'border border-line text-ink hover:border-brand-gold/40 hover:bg-ink/[0.04]'
+                                    : 'border-2 border-brand-mist text-ink hover:border-brand-navy hover:bg-surface'
+                            }`}
+                        >
+                            <Bell size={16} /> {t('explore.notify_me')}
+                        </button>
+                    )}
+                    {!isOpen && !announced && !onNotify && (
                         <span className={`rounded-xl py-3.5 text-center text-sm font-bold ${isDark ? 'bg-ink/[0.04] text-ink-muted' : 'bg-surface-sunken text-ink-subtle'}`}>
                             {t('courseDetail.not_open_yet')}
                         </span>

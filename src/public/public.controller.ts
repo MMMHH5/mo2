@@ -40,7 +40,16 @@ export class PublicController {
     async stats() {
         const [courses, instructors, enrollments, certificates] = await Promise.all([
             this.prisma.course.count({
-                where: { openings: { some: { isPublished: true, status: { in: ['OPEN', 'ANNOUNCEMENT'] } } } },
+                where: {
+                    archivedAt: null,
+                    openings: {
+                        some: {
+                            archivedAt: null,
+                            isPublished: true,
+                            status: { in: ['OPEN', 'ANNOUNCEMENT', 'STARTED', 'ENDED'] },
+                        },
+                    },
+                },
             }),
             this.prisma.user.count({ where: publicInstructorWhere(true) }),
             this.prisma.enrollment.count({ where: { status: 'APPROVED' } }),
@@ -138,15 +147,17 @@ export class PublicController {
         };
     }
 
-    @ApiOperation({ summary: 'Public browseable courses (only OPEN or ANNOUNCEMENT openings)' })
+    @ApiOperation({ summary: 'Public catalogue of courses with at least one published opening' })
     @Get('courses')
     async courses() {
         const courses = await this.prisma.course.findMany({
             where: {
+                archivedAt: null,
                 openings: {
                     some: {
+                        archivedAt: null,
                         isPublished: true,
-                        status: { in: ['OPEN', 'ANNOUNCEMENT'] as any },
+                        status: { in: ['OPEN', 'ANNOUNCEMENT', 'STARTED', 'ENDED'] },
                     },
                 },
             },
@@ -154,7 +165,11 @@ export class PublicController {
             include: {
                 instructor: { select: publicInstructorSelect },
                 openings: {
-                    where: { isPublished: true },
+                    where: {
+                        archivedAt: null,
+                        isPublished: true,
+                        status: { in: ['OPEN', 'ANNOUNCEMENT', 'STARTED', 'ENDED'] },
+                    },
                     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
                     select: {
                         id: true,

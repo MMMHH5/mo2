@@ -22,6 +22,7 @@ import {
     Megaphone,
     Star,
     PanelTop,
+    BellRing,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -140,6 +141,7 @@ export function buildAdminNavLinks(t: (key: string) => string): NavLink[] {
         { name: t('admin.nav_overview'), href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
         { name: t('admin.nav_homepage'), href: '/dashboard/admin/homepage', icon: PanelTop, roles: ['ADMIN'] },
         { name: t('admin.nav_courses'), href: '/dashboard/admin/courses', icon: BookOpen, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_course_interests'), href: '/dashboard/admin/course-interests', icon: BellRing, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_learning_paths'), href: '/dashboard/admin/learning-paths', icon: Route, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_openings'), href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_ended'), href: '/dashboard/admin/ended', icon: Flag, roles: ['ADMIN', 'COURSE_MANAGER'] },
