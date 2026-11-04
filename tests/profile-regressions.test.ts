@@ -85,7 +85,7 @@ describe('certificate holder identity', () => {
                 }),
             },
             enrollment: {
-                findMany: () => Promise.resolve([{ studentId: 'student-1' }]),
+                findMany: () => Promise.resolve([{ studentId: 'student-1', courseEvaluation: { id: 'evaluation-1' } }]),
             },
             certificate: {
                 findFirst: () => Promise.resolve(null),
@@ -182,6 +182,12 @@ describe('certificate holder identity', () => {
 
     test('the owner view still returns the identity it always did, plus the name', async () => {
         const prisma = {
+            enrollment: {
+                findUnique: () => Promise.resolve({
+                    status: 'APPROVED',
+                    courseEvaluation: { id: 'evaluation-1' },
+                }),
+            },
             certificate: {
                 findUnique: () =>
                     Promise.resolve({

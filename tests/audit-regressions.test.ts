@@ -75,6 +75,13 @@ function makePrismaStub(opts: {
             },
         },
         enrollment: {
+            findUnique: (args: any) => {
+                calls.push({ model: 'enrollment.findUnique', args });
+                return Promise.resolve({
+                    status: 'APPROVED',
+                    courseEvaluation: { id: 'evaluation-1' },
+                });
+            },
             findMany: (args: any) => {
                 calls.push({ model: 'enrollment.findMany', args });
                 return Promise.resolve(enrolled.map((courseId) => ({ courseId })));

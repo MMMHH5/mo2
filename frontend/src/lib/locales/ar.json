@@ -271,6 +271,7 @@
         "certificates": "الشهادات",
         "create_course": "إنشاء دورة",
         "manage_courses": "إدارة الدورات",
+        "course_evaluations": "تقييمات نهاية الدورات",
         "openings": "إدارة الفتحات",
         "instructors_hr": "المدرسون / الموارد البشرية",
         "finance": "المالية",
@@ -1373,7 +1374,8 @@
         "quick_desc_gateways": "اضبط طرق الدفع",
         "health_check_title": "صحة الخدمات",
         "health_check_subtitle": "الحالة الفورية لخدمات المنصة الأساسية.",
-        "nav_ended": "الدورات المنتهية"
+        "nav_ended": "الدورات المنتهية",
+        "nav_evaluations": "تقييمات نهاية الدورات"
     },
     "certStatus": {
         "valid": "سارية",

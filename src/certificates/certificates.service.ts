@@ -183,7 +183,8 @@ export class CertificatesService {
 
     /**
      * Compose the exact set of students that MAY receive a certificate for an
-     * opening: those with an APPROVED enrollment on that specific batch.
+     * opening: those with an APPROVED enrollment and a submitted final
+     * evaluation for that specific batch.
      */
     async listCandidates(openingId: string) {
         const opening = await this.prisma.courseOpening.findUnique({
@@ -195,7 +196,7 @@ export class CertificatesService {
         if (!opening) throw new NotFoundException('Opening not found');
 
         const enrollments = await this.prisma.enrollment.findMany({
-            where: { openingId, status: 'APPROVED' },
+            where: { openingId, status: 'APPROVED', courseEvaluation: { isNot: null } },
             select: {
                 studentId: true,
                 student: { select: { email: true } },
@@ -248,10 +249,19 @@ export class CertificatesService {
         }
 
         const enrollments = await this.prisma.enrollment.findMany({
-            where: { openingId, status: 'APPROVED', studentId: { in: studentIds } },
+            where: {
+                openingId,
+                status: 'APPROVED',
+                studentId: { in: studentIds },
+                courseEvaluation: { isNot: null },
+            },
             select: { studentId: true },
         });
         const eligible = new Set(enrollments.map(e => e.studentId));
+        const selected = new Set(studentIds);
+        if ([...selected].some((studentId) => !eligible.has(studentId))) {
+            throw new BadRequestException('Every selected student must complete the course evaluation before certificate issuance');
+        }
 
         const issued: string[] = [];
         for (const studentId of new Set(studentIds)) {
@@ -375,6 +385,9 @@ export class CertificatesService {
         // their own from the dashboard, so ownership is honoured here rather
         // than by a blanket role restriction on the route.
         const isOwner = certificate.studentId === actor.userId;
+        if (isOwner && actor.role === Role.STUDENT && certificate.courseId) {
+            await this.assertStudentEvaluationSubmitted(actor.userId, certificate.courseId);
+        }
         if (!isOwner) {
             // A certificate with no course cannot be matched to a teaching
             // assignment, so only platform staff may release it.
@@ -492,8 +505,18 @@ export class CertificatesService {
      * (listForCourse), where the reader is a COURSE_MANAGER / ADMIN.
      */
     async listMine(studentId: string) {
+        const evaluated = await this.prisma.enrollment.findMany({
+            where: { studentId, courseEvaluation: { isNot: null } },
+            select: { courseId: true },
+        });
         return this.prisma.certificate.findMany({
-            where: { studentId },
+            where: {
+                studentId,
+                OR: [
+                    { courseId: null },
+                    { courseId: { in: evaluated.map((enrollment) => enrollment.courseId) } },
+                ],
+            },
             select: {
                 id: true,
                 verificationCode: true,
@@ -518,6 +541,7 @@ export class CertificatesService {
             },
         });
         if (!cert) throw new NotFoundException('Certificate not found for this course');
+        await this.assertStudentEvaluationSubmitted(studentId, courseId);
         return cert;
     }
 
@@ -539,6 +563,9 @@ export class CertificatesService {
         if (role !== Role.ADMIN && cert.studentId !== studentId) {
             throw new ForbiddenException('You are not allowed to view this certificate');
         }
+        if (role === Role.STUDENT && cert.courseId) {
+            await this.assertStudentEvaluationSubmitted(studentId, cert.courseId);
+        }
         const { student, ...rest } = cert;
         return {
             ...rest,
@@ -546,6 +573,16 @@ export class CertificatesService {
             student: student ? { id: student.id, email: student.email } : null,
             holderName: this.displayName(student, true),
         };
+    }
+
+    private async assertStudentEvaluationSubmitted(studentId: string, courseId: string) {
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { studentId_courseId: { studentId, courseId } },
+            select: { status: true, courseEvaluation: { select: { id: true } } },
+        });
+        if (enrollment?.status !== 'APPROVED' || !enrollment.courseEvaluation) {
+            throw new ForbiddenException('Submit the required course evaluation before accessing your certificate');
+        }
     }
 
     async verifyByCode(code: string) {

@@ -11,13 +11,14 @@ import {
     PlayCircle, FileText, ClipboardList, Link2, Clock, CheckCircle, Play, Pause,
     RotateCcw, Volume2, VolumeX, Maximize, ZoomIn, ZoomOut, Maximize2, Download,
     UploadCloud, StickyNote, MessagesSquare, Send, X, BookMarked, MessageCircle, ArrowRight,
-    Bell, Megaphone, Calendar, User, AlertTriangle, Video, CalendarDays, Radio,
+    Bell, Megaphone, Calendar, User, AlertTriangle, Video, CalendarDays, Radio, Star,
 } from 'lucide-react';
 import CourseChat from '@/components/CourseChat';
 import DiscussionForum from '@/components/DiscussionForum';
 import InteractiveQuiz from '@/components/InteractiveQuiz';
 import StudentSessionList, { StudentLiveSession } from '@/components/StudentSessionList';
 import StudentAttendanceHistory from '@/components/StudentAttendanceHistory';
+import CourseEvaluationForm, { type MyCourseEvaluation } from '@/components/CourseEvaluationForm';
 
 // ---------- Types ----------
 
@@ -76,6 +77,10 @@ interface ProgressData {
     meetLink?: string | null;
     /** The batch's meeting schedule; gated on the same rule as meetLink. */
     liveSessions?: StudentLiveSession[];
+}
+interface EvaluationStatus extends MyCourseEvaluation {
+    courseId: string;
+    openingId: string | null;
 }
 interface NoteRow {
     moduleId: string;
@@ -185,6 +190,7 @@ export default function CoursePlayer({ courseId }: Props) {
 
     const [course, setCourse] = useState<CourseData | null>(null);
     const [progress, setProgress] = useState<ProgressData | null>(null);
+    const [evaluation, setEvaluation] = useState<EvaluationStatus | null>(null);
     const [notesData, setNotesData] = useState<NotesData | null>(null);
     const [tasks, setTasks] = useState<LessonTask[]>([]);
     const [loading, setLoading] = useState(true);
@@ -228,10 +234,11 @@ export default function CoursePlayer({ courseId }: Props) {
             setLoading(true);
             setLoadError(null);
             try {
-                const [c, p, n] = await Promise.all([
+                const [c, p, n, e] = await Promise.all([
                     api.get(`/courses/${courseId}`),
                     api.get(`/lms/courses/${courseId}/my-progress`),
                     api.get(`/lms/courses/${courseId}/my-notes`),
+                    api.get(`/course-evaluations/my/${courseId}`),
                 ]);
                 if (!active) return;
                 const baseCourse = c.data as CourseData;
@@ -251,6 +258,7 @@ export default function CoursePlayer({ courseId }: Props) {
                         : [],
                 });
                 setProgress(incoming as ProgressData);
+                setEvaluation(e.data as EvaluationStatus);
                 // A live course opens on its schedule: the meeting times are what
                 // the student came for, and the lesson list below has no video.
                 if (incoming && (incoming.contentType ?? 'LIVE') !== 'RECORDED' && (incoming.liveSessions?.length ?? 0) > 0) {
@@ -419,6 +427,14 @@ export default function CoursePlayer({ courseId }: Props) {
             } else {
                 const p = await api.post('/lms/progress', { enrollmentId: progress.enrollmentId, moduleId: selected.id });
                 setProgress(p.data as ProgressData);
+                if (p.data?.total > 0 && p.data?.completed >= p.data?.total) {
+                    try {
+                        const evaluationStatus = await api.get(`/course-evaluations/my/${courseId}`);
+                        setEvaluation(evaluationStatus.data as EvaluationStatus);
+                    } catch (error) {
+                        toast.error(getErrorMessage(error) || (isAr ? 'اكتملت الدروس، لكن تعذر تحميل نموذج التقييم.' : 'Lessons are complete, but the evaluation form could not be loaded.'));
+                    }
+                }
             }
         } catch (e) {
             toast.error(getErrorMessage(e) || t('player.mark_failed'));
@@ -467,7 +483,11 @@ export default function CoursePlayer({ courseId }: Props) {
         }
     };
 
-    const isCourseComplete = progress?.percent === 100 && progress.total > 0;
+    const lessonsComplete = Boolean(progress && progress.total > 0 && progress.completed >= progress.total);
+    const isCourseComplete = lessonsComplete && evaluation?.submitted === true;
+    const needsCourseEvaluation = lessonsComplete && evaluation?.canSubmit === true && !evaluation.submitted;
+    const hasPendingFinalWork = lessonsComplete && !evaluation?.submitted &&
+        ((evaluation?.pendingTasks ?? 0) > 0 || (evaluation?.failedQuizzes ?? 0) > 0);
 
     // ---------- Sub renders ----------
 
@@ -902,6 +922,11 @@ export default function CoursePlayer({ courseId }: Props) {
                                 <Award size={12} /> {t('player.completion_badge')}
                             </span>
                         )}
+                        {needsCourseEvaluation && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-1 text-[10px] font-black text-amber-700 dark:text-amber-300">
+                                <Star size={12} /> {isAr ? 'أرسل تقييمك لإتمام الدورة' : 'Evaluation required to finish'}
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -1072,6 +1097,19 @@ export default function CoursePlayer({ courseId }: Props) {
                     <motion.div layout className="space-y-4 min-h-[300px]">
                         {renderStage()}
                         {renderDeck()}
+                        {needsCourseEvaluation && (
+                            <CourseEvaluationForm
+                                courseId={courseId}
+                                onSubmitted={(status) => setEvaluation((current) => current ? { ...current, ...status } : null)}
+                            />
+                        )}
+                        {hasPendingFinalWork && (
+                            <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4 text-sm font-bold text-amber-800 dark:text-amber-200">
+                                {isAr
+                                    ? `أكمل الأعمال المطلوبة قبل التقييم: ${evaluation?.pendingTasks ?? 0} واجب و${evaluation?.failedQuizzes ?? 0} اختبار.`
+                                    : `Complete the required work before evaluating: ${evaluation?.pendingTasks ?? 0} assignment(s) and ${evaluation?.failedQuizzes ?? 0} quiz(es).`}
+                            </div>
+                        )}
                     </motion.div>
                 </main>
             </div>

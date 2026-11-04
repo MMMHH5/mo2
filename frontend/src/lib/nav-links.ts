@@ -20,6 +20,7 @@ import {
     Route,
     Flag,
     Megaphone,
+    Star,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -119,6 +120,7 @@ export function buildNavLinks(t: (key: string) => string): NavLink[] {
         { name: t('sidebar.support'), href: '/dashboard/support', icon: LifeBuoy, roles: ['STUDENT', 'INSTRUCTOR', 'COURSE_MANAGER', 'FINANCE', 'ADMIN'] },
         { name: t('sidebar.manage_courses'), href: '/dashboard/admin/courses', icon: BookOpen, roles: ['COURSE_MANAGER', 'ADMIN'] },
         { name: t('sidebar.openings'), href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['COURSE_MANAGER', 'ADMIN'] },
+        { name: t('sidebar.course_evaluations'), href: '/dashboard/admin/evaluations', icon: Star, roles: ['COURSE_MANAGER', 'ADMIN'] },
         { name: t('sidebar.teach_hub'), href: '/dashboard/teaching', icon: GraduationCap, roles: ['INSTRUCTOR'] },
         // The public CV used to be reachable only through the generic profile
         // edit modal, so nobody found it and every instructor stayed
@@ -139,6 +141,7 @@ export function buildAdminNavLinks(t: (key: string) => string): NavLink[] {
         { name: t('admin.nav_learning_paths'), href: '/dashboard/admin/learning-paths', icon: Route, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_openings'), href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_ended'), href: '/dashboard/admin/ended', icon: Flag, roles: ['ADMIN', 'COURSE_MANAGER'] },
+        { name: t('admin.nav_evaluations'), href: '/dashboard/admin/evaluations', icon: Star, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_certificates'), href: '/dashboard/admin/certificates', icon: Award, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_users'), href: '/dashboard/admin/users', icon: Users, roles: ['ADMIN'] },
         { name: t('admin.nav_students'), href: '/dashboard/admin/users/students', icon: Users, roles: ['ADMIN'] },

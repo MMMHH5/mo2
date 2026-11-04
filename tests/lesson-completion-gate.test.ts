@@ -23,6 +23,7 @@ function makeHarness(h: {
     enrolled?: boolean;
     contentType?: string;
     progress?: { moduleId: string; completedAt: Date | null }[];
+    evaluation?: { id: string } | null;
 }) {
     const calls: Rec[] = [];
     const awarded: string[] = [];
@@ -91,6 +92,12 @@ function makeHarness(h: {
             deleteMany: async (args: any) => {
                 calls.push({ model: 'lessonProgress', op: 'deleteMany', args });
                 return { count: 1 };
+            },
+        },
+        courseEvaluation: {
+            findUnique: async (args: any) => {
+                calls.push({ model: 'courseEvaluation', op: 'findUnique', args });
+                return h.evaluation ?? null;
             },
         },
     };
@@ -283,33 +290,42 @@ describe('completion points are awarded once per transition', () => {
         assert.deepEqual(h.awarded, []);
     });
 
-    test('course_complete is paid only on the transition into 100%', async () => {
+    test('course_complete waits until the final evaluation is submitted', async () => {
         const h = makeHarness({ modules: [mod1, mod2], tasks: [], quizzes: [] });
 
         await h.service.markComplete('enr-1', 'mod-1', 'stu-1');
         assert.deepEqual(h.awarded, ['lesson_complete'], 'partial progress must not pay course_complete');
 
         await h.service.markComplete('enr-1', 'mod-2', 'stu-1');
-        assert.deepEqual(h.awarded, ['lesson_complete', 'lesson_complete', 'course_complete']);
+        assert.deepEqual(h.awarded, ['lesson_complete', 'lesson_complete']);
 
         // Anything further now sits at 100% and must be silent.
         await h.service.markComplete('enr-1', 'mod-1', 'stu-1');
         await h.service.markComplete('enr-1', 'mod-2', 'stu-1');
         assert.deepEqual(
             h.awarded,
-            ['lesson_complete', 'lesson_complete', 'course_complete'],
-            'a finished course must not pay course_complete again',
+            ['lesson_complete', 'lesson_complete'],
+            'course completion points are deferred until the required evaluation',
         );
     });
 
-    test('the last module of a single-lesson course pays both, exactly once', async () => {
+    test('the last module of a single-lesson course defers course points', async () => {
         const h = makeHarness({ modules: [module1], tasks: [], quizzes: [] });
 
         await h.service.markComplete('enr-1', 'mod-1', 'stu-1');
-        assert.deepEqual(h.awarded, ['lesson_complete', 'course_complete']);
+        assert.deepEqual(h.awarded, ['lesson_complete']);
 
         await h.service.markComplete('enr-1', 'mod-1', 'stu-1');
-        assert.deepEqual(h.awarded, ['lesson_complete', 'course_complete']);
+        assert.deepEqual(h.awarded, ['lesson_complete']);
+    });
+
+    test('the final evaluation makes lesson progress immutable', async () => {
+        const h = makeHarness({ modules: [module1], tasks: [], quizzes: [], evaluation: { id: 'evaluation-1' } });
+        await assert.rejects(
+            () => h.service.markIncomplete('enr-1', 'mod-1', 'stu-1'),
+            /cannot be changed after submitting the final evaluation/,
+        );
+        assert.equal(h.calls.some((call) => call.model === 'lessonProgress' && call.op === 'deleteMany'), false);
     });
 
     test('a refused completion pays nothing at all', async () => {

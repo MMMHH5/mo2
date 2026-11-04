@@ -271,6 +271,7 @@
         "certificates": "Certificates",
         "create_course": "Create Course",
         "manage_courses": "Manage Courses",
+        "course_evaluations": "Course Evaluations",
         "openings": "Openings",
         "instructors_hr": "Instructors / HR",
         "finance": "Finance",
@@ -1373,7 +1374,8 @@
         "quick_desc_gateways": "Configure payment methods",
         "health_check_title": "Service Health",
         "health_check_subtitle": "Real-time status of core platform services.",
-        "nav_ended": "Ended Courses"
+        "nav_ended": "Ended Courses",
+        "nav_evaluations": "Course Evaluations"
     },
     "certStatus": {
         "valid": "Valid",

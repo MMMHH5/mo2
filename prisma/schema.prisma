@@ -223,6 +223,7 @@ model User {
   discussionReplies         DiscussionReply[]
   instructorRatingsReceived InstructorRating[]         @relation("InstructorRatingReceived")
   instructorRatingsGiven    InstructorRating[]         @relation("InstructorRatingGiven")
+  courseEvaluationsReceived CourseEvaluation[]         @relation("CourseEvaluationInstructor")
   points                    UserPoints?
   pointLogs                 PointLog[]
   learningPathsCreated      LearningPath[]
@@ -305,6 +306,7 @@ model Course {
   quizzes             Quiz[]
   directChats         DirectChat[]
   instructorRatings   InstructorRating[]
+  evaluations         CourseEvaluation[]
   learningPathCourses LearningPathCourse[]
   learningSessions    LearningSession[]
   refundRequests      RefundRequest[]
@@ -372,6 +374,7 @@ model CourseOpening {
   moduleContents   OpeningModuleContent[]
   instructorGrants OpeningInstructorGrant[]
   financeExpenses  FinanceExpense[]
+  evaluations        CourseEvaluation[]
 
   @@index([archivedAt])
 }
@@ -571,6 +574,7 @@ model Enrollment {
   submissions    TaskSubmission[]
   payments       Payment[]
   lessonProgress LessonProgress[]
+  courseEvaluation CourseEvaluation?
   lessonNotes    LessonNote[]
   quizAttempts   QuizAttempt[]
   attendance     SessionAttendance[]
@@ -1662,6 +1666,31 @@ model InstructorRating {
 
   @@unique([courseId, userId])
   @@index([instructorId])
+}
+
+model CourseEvaluation {
+  id               String   @id @default(uuid())
+  courseRating     Int
+  instructorRating Int
+  commentAr        String?  @db.Text
+  commentEn        String?  @db.Text
+  createdAt        DateTime @default(now())
+
+  enrollmentId String     @unique
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  openingId String?
+  opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: SetNull)
+
+  instructorId String
+  instructor   User   @relation("CourseEvaluationInstructor", fields: [instructorId], references: [id], onDelete: Restrict)
+
+  @@index([openingId, createdAt])
+  @@index([courseId, createdAt])
+  @@index([instructorId, createdAt])
 }
 
 // ===== Gamification =====

@@ -484,7 +484,13 @@ export class LessonsService {
     const nowComplete = progress.total > 0 && progress.completed >= progress.total;
     const wasComplete = before.total > 0 && before.completed >= before.total;
     if (nowComplete && !wasComplete) {
-      try { await this.gamification.addPoints(studentId, 'course_complete'); } catch {}
+      const evaluation = await this.prisma.courseEvaluation.findUnique({
+        where: { enrollmentId },
+        select: { id: true },
+      });
+      if (evaluation) {
+        try { await this.gamification.addPoints(studentId, 'course_complete'); } catch {}
+      }
     }
     return progress;
   }
@@ -493,6 +499,13 @@ export class LessonsService {
     const enrollment = await this.prisma.enrollment.findUnique({ where: { id: enrollmentId } });
     if (!enrollment || enrollment.studentId !== studentId || enrollment.status !== EnrollmentStatus.APPROVED) {
       throw new ForbiddenException('Not your enrollment');
+    }
+    const evaluation = await this.prisma.courseEvaluation.findUnique({
+      where: { enrollmentId },
+      select: { id: true },
+    });
+    if (evaluation) {
+      throw new ConflictException('Course progress cannot be changed after submitting the final evaluation');
     }
     await this.prisma.lessonProgress.deleteMany({ where: { enrollmentId, moduleId } });
     return this.courseProgress(enrollment.courseId, studentId);
