@@ -54,6 +54,49 @@ export class CertificatesController {
         return this.certificatesService.managementOverview();
     }
 
+    @ApiOperation({ summary: 'Get the signed-in instructor signature' })
+    @Roles(Role.INSTRUCTOR)
+    @Get('my-signature')
+    getMySignature(@Request() req: any) {
+        return this.certificatesService.getInstructorSignature(req.user.userId);
+    }
+
+    @ApiOperation({ summary: 'Save the signed-in instructor signature' })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+    @Roles(Role.INSTRUCTOR)
+    @Post('my-signature')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: createUploadStorage({
+            destination: () => './uploads/certificates',
+            filename: (_req, file) => {
+                const extension = file.mimetype === 'image/png' ? '.png'
+                    : file.mimetype === 'image/webp' ? '.webp' : '.jpg';
+                return `instructor-signature-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
+            },
+        }),
+        fileFilter: (_req, file, callback) => {
+            if (CERTIFICATE_IMAGE_MIMES.includes(file.mimetype)) callback(null, true);
+            else callback(new BadRequestException('Only PNG, JPEG, and WEBP images are allowed.'), false);
+        },
+        limits: { fileSize: 2 * 1024 * 1024, fieldSize: 64 * 1024, files: 1, parts: 2 },
+    }))
+    async saveMySignature(@UploadedFile() file: Express.Multer.File, @Request() req: any) {
+        if (!file) throw new BadRequestException('An image file is required.');
+        if (!hasValidUploadedSignature(file)) {
+            await removeUploadedFile(file);
+            throw new BadRequestException('File content does not match its declared image type.');
+        }
+        return this.certificatesService.setInstructorSignature(req.user.userId, uploadUrl(file), req.user.userId);
+    }
+
+    @ApiOperation({ summary: 'Remove the signed-in instructor signature' })
+    @Roles(Role.INSTRUCTOR)
+    @Delete('my-signature')
+    removeMySignature(@Request() req: any) {
+        return this.certificatesService.removeInstructorSignature(req.user.userId, req.user.userId);
+    }
+
     @ApiOperation({ summary: 'Save a teacher signature, director signature, or academy stamp image' })
     @ApiConsumes('multipart/form-data')
     @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })

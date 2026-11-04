@@ -132,6 +132,14 @@ export class CertificatesService {
         return saved;
     }
 
+    async getInstructorSignature(instructorId: string) {
+        const signature = await this.prisma.certificateInstructorSignature.findUnique({
+            where: { instructorId },
+            select: { signatureUrl: true },
+        });
+        return { instructorId, signatureUrl: signature?.signatureUrl ?? null };
+    }
+
     async removeInstructorSignature(instructorId: string, actorId: string) {
         if (!instructorId) throw new BadRequestException('An instructor must be selected');
         await this.prisma.certificateInstructorSignature.deleteMany({ where: { instructorId } });

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useFetchData } from '@/lib/useFetchData';
 import { useI18n } from '@/lib/i18n-context';
@@ -10,7 +11,7 @@ import toast from 'react-hot-toast';
 import {
     BadgeCheck, Camera, Check, CircleAlert, Eye, Loader, Save, Sparkles,
     Plus, Trash2, ArrowUp, ArrowDown, Link2, GraduationCap, Award, Languages,
-    Briefcase, Info,
+    Briefcase, Info, PenLine, LoaderCircle, Upload,
 } from 'lucide-react';
 import type {
     BilingualText,
@@ -95,6 +96,132 @@ const storedBilingual = (stored: Record<string, unknown>, key: string): Bilingua
 const completeOnly = <T,>(items: T[], required: Array<keyof T>): T[] =>
     items.filter((item) => required.every((key) => asText(item[key])));
 
+function InstructorSignaturePad({ savedUrl, busy, isAr, onSave, onRemove }: {
+    savedUrl: string | null;
+    busy: boolean;
+    isAr: boolean;
+    onSave: (blob: Blob | File) => Promise<void>;
+    onRemove: () => Promise<void>;
+}) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const drawing = useRef(false);
+    const hasDrawing = useRef(false);
+
+    const point = (event: PointerEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return null;
+        const bounds = canvas.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) return null;
+        return {
+            x: (event.clientX - bounds.left) * (canvas.width / bounds.width),
+            y: (event.clientY - bounds.top) * (canvas.height / bounds.height),
+        };
+    };
+
+    const start = (event: PointerEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        const position = point(event);
+        const context = canvas?.getContext('2d');
+        if (!canvas || !context || !position) return;
+        event.preventDefault();
+        canvas.setPointerCapture(event.pointerId);
+        drawing.current = true;
+        hasDrawing.current = true;
+        context.strokeStyle = '#12305A';
+        context.fillStyle = '#12305A';
+        context.lineWidth = 3;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.beginPath();
+        context.moveTo(position.x, position.y);
+        context.lineTo(position.x + 0.01, position.y + 0.01);
+        context.stroke();
+    };
+
+    const move = (event: PointerEvent<HTMLCanvasElement>) => {
+        if (!drawing.current) return;
+        const position = point(event);
+        const context = canvasRef.current?.getContext('2d');
+        if (!position || !context) return;
+        event.preventDefault();
+        context.lineTo(position.x, position.y);
+        context.stroke();
+    };
+
+    const clear = () => {
+        hasDrawing.current = false;
+        drawing.current = false;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const saveDrawing = () => {
+        if (!hasDrawing.current) {
+            toast.error(isAr ? 'ارسم التوقيع قبل الحفظ.' : 'Draw your signature before saving.');
+            return;
+        }
+        canvasRef.current?.toBlob((blob) => {
+            if (blob) void onSave(blob);
+            else toast.error(isAr ? 'تعذر إنشاء صورة التوقيع.' : 'Could not create the signature image.');
+        }, 'image/png');
+    };
+
+    return (
+        <div>
+            <div className="mb-5 flex min-h-28 items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-black/10">
+                {savedUrl ? (
+                    <Image src={`${API_BASE_URL}${savedUrl}`} alt={isAr ? 'التوقيع المحفوظ' : 'Saved signature'} width={360} height={120} unoptimized className="max-h-24 w-full object-contain" />
+                ) : (
+                    <div className="text-center">
+                        <PenLine className="mx-auto mb-2 text-gray-300" size={28} />
+                        <p className="text-xs text-gray-400">{isAr ? 'لم تتم إضافة توقيع بعد' : 'No signature added yet'}</p>
+                    </div>
+                )}
+            </div>
+            <p className="mb-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                {isAr ? 'ارسم توقيعك بوضوح داخل المساحة (يدعم اللمس والقلم)' : 'Draw your signature clearly in the space (touch and stylus supported)'}
+            </p>
+            <canvas
+                ref={canvasRef}
+                width={720}
+                height={220}
+                aria-label={isAr ? 'لوحة التوقيع' : 'Signature pad'}
+                className="h-32 w-full touch-none rounded-xl border border-gray-300 bg-white shadow-inner dark:border-white/10"
+                onPointerDown={start}
+                onPointerMove={move}
+                onPointerUp={() => { drawing.current = false; }}
+                onPointerCancel={() => { drawing.current = false; }}
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={clear} className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5">
+                    {isAr ? 'مسح الرسم' : 'Clear drawing'}
+                </button>
+                <button type="button" disabled={busy} onClick={saveDrawing} className="inline-flex items-center gap-2 rounded-lg bg-brand-navy px-3 py-2 text-xs font-bold text-white disabled:opacity-50 dark:bg-brand-gold dark:text-brand-navy-dark">
+                    {busy ? <LoaderCircle size={14} className="animate-spin" /> : <PenLine size={14} />}
+                    {isAr ? 'حفظ التوقيع' : 'Save signature'}
+                </button>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5">
+                    <Upload size={14} /> {isAr ? 'رفع توقيع مصور' : 'Upload signature image'}
+                    <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={busy} onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void onSave(file);
+                        event.currentTarget.value = '';
+                    }} />
+                </label>
+                {savedUrl && (
+                    <button type="button" disabled={busy} onClick={() => void onRemove()} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 disabled:opacity-50 dark:border-red-500/20 dark:text-red-300">
+                        <Trash2 size={14} /> {isAr ? 'حذف التوقيع' : 'Remove signature'}
+                    </button>
+                )}
+            </div>
+            <p className="mt-3 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                {isAr ? 'يُستخدم التوقيع بصرياً داخل شهادة الدورة ولا يمثل توقيعاً رقمياً مشفراً.' : 'This is a visual signature used on course certificates, not a cryptographic digital signature.'}
+            </p>
+        </div>
+    );
+}
+
 const trimmedText = <T extends object>(items: T[]): T[] =>
     items.map((item) => {
         const out: Record<string, unknown> = {};
@@ -116,6 +243,8 @@ export default function InstructorProfilePage() {
     const [form, setForm] = useState<ProfileForm>(EMPTY);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+    const [signatureBusy, setSignatureBusy] = useState(false);
     const fileRef = useRef<HTMLInputElement | null>(null);
 
     // Hydrate once per profile. The ref only remembers *which* profile was
@@ -174,6 +303,42 @@ export default function InstructorProfilePage() {
             })),
         });
     }, [profile]);
+
+    useEffect(() => {
+        if (profile?.role !== 'INSTRUCTOR') return;
+        void api.get('/certificates/my-signature')
+            .then((response) => setSignatureUrl(response.data.signatureUrl ?? null))
+            .catch(() => setSignatureUrl(null));
+    }, [profile?.id, profile?.role]);
+
+    const saveSignature = async (asset: Blob | File) => {
+        setSignatureBusy(true);
+        try {
+            const body = new FormData();
+            const file = asset instanceof File ? asset : new File([asset], `signature-${Date.now()}.png`, { type: 'image/png' });
+            body.append('file', file);
+            const response = await api.post('/certificates/my-signature', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+            setSignatureUrl(response.data.signatureUrl ?? null);
+            toast.success(locale === 'ar' ? 'تم حفظ التوقيع بنجاح.' : 'Signature saved successfully.');
+        } catch (err) {
+            toast.error(getErrorMessage(err) || (locale === 'ar' ? 'تعذر حفظ التوقيع.' : 'Could not save the signature.'));
+        } finally {
+            setSignatureBusy(false);
+        }
+    };
+
+    const removeSignature = async () => {
+        setSignatureBusy(true);
+        try {
+            await api.delete('/certificates/my-signature');
+            setSignatureUrl(null);
+            toast.success(locale === 'ar' ? 'تم حذف التوقيع.' : 'Signature removed.');
+        } catch (err) {
+            toast.error(getErrorMessage(err) || (locale === 'ar' ? 'تعذر حذف التوقيع.' : 'Could not remove the signature.'));
+        } finally {
+            setSignatureBusy(false);
+        }
+    };
 
     const setField = useCallback(
         (key: keyof ProfileForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -909,6 +1074,28 @@ export default function InstructorProfilePage() {
                                 <Plus size={16} /> {t('instructorProfile.add_link')}
                             </button>
                         </section>
+
+                        {/* Certificate signature */}
+                        {profile.role === 'INSTRUCTOR' && (
+                            <section className={cardCls}>
+                                <h2 className={`${sectionTitle} flex items-center gap-2`}>
+                                    <PenLine size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
+                                    {locale === 'ar' ? 'توقيع الشهادات' : 'Certificate signature'}
+                                </h2>
+                                <p className={hintCls}>
+                                    {locale === 'ar'
+                                        ? 'أضف توقيعك المصمم ليظهر بصورة احترافية على شهادات طلابك.'
+                                        : 'Add your designed signature for a professional appearance on your students’ certificates.'}
+                                </p>
+                                <InstructorSignaturePad
+                                    savedUrl={signatureUrl}
+                                    busy={signatureBusy}
+                                    isAr={locale === 'ar'}
+                                    onSave={saveSignature}
+                                    onRemove={removeSignature}
+                                />
+                            </section>
+                        )}
 
                         {/* Save */}
                         <section className={`${cardCls} sticky bottom-3 z-10 shadow-xl`}>
