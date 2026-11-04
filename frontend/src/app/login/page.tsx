@@ -154,6 +154,11 @@ function LoginForm() {
                 </div>
 
                 {error && <div className={`mb-4 p-3 rounded-md text-sm font-semibold animate-fade-in-up ${dark ? 'bg-red-500/10 border border-red-400/30 text-red-400' : 'bg-red-50 border border-red-200 text-red-600'}`}>{error}</div>}
+                {searchParams?.get('oauthError') === '1' && (
+                    <div className={`mb-4 p-3 rounded-xl text-sm font-semibold ${dark ? 'bg-red-500/10 border border-red-400/30 text-red-400' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                        {t('auth.google_signin_failed')}
+                    </div>
+                )}
                 {searchParams?.get('verifyEmail') === '1' && (
                     <div className={`mb-4 p-3 rounded-xl text-sm font-semibold ${dark ? 'bg-brand-gold/10 border border-brand-gold/20 text-brand-gold-light' : 'bg-amber-50 border border-amber-200 text-amber-900'}`}>
                         {t('auth.check_verification_email')}

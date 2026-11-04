@@ -5,6 +5,7 @@
         "email": "Email",
         "password": "Password",
         "continue_with_google": "Continue with Google",
+        "google_signin_failed": "Google sign-in could not be completed. Please try again or use your email and password.",
         "welcome_back": "Welcome Back",
         "dont_have_account": "Don't have an account?",
         "register_now": "Register Now",

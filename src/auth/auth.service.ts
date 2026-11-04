@@ -491,7 +491,9 @@ export class AuthService {
     async googleLogin(req: any): Promise<LoginResult> {
         if (!req.user) throw new UnauthorizedException('No user from google');
 
-        const { email } = req.user;
+        const email = String(req.user.email || '').trim().toLowerCase();
+        if (!email) throw new UnauthorizedException('Google account email is missing');
+
         let user = await this.prisma.user.findUnique({ where: { email } });
 
         if (!user) {

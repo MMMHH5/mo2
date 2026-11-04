@@ -26,6 +26,12 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        value: https://laxalab-api-public.onrender.com/auth/google/callback
       - key: FRONTEND_URL
         value: https://laxalab-web-learner.onrender.com
       - key: CORS_ORIGINS

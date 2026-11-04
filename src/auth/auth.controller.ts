@@ -148,6 +148,12 @@ export class AuthController {
         // Guard redirects
     }
 
+    @ApiOperation({ summary: 'Google Auth Failure' })
+    @Get('google/failure')
+    async googleAuthFailure(@Res() res: Response) {
+        return res.redirect(`${getFrontendUrl()}/login?oauthError=1`);
+    }
+
     @ApiOperation({ summary: 'Google Auth Callback' })
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))

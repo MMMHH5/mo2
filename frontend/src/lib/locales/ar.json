@@ -5,6 +5,7 @@
         "email": "البريد الإلكتروني",
         "password": "كلمة المرور",
         "continue_with_google": "المتابعة باستخدام Google",
+        "google_signin_failed": "تعذّر إكمال تسجيل الدخول عبر Google. حاول مرة أخرى أو استخدم البريد الإلكتروني وكلمة المرور.",
         "welcome_back": "مرحباً بعودتك",
         "dont_have_account": "ليس لديك حساب؟",
         "register_now": "سجل الآن",
