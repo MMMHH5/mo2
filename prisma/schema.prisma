@@ -737,6 +737,16 @@ model OperationsSetting {
 
 /// Which admin accounts may open the operations page.
 ///
+model HomepageSettings {
+  id            String   @id @default("singleton")
+  draft         Json
+  published     Json?
+  updatedById   String?
+  publishedById String?
+  updatedAt     DateTime @updatedAt
+  publishedAt   DateTime?
+}
+
 /// A separate table from `User` because this is not a role: every row is
 /// already an ADMIN, and the point is to narrow that set. Storing user ids
 /// rather than emails means a renamed account keeps its access and a deleted

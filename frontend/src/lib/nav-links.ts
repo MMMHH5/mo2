@@ -21,6 +21,7 @@ import {
     Flag,
     Megaphone,
     Star,
+    PanelTop,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -137,6 +138,7 @@ export function buildNavLinks(t: (key: string) => string): NavLink[] {
 export function buildAdminNavLinks(t: (key: string) => string): NavLink[] {
     return [
         { name: t('admin.nav_overview'), href: '/dashboard/admin', icon: LayoutDashboard, roles: ['ADMIN'] },
+        { name: t('admin.nav_homepage'), href: '/dashboard/admin/homepage', icon: PanelTop, roles: ['ADMIN'] },
         { name: t('admin.nav_courses'), href: '/dashboard/admin/courses', icon: BookOpen, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_learning_paths'), href: '/dashboard/admin/learning-paths', icon: Route, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('admin.nav_openings'), href: '/dashboard/admin/openings', icon: CalendarClock, roles: ['ADMIN', 'COURSE_MANAGER'] },
