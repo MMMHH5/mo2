@@ -1,3 +1,3 @@
-export const SUPPORT_PHONE_DISPLAY = '+967 730 451 014';
-export const SUPPORT_PHONE_TEL = '+967730451014';
-export const SUPPORT_WHATSAPP_URL = 'https://wa.me/967730451014';
+export const SUPPORT_PHONE_DISPLAY = '+967 770 199 425';
+export const SUPPORT_PHONE_TEL = '+967770199425';
+export const SUPPORT_WHATSAPP_URL = 'https://wa.me/967770199425';
