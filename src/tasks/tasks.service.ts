@@ -137,7 +137,7 @@ export class TasksService {
         titleEn: string;
         descriptionAr?: string;
         descriptionEn?: string;
-        dueDate?: string;
+        dueDate?: string | null;
         maxScore?: number;
         moduleId?: string;
         attachmentUrl?: string;
@@ -150,6 +150,9 @@ export class TasksService {
         }
         if (dto.maxScore != null && dto.maxScore <= 0) {
             throw new BadRequestException('Max score must be greater than 0');
+        }
+        if (dto.dueDate && !Number.isFinite(new Date(dto.dueDate).getTime())) {
+            throw new BadRequestException('Due date is invalid');
         }
         if (dto.moduleId) {
             await this.assertModuleBelongsToCourse(dto.moduleId, openingId);
@@ -282,7 +285,7 @@ export class TasksService {
         titleEn?: string;
         descriptionAr?: string;
         descriptionEn?: string;
-        dueDate?: string;
+        dueDate?: string | null;
         maxScore?: number;
         moduleId?: string;
         attachmentUrl?: string;
@@ -293,6 +296,9 @@ export class TasksService {
         await this.assertCanManageOpening(task.openingId, actorId, actorRole);
         if (dto.maxScore != null && dto.maxScore <= 0) {
             throw new BadRequestException('Max score must be greater than 0');
+        }
+        if (dto.dueDate && !Number.isFinite(new Date(dto.dueDate).getTime())) {
+            throw new BadRequestException('Due date is invalid');
         }
         if (dto.moduleId !== undefined) {
             if (dto.moduleId) {
@@ -347,6 +353,13 @@ export class TasksService {
         const task = await this.getTaskOrThrow(taskId);
         const enrollmentId = await this.getEnrollmentId(studentId, task.openingId);
         if (!enrollmentId) throw new ForbiddenException('You are not enrolled in this opening');
+        const existing = await this.prisma.taskSubmission.findUnique({
+            where: { taskId_enrollmentId: { taskId, enrollmentId } },
+            select: { score: true },
+        });
+        if (existing?.score != null) {
+            throw new BadRequestException('A graded submission cannot be changed');
+        }
         return enrollmentId;
     }
 
@@ -360,6 +373,12 @@ export class TasksService {
         const task = await this.getTaskOrThrow(taskId);
         const enrollmentId = await this.getEnrollmentId(studentId, task.openingId);
         if (!enrollmentId) throw new ForbiddenException('You are not enrolled in this opening');
+        const existing = await this.prisma.taskSubmission.findUnique({
+            where: { taskId_enrollmentId: { taskId, enrollmentId } },
+        });
+        if (existing?.score != null) {
+            throw new BadRequestException('A graded submission cannot be changed');
+        }
 
         // The stored URL is ours, not the caller's: a student could otherwise
         // point their submission at any path on the server, or at a file
@@ -379,10 +398,6 @@ export class TasksService {
             }
             : { attachmentUrl: null, attachmentName: null, attachmentType: null, attachmentSize: null };
 
-        const existing = await this.prisma.taskSubmission.findUnique({
-            where: { taskId_enrollmentId: { taskId, enrollmentId } },
-        });
-
         // A new file replaces the old one as a whole: keeping the previous
         // filename next to a new URL, or a URL with no name, would misdescribe
         // the work the instructor opens. Leaving the field out entirely keeps
@@ -396,21 +411,31 @@ export class TasksService {
                 attachmentSize: existing?.attachmentSize ?? null,
             };
 
-        const submission = await this.prisma.taskSubmission.upsert({
-            where: { taskId_enrollmentId: { taskId, enrollmentId } },
-            update: {
-                content: dto.content?.trim() ? dto.content.trim() : (existing?.content ?? null),
-                ...fileFields,
-                score: existing?.score ?? null,
-                notes: existing?.notes ?? null,
-            },
-            create: {
+        let submission;
+        if (existing) {
+            const result = await this.prisma.taskSubmission.updateMany({
+                where: { taskId, enrollmentId, score: null },
+                data: {
+                    content: dto.content?.trim() ? dto.content.trim() : (existing.content ?? null),
+                    ...fileFields,
+                },
+            });
+            if (result.count !== 1) {
+                throw new BadRequestException('A graded submission cannot be changed');
+            }
+            submission = await this.prisma.taskSubmission.findUniqueOrThrow({
+                where: { taskId_enrollmentId: { taskId, enrollmentId } },
+            });
+        } else {
+            submission = await this.prisma.taskSubmission.create({
+            data: {
                 taskId,
                 enrollmentId,
                 content: dto.content?.trim() ? dto.content.trim() : null,
                 ...submittedFile,
             },
         });
+        }
         await this.audit.logAction(`Student ${studentId} submitted Task ${taskId} (Opening ${task.openingId})`, undefined, studentId);
         await this.audit.logOpeningActivity?.(task.openingId, studentId, 'task_submission', {
             entityType: 'task_submission',

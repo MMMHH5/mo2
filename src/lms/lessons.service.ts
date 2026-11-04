@@ -115,6 +115,10 @@ export class LessonsService {
     return this.listCourseModules(opening.courseId, openingId);
   }
 
+  async assertCanUploadOpeningFile(openingId: string, actorId: string, role: Role) {
+    await this.assertCanEditOpening(openingId, actorId, role);
+  }
+
   async updateOpeningModule(openingId: string, moduleId: string, data: Record<string, unknown>, actorId: string, role: Role) {
     const opening = await this.assertCanEditOpening(openingId, actorId, role);
     const module = await this.prisma.module.findUnique({ where: { id: moduleId } });

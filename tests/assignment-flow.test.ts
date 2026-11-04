@@ -96,6 +96,12 @@ function makeHarness(h: {
                 calls.push({ model: 'courseTask', op: 'findMany', args });
                 return tasks.filter(t => t.openingId === args?.where?.openingId);
             },
+            update: async (args: any) => {
+                calls.push({ model: 'courseTask', op: 'update', args });
+                writes.push({ op: 'updateTask', args });
+                const task = tasks.find(t => t.id === args.where.id);
+                return { ...task, ...args.data };
+            },
         },
         module: { findUnique: async () => ({ id: 'mod-1', courseId: 'crs-1' }) },
         taskSubmission: {
@@ -120,6 +126,25 @@ function makeHarness(h: {
                 calls.push({ model: 'taskSubmission', op: 'upsert', args });
                 writes.push({ op: 'upsert', args });
                 return { id: 'sub-1', ...(args.create ?? {}), ...(args.update ?? {}) };
+            },
+            create: async (args: any) => {
+                calls.push({ model: 'taskSubmission', op: 'create', args });
+                writes.push({ op: 'createSubmission', args });
+                return { id: 'sub-1', ...args.data };
+            },
+            updateMany: async (args: any) => {
+                calls.push({ model: 'taskSubmission', op: 'updateMany', args });
+                writes.push({ op: 'updateSubmission', args });
+                const row = submissions.find(s => s.taskId === args.where.taskId && s.enrollmentId === args.where.enrollmentId);
+                if (!row || row.score != null) return { count: 0 };
+                Object.assign(row, args.data);
+                return { count: 1 };
+            },
+            findUniqueOrThrow: async (args: any) => {
+                const k = args?.where?.taskId_enrollmentId;
+                const row = submissions.find(s => s.taskId === k?.taskId && s.enrollmentId === k?.enrollmentId);
+                if (!row) throw new Error('Submission not found');
+                return row;
             },
             update: async (args: any) => {
                 calls.push({ model: 'taskSubmission', op: 'update', args });
@@ -208,7 +233,7 @@ describe('assignment: a student whose batch was never recorded still gets their 
 
         await service.submitTask('task-1', 'stu-1', { content: 'done' });
         assert.equal(writes.length, 1);
-        assert.equal(writes[0].args.create.enrollmentId, 'enr-1');
+        assert.equal(writes[0].args.data.enrollmentId, 'enr-1');
     });
 
     test('with two batches the student is refused rather than shown another cohort', async () => {
@@ -243,7 +268,7 @@ describe('assignment: a student can submit a file of any type', () => {
         assert.equal(saved.attachmentName, 'my solution.zip');
         assert.equal(saved.attachmentType, 'application/zip');
         assert.equal(saved.attachmentSize, 2048);
-        assert.equal(writes[0].args.create.content, 'attached');
+        assert.equal(writes[0].args.data.content, 'attached');
     });
 
     test('a path the server never issued is refused', async () => {
@@ -297,9 +322,50 @@ describe('assignment: a student can submit a file of any type', () => {
         });
 
         await service.submitTask('task-1', 'stu-1', { content: 'see attached' });
-        const update = writes[0].args.update;
+        const update = writes[0].args.data;
         assert.equal(update.attachmentUrl, '/uploads/tasks/submission-1.pdf');
         assert.equal(update.attachmentName, 'report.pdf');
+    });
+
+    test('a student cannot change a submission after it has been graded', async () => {
+        const { service, writes } = makeHarness({
+            courses: [COURSE],
+            openings: [BATCH_OWNED_BY_SOMEONE_ELSE],
+            enrollments: [{ id: 'enr-1', studentId: 'stu-1', courseId: 'crs-1', openingId: 'opn-1', status: 'APPROVED' }],
+            tasks: [{ id: 'task-1', openingId: 'opn-1', titleAr: 'م', titleEn: 't', maxScore: 10 }],
+            submissions: [{ id: 'sub-1', taskId: 'task-1', enrollmentId: 'enr-1', score: 8 }],
+        });
+
+        await assert.rejects(
+            () => service.submitTask('task-1', 'stu-1', { attachmentUrl: '/uploads/tasks/new.pdf' }),
+            /graded submission cannot be changed/i,
+        );
+        await assert.rejects(
+            () => service.assertStudentCanSubmit('task-1', 'stu-1'),
+            /graded submission cannot be changed/i,
+        );
+        assert.equal(writes.length, 0);
+    });
+});
+
+describe('assignment: changing a task due date does not alter its submissions', () => {
+    test('the teacher can clear the optional due date without touching submitted work', async () => {
+        const submission = {
+            id: 'sub-1', taskId: 'task-1', enrollmentId: 'enr-1', content: 'already delivered',
+        };
+        const { service, writes, calls } = makeHarness({
+            courses: [COURSE],
+            openings: [BATCH_OWNED_BY_SOMEONE_ELSE],
+            tasks: [{ id: 'task-1', openingId: 'opn-1', titleAr: 'م', titleEn: 't', maxScore: 10, dueDate: new Date('2025-01-01') }],
+            submissions: [submission],
+        });
+
+        await service.updateTask('task-1', { dueDate: null }, 'owner', Role.INSTRUCTOR);
+
+        const taskUpdate = writes.find(write => write.op === 'updateTask');
+        assert.equal(taskUpdate.args.data.dueDate, null);
+        assert.equal(calls.some(call => call.model === 'taskSubmission'), false);
+        assert.equal(submission.content, 'already delivered');
     });
 });
 

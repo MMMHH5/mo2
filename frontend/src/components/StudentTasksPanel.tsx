@@ -254,7 +254,7 @@ export default function StudentTasksPanel({ courseId, openingId }: Props) {
                                     </div>
                                 ) : null}
 
-                                <div className="mt-4">
+                                {!graded && <div className="mt-4">
                                     <textarea
                                         value={drafts[task.id] || ''}
                                         onChange={e => setDrafts(prev => ({ ...prev, [task.id]: e.target.value }))}
@@ -298,7 +298,7 @@ export default function StudentTasksPanel({ courseId, openingId }: Props) {
                                         </button>
                                     </div>
                                     <p className="mt-2 text-[11px] text-ink-subtle">{t('tasks.any_file_hint')}</p>
-                                </div>
+                                </div>}
                             </div>
                         );
                     })}

@@ -201,7 +201,7 @@ export default function TasksPanel({
                 titleEn: form.titleEn.trim(),
                 descriptionAr: form.descriptionAr.trim() || undefined,
                 descriptionEn: form.descriptionEn.trim() || undefined,
-                dueDate: form.dueDate ? new Date(`${form.dueDate}T00:00:00Z`).toISOString() : undefined,
+                dueDate: form.dueDate ? new Date(`${form.dueDate}T00:00:00Z`).toISOString() : null,
                 maxScore: Number(form.maxScore) || 100,
                 moduleId: form.moduleId || undefined,
                 attachmentUrl: attachmentUrl || undefined,

@@ -30,7 +30,7 @@ interface LessonForm {
     descriptionEn: string;
     videoUrl: string;
     durationMinutes: string;
-    files: string;
+    files: { url: string; nameAr: string; nameEn: string }[];
     links: string;
     outcomes: string;
 }
@@ -42,7 +42,7 @@ const emptyForm = (): LessonForm => ({
     descriptionEn: '',
     videoUrl: '',
     durationMinutes: '',
-    files: '',
+    files: [],
     links: '',
     outcomes: '',
 });
@@ -65,7 +65,15 @@ const toForm = (lesson: OpeningLesson): LessonForm => ({
     descriptionEn: lesson.descriptionEn || '',
     videoUrl: lesson.videoUrl || '',
     durationMinutes: lesson.durationMinutes == null ? '' : String(lesson.durationMinutes),
-    files: linesFrom(lesson.files, ['url', 'nameAr', 'nameEn']),
+    files: (lesson.files || []).flatMap((item) => {
+        if (!item || typeof item !== 'object') return [];
+        const file = item as Record<string, unknown>;
+        return typeof file.url === 'string' ? [{
+            url: file.url,
+            nameAr: typeof file.nameAr === 'string' ? file.nameAr : '',
+            nameEn: typeof file.nameEn === 'string' ? file.nameEn : '',
+        }] : [];
+    }),
     links: linesFrom(lesson.links, ['url', 'labelAr', 'labelEn']),
     outcomes: linesFrom(lesson.outcomes, ['descriptionAr', 'descriptionEn']),
 });
@@ -80,6 +88,7 @@ export default function OpeningContentEditor({ openingId }: { openingId: string 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
+    const [uploadingFile, setUploadingFile] = useState(false);
     const t = (ar: string, en: string) => isAr ? ar : en;
 
     useEffect(() => {
@@ -123,7 +132,12 @@ export default function OpeningContentEditor({ openingId }: { openingId: string 
             setMessage({ text: t('أدخل عنوان الدرس بالعربية والإنجليزية.', 'Enter the lesson title in Arabic and English.'), error: true });
             return;
         }
-        const files = itemsFrom(form.files, ['url', 'nameAr', 'nameEn']);
+        const files = form.files.filter((file) => file.url.trim()).map((file) => ({
+            ...file,
+            url: file.url.trim(),
+            nameAr: file.nameAr.trim(),
+            nameEn: file.nameEn.trim(),
+        }));
         const links = itemsFrom(form.links, ['url', 'labelAr', 'labelEn']);
         const outcomes = itemsFrom(form.outcomes, ['descriptionAr', 'descriptionEn'])
             .map((outcome) => ({ descriptionAr: outcome.descriptionAr || '', descriptionEn: outcome.descriptionEn || '' }));
@@ -166,6 +180,31 @@ export default function OpeningContentEditor({ openingId }: { openingId: string 
             setMessage({ text: getErrorMessage(error) || t('تعذر حفظ المحتوى.', 'Could not save content.'), error: true });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const uploadLessonFile = async (file: File | undefined) => {
+        if (!file) return;
+        const body = new FormData();
+        body.append('file', file);
+        setUploadingFile(true);
+        setMessage(null);
+        try {
+            const response = await api.post(`/lms/openings/${openingId}/modules/files`, body, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            setForm((current) => ({
+                ...current,
+                files: [...current.files, {
+                    url: response.data.url,
+                    nameAr: response.data.name,
+                    nameEn: response.data.name,
+                }],
+            }));
+        } catch (error) {
+            setMessage({ text: getErrorMessage(error) || t('تعذر رفع الملف.', 'Could not upload the file.'), error: true });
+        } finally {
+            setUploadingFile(false);
         }
     };
 
@@ -215,14 +254,41 @@ export default function OpeningContentEditor({ openingId }: { openingId: string 
                         </div>
                         <div className="grid gap-3 lg:grid-cols-3">
                             {([
-                                ['files', t('الملفات', 'Files'), t('رابط الملف | الاسم بالعربية | الاسم بالإنجليزية', 'File URL | Arabic name | English name')],
                                 ['links', t('الروابط', 'Links'), t('الرابط | العنوان بالعربية | العنوان بالإنجليزية', 'URL | Arabic label | English label')],
                                 ['outcomes', t('مخرجات التعلم', 'Learning outcomes'), t('الوصف بالعربية | الوصف بالإنجليزية', 'Arabic description | English description')],
                             ] as const).map(([key, label]) => (
                                 <label key={key} className="space-y-1.5 text-xs font-bold text-gray-300">{label}
                                     <textarea dir="auto" spellCheck={false} className={field} rows={5} placeholder={key === 'outcomes' ? label : undefined} value={form[key]} onChange={(event) => setForm({ ...form, [key]: event.target.value })} />
-                                    <span className="block font-normal text-gray-500">{label} — {key === 'files' ? t('كل ملف في سطر مستقل', 'One file per line') : key === 'links' ? t('كل رابط في سطر مستقل', 'One link per line') : t('كل مخرج تعلم في سطر مستقل', 'One learning outcome per line')}</span>
+                                    <span className="block font-normal text-gray-500">{label} — {key === 'links' ? t('كل رابط في سطر مستقل', 'One link per line') : t('كل مخرج تعلم في سطر مستقل', 'One learning outcome per line')}</span>
                                 </label>
+                            ))}
+                        </div>
+                        <div className="space-y-2 rounded-xl border border-white/5 bg-black/10 p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-gray-300">{t('مرفقات الدرس', 'Lesson attachments')}</span>
+                                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-gold/30 px-3 py-2 text-xs font-bold text-brand-gold-light hover:bg-brand-gold/10">
+                                    {uploadingFile ? <Loader size={14} className="animate-spin" /> : <Plus size={14} />}
+                                    {uploadingFile ? t('جارٍ الرفع...', 'Uploading...') : t('رفع ملف', 'Upload file')}
+                                    <input
+                                        type="file"
+                                        className="sr-only"
+                                        disabled={uploadingFile}
+                                        onChange={(event) => {
+                                            void uploadLessonFile(event.target.files?.[0]);
+                                            event.currentTarget.value = '';
+                                        }}
+                                    />
+                                </label>
+                            </div>
+                            {form.files.length === 0 ? (
+                                <p className="text-xs text-gray-500">{t('لم تتم إضافة مرفقات.', 'No attachments added.')}</p>
+                            ) : form.files.map((file, index) => (
+                                <div key={`${file.url}-${index}`} className="grid gap-2 rounded-lg border border-white/5 p-2 sm:grid-cols-[1fr_1fr_auto]">
+                                    <input className={field} value={file.nameAr} aria-label={t('اسم الملف بالعربية', 'File name in Arabic')} onChange={(event) => setForm((current) => ({ ...current, files: current.files.map((item, i) => i === index ? { ...item, nameAr: event.target.value } : item) }))} />
+                                    <input className={field} value={file.nameEn} aria-label={t('اسم الملف بالإنجليزية', 'File name in English')} onChange={(event) => setForm((current) => ({ ...current, files: current.files.map((item, i) => i === index ? { ...item, nameEn: event.target.value } : item) }))} />
+                                    <button type="button" className="rounded-lg px-3 text-xs font-bold text-red-300 hover:bg-red-500/10" onClick={() => setForm((current) => ({ ...current, files: current.files.filter((_, i) => i !== index) }))}>{t('حذف', 'Remove')}</button>
+                                    <a className="truncate text-xs text-gray-500 underline sm:col-span-2" href={file.url} target="_blank" rel="noreferrer">{file.url}</a>
+                                </div>
                             ))}
                         </div>
                         <div className="flex justify-end border-t border-white/5 pt-4">
