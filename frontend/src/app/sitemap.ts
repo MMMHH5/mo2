@@ -1,6 +1,15 @@
 import type { MetadataRoute } from 'next';
 import { API_BASE_URL, SITE_URL } from '@/lib/deployment-urls';
 
+const API_TIMEOUT_MS = 5_000;
+
+function fetchSitemapData(path: string) {
+  return fetch(`${API_BASE_URL}${path}`, {
+    next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(API_TIMEOUT_MS),
+  });
+}
+
 function alternates(path: string) {
   return {
     languages: {
@@ -42,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Public blog posts
   try {
-    const res = await fetch(`${API_BASE_URL}/blog?page=1&pageSize=500`, { next: { revalidate: 3600 } });
+    const res = await fetchSitemapData('/blog?page=1&pageSize=500');
     if (res.ok) {
       const data = await res.json();
       const items = (data?.items ?? []) as { slug?: string; publishedAt?: string }[];
@@ -58,13 +67,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         });
       }
     }
-  } catch {
-    // API unreachable — static routes only.
+  } catch (error) {
+    console.warn('Sitemap blog entries unavailable; using static routes only.', error);
   }
 
   // Public courses
   try {
-    const res = await fetch(`${API_BASE_URL}/courses`, { next: { revalidate: 3600 } });
+    const res = await fetchSitemapData('/courses');
     if (res.ok) {
       const data = (await res.json()) as { id?: string }[];
       if (Array.isArray(data)) {
@@ -81,8 +90,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }
       }
     }
-  } catch {
-    // API unreachable — static routes only.
+  } catch (error) {
+    console.warn('Sitemap course entries unavailable; using static routes only.', error);
   }
 
   return entries;
