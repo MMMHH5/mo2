@@ -77,7 +77,21 @@ interface AdminActivity {
     targetType: string | null;
     targetId: string | null;
     targetLabel: string | null;
-    details: { changes?: Array<{ field: string; label: string; value?: string | number | boolean }> } | null;
+    method: string | null;
+    route: string | null;
+    details: {
+        summary?: string;
+        outcome?: string;
+        operation?: string;
+        target?: string;
+        changes?: Array<{
+            field: string;
+            label: string;
+            value?: string | number | boolean;
+            previousValue?: string | number | boolean;
+            newValue?: string | number | boolean;
+        }>;
+    } | null;
 }
 
 interface TimelinePoint {
@@ -674,7 +688,7 @@ function OperationsCenterPage() {
                                             <th className="px-3 py-3 font-bold">{t('ops.col_time')}</th>
                                             <th className="px-3 py-3 font-bold">{t('ops.activity_actor')}</th>
                                             <th className="px-3 py-3 font-bold">{t('ops.col_action')}</th>
-                                            <th className="px-3 py-3 font-bold">{t('ops.activity_target')}</th>
+                                            <th className="px-3 py-3 font-bold">تفصيل العملية والنتيجة</th>
                                             <th className="px-3 py-3 font-bold">{t('ops.activity_changes')}</th>
                                         </tr>
                                     </thead>
@@ -693,18 +707,39 @@ function OperationsCenterPage() {
                                                                     : item.actorRole ?? t('ops.na')}
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-4 font-bold text-brand-navy dark:text-white">{item.action}</td>
+                                                <td className="px-3 py-4 font-bold text-brand-navy dark:text-white">
+                                                    <div>{item.action}</div>
+                                                    <div className="mt-1 inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[11px] text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                                        {item.details?.outcome ?? 'نجح التنفيذ'}
+                                                    </div>
+                                                </td>
                                                 <td className="px-3 py-4 text-gray-700 dark:text-gray-300">
-                                                    <div>{item.targetLabel ?? item.targetType ?? t('ops.na')}</div>
-                                                    {item.targetId && <div className="text-xs font-mono text-gray-500 dark:text-gray-400" dir="ltr">{item.targetId}</div>}
+                                                    <div className="font-medium text-brand-navy dark:text-white">
+                                                        {item.details?.summary ?? `${item.actorEmail ?? 'المستخدم'} نفّذ «${item.action}» على ${item.targetLabel ?? item.targetType ?? 'عنصر إداري'}.`}
+                                                    </div>
+                                                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                                        الهدف: {item.targetLabel ?? item.targetType ?? t('ops.na')}
+                                                    </div>
+                                                    {item.targetId && <div className="mt-1 text-xs font-mono text-gray-500 dark:text-gray-400 break-all" dir="ltr">ID: {item.targetId}</div>}
+                                                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 break-all" dir="ltr">{item.method} · {item.route}</div>
                                                 </td>
                                                 <td className="px-3 py-4 text-gray-700 dark:text-gray-300">
                                                     {item.details?.changes?.length ? (
-                                                        <ul className="space-y-1">
+                                                        <ul className="space-y-2">
                                                             {item.details.changes.map((change, index) => (
                                                                 <li key={`${change.field}-${index}`}>
-                                                                    <span className="font-bold">{change.label}</span>
-                                                                    {change.value !== undefined && <>: {String(change.value)}</>}
+                                                                    <div className="font-bold">{change.label}</div>
+                                                                    {change.previousValue !== undefined && (
+                                                                        <div className="text-xs text-red-600 dark:text-red-300">قبل: {String(change.previousValue)}</div>
+                                                                    )}
+                                                                    {(change.newValue !== undefined || change.value !== undefined) && (
+                                                                        <div className="text-xs text-green-700 dark:text-green-300">
+                                                                            بعد: {String(change.newValue ?? change.value)}
+                                                                        </div>
+                                                                    )}
+                                                                    {change.previousValue === undefined && change.newValue === undefined && change.value === undefined && (
+                                                                        <div className="text-xs text-gray-500">تم إرسال هذا الحقل</div>
+                                                                    )}
                                                                 </li>
                                                             ))}
                                                         </ul>

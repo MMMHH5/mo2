@@ -16,6 +16,8 @@ interface ChangeDetail {
     field: string;
     label: string;
     value?: string | number | boolean;
+    previousValue?: string | number | boolean;
+    newValue?: string | number | boolean;
 }
 
 const TARGET_TYPES: Array<[RegExp, string]> = [
@@ -182,7 +184,10 @@ export function createAdminActivityRecord(request: AuthenticatedRequest): AdminA
         field: change.field,
         label: change.label,
         ...(change.value !== undefined ? { value: change.value } : {}),
+        ...(change.previousValue !== undefined ? { previousValue: change.previousValue } : {}),
+        ...(change.newValue !== undefined ? { newValue: change.newValue } : {}),
     }));
+    const summary = `${user.email} (${role}) نفّذ إجراء «${action}»${targetLabel ? ` على «${targetLabel}»` : ''}. تم تنفيذ الطلب بنجاح.`;
 
     return {
         action,
@@ -195,7 +200,13 @@ export function createAdminActivityRecord(request: AuthenticatedRequest): AdminA
         method,
         route,
         ipAddress: request.ip?.slice(0, 64),
-        details: changes.length ? { changes: jsonChanges } : undefined,
+        details: {
+            summary,
+            outcome: 'نجح التنفيذ',
+            operation: action,
+            target: targetLabel ?? targetType,
+            ...(changes.length ? { changes: jsonChanges } : {}),
+        },
     };
 }
 
@@ -275,6 +286,7 @@ function captureChanges(body: Record<string, unknown>): ChangeDetail[] {
         };
         if (VALUE_FIELDS.has(field) && !UNSAFE_VALUE_FIELD.test(field) && isSafeScalar(rawValue)) {
             change.value = typeof rawValue === 'string' ? rawValue.trim().slice(0, 120) : rawValue;
+            change.newValue = change.value;
         }
         changes.push(change);
     }

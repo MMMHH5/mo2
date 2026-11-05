@@ -29,10 +29,14 @@ describe('administrative activity audit', () => {
         assert.equal(record.targetId, 'enrollment-1');
         assert.equal(record.targetLabel, 'تسجيل طالب أو إيصال: Test Student');
         assert.deepEqual(record.details, {
+            summary: 'finance@example.com (FINANCE) نفّذ إجراء «وافق على تسجيل طالب أو إيصال» على «تسجيل طالب أو إيصال: Test Student». تم تنفيذ الطلب بنجاح.',
+            outcome: 'نجح التنفيذ',
+            operation: 'وافق على تسجيل طالب أو إيصال',
+            target: 'تسجيل طالب أو إيصال: Test Student',
             changes: [
-                { field: 'status', label: 'الحالة', value: 'APPROVED' },
-                { field: 'studentName', label: 'اسم الطالب', value: 'Test Student' },
-                { field: 'amount', label: 'المبلغ', value: 100 },
+                { field: 'status', label: 'الحالة', value: 'APPROVED', newValue: 'APPROVED' },
+                { field: 'studentName', label: 'اسم الطالب', value: 'Test Student', newValue: 'Test Student' },
+                { field: 'amount', label: 'المبلغ', value: 100, newValue: 100 },
                 { field: 'description', label: 'حقل: description' },
                 { field: 'nested', label: 'حقل: nested' },
             ],

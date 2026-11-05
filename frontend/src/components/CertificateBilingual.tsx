@@ -16,7 +16,7 @@ export interface CertificateTemplateData {
     directorSignatureUrl: string | null;
     academyStampUrl: string | null;
     designKey?: 'classic' | 'royal' | 'modern';
-    layout?: Record<string, { x: number; y: number }>;
+    layout?: Record<string, { x: number; y: number } | unknown>;
 }
 
 export interface CertificateProps {
@@ -75,10 +75,20 @@ export default function CertificateBilingual({ studentName, courseName, instruct
     const academyName = isAr ? template?.academyNameAr : template?.academyNameEn;
     const certificateTitle = isAr ? template?.titleAr : template?.titleEn;
     const certificateDescription = isAr ? template?.descriptionAr : template?.descriptionEn;
+    const savedStyle = template?.layout?.__visualStyle;
+    const visualStyle = {
+        primaryColor: savedStyle && typeof savedStyle === 'object' && 'primaryColor' in savedStyle && typeof savedStyle.primaryColor === 'string' ? savedStyle.primaryColor : '#12305A',
+        accentColor: savedStyle && typeof savedStyle === 'object' && 'accentColor' in savedStyle && typeof savedStyle.accentColor === 'string' ? savedStyle.accentColor : '#C6A15B',
+        backgroundColor: savedStyle && typeof savedStyle === 'object' && 'backgroundColor' in savedStyle && typeof savedStyle.backgroundColor === 'string' ? savedStyle.backgroundColor : '#FFFFFF',
+        textColor: savedStyle && typeof savedStyle === 'object' && 'textColor' in savedStyle && typeof savedStyle.textColor === 'string' ? savedStyle.textColor : '#12305A',
+        frameStyle: savedStyle && typeof savedStyle === 'object' && 'frameStyle' in savedStyle && typeof savedStyle.frameStyle === 'string' ? savedStyle.frameStyle : 'double',
+        logoShape: savedStyle && typeof savedStyle === 'object' && 'logoShape' in savedStyle && typeof savedStyle.logoShape === 'string' ? savedStyle.logoShape : 'rounded',
+    };
     const layoutOffset = (key: string, axis: 'x' | 'y', baseline: number) => {
         const point = template?.layout?.[key];
-        const value = point?.[axis] ?? baseline;
-        return (value - baseline) * 5.6;
+        if (!point || typeof point !== 'object' || !('x' in point) || !('y' in point)) return 0;
+        const value = point[axis] ?? baseline;
+        return typeof value === 'number' ? (value - baseline) * 5.6 : 0;
     };
     const [scale, setScale] = useState(1);
     const certRef = useRef<HTMLDivElement>(null);
@@ -214,6 +224,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             height: '748px',
                             transform: `scale(${scale})`,
                             transformOrigin: 'top left',
+                            backgroundColor: visualStyle.backgroundColor,
                         }}
                     >
 
@@ -223,8 +234,8 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             style={{
                                 inset: 0,
                                 borderStyle: 'solid',
-                                borderWidth: template?.designKey === 'royal' ? 14 : template?.designKey === 'modern' ? 4 : 8,
-                                borderColor: template?.designKey === 'modern' ? '#C6A15B' : '#12305A',
+                                borderWidth: visualStyle.frameStyle === 'none' ? 0 : visualStyle.frameStyle === 'double' ? 14 : 6,
+                                borderColor: visualStyle.primaryColor,
                             }}
                         />
                         <div className="absolute border-[2px] border-[#C6A15B]" style={{ inset: '10px' }} />
@@ -256,7 +267,9 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             <div className="text-center w-full" style={{ transform: `translate(${layoutOffset('brand', 'x', 50)}px, ${layoutOffset('brand', 'y', 9) + layoutOffset('title', 'y', 19)}px)` }}>
                                 {/* Logo + Brand */}
                                 <div className={`flex items-center justify-center gap-3 mb-4 ${isAr ? 'flex-row-reverse' : ''}`}>
-                                    <BrandLogo className="h-12 w-12 rounded-lg" variant="mark" dark />
+                                    <div style={{ transform: `translate(${layoutOffset('logo', 'x', 50)}px, ${layoutOffset('logo', 'y', 9)}px)` }}>
+                                        <BrandLogo className={`h-12 w-12 object-contain ${visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'square' ? 'rounded-none' : 'rounded-lg'}`} variant="mark" dark />
+                                    </div>
                                     <h1 className="text-2xl font-black text-[#12305A] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
                                         {academyName || 'Laxalab Academy'}
                                     </h1>
