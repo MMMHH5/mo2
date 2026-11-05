@@ -79,13 +79,13 @@ export class CourseImportService {
         const lessons = workbook.addWorksheet('Lessons', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
         lessons.columns = [
             { header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 },
+            { header: 'lessonKey', key: 'lessonKey', width: 18 },
             { header: 'titleAr', key: 'titleAr', width: 32 }, { header: 'titleEn', key: 'titleEn', width: 32 },
             { header: 'descriptionAr', key: 'descriptionAr', width: 44 }, { header: 'descriptionEn', key: 'descriptionEn', width: 44 },
             { header: 'videoUrl', key: 'videoUrl', width: 36 }, { header: 'orderIndex', key: 'orderIndex', width: 14 },
             { header: 'durationMinutes', key: 'durationMinutes', width: 18 }, { header: 'links', key: 'links', width: 50 },
+            { header: 'files', key: 'files', width: 70 },
         ];
-        lessons.columns.splice(2, 0, { header: 'lessonKey', key: 'lessonKey', width: 18 });
-        lessons.columns.push({ header: 'files', key: 'files', width: 70 });
         lessons.addRow({ courseKey: 'CO-001', chapterKey: 'CH-001', lessonKey: 'LE-001', titleAr: 'الدرس الأول', titleEn: 'First lesson', videoUrl: '', orderIndex: 0, durationMinutes: 30, links: '', files: '' });
 
         const objectives = workbook.addWorksheet('Objectives', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
