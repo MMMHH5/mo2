@@ -13,6 +13,8 @@ import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 import { CreateCourseDto, UpdateCourseDto } from './dto/create-course.dto';
 import { CreateOpeningDto } from './dto/create-opening.dto';
+import { CourseImportService } from './course-import.service';
+import { StreamableFile } from '@nestjs/common';
 
 const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/quicktime'];
@@ -22,7 +24,10 @@ const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/quicktime'];
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Controller('api/admin/courses')
 export class AdminCoursesController {
-    constructor(private readonly coursesService: CoursesService) { }
+    constructor(
+        private readonly coursesService: CoursesService,
+        private readonly courseImportService: CourseImportService,
+    ) { }
 
     @ApiOperation({ summary: 'List archived courses and openings' })
     @Roles(Role.ADMIN, Role.COURSE_MANAGER)
@@ -38,6 +43,35 @@ export class AdminCoursesController {
     @Post(':id/restore')
     restore(@Param('id') id: string, @Request() req: any, @Ip() ip: string) {
         return this.coursesService.restoreCourse(id, req.user.userId, ip);
+    }
+
+    @ApiOperation({ summary: 'Download the professional bulk course Excel template' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_WRITE)
+    @Get('import/template')
+    async downloadImportTemplate() {
+        const buffer = await this.courseImportService.template();
+        return new StreamableFile(buffer, {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            disposition: 'attachment; filename="LaxaLab-Course-Import-Template.xlsx"',
+        });
+    }
+
+    @ApiOperation({ summary: 'Create courses in bulk from a validated Excel workbook' })
+    @ApiConsumes('multipart/form-data')
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_WRITE)
+    @Post('import')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: require('multer').memoryStorage(),
+        limits: { fileSize: 15 * 1024 * 1024, files: 1, fields: 10 },
+        fileFilter: (_req, file, callback) => {
+            callback(null, file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.originalname.toLowerCase().endsWith('.xlsx'));
+        },
+    }))
+    importCourses(@UploadedFile() file: Express.Multer.File, @Request() req: any) {
+        if (!file?.buffer) throw new BadRequestException('يرجى رفع ملف Excel بصيغة .xlsx.');
+        return this.courseImportService.import(file.buffer, req.user.userId);
     }
 
     @ApiOperation({ summary: 'Create a new course (Managers/Admins)' })

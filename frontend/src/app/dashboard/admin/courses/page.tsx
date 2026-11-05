@@ -3,11 +3,11 @@
 import { useFetchData } from '@/lib/useFetchData';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Pencil, Trash2, CalendarPlus, Users, ArrowUpRight, Search, BookOpen, Package, ChevronDown } from 'lucide-react';
+import { Pencil, Trash2, CalendarPlus, Users, ArrowUpRight, Search, BookOpen, Package, ChevronDown, Download, Upload, LoaderCircle } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnPrimary, type Tone } from '../components';
 import CourseAdminPanel from '@/components/admin/CourseAdminPanel';
 
@@ -60,6 +60,32 @@ export default function AdminCoursesPage() {
     // opening state, and the full student roster. Expanding the row keeps that
     // context on the list instead of sending them off to separate pages.
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [importing, setImporting] = useState(false);
+    const importRef = useRef<HTMLInputElement>(null);
+
+    const downloadTemplate = async () => {
+        try {
+            const response = await api.get('/api/admin/courses/import/template', { responseType: 'blob' });
+            const url = URL.createObjectURL(response.data);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'LaxaLab-Course-Import-Template.xlsx';
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch (err) { toast.error(getErrorMessage(err) || 'تعذر تحميل قالب Excel'); }
+    };
+
+    const importWorkbook = async (file: File) => {
+        setImporting(true);
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            const response = await api.post('/api/admin/courses/import', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+            toast.success(`تم إنشاء ${response.data.imported} دورة بنجاح`);
+            refetch();
+        } catch (err) { toast.error(getErrorMessage(err) || 'تعذر استيراد ملف Excel'); }
+        finally { setImporting(false); if (importRef.current) importRef.current.value = ''; }
+    };
 
     const handleDelete = async (c: Course) => {
         if (!window.confirm(`${t('manageCourses.delete_prefix')} ${pick(c, 'title') || c.id}?`)) return;
@@ -102,6 +128,11 @@ export default function AdminCoursesPage() {
                                 className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-full sm:w-56 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
+                        <button type="button" onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-xl border border-brand-gold/40 px-4 py-2.5 text-sm font-bold text-brand-navy transition hover:bg-brand-gold/10 dark:text-white"><Download size={16} /> قالب Excel</button>
+                        <button type="button" disabled={importing} onClick={() => importRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-brand-gold bg-white px-4 py-2.5 text-sm font-bold text-brand-navy transition hover:bg-brand-gold/10 disabled:opacity-60 dark:bg-brand-navy-dark dark:text-white">
+                            {importing ? <LoaderCircle size={16} className="animate-spin" /> : <Upload size={16} />} {importing ? 'جارٍ الاستيراد...' : 'استيراد دورات'}
+                        </button>
+                        <input ref={importRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) void importWorkbook(file); }} />
                         <BtnPrimary href="/dashboard/courses/create" icon={BookOpen}>{t('manageCourses.create_course')}</BtnPrimary>
                     </>
                 }
