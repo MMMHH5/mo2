@@ -25,6 +25,10 @@ media, chat attachments, assignments, receipts, and CVs remain available across
 the two API origins. Private receipts and CVs are still served only by their
 authenticated download routes; R2 itself is not exposed as a public bucket.
 
+The frontend build commands copy `.next/static` and `public` into the standalone
+server output so the production server can serve its JavaScript, CSS, and public
+assets after deployment.
+
 ### Before creating the Blueprint
 
 1. Create a Cloudflare R2 bucket and an API token with read/write access to that
