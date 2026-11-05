@@ -305,7 +305,7 @@ export default function InstructorProfilePage() {
     }, [profile]);
 
     useEffect(() => {
-        if (profile?.role !== 'INSTRUCTOR') return;
+        if (!['INSTRUCTOR', 'COURSE_MANAGER'].includes(profile?.role ?? '')) return;
         void api.get('/certificates/my-signature')
             .then((response) => setSignatureUrl(response.data.signatureUrl ?? null))
             .catch(() => setSignatureUrl(null));
@@ -1076,7 +1076,7 @@ export default function InstructorProfilePage() {
                         </section>
 
                         {/* Certificate signature */}
-                        {profile.role === 'INSTRUCTOR' && (
+                        {['INSTRUCTOR', 'COURSE_MANAGER'].includes(profile.role) && (
                             <section className={cardCls}>
                                 <h2 className={`${sectionTitle} flex items-center gap-2`}>
                                     <PenLine size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />

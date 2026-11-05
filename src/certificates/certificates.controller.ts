@@ -79,7 +79,7 @@ export class CertificatesController {
     }
 
     @ApiOperation({ summary: 'Get the signed-in instructor signature' })
-    @Roles(Role.INSTRUCTOR)
+    @Roles(Role.INSTRUCTOR, Role.COURSE_MANAGER)
     @Get('my-signature')
     getMySignature(@Request() req: any) {
         return this.certificatesService.getInstructorSignature(req.user.userId);
@@ -88,7 +88,7 @@ export class CertificatesController {
     @ApiOperation({ summary: 'Save the signed-in instructor signature' })
     @ApiConsumes('multipart/form-data')
     @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
-    @Roles(Role.INSTRUCTOR)
+    @Roles(Role.INSTRUCTOR, Role.COURSE_MANAGER)
     @Post('my-signature')
     @UseInterceptors(FileInterceptor('file', {
         storage: createUploadStorage({
@@ -115,7 +115,7 @@ export class CertificatesController {
     }
 
     @ApiOperation({ summary: 'Remove the signed-in instructor signature' })
-    @Roles(Role.INSTRUCTOR)
+    @Roles(Role.INSTRUCTOR, Role.COURSE_MANAGER)
     @Delete('my-signature')
     removeMySignature(@Request() req: any) {
         return this.certificatesService.removeInstructorSignature(req.user.userId, req.user.userId);
