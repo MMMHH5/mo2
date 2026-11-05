@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Award, Check, ChevronDown, ExternalLink, FileBadge, GripVertical, ImagePlus, LayoutTemplate, LoaderCircle, Palette, PenLine, RotateCcw, Save, ShieldCheck, Stamp, Trash2, Upload } from 'lucide-react';
+import { Award, Check, ChevronDown, ExternalLink, FileBadge, GripVertical, ImagePlus, LayoutTemplate, LoaderCircle, Palette, PenLine, RotateCcw, Save, ShieldCheck, Stamp, Trash2, Type, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
-import BrandLogo from '@/components/BrandLogo';
+import CertificateDesignFrame, { CERTIFICATE_DESIGNS, type CertificateDesign } from '@/components/CertificateDesignFrame';
 
 type AssetKind = 'teacherSignature' | 'directorSignature' | 'academyStamp';
+type BrandingAsset = { name: string; url: string };
 type CertificateLayout = Record<string, { x: number; y: number } | CertificateVisualStyle>;
 type CertificateVisualStyle = {
     primaryColor: string;
@@ -20,9 +21,36 @@ type CertificateVisualStyle = {
     logoShape: 'circle' | 'rounded' | 'square';
     logoVariant: 'mark' | 'horizontal' | 'stacked';
     showLogo: boolean;
+    logoUrl: string;
+    logoLibrary: BrandingAsset[];
+    certificateDesign: CertificateDesign;
+    fontName: string;
+    fontFamily: string;
+    fontUrl: string | null;
+    fontLibrary: BrandingAsset[];
 };
 const CERTIFICATE_ELEMENTS = ['logo', 'brand', 'title', 'recipient', 'course', 'description', 'signatures', 'qr'] as const;
 type CertificateElementKey = typeof CERTIFICATE_ELEMENTS[number];
+const DEFAULT_CERTIFICATE_LOGO = '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png';
+const BUILT_IN_LOGOS = [
+    { nameAr: 'LaxaLab Academy — أفقي أساسي', nameEn: 'LaxaLab Academy — Primary horizontal', url: DEFAULT_CERTIFICATE_LOGO },
+    { nameAr: 'LaxaLab Academy — عمودي أساسي', nameEn: 'LaxaLab Academy — Primary stacked', url: '/logos/LaxaLab_Academy_Stacked_Primary_4K.png' },
+    { nameAr: 'LaxaLab — أفقي أحادي داكن', nameEn: 'LaxaLab — Navy monochrome horizontal', url: '/logos/LaxaLab_Academy_Horizontal_Mono_Navy_4K.png' },
+    { nameAr: 'LaxaLab — علامة أساسية', nameEn: 'LaxaLab — Primary mark', url: '/logos/LaxaLab_LAXA_Mark_Primary_4096.png' },
+    { nameAr: 'LaxaLab Academy — أفقي أبيض', nameEn: 'LaxaLab Academy — White horizontal', url: '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' },
+    { nameAr: 'LaxaLab Academy — عمودي أبيض', nameEn: 'LaxaLab Academy — White stacked', url: '/logos/LaxaLab_Academy_Stacked_Reverse_4K.png' },
+];
+const BUILT_IN_FONTS = [
+    { name: 'Georgia', family: "'Georgia', 'Times New Roman', serif" },
+    { name: 'Arial', family: 'Arial, sans-serif' },
+    { name: 'Times New Roman', family: "'Times New Roman', serif" },
+    { name: 'Tahoma', family: 'Tahoma, sans-serif' },
+    { name: 'Verdana', family: 'Verdana, sans-serif' },
+    { name: 'Trebuchet MS', family: "'Trebuchet MS', sans-serif" },
+    { name: 'Palatino Linotype', family: "'Palatino Linotype', 'Book Antiqua', serif" },
+    { name: 'Garamond', family: 'Garamond, serif' },
+];
+const brandingAssetSrc = (url: string) => url.startsWith('/uploads/') ? `${API_BASE_URL}${url}` : url;
 
 const DEFAULT_VISUAL_STYLE: CertificateVisualStyle = {
     primaryColor: '#12305A',
@@ -33,6 +61,13 @@ const DEFAULT_VISUAL_STYLE: CertificateVisualStyle = {
     logoShape: 'rounded',
     logoVariant: 'mark',
     showLogo: true,
+    logoUrl: DEFAULT_CERTIFICATE_LOGO,
+    logoLibrary: [],
+    certificateDesign: 'classic',
+    fontName: 'Georgia',
+    fontFamily: "'Georgia', 'Times New Roman', serif",
+    fontUrl: null,
+    fontLibrary: [],
 };
 type CertificatePreset = { id: string; name: string; designKey: 'classic' | 'royal' | 'modern'; layout: CertificateLayout };
 type CertificateTemplate = {
@@ -272,6 +307,7 @@ export default function AdminCertificatesPage() {
     const [loading, setLoading] = useState(true);
     const [savingText, setSavingText] = useState(false);
     const [busyAsset, setBusyAsset] = useState<AssetKind | null>(null);
+    const [busyBrandAsset, setBusyBrandAsset] = useState<'logo' | 'font' | null>(null);
     const [error, setError] = useState('');
 
     const visualStyle: CertificateVisualStyle = {
@@ -376,6 +412,52 @@ export default function AdminCertificatesPage() {
             toast.error(getErrorMessage(requestError) || (isAr ? 'فشل رفع الصورة.' : 'Image upload failed.'));
         } finally {
             setBusyAsset(null);
+        }
+    };
+
+    const uploadBrandAsset = async (kind: 'logo' | 'font', file: File) => {
+        const isSupported = kind === 'logo'
+            ? ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+            : /\.(woff2?|ttf|otf)$/i.test(file.name);
+        if (!isSupported) {
+            toast.error(isAr
+                ? (kind === 'logo' ? 'ارفع شعاراً بصيغة PNG أو JPG أو WEBP.' : 'ارفع خطاً بصيغة WOFF أو WOFF2 أو TTF أو OTF.')
+                : (kind === 'logo' ? 'Upload a PNG, JPG, or WEBP logo.' : 'Upload a WOFF, WOFF2, TTF, or OTF font.'));
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error(isAr ? 'يجب ألا يتجاوز حجم الملف 5 ميجابايت.' : 'The file must be 5 MB or smaller.');
+            return;
+        }
+
+        setBusyBrandAsset(kind);
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            const response = await api.post<BrandingAsset & { kind: string }>(
+                `/certificates/template/branding-assets?kind=${kind}`,
+                form,
+                { headers: { 'Content-Type': 'multipart/form-data' } },
+            );
+            const uploadedAsset = { name: file.name, url: response.data.url };
+            setTemplate((current) => {
+                const currentStyle = { ...DEFAULT_VISUAL_STYLE, ...((current.layout.__visualStyle ?? {}) as Partial<CertificateVisualStyle>) };
+                const updatedStyle: CertificateVisualStyle = kind === 'logo'
+                    ? { ...currentStyle, logoUrl: uploadedAsset.url, logoLibrary: [...(Array.isArray(currentStyle.logoLibrary) ? currentStyle.logoLibrary : []), uploadedAsset] }
+                    : {
+                        ...currentStyle,
+                        fontName: uploadedAsset.name,
+                        fontFamily: "'LaxaCertificateCustom', sans-serif",
+                        fontUrl: uploadedAsset.url,
+                        fontLibrary: [...(Array.isArray(currentStyle.fontLibrary) ? currentStyle.fontLibrary : []), uploadedAsset],
+                    };
+                return { ...current, layout: { ...current.layout, __visualStyle: updatedStyle } };
+            });
+            toast.success(isAr ? 'تم رفع الملف. احفظ تصميم الشهادة لتثبيته.' : 'File uploaded. Save the certificate design to keep it.');
+        } catch (requestError) {
+            toast.error(getErrorMessage(requestError) || (isAr ? 'تعذر رفع الملف.' : 'Could not upload the file.'));
+        } finally {
+            setBusyBrandAsset(null);
         }
     };
 
@@ -585,6 +667,9 @@ export default function AdminCertificatesPage() {
             </section>
 
             <section className="rounded-3xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
+                {visualStyle.fontUrl?.startsWith('/uploads/certificates/branding/') && !visualStyle.fontUrl.includes('..') && (
+                    <style>{`@font-face { font-family: 'LaxaCertificateCustom'; src: url("${brandingAssetSrc(visualStyle.fontUrl)}"); font-display: swap; }`}</style>
+                )}
                 <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light"><LayoutTemplate size={19} /></span>
@@ -601,7 +686,7 @@ export default function AdminCertificatesPage() {
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
                     <div className="overflow-auto rounded-2xl bg-slate-200 p-3 dark:bg-black/20 sm:p-5">
                         <div
-                            style={{ backgroundColor: visualStyle.backgroundColor }}
+                            style={{ backgroundColor: visualStyle.backgroundColor, fontFamily: visualStyle.fontFamily }}
                             className={`relative mx-auto aspect-[1.414/1] w-full max-w-[760px] overflow-hidden shadow-2xl ${template.designKey === 'modern' ? 'rounded-lg' : ''}`}
                         >
                             {visualStyle.frameStyle !== 'none' && (
@@ -621,6 +706,11 @@ export default function AdminCertificatesPage() {
                                     )}
                                 </>
                             )}
+                            <CertificateDesignFrame
+                                design={visualStyle.certificateDesign}
+                                primaryColor={visualStyle.primaryColor}
+                                accentColor={visualStyle.accentColor}
+                            />
                             {CERTIFICATE_ELEMENTS.map((key) => {
                                 if (key === 'logo' && !visualStyle.showLogo) return null;
                                 const rawPosition = template.layout[key] ?? EMPTY_TEMPLATE.layout[key];
@@ -649,10 +739,12 @@ export default function AdminCertificatesPage() {
                                     >
                                         <GripVertical className="mr-auto inline-block text-brand-gold-dark" size={12} />
                                         {key === 'logo' ? (
-                                            <BrandLogo
-                                                variant={visualStyle.logoVariant}
-                                                dark={false}
-                                                className={`mx-auto block ${visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'rounded' ? 'rounded-lg' : 'rounded-none'} ${visualStyle.logoVariant === 'mark' ? 'h-14 w-14' : visualStyle.logoVariant === 'horizontal' ? 'h-10 w-32' : 'h-14 w-20'} object-contain`}
+                                            <Image
+                                                src={brandingAssetSrc(visualStyle.logoUrl || DEFAULT_CERTIFICATE_LOGO)}
+                                                width={360}
+                                                height={100}
+                                                unoptimized
+                                                className={`mx-auto block ${visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'rounded' ? 'rounded-lg' : 'rounded-none'} h-12 w-40 object-contain`}
                                                 alt={isAr ? 'شعار المنصة' : 'Platform logo'}
                                             />
                                         ) : labels[key]}
@@ -695,11 +787,34 @@ export default function AdminCertificatesPage() {
                             </label>
                         </div>
                         <div>
-                            <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-brand-navy dark:text-white"><Palette size={16} /> {isAr ? 'نمط التصميم' : 'Design style'}</h3>
-                            <div className="grid grid-cols-3 gap-2">
-                                {(['classic', 'royal', 'modern'] as const).map((design) => (
-                                    <button key={design} type="button" onClick={() => setTemplate((current) => ({ ...current, designKey: design }))} className={`rounded-xl border p-3 text-xs font-bold transition ${template.designKey === design ? 'border-brand-gold bg-brand-gold/10 text-brand-navy dark:text-white' : 'border-gray-200 text-gray-500 dark:border-white/10'}`}>
-                                        {design === 'classic' ? (isAr ? 'كلاسيكي' : 'Classic') : design === 'royal' ? (isAr ? 'ملكي' : 'Royal') : (isAr ? 'عصري' : 'Modern')}
+                            <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-brand-navy dark:text-white"><Palette size={16} /> {isAr ? 'اختر شكل الشهادة' : 'Choose a certificate design'}</h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                {CERTIFICATE_DESIGNS.map((design) => (
+                                    <button
+                                        key={design.id}
+                                        type="button"
+                                        onClick={() => {
+                                            const designKey = design.id === 'modern' || design.id === 'minimal' || design.id === 'geometric' || design.id === 'wave' || design.id === 'mosaic'
+                                                ? 'modern'
+                                                : design.id === 'royal' || design.id === 'artDeco' || design.id === 'heritage' || design.id === 'ribbon'
+                                                    ? 'royal'
+                                                    : 'classic';
+                                            setTemplate((current) => ({
+                                                ...current,
+                                                designKey,
+                                                layout: {
+                                                    ...current.layout,
+                                                    __visualStyle: { ...visualStyle, certificateDesign: design.id },
+                                                },
+                                            }));
+                                        }}
+                                        className={`relative overflow-hidden rounded-xl border p-2 text-start transition ${visualStyle.certificateDesign === design.id ? 'border-brand-gold bg-brand-gold/10 text-brand-navy dark:text-white' : 'border-gray-200 text-gray-600 dark:border-white/10 dark:text-gray-300'}`}
+                                    >
+                                        <span className="relative mb-2 block aspect-[1.7/1] overflow-hidden rounded-md border bg-white" style={{ borderColor: visualStyle.primaryColor, backgroundColor: visualStyle.backgroundColor }}>
+                                            <span className="absolute inset-[12%] border" style={{ borderColor: visualStyle.primaryColor }} />
+                                            <CertificateDesignFrame design={design.id} primaryColor={visualStyle.primaryColor} accentColor={visualStyle.accentColor} />
+                                        </span>
+                                        <span className="text-[11px] font-bold">{isAr ? design.nameAr : design.nameEn}</span>
                                     </button>
                                 ))}
                             </div>
@@ -740,14 +855,57 @@ export default function AdminCertificatesPage() {
                                     ))}
                                 </div>
                             </label>
-                            <label className="mt-3 block text-xs font-bold text-gray-600 dark:text-gray-300">
-                                {isAr ? 'نوع شعار المنصة' : 'Platform logo type'}
-                                <select value={visualStyle.logoVariant} onChange={(event) => updateVisualStyle({ logoVariant: event.target.value as CertificateVisualStyle['logoVariant'] })} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-white/10 dark:bg-brand-navy-dark">
-                                    <option value="mark">{isAr ? 'الأيقونة' : 'Icon'}</option>
-                                    <option value="horizontal">{isAr ? 'الشعار الأفقي' : 'Horizontal logo'}</option>
-                                    <option value="stacked">{isAr ? 'الشعار العمودي' : 'Stacked logo'}</option>
+                            <div className="mt-4 rounded-xl border border-gray-100 p-3 dark:border-white/10">
+                                <h4 className="mb-2 flex items-center gap-2 text-xs font-black text-gray-700 dark:text-gray-200"><ImagePlus size={14} /> {isAr ? 'الشعار المستخدم' : 'Certificate logo'}</h4>
+                                <div className="mb-2 flex h-16 items-center justify-center rounded-lg bg-gray-50 p-2 dark:bg-white/5">
+                                    <Image src={brandingAssetSrc(visualStyle.logoUrl || DEFAULT_CERTIFICATE_LOGO)} alt={isAr ? 'معاينة الشعار' : 'Logo preview'} width={240} height={72} unoptimized className="h-full max-w-full object-contain" />
+                                </div>
+                                <select
+                                    value={visualStyle.logoUrl || DEFAULT_CERTIFICATE_LOGO}
+                                    onChange={(event) => updateVisualStyle({ logoUrl: event.target.value })}
+                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-white/10 dark:bg-brand-navy-dark"
+                                >
+                                    {BUILT_IN_LOGOS.map((logo) => <option key={logo.url} value={logo.url}>{isAr ? logo.nameAr : logo.nameEn}</option>)}
+                                    {(Array.isArray(visualStyle.logoLibrary) ? visualStyle.logoLibrary : []).map((logo) => <option key={logo.url} value={logo.url}>{logo.name}</option>)}
                                 </select>
-                            </label>
+                                <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-bold text-gray-600 dark:border-white/10 dark:text-gray-300">
+                                    {busyBrandAsset === 'logo' ? <LoaderCircle size={14} className="animate-spin" /> : <Upload size={14} />}
+                                    {isAr ? 'إضافة شعار جديد' : 'Upload another logo'}
+                                    <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={busyBrandAsset !== null} onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (file) void uploadBrandAsset('logo', file);
+                                        event.currentTarget.value = '';
+                                    }} />
+                                </label>
+                            </div>
+                            <div className="mt-4 rounded-xl border border-gray-100 p-3 dark:border-white/10">
+                                <h4 className="mb-2 flex items-center gap-2 text-xs font-black text-gray-700 dark:text-gray-200"><Type size={14} /> {isAr ? 'خط الشهادة' : 'Certificate font'}</h4>
+                                <select
+                                    value={visualStyle.fontUrl || visualStyle.fontFamily}
+                                    onChange={(event) => {
+                                        const font = BUILT_IN_FONTS.find((option) => option.family === event.target.value);
+                                        if (font) {
+                                            updateVisualStyle({ fontName: font.name, fontFamily: font.family, fontUrl: null });
+                                            return;
+                                        }
+                                        const uploadedFont = (Array.isArray(visualStyle.fontLibrary) ? visualStyle.fontLibrary : []).find((asset) => asset.url === event.target.value);
+                                        if (uploadedFont) updateVisualStyle({ fontName: uploadedFont.name, fontFamily: "'LaxaCertificateCustom', sans-serif", fontUrl: uploadedFont.url });
+                                    }}
+                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-white/10 dark:bg-brand-navy-dark"
+                                >
+                                    {BUILT_IN_FONTS.map((font) => <option key={font.name} value={font.family}>{font.name}</option>)}
+                                    {(Array.isArray(visualStyle.fontLibrary) ? visualStyle.fontLibrary : []).map((font) => <option key={font.url} value={font.url}>{font.name}</option>)}
+                                </select>
+                                <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-bold text-gray-600 dark:border-white/10 dark:text-gray-300">
+                                    {busyBrandAsset === 'font' ? <LoaderCircle size={14} className="animate-spin" /> : <Upload size={14} />}
+                                    {isAr ? 'رفع خط جديد (حتى 5 ميجابايت)' : 'Upload a font (up to 5 MB)'}
+                                    <input type="file" accept=".woff,.woff2,.ttf,.otf,font/woff,font/woff2,font/ttf,font/otf" className="sr-only" disabled={busyBrandAsset !== null} onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (file) void uploadBrandAsset('font', file);
+                                        event.currentTarget.value = '';
+                                    }} />
+                                </label>
+                            </div>
                             <div className="mt-4">
                                 <p className="mb-2 text-xs font-bold text-gray-600 dark:text-gray-300">{isAr ? 'لوحات ألوان جاهزة' : 'Color palettes'}</p>
                                 <div className="grid grid-cols-2 gap-2">

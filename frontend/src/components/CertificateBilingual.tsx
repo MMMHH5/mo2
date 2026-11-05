@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api';
 import BrandLogo from '@/components/BrandLogo';
+import CertificateDesignFrame, { type CertificateDesign } from '@/components/CertificateDesignFrame';
 
 export interface CertificateTemplateData {
     academyNameAr: string;
@@ -95,10 +96,23 @@ export default function CertificateBilingual({ studentName, courseName, instruct
         logoShape: savedStyle && typeof savedStyle === 'object' && 'logoShape' in savedStyle && typeof savedStyle.logoShape === 'string' ? savedStyle.logoShape : 'rounded',
         logoVariant: savedStyle && typeof savedStyle === 'object' && 'logoVariant' in savedStyle && typeof savedStyle.logoVariant === 'string' ? savedStyle.logoVariant : 'mark',
         showLogo: !(savedStyle && typeof savedStyle === 'object' && 'showLogo' in savedStyle && savedStyle.showLogo === false),
+        logoUrl: savedStyle && typeof savedStyle === 'object' && 'logoUrl' in savedStyle && typeof savedStyle.logoUrl === 'string' ? savedStyle.logoUrl : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png',
+        certificateDesign: savedStyle && typeof savedStyle === 'object' && 'certificateDesign' in savedStyle && typeof savedStyle.certificateDesign === 'string' ? savedStyle.certificateDesign as CertificateDesign : 'classic',
+        fontFamily: savedStyle && typeof savedStyle === 'object' && 'fontFamily' in savedStyle && typeof savedStyle.fontFamily === 'string' ? savedStyle.fontFamily : "'Georgia', 'Times New Roman', serif",
+        fontUrl: savedStyle && typeof savedStyle === 'object' && 'fontUrl' in savedStyle && typeof savedStyle.fontUrl === 'string' ? savedStyle.fontUrl : null,
     };
     const logoClass = visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'square' ? 'rounded-none' : 'rounded-lg';
-    const logoVariant = visualStyle.logoVariant === 'horizontal' || visualStyle.logoVariant === 'stacked' ? visualStyle.logoVariant : 'mark';
     const frameBorderStyle = visualStyle.frameStyle === 'dashed' ? 'dashed' : visualStyle.frameStyle === 'ornate' ? 'double' : 'solid';
+    const logoSrc = visualStyle.logoUrl.startsWith('/uploads/certificates/branding/') && !visualStyle.logoUrl.includes('..')
+        ? `${API_BASE_URL}${visualStyle.logoUrl}`
+        : /^\/(logos|icons)\/[A-Za-z0-9._/-]+$/.test(visualStyle.logoUrl) && !visualStyle.logoUrl.includes('..')
+            ? visualStyle.logoUrl
+            : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png';
+    const fontSrc = visualStyle.fontUrl?.startsWith('/uploads/certificates/branding/') && !visualStyle.fontUrl.includes('..')
+        ? `${API_BASE_URL}${visualStyle.fontUrl}`
+        : null;
+    const fontFormat = fontSrc?.toLowerCase().endsWith('.woff2') ? 'woff2' : fontSrc?.toLowerCase().endsWith('.woff') ? 'woff' : fontSrc?.toLowerCase().endsWith('.otf') ? 'opentype' : 'truetype';
+    const certificateFontFamily = visualStyle.fontFamily;
     const layoutOffset = (key: string, axis: 'x' | 'y', baseline: number) => {
         const point = template?.layout?.[key];
         if (!point || typeof point !== 'object' || !('x' in point) || !('y' in point)) return 0;
@@ -134,6 +148,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
 
     return (
         <>
+            {fontSrc && <style>{`@font-face { font-family: 'LaxaCertificateCustom'; src: url("${fontSrc}") format("${fontFormat}"); font-display: swap; }`}</style>}
             {/* Controls — hidden on print */}
             <div className="no-print fixed top-0 inset-x-0 z-50 bg-brand-navy-dark/95 backdrop-blur-xl border-b border-white/10">
                 <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -167,35 +182,36 @@ export default function CertificateBilingual({ studentName, courseName, instruct
             <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4 overflow-hidden print:bg-white print:p-0 print:overflow-visible">
                 {/* Mobile stacked certificate (screen only, below md) */}
                 <div className="md:hidden print:hidden w-full max-w-md mx-auto relative z-10">
-                    <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ backgroundColor: visualStyle.backgroundColor, border: visualStyle.frameStyle === 'none' ? 'none' : `8px ${frameBorderStyle} ${visualStyle.primaryColor}` }}>
-                        <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: visualStyle.accentColor }} />
-                        <div className="p-6 pt-8 text-center space-y-5">
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{ backgroundColor: visualStyle.backgroundColor, border: visualStyle.frameStyle === 'none' ? 'none' : `8px ${frameBorderStyle} ${visualStyle.primaryColor}` }}>
+                        <CertificateDesignFrame design={visualStyle.certificateDesign} primaryColor={visualStyle.primaryColor} accentColor={visualStyle.accentColor} />
+                        <div className="absolute inset-x-0 top-0 z-10 h-1.5" style={{ backgroundColor: visualStyle.accentColor }} />
+                        <div className="relative z-10 p-6 pt-8 text-center space-y-5">
                             <div className="flex items-center justify-center gap-2">
-                                {visualStyle.showLogo && <BrandLogo className={`${logoVariant === 'mark' ? 'h-9 w-9' : 'h-10 w-32'} ${logoClass} object-contain`} variant={logoVariant} dark />}
-                                <span className="text-xl font-black tracking-tight" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>{academyName || 'Laxalab Academy'}</span>
+                                {visualStyle.showLogo && <Image src={logoSrc} alt={isAr ? 'شعار المنصة' : 'Platform logo'} width={320} height={90} unoptimized className={`h-10 w-36 ${logoClass} object-contain`} />}
+                                <span className="text-xl font-black tracking-tight" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>{academyName || 'Laxalab Academy'}</span>
                             </div>
                             <div className="mx-8 h-px" style={{ background: `linear-gradient(to right, transparent, ${colorWithOpacity(visualStyle.accentColor, 0.6)}, transparent)` }} />
                             <div>
-                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-4" style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] mb-4" style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}>
                                     {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'CERTIFICATE OF COMPLETION')}
                                 </p>
                                 <p className="text-sm text-gray-500 italic">{isAr ? 'تُمنح هذه الشهادة إلى' : 'This is to certify that'}</p>
-                                <p className="mt-1 break-words text-2xl font-bold" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>{studentName}</p>
+                                <p className="mt-1 break-words text-2xl font-bold" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>{studentName}</p>
                                 <p className="text-sm text-gray-500 italic mt-4">{isAr ? 'وقد أتم بنجاح دورة:' : 'has successfully completed the course:'}</p>
-                                <p className="mt-1 break-words text-lg font-bold" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>{courseName}</p>
+                                <p className="mt-1 break-words text-lg font-bold" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>{courseName}</p>
                             </div>
                             <div className="grid grid-cols-2 gap-3 text-start">
                                 <div className="rounded-xl border p-3" style={{ backgroundColor: colorWithOpacity(visualStyle.primaryColor, 0.035), borderColor: colorWithOpacity(visualStyle.primaryColor, 0.1) }}>
-                                            <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                            <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}>
                                         {isAr ? 'المدرّس المعتمد' : 'Instructor'}
                                     </p>
-                                    <p className="mt-1 break-words text-xs font-bold" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>{instructorName}</p>
+                                    <p className="mt-1 break-words text-xs font-bold" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>{instructorName}</p>
                                 </div>
                                 <div className="rounded-xl border p-3" style={{ backgroundColor: colorWithOpacity(visualStyle.primaryColor, 0.035), borderColor: colorWithOpacity(visualStyle.primaryColor, 0.1) }}>
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}>
                                         {isAr ? 'تاريخ الإصدار' : 'Date'}
                                     </p>
-                                    <p className="mt-1 text-xs font-bold" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>{formatDate(issueDate, lang)}</p>
+                                    <p className="mt-1 text-xs font-bold" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>{formatDate(issueDate, lang)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 border-t border-dashed pt-4" style={{ borderColor: colorWithOpacity(visualStyle.primaryColor, 0.15) }}>
@@ -216,7 +232,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     <QRCodeSVG url={verificationUrl} lang={lang} color={visualStyle.primaryColor} />
                                 </div>
                                 <div className="text-start min-w-0">
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}>
                                         {isAr ? 'رقم الشهادة' : 'Certificate ID'}
                                     </p>
                                     <p className="break-all text-sm font-mono font-black tracking-wider" style={{ color: visualStyle.textColor }} dir="ltr">{verificationCode.toUpperCase()}</p>
@@ -242,6 +258,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             backgroundColor: visualStyle.backgroundColor,
                         }}
                     >
+                        <CertificateDesignFrame design={visualStyle.certificateDesign} primaryColor={visualStyle.primaryColor} accentColor={visualStyle.accentColor} />
 
                         {/* === DECORATIVE BORDER === */}
                         {visualStyle.frameStyle !== 'none' && (
@@ -283,7 +300,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
 
                         {/* === CONTENT === */}
                         <div
-                            className="relative h-full flex flex-col items-center justify-between"
+                            className="relative z-10 h-full flex flex-col items-center justify-between"
                             style={{ inset: '24px', position: 'absolute', padding: isAr ? '40px 48px 32px' : '40px 48px 32px' }}
                         >
 
@@ -293,10 +310,10 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 <div className={`flex items-center justify-center gap-3 mb-4 ${isAr ? 'flex-row-reverse' : ''}`}>
                                     {visualStyle.showLogo && (
                                         <div style={{ transform: `translate(${layoutOffset('logo', 'x', 50)}px, ${layoutOffset('logo', 'y', 9)}px)` }}>
-                                            <BrandLogo className={`${logoVariant === 'mark' ? 'h-12 w-12' : logoVariant === 'horizontal' ? 'h-12 w-40' : 'h-16 w-24'} ${logoClass} object-contain`} variant={logoVariant} dark />
+                                            <Image src={logoSrc} alt={isAr ? 'شعار المنصة' : 'Platform logo'} width={400} height={110} unoptimized className={`h-16 w-52 ${logoClass} object-contain`} />
                                         </div>
                                     )}
-                                    <h1 className="text-2xl font-black tracking-tight" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    <h1 className="text-2xl font-black tracking-tight" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>
                                         {academyName || 'Laxalab Academy'}
                                     </h1>
                                 </div>
@@ -311,7 +328,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* Certificate Title */}
                                 <h2
                                     className="text-[11px] font-bold uppercase tracking-[0.4em] mb-1"
-                                    style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}
+                                    style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}
                                 >
                                     {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion')}
                                 </h2>
@@ -323,7 +340,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* "This is to certify that" */}
                                 <p
                                     className="text-[13px] mb-4"
-                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.68), fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
+                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.68), fontFamily: certificateFontFamily, fontStyle: 'italic' }}
                                 >
                                     {isAr ? 'تُمنح هذه الشهادة إلى' : 'This is to certify that'}
                                 </p>
@@ -334,7 +351,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                         className="text-[38px] leading-tight mb-1"
                                         style={{
                                             color: visualStyle.textColor,
-                                            fontFamily: "'Georgia', 'Times New Roman', serif",
+                                            fontFamily: certificateFontFamily,
                                             fontWeight: 700,
                                         }}
                                     >
@@ -346,7 +363,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* "has successfully completed" */}
                                 <p
                                     className="text-[13px] mt-3 mb-2"
-                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.68), fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
+                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.68), fontFamily: certificateFontFamily, fontStyle: 'italic' }}
                                 >
                                     {isAr ? 'وقد أتم بنجاح دورة' : 'has successfully completed the course'}
                                 </p>
@@ -356,7 +373,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     className="text-[22px] font-bold mb-3"
                                     style={{
                                         color: visualStyle.textColor,
-                                        fontFamily: "'Georgia', 'Times New Roman', serif",
+                                        fontFamily: certificateFontFamily,
                                     }}
                                 >
                                     {courseName}
@@ -365,7 +382,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* Description */}
                                 <p
                                     className="text-[11px] leading-relaxed max-w-md mb-4"
-                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.55), fontFamily: "'Georgia', 'Times New Roman', serif" }}
+                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.55), fontFamily: certificateFontFamily }}
                                 >
                                     {certificateDescription || (isAr
                                         ? 'بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.'
@@ -374,7 +391,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
 
                                 {/* Certificate Number */}
                                 <div className={`inline-flex items-center gap-2 rounded border px-4 py-1.5 ${isAr ? 'flex-row-reverse' : ''}`} style={{ borderColor: colorWithOpacity(visualStyle.primaryColor, 0.1), backgroundColor: colorWithOpacity(visualStyle.primaryColor, 0.035) }}>
-                                    <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}>
                                         {isAr ? 'رقم الشهادة' : 'Certificate ID'}
                                     </span>
                                     <span className="text-[10px] font-mono font-black tracking-wider" style={{ color: visualStyle.textColor }} dir="ltr">
@@ -392,7 +409,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                         className="text-[14px] italic mb-1"
                                         style={{
                                             color: visualStyle.textColor,
-                                            fontFamily: "'Georgia', 'Times New Roman', serif",
+                                            fontFamily: certificateFontFamily,
                                         }}
                                     >
                                         {instructorSignatureUrl
@@ -401,7 +418,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     </p>
                                     <div className="mb-1 h-[1px] w-full" style={{ backgroundColor: colorWithOpacity(visualStyle.primaryColor, 0.2) }} />
                                     {instructorSignatureUrl && <p className="mb-1 text-[8px] font-semibold" style={{ color: visualStyle.textColor }}>{instructorName}</p>}
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}>
                                         {isAr ? 'المدرّس المعتمد' : 'Certified Instructor'}
                                     </p>
                                 </div>
@@ -421,13 +438,13 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 <div className="flex-1 text-center" dir={isAr ? 'rtl' : 'ltr'}>
                                     {template?.directorSignatureUrl
                                         ? <Image src={`${API_BASE_URL}${template.directorSignatureUrl}`} alt={isAr ? 'توقيع المدير' : 'Director signature'} width={300} height={100} unoptimized className="mx-auto h-12 max-w-full object-contain" />
-                                        : <p className="mb-1 text-[12px] font-bold" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>{isAr ? 'إدارة الأكاديمية' : 'Academy Director'}</p>}
+                                        : <p className="mb-1 text-[12px] font-bold" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>{isAr ? 'إدارة الأكاديمية' : 'Academy Director'}</p>}
                                     <div className="mb-1 h-[1px] w-full" style={{ backgroundColor: colorWithOpacity(visualStyle.primaryColor, 0.2) }} />
                                     <p className="mb-1 text-[8px] font-semibold" style={{ color: visualStyle.textColor }}>{isAr ? 'المدير' : 'Director'}</p>
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}>
                                         {isAr ? 'تاريخ الإصدار' : 'Date of Issue'}
                                     </p>
-                                    <p className="mt-1 text-[10px] font-bold" style={{ color: visualStyle.textColor, fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+                                    <p className="mt-1 text-[10px] font-bold" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>
                                         {formatDate(issueDate, lang)}
                                     </p>
                                 </div>

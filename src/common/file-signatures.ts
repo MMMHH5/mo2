@@ -56,3 +56,33 @@ export function hasValidUploadedSignature(file: {
 }): boolean {
     return hasValidSignature(file.signature ?? file.path, file.mimetype);
 }
+
+export function hasValidFontSignature(file: {
+    path: string;
+    signature?: Buffer;
+    mimetype: string;
+}): boolean {
+    let signature = file.signature;
+    if (!signature) {
+        try {
+            signature = readBytes(file.path, 24);
+        } catch {
+            return false;
+        }
+    }
+    if (file.mimetype === 'font/woff' || file.mimetype === 'application/font-woff' || file.mimetype === 'application/x-font-woff') {
+        return signature.toString('latin1', 0, 4) === 'wOFF';
+    }
+    if (file.mimetype === 'font/woff2' || file.mimetype === 'application/font-woff2' || file.mimetype === 'application/x-font-woff2') {
+        return signature.toString('latin1', 0, 4) === 'wOF2';
+    }
+    if (file.mimetype === 'font/ttf' || file.mimetype === 'application/x-font-ttf' || file.mimetype === 'application/x-font-truetype') {
+        return startsWith([0x00, 0x01, 0x00, 0x00])(signature)
+            || signature.toString('latin1', 0, 4) === 'true'
+            || signature.toString('latin1', 0, 4) === 'typ1';
+    }
+    if (file.mimetype === 'font/otf' || file.mimetype === 'application/vnd.ms-opentype' || file.mimetype === 'application/x-font-opentype') {
+        return signature.toString('latin1', 0, 4) === 'OTTO';
+    }
+    return false;
+}

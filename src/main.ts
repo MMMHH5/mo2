@@ -117,7 +117,7 @@ async function bootstrap() {
                 res.setHeader('Content-Type', file.contentType || 'application/octet-stream');
                 if (file.contentLength !== undefined) res.setHeader('Content-Length', file.contentLength);
 
-                const inline = /\.(jpe?g|png|webp|gif|mp4|webm|mov)$/i.test(relativePath);
+                const inline = /\.(jpe?g|png|webp|gif|mp4|webm|mov|woff2?|ttf|otf)$/i.test(relativePath);
                 if (!inline) {
                     const name = (relativePath.split('/').pop() || 'file').replace(/["\\\r\n]/g, '');
                     res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
@@ -159,7 +159,7 @@ async function bootstrap() {
             res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
             // Only preview-safe media types render inline; everything else downloads
             // so an uploaded file can never be interpreted as HTML/SVG active content.
-            const inline = /\.(jpe?g|png|webp|gif|mp4|webm|mov)$/i.test(filePath);
+            const inline = /\.(jpe?g|png|webp|gif|mp4|webm|mov|woff2?|ttf|otf)$/i.test(filePath);
             if (!inline) {
                 const name = (filePath.split(/[\\/]/).pop() || 'file').replace(/["\\\r\n]/g, '');
                 res.setHeader('Content-Disposition', `attachment; filename="${name}"`);

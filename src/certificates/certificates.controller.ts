@@ -11,7 +11,7 @@ import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/permissions/permissions';
 import { Role } from '@prisma/client';
 import { createUploadStorage, removeUploadedFile, uploadUrl } from '../common/upload-storage';
-import { hasValidUploadedSignature } from '../common/file-signatures';
+import { hasValidFontSignature, hasValidUploadedSignature } from '../common/file-signatures';
 import type { CertificateAssetKind } from './certificates.service';
 
 const CERTIFICATE_ASSET_KINDS: readonly CertificateAssetKind[] = [
@@ -20,6 +20,20 @@ const CERTIFICATE_ASSET_KINDS: readonly CertificateAssetKind[] = [
     'academyStamp',
 ];
 const CERTIFICATE_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+const CERTIFICATE_FONT_EXTENSIONS: Record<string, string> = {
+    'font/woff': '.woff',
+    'application/font-woff': '.woff',
+    'application/x-font-woff': '.woff',
+    'font/woff2': '.woff2',
+    'application/font-woff2': '.woff2',
+    'application/x-font-woff2': '.woff2',
+    'font/ttf': '.ttf',
+    'application/x-font-ttf': '.ttf',
+    'application/x-font-truetype': '.ttf',
+    'font/otf': '.otf',
+    'application/vnd.ms-opentype': '.otf',
+    'application/x-font-opentype': '.otf',
+};
 
 const CERT_STAFF_ROLES = [Role.INSTRUCTOR, Role.ADMIN, Role.COURSE_MANAGER];
 
@@ -165,6 +179,49 @@ export class CertificatesController {
             return this.certificatesService.setInstructorSignature(instructorId, uploadUrl(file), req.user.userId);
         }
         return this.certificatesService.setTemplateAsset(kind as CertificateAssetKind, uploadUrl(file), req.user.userId);
+    }
+
+    @ApiOperation({ summary: 'Upload a certificate logo or custom font' })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.CERTIFICATES_MANAGE)
+    @Post('template/branding-assets')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: createUploadStorage({
+            destination: () => './uploads/certificates/branding',
+            filename: (_req, file) => {
+                const extension = CERTIFICATE_FONT_EXTENSIONS[file.mimetype]
+                    || (file.mimetype === 'image/png' ? '.png' : file.mimetype === 'image/webp' ? '.webp' : '.jpg');
+                return `branding-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
+            },
+        }),
+        fileFilter: (_req, file, callback) => {
+            if (CERTIFICATE_IMAGE_MIMES.includes(file.mimetype) || file.mimetype in CERTIFICATE_FONT_EXTENSIONS) {
+                callback(null, true);
+            } else {
+                callback(new BadRequestException('Upload a PNG, JPEG, or WEBP logo, or a WOFF/WOFF2/TTF/OTF font.'), false);
+            }
+        },
+        limits: { fileSize: 5 * 1024 * 1024, fieldSize: 64 * 1024, fields: 2, files: 1, parts: 4 },
+    }))
+    async uploadBrandingAsset(
+        @UploadedFile() file: Express.Multer.File,
+        @Query('kind') kind: string,
+    ) {
+        if (kind !== 'logo' && kind !== 'font') {
+            if (file) await removeUploadedFile(file);
+            throw new BadRequestException('Choose a logo or font asset type.');
+        }
+        if (!file) throw new BadRequestException('A logo or font file is required.');
+        const valid = kind === 'logo'
+            ? CERTIFICATE_IMAGE_MIMES.includes(file.mimetype) && hasValidUploadedSignature(file)
+            : file.mimetype in CERTIFICATE_FONT_EXTENSIONS && hasValidFontSignature(file);
+        if (!valid) {
+            await removeUploadedFile(file);
+            throw new BadRequestException('File content does not match the selected logo or font type.');
+        }
+        return { url: uploadUrl(file), name: file.originalname, kind };
     }
 
     @ApiOperation({ summary: 'Remove a saved certificate signature or academy stamp' })
