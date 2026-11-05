@@ -157,7 +157,7 @@ export class CertificatesService {
             where: { id: instructorId },
             select: { id: true, role: true, isActive: true },
         });
-        if (!instructor || instructor.role !== Role.INSTRUCTOR || !instructor.isActive) {
+        if (!instructor || (instructor.role !== Role.INSTRUCTOR && instructor.role !== Role.COURSE_MANAGER) || !instructor.isActive) {
             throw new BadRequestException('Choose an active instructor');
         }
         const saved = await this.prisma.certificateInstructorSignature.upsert({
