@@ -17,6 +17,7 @@ import {
     MessagesSquare,
     CalendarClock,
     BadgeCheck,
+    PenLine,
     Route,
     Flag,
     Megaphone,
@@ -85,7 +86,7 @@ export function groupInstructorNavLinks(
         },
         {
             title: t('sidebar.nav_teaching'),
-            hrefs: ['/dashboard/teaching', '/dashboard/instructor-profile', '/dashboard/submissions'],
+            hrefs: ['/dashboard/teaching', '/dashboard/instructor-profile', '/dashboard/instructor-profile?tab=signature', '/dashboard/submissions'],
         },
         {
             title: t('sidebar.nav_communication'),
@@ -128,6 +129,7 @@ export function buildNavLinks(t: (key: string) => string): NavLink[] {
         // edit modal, so nobody found it and every instructor stayed
         // `isProfileIncomplete`. Its own entry is what makes it discoverable.
         { name: t('sidebar.instructor_profile'), href: '/dashboard/instructor-profile', icon: BadgeCheck, roles: ['INSTRUCTOR', 'COURSE_MANAGER'] },
+        { name: t('sidebar.certificate_signature'), href: '/dashboard/instructor-profile?tab=signature', icon: PenLine, roles: ['INSTRUCTOR', 'COURSE_MANAGER'] },
         { name: t('sidebar.submissions'), href: '/dashboard/submissions', icon: ClipboardCheck, roles: ['INSTRUCTOR'] },
         { name: t('sidebar.instructors_hr'), href: '/dashboard/admin/instructors', icon: Users, roles: ['ADMIN', 'COURSE_MANAGER'] },
         { name: t('sidebar.audit_logs'), href: '/dashboard/admin/audit', icon: ShieldAlert, roles: ['ADMIN'] },

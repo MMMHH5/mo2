@@ -311,6 +311,11 @@ export default function InstructorProfilePage() {
             .catch(() => setSignatureUrl(null));
     }, [profile?.id, profile?.role]);
 
+    useEffect(() => {
+        if (new URLSearchParams(window.location.search).get('tab') !== 'signature') return;
+        requestAnimationFrame(() => document.getElementById('certificate-signature')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }, [profile]);
+
     const saveSignature = async (asset: Blob | File) => {
         setSignatureBusy(true);
         try {
@@ -1077,7 +1082,7 @@ export default function InstructorProfilePage() {
 
                         {/* Certificate signature */}
                         {['INSTRUCTOR', 'COURSE_MANAGER'].includes(String(profile.role ?? '').toUpperCase()) && (
-                            <section className={cardCls}>
+                            <section id="certificate-signature" className={cardCls}>
                                 <h2 className={`${sectionTitle} flex items-center gap-2`}>
                                     <PenLine size={18} className="text-brand-gold-dark dark:text-brand-gold-light" />
                                     {locale === 'ar' ? 'توقيع الشهادات' : 'Certificate signature'}
