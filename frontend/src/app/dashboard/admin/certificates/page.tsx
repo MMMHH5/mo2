@@ -16,9 +16,13 @@ type CertificateVisualStyle = {
     accentColor: string;
     backgroundColor: string;
     textColor: string;
-    frameStyle: 'double' | 'single' | 'none';
+    frameStyle: 'double' | 'single' | 'none' | 'dashed' | 'ornate';
     logoShape: 'circle' | 'rounded' | 'square';
+    logoVariant: 'mark' | 'horizontal' | 'stacked';
+    showLogo: boolean;
 };
+const CERTIFICATE_ELEMENTS = ['logo', 'brand', 'title', 'recipient', 'course', 'description', 'signatures', 'qr'] as const;
+type CertificateElementKey = typeof CERTIFICATE_ELEMENTS[number];
 
 const DEFAULT_VISUAL_STYLE: CertificateVisualStyle = {
     primaryColor: '#12305A',
@@ -27,6 +31,8 @@ const DEFAULT_VISUAL_STYLE: CertificateVisualStyle = {
     textColor: '#12305A',
     frameStyle: 'double',
     logoShape: 'rounded',
+    logoVariant: 'mark',
+    showLogo: true,
 };
 type CertificatePreset = { id: string; name: string; designKey: 'classic' | 'royal' | 'modern'; layout: CertificateLayout };
 type CertificateTemplate = {
@@ -258,6 +264,7 @@ export default function AdminCertificatesPage() {
     const [presets, setPresets] = useState<CertificatePreset[]>([]);
     const [presetName, setPresetName] = useState('');
     const [draggingLayoutKey, setDraggingLayoutKey] = useState<keyof CertificateLayout | null>(null);
+    const [selectedElement, setSelectedElement] = useState<CertificateElementKey>('logo');
     const [overview, setOverview] = useState<Overview | null>(null);
     const [selectedInstructorId, setSelectedInstructorId] = useState('');
     const [records, setRecords] = useState<Record<string, CourseCertificates>>({});
@@ -599,16 +606,23 @@ export default function AdminCertificatesPage() {
                         >
                             {visualStyle.frameStyle !== 'none' && (
                                 <>
-                                    <div className="absolute" style={{ inset: 0, borderStyle: 'solid', borderWidth: visualStyle.frameStyle === 'double' ? 12 : 6, borderColor: visualStyle.primaryColor }} />
+                                    <div className="absolute" style={{ inset: 0, borderStyle: visualStyle.frameStyle === 'dashed' ? 'dashed' : visualStyle.frameStyle === 'ornate' ? 'double' : 'solid', borderWidth: visualStyle.frameStyle === 'double' || visualStyle.frameStyle === 'ornate' ? 12 : 6, borderColor: visualStyle.primaryColor }} />
                                     {visualStyle.frameStyle === 'double' && (
                                         <>
                                             <div className="absolute border" style={{ inset: 18, borderColor: visualStyle.accentColor }} />
                                             <div className="absolute border" style={{ inset: 28, borderColor: `${visualStyle.primaryColor}55` }} />
                                         </>
                                     )}
+                                    {visualStyle.frameStyle === 'ornate' && (
+                                        <>
+                                            <div className="absolute border-2" style={{ inset: 18, borderColor: visualStyle.accentColor }} />
+                                            <div className="absolute border" style={{ inset: 28, borderColor: `${visualStyle.primaryColor}55` }} />
+                                        </>
+                                    )}
                                 </>
                             )}
-                            {(['logo', 'brand', 'title', 'recipient', 'course', 'description', 'signatures', 'qr'] as const).map((key) => {
+                            {CERTIFICATE_ELEMENTS.map((key) => {
+                                if (key === 'logo' && !visualStyle.showLogo) return null;
                                 const rawPosition = template.layout[key] ?? EMPTY_TEMPLATE.layout[key];
                                 const pos = rawPosition && 'x' in rawPosition ? rawPosition : { x: 50, y: 50 };
                                 const labels: Record<typeof key, string> = {
@@ -624,20 +638,21 @@ export default function AdminCertificatesPage() {
                                 return (
                                     <div
                                         key={key}
-                                        onPointerDown={(event) => beginLayoutDrag(key, event)}
+                                        onClick={() => setSelectedElement(key)}
+                                        onPointerDown={(event) => { setSelectedElement(key); beginLayoutDrag(key, event); }}
                                         onPointerMove={(event) => { if (draggingLayoutKey === key) moveLayoutItem(key, event); }}
                                         onPointerUp={() => setDraggingLayoutKey(null)}
                                         onPointerCancel={() => setDraggingLayoutKey(null)}
-                                        className={`absolute z-10 touch-none cursor-move select-none border border-dashed border-brand-gold/80 bg-white/90 px-2 py-1 text-center shadow-sm transition hover:bg-white ${draggingLayoutKey === key ? 'scale-105 border-brand-gold bg-white ring-2 ring-brand-gold/30' : ''} ${key === 'recipient' ? 'text-xl font-serif font-bold text-[#12305A]' : key === 'course' ? 'text-base font-bold text-[#12305A]' : 'text-xs text-gray-600'}`}
-                                        style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)', minWidth: key === 'qr' ? 46 : 120 }}
+                                        className={`absolute z-10 touch-none cursor-move select-none border border-dashed px-2 py-1 text-center shadow-sm transition hover:bg-white ${selectedElement === key || draggingLayoutKey === key ? 'border-brand-gold bg-white ring-2 ring-brand-gold/30' : 'border-brand-gold/50 bg-white/90'} ${draggingLayoutKey === key ? 'scale-105' : ''} ${key === 'recipient' ? 'text-xl font-serif font-bold' : key === 'course' ? 'text-base font-bold' : 'text-xs'}`}
+                                        style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)', minWidth: key === 'qr' ? 46 : 120, color: key === 'recipient' || key === 'course' ? visualStyle.textColor : undefined }}
                                         title={isAr ? 'اسحب لتغيير المكان' : 'Drag to reposition'}
                                     >
                                         <GripVertical className="mr-auto inline-block text-brand-gold-dark" size={12} />
                                         {key === 'logo' ? (
                                             <BrandLogo
-                                                variant="mark"
+                                                variant={visualStyle.logoVariant}
                                                 dark={false}
-                                                className={`mx-auto block ${visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'rounded' ? 'rounded-lg' : 'rounded-none'} h-14 w-14 object-contain`}
+                                                className={`mx-auto block ${visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'rounded' ? 'rounded-lg' : 'rounded-none'} ${visualStyle.logoVariant === 'mark' ? 'h-14 w-14' : visualStyle.logoVariant === 'horizontal' ? 'h-10 w-32' : 'h-14 w-20'} object-contain`}
                                                 alt={isAr ? 'شعار المنصة' : 'Platform logo'}
                                             />
                                         ) : labels[key]}
@@ -648,6 +663,37 @@ export default function AdminCertificatesPage() {
                     </div>
 
                     <aside className="space-y-5">
+                        <div>
+                            <h3 className="mb-3 text-sm font-black text-brand-navy dark:text-white">{isAr ? 'عناصر الشهادة' : 'Certificate elements'}</h3>
+                            <div className="grid grid-cols-2 gap-2">
+                                {CERTIFICATE_ELEMENTS.map((key) => {
+                                    const labels: Record<CertificateElementKey, [string, string]> = {
+                                        logo: ['شعار المنصة', 'Platform logo'],
+                                        brand: ['اسم الأكاديمية', 'Academy name'],
+                                        title: ['عنوان الشهادة', 'Certificate title'],
+                                        recipient: ['اسم المستفيد', 'Recipient name'],
+                                        course: ['اسم الدورة', 'Course name'],
+                                        description: ['نص الشهادة', 'Certificate wording'],
+                                        signatures: ['التوقيعات والختم', 'Signatures & seal'],
+                                        qr: ['رمز التحقق QR', 'Verification QR'],
+                                    };
+                                    return (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => setSelectedElement(key)}
+                                            className={`rounded-xl border px-3 py-2 text-start text-xs font-bold transition ${selectedElement === key ? 'border-brand-gold bg-brand-gold/10 text-brand-navy dark:text-white' : 'border-gray-200 text-gray-600 dark:border-white/10 dark:text-gray-300'}`}
+                                        >
+                                            {labels[key][isAr ? 0 : 1]}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <label className="mt-3 flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                                <input type="checkbox" checked={visualStyle.showLogo} onChange={(event) => updateVisualStyle({ showLogo: event.target.checked })} />
+                                {isAr ? 'إظهار شعار المنصة في الشهادة' : 'Show platform logo on certificate'}
+                            </label>
+                        </div>
                         <div>
                             <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-brand-navy dark:text-white"><Palette size={16} /> {isAr ? 'نمط التصميم' : 'Design style'}</h3>
                             <div className="grid grid-cols-3 gap-2">
@@ -679,6 +725,8 @@ export default function AdminCertificatesPage() {
                                 <select value={visualStyle.frameStyle} onChange={(event) => updateVisualStyle({ frameStyle: event.target.value as CertificateVisualStyle['frameStyle'] })} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-white/10 dark:bg-brand-navy-dark">
                                     <option value="double">{isAr ? 'إطار مزدوج' : 'Double frame'}</option>
                                     <option value="single">{isAr ? 'إطار واحد' : 'Single frame'}</option>
+                                    <option value="dashed">{isAr ? 'إطار متقطع' : 'Dashed frame'}</option>
+                                    <option value="ornate">{isAr ? 'إطار مزخرف' : 'Ornate frame'}</option>
                                     <option value="none">{isAr ? 'بدون إطار' : 'No frame'}</option>
                                 </select>
                             </label>
@@ -692,6 +740,35 @@ export default function AdminCertificatesPage() {
                                     ))}
                                 </div>
                             </label>
+                            <label className="mt-3 block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                {isAr ? 'نوع شعار المنصة' : 'Platform logo type'}
+                                <select value={visualStyle.logoVariant} onChange={(event) => updateVisualStyle({ logoVariant: event.target.value as CertificateVisualStyle['logoVariant'] })} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-white/10 dark:bg-brand-navy-dark">
+                                    <option value="mark">{isAr ? 'الأيقونة' : 'Icon'}</option>
+                                    <option value="horizontal">{isAr ? 'الشعار الأفقي' : 'Horizontal logo'}</option>
+                                    <option value="stacked">{isAr ? 'الشعار العمودي' : 'Stacked logo'}</option>
+                                </select>
+                            </label>
+                            <div className="mt-4">
+                                <p className="mb-2 text-xs font-bold text-gray-600 dark:text-gray-300">{isAr ? 'لوحات ألوان جاهزة' : 'Color palettes'}</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { name: isAr ? 'ملكي' : 'Royal', primaryColor: '#12305A', accentColor: '#C6A15B', backgroundColor: '#FFFFFF', textColor: '#12305A' },
+                                        { name: isAr ? 'زمردي' : 'Emerald', primaryColor: '#064E3B', accentColor: '#34D399', backgroundColor: '#F0FDF4', textColor: '#052E16' },
+                                        { name: isAr ? 'بنفسجي' : 'Violet', primaryColor: '#4C1D95', accentColor: '#C4B5FD', backgroundColor: '#FAF5FF', textColor: '#2E1065' },
+                                        { name: isAr ? 'عنابي' : 'Burgundy', primaryColor: '#7F1D1D', accentColor: '#FCA5A5', backgroundColor: '#FFFBFA', textColor: '#450A0A' },
+                                        { name: isAr ? 'أزرق محيطي' : 'Ocean', primaryColor: '#0C4A6E', accentColor: '#38BDF8', backgroundColor: '#F0F9FF', textColor: '#082F49' },
+                                        { name: isAr ? 'فحمي' : 'Charcoal', primaryColor: '#27272A', accentColor: '#A1A1AA', backgroundColor: '#FAFAFA', textColor: '#18181B' },
+                                    ].map((palette) => (
+                                        <button key={palette.name} type="button" onClick={() => updateVisualStyle(palette)} className="flex items-center gap-2 rounded-lg border border-gray-200 px-2 py-2 text-[11px] font-bold dark:border-white/10">
+                                            <span className="flex h-5 w-8 overflow-hidden rounded">
+                                                <span className="w-1/2" style={{ backgroundColor: palette.primaryColor }} />
+                                                <span className="w-1/2" style={{ backgroundColor: palette.accentColor }} />
+                                            </span>
+                                            {palette.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
                         <div>
