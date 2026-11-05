@@ -4,7 +4,6 @@ import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/lib/i18n-context';
 import { XCircle, Plus, Trash2, Film, Image as ImageIcon, Loader, FileText, Link2, Check } from 'lucide-react';
@@ -176,6 +175,8 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
     const videoRef = useRef<HTMLInputElement>(null);
 
     const [currentStep, setCurrentStep] = useState(0);
+    const [draftCourseId, setDraftCourseId] = useState<string | undefined>(courseId);
+    const draftSaveInProgress = useRef(false);
 
     const { register, handleSubmit, formState: { errors }, reset, watch } = useForm<FormValues>({
         defaultValues: buildValues(undefined),
@@ -273,12 +274,10 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
         }
     };
 
-    const onSubmit = async (data: FormValues) => {
-        setIsSubmitting(true);
-        try {
-            const num = (v: string) => (v !== '' && v !== null && v !== undefined ? Number(v) : null);
-            const isLive = data.contentType !== 'RECORDED';
-            const payload: Record<string, unknown> = {
+    const buildCoursePayload = (data: FormValues) => {
+        const num = (v: string) => (v !== '' && v !== null && v !== undefined ? Number(v) : null);
+        const isLive = data.contentType !== 'RECORDED';
+        const payload: Record<string, unknown> = {
                 titleAr: data.titleAr,
                 titleEn: data.titleEn,
                 excerptAr: data.excerptAr || null,
@@ -330,10 +329,54 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                         outcomes: m.outcomes.map((o) => ({ ...o })).filter(o => o.descriptionAr || o.descriptionEn),
                     })).filter(m => m.titleAr || m.titleEn),
                 })).filter(ch => ch.titleAr || ch.titleEn || ch.modules.length > 0),
-            };
+        };
 
-            if (courseId) {
-                await api.patch(`/api/admin/courses/${courseId}`, payload);
+        return payload;
+    };
+
+    const saveDraft = async (showToast = false) => {
+        const values = watch();
+        const hasContent = Object.values(values).some(value => typeof value === 'string' ? value.trim() !== '' : value !== false && value !== undefined)
+            || coverUrl || videoFileUrl || gallery.length || objectives.length || prerequisites.length || audiences.length || faqs.length || chapters.length;
+        if (!hasContent || draftSaveInProgress.current) return;
+
+        draftSaveInProgress.current = true;
+        try {
+            const payload = buildCoursePayload(values);
+            payload.titleAr = String(payload.titleAr || '').trim() || 'مسودة دورة جديدة';
+            payload.titleEn = String(payload.titleEn || '').trim() || 'New Course Draft';
+            payload.chapters = (payload.chapters as any[] || []).map((chapter) => ({
+                ...chapter,
+                titleAr: String(chapter.titleAr || '').trim() || 'مسودة فصل',
+                titleEn: String(chapter.titleEn || '').trim() || 'Draft Chapter',
+                modules: (chapter.modules || []).map((module: any) => ({
+                    ...module,
+                    titleAr: String(module.titleAr || '').trim() || 'مسودة درس',
+                    titleEn: String(module.titleEn || '').trim() || 'Draft Lesson',
+                })),
+            }));
+
+            if (draftCourseId) {
+                await api.patch(`/api/admin/courses/${draftCourseId}`, payload);
+            } else {
+                const response = await api.post('/api/admin/courses', payload);
+                setDraftCourseId(response.data.id);
+            }
+            if (showToast) toast.success('تم حفظ التغييرات كمسودة');
+        } catch (err) {
+            if (showToast) toast.error(getErrorMessage(err) || 'تعذر حفظ المسودة');
+        } finally {
+            draftSaveInProgress.current = false;
+        }
+    };
+
+    const onSubmit = async (data: FormValues) => {
+        setIsSubmitting(true);
+        try {
+            const payload = buildCoursePayload(data);
+            const savedCourseId = courseId || draftCourseId;
+            if (savedCourseId) {
+                await api.patch(`/api/admin/courses/${savedCourseId}`, payload);
                 toast.success(t('createCourse.updated'));
             } else {
                 await api.post('/api/admin/courses', payload);
@@ -365,6 +408,25 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
 
     const goNext = useCallback(() => setCurrentStep(s => Math.min(s + 1, STEPS.length - 1)), []);
     const goBack = useCallback(() => setCurrentStep(s => Math.max(s - 1, 0)), []);
+
+    useEffect(() => {
+        let timer: ReturnType<typeof setTimeout>;
+        const subscription = watch(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => void saveDraft(), 1500);
+        });
+        const beforeUnload = () => {
+            if (!courseId && !draftCourseId) void saveDraft();
+        };
+        window.addEventListener('beforeunload', beforeUnload);
+        return () => {
+            clearTimeout(timer);
+            subscription.unsubscribe();
+            window.removeEventListener('beforeunload', beforeUnload);
+        };
+        // Drafts should also react to uploaded media and course structure changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [coverUrl, videoFileUrl, gallery, objectives, prerequisites, audiences, faqs, chapters, draftCourseId]);
 
     if (loadingInit) {
         return <div className="min-h-screen flex items-center justify-center text-brand-navy"><Loader className="animate-spin" size={48} /></div>;
@@ -1040,11 +1102,16 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                             >
                                 {isSubmitting ? t('common.submitting') : courseId ? t('createCourse.updated') : t('createCourse.saving')}
                             </button>
-                            <Link href="/dashboard/admin/courses" className="flex-1">
-                                <button type="button" className="w-full bg-brand-mist text-brand-navy font-bold py-3.5 rounded-xl hover:bg-brand-navy hover:text-white transition cursor-pointer">
-                                    {t('common.cancel')}
-                                </button>
-                            </Link>
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    await saveDraft(true);
+                                    router.push('/dashboard/admin/courses');
+                                }}
+                                className="flex-1 bg-brand-mist text-brand-navy font-bold py-3.5 rounded-xl hover:bg-brand-navy hover:text-white transition cursor-pointer"
+                            >
+                                {t('common.cancel')}
+                            </button>
                         </>
                     )}
                 </div>
