@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Award, Check, ChevronDown, ExternalLink, FileBadge, GripVertical, ImagePlus, LayoutTemplate, LoaderCircle, Palette, PenLine, Save, ShieldCheck, Stamp, Trash2, Upload } from 'lucide-react';
+import { Award, Check, ChevronDown, ExternalLink, FileBadge, GripVertical, ImagePlus, LayoutTemplate, LoaderCircle, Palette, PenLine, RotateCcw, Save, ShieldCheck, Stamp, Trash2, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
@@ -239,6 +239,7 @@ export default function AdminCertificatesPage() {
     const [template, setTemplate] = useState<CertificateTemplate>(EMPTY_TEMPLATE);
     const [presets, setPresets] = useState<CertificatePreset[]>([]);
     const [presetName, setPresetName] = useState('');
+    const [draggingLayoutKey, setDraggingLayoutKey] = useState<keyof CertificateLayout | null>(null);
     const [overview, setOverview] = useState<Overview | null>(null);
     const [selectedInstructorId, setSelectedInstructorId] = useState('');
     const [records, setRecords] = useState<Record<string, CourseCertificates>>({});
@@ -364,13 +365,25 @@ export default function AdminCertificatesPage() {
         }
     };
 
-    const moveLayoutItem = (key: keyof CertificateLayout, event: React.DragEvent<HTMLDivElement>) => {
+    const moveLayoutItem = (key: keyof CertificateLayout, event: React.PointerEvent<HTMLDivElement>) => {
         const canvas = event.currentTarget.parentElement;
         if (!canvas) return;
         const bounds = canvas.getBoundingClientRect();
         const x = Math.max(8, Math.min(92, ((event.clientX - bounds.left) / bounds.width) * 100));
         const y = Math.max(6, Math.min(94, ((event.clientY - bounds.top) / bounds.height) * 100));
         setTemplate((current) => ({ ...current, layout: { ...current.layout, [key]: { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 } } }));
+    };
+
+    const beginLayoutDrag = (key: keyof CertificateLayout, event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        setDraggingLayoutKey(key);
+        moveLayoutItem(key, event);
+    };
+
+    const resetLayout = () => {
+        setTemplate((current) => ({ ...current, layout: { ...EMPTY_TEMPLATE.layout } }));
+        toast.success(isAr ? 'تمت إعادة العناصر إلى وضعها الافتراضي.' : 'Elements returned to the default layout.');
     };
 
     const savePreset = async () => {
@@ -535,19 +548,23 @@ export default function AdminCertificatesPage() {
             </section>
 
             <section className="rounded-3xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
-                <div className="mb-5 flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light"><LayoutTemplate size={19} /></span>
-                    <div>
-                        <h2 className="text-xl font-black text-brand-navy dark:text-white">{isAr ? 'مصمم الشهادة الاحترافي' : 'Professional certificate designer'}</h2>
-                        <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{isAr ? 'اسحب العناصر لتغيير مواقعها، واختر شكلاً بصرياً واحفظه كقالب قابل لإعادة الاستخدام.' : 'Drag elements to reposition them, choose a visual style, and save reusable templates.'}</p>
+                <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light"><LayoutTemplate size={19} /></span>
+                        <div>
+                            <h2 className="text-xl font-black text-brand-navy dark:text-white">{isAr ? 'مصمم الشهادة الاحترافي' : 'Professional certificate designer'}</h2>
+                            <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{isAr ? 'اسحب العناصر بالماوس أو اللمس لتغيير مواقعها، واختر شكلاً بصرياً واحفظه كقالب قابل لإعادة الاستخدام.' : 'Drag elements with a mouse or touch to reposition them, choose a visual style, and save reusable templates.'}</p>
+                        </div>
                     </div>
+                    <button type="button" onClick={resetLayout} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:border-brand-gold hover:text-brand-gold-dark dark:border-white/10 dark:text-gray-300">
+                        <RotateCcw size={15} /> {isAr ? 'إعادة المواضع' : 'Reset positions'}
+                    </button>
                 </div>
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
                     <div className="overflow-auto rounded-2xl bg-slate-200 p-3 dark:bg-black/20 sm:p-5">
                         <div
                             className={`relative mx-auto aspect-[1.414/1] w-full max-w-[760px] overflow-hidden bg-white shadow-2xl ${template.designKey === 'royal' ? 'ring-[10px] ring-[#172b4d] ring-inset outline outline-1 outline-[#c6a15b]' : template.designKey === 'modern' ? 'rounded-lg' : 'border-[12px] border-[#12305A]'}`}
-                            onDragOver={(event) => event.preventDefault()}
                         >
                             <div className="absolute inset-3 border border-[#c6a15b]/60" />
                             <div className="absolute inset-[18px] border border-[#12305a]/15" />
@@ -565,10 +582,11 @@ export default function AdminCertificatesPage() {
                                 return (
                                     <div
                                         key={key}
-                                        draggable
-                                        onDragStart={(event) => event.dataTransfer.setData('text/plain', key)}
-                                        onDragEnd={(event) => moveLayoutItem(key, event)}
-                                        className={`absolute z-10 cursor-move select-none border border-dashed border-brand-gold/80 bg-white/90 px-2 py-1 text-center shadow-sm transition hover:bg-white ${key === 'recipient' ? 'text-xl font-serif font-bold text-[#12305A]' : key === 'course' ? 'text-base font-bold text-[#12305A]' : 'text-xs text-gray-600'}`}
+                                        onPointerDown={(event) => beginLayoutDrag(key, event)}
+                                        onPointerMove={(event) => { if (draggingLayoutKey === key) moveLayoutItem(key, event); }}
+                                        onPointerUp={() => setDraggingLayoutKey(null)}
+                                        onPointerCancel={() => setDraggingLayoutKey(null)}
+                                        className={`absolute z-10 touch-none cursor-move select-none border border-dashed border-brand-gold/80 bg-white/90 px-2 py-1 text-center shadow-sm transition hover:bg-white ${draggingLayoutKey === key ? 'scale-105 border-brand-gold bg-white ring-2 ring-brand-gold/30' : ''} ${key === 'recipient' ? 'text-xl font-serif font-bold text-[#12305A]' : key === 'course' ? 'text-base font-bold text-[#12305A]' : 'text-xs text-gray-600'}`}
                                         style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)', minWidth: key === 'qr' ? 46 : 120 }}
                                         title={isAr ? 'اسحب لتغيير المكان' : 'Drag to reposition'}
                                     >
