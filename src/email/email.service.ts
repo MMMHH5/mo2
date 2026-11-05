@@ -19,6 +19,9 @@ export class EmailService {
                 host,
                 port: Number(process.env.SMTP_PORT || 587),
                 secure: process.env.SMTP_SECURE === 'true',
+                connectionTimeout: 20_000,
+                greetingTimeout: 20_000,
+                socketTimeout: 30_000,
                 auth: { user, pass },
             });
             this.logger.log(`Email transport configured via SMTP (${host})`);
