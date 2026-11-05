@@ -26,20 +26,23 @@ export class CourseImportService {
         workbook.creator = 'LaxaLab Academy';
         workbook.created = new Date();
         const guide = workbook.addWorksheet('Instructions', { views: [{ rightToLeft: true }] });
-        guide.columns = [{ width: 42 }, { width: 100 }];
+        guide.columns = [{ width: 36 }, { width: 105 }];
         guide.addRow(['القاعدة', 'الشرح']);
-        guide.addRow(['Courses reference key', 'استخدم معرفاً قصيراً فريداً مثل CO-001 في جميع الأسطر']);
-        guide.addRow(['الحقول المطلوبة', 'العنوان العربي، العنوان الإنجليزي، نوع المحتوى']);
+        guide.addRow(['طريقة الاستخدام', 'عدّل صف المثال في كل ورقة ثم أضف صفوفاً أخرى عند الحاجة. لا تغيّر أسماء الأعمدة أو ترتيبها.']);
+        guide.addRow(['CourseKey', 'استخدم معرفاً قصيراً فريداً لكل دورة مثل CO-001، وكرره كما هو في جميع أوراق الدورة.']);
+        guide.addRow(['الحقول المطلوبة', 'العنوان العربي، العنوان الإنجليزي، ونوع المحتوى. أكمل الترجمات العربية والإنجليزية لكل عنصر تضيفه.']);
         guide.addRow(['نوع المحتوى', 'LIVE للدورات المباشرة أو RECORDED للدورات المسجلة']);
-        guide.addRow(['المستوى', 'BEGINNER أو INTERMEDIATE أو ADVANCED أو EXPERT']);
-        guide.addRow(['الترتيب', 'رقم صحيح يبدأ من 0']);
-        guide.addRow(['الملفات والصور', 'يمكن وضع روابط الصور والملفات العامة فقط كنص. الملفات المرفوعة فعلياً تُدار لاحقاً من شاشة تعديل الدورة.']);
-        guide.addRow(['Objectives / Prerequisites / Audiences', 'سطر لكل عنصر مع CourseKey والترجمة العربية والإنجليزية والترتيب.']);
-        guide.addRow(['FAQs', 'سطر لكل سؤال، ويجب ملء السؤال والإجابة بالعربية والإنجليزية.']);
-        guide.addRow(['LessonOutcomes', 'اربط نتيجة الدرس بـ CourseKey و chapterKey و lessonKey الموجودين في ورقتي Chapters و Lessons.']);
-        guide.addRow(['Lesson links', 'روابط الدرس بصيغة URL - الاسم المتعددة مفصولة بـ | أو سطر جديد.']);
-        guide.addRow(['Lesson files', 'الصيغة: https://example.com/file.pdf | اسم عربي | English name. تُفصل عدة ملفات بفاصلة منقوطة أو سطر جديد.']);
-        guide.addRow(['القيم المنطقية', 'استخدم TRUE أو FALSE في حقول المميزات.']);
+        guide.addRow(['المستوى', 'BEGINNER أو INTERMEDIATE أو ADVANCED أو ALL_LEVELS']);
+        guide.addRow(['Courses', 'كل بيانات نموذج إنشاء الدورة: العناوين والملخص والوصف والتصنيف والمنهج والمدة والوسائط والميزات.']);
+        guide.addRow(['Chapters و Lessons', 'أضف الفصول والدروس. يجب أن يطابق CourseKey و chapterKey في ورقة الدروس المفاتيح المعرفة هنا.']);
+        guide.addRow(['Objectives / Prerequisites / Audiences', 'صف مستقل لكل هدف أو متطلب أو فئة، مع CourseKey والترجمتين والترتيب.']);
+        guide.addRow(['FAQs', 'صف مستقل لكل سؤال. أكمل السؤال والإجابة باللغتين.']);
+        guide.addRow(['LessonOutcomes', 'اربط النتيجة بـ CourseKey و chapterKey و lessonKey، واكتب الوصف باللغتين.']);
+        guide.addRow(['Gallery', 'أضف رابط صورة لكل صف، مع نص بديل اختياري بالعربية والإنجليزية.']);
+        guide.addRow(['الصور والفيديوهات', 'استخدم رابط URL عام مباشر أو رابطاً تم رفعه مسبقاً. لا يرفع ملف Excel الملفات الثنائية؛ يمكن رفع الوسائط لاحقاً من شاشة الدورة.']);
+        guide.addRow(['روابط الدرس', 'اكتب كل رابط بصيغة URL | الاسم بالعربية | English label، وافصل عدة روابط بفاصلة منقوطة أو سطر جديد.']);
+        guide.addRow(['ملفات الدرس', 'اكتب كل ملف بصيغة URL | الاسم بالعربية | English name. افصل الملفات بفاصلة منقوطة أو سطر جديد.']);
+        guide.addRow(['الترتيب والميزات', 'الترتيب يبدأ من 0. استخدم TRUE أو FALSE لحقول الميزات.']);
 
         const courses = workbook.addWorksheet('Courses', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
         courses.columns = [
@@ -105,7 +108,13 @@ export class CourseImportService {
         faqs.addRow({ courseKey: 'CO-001', questionAr: 'هل يمكنني التسجيل؟', questionEn: 'Can I enroll?', answerAr: 'نعم، متاح التسجيل حسب فتحات الدورة.', answerEn: 'Yes, enrollment is available according to course openings.', orderIndex: 0 });
 
         const gallery = workbook.addWorksheet('Gallery', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
-        gallery.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'url', key: 'url', width: 55 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
+        gallery.columns = [
+            { header: 'CourseKey', key: 'courseKey', width: 18 },
+            { header: 'url', key: 'url', width: 55 },
+            { header: 'altAr', key: 'altAr', width: 38 },
+            { header: 'altEn', key: 'altEn', width: 38 },
+            { header: 'orderIndex', key: 'orderIndex', width: 14 },
+        ];
 
         const lessonOutcomes = workbook.addWorksheet('LessonOutcomes', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
         lessonOutcomes.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 }, { header: 'lessonKey', key: 'lessonKey', width: 18 }, { header: 'descriptionAr', key: 'descriptionAr', width: 45 }, { header: 'descriptionEn', key: 'descriptionEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
@@ -115,8 +124,13 @@ export class CourseImportService {
             sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
             sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
             sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+            sheet.getRow(1).height = 24;
+            sheet.views = [{ state: 'frozen', ySplit: 1, rightToLeft: true, zoomScale: 85 }];
             const colLetter = sheet.getColumn(sheet.columnCount).letter;
-            sheet.autoFilter = { from: 'A1', to: `${colLetter}1` };
+            sheet.autoFilter = { from: 'A1', to: `${colLetter}${Math.max(sheet.rowCount, 2)}` };
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) row.alignment = { vertical: 'top', wrapText: true };
+            });
         }
         for (let row = 2; row <= 500; row += 1) {
             courses.getCell(row, 10).dataValidation = { type: 'list', allowBlank: true, formulae: ['"BEGINNER,INTERMEDIATE,ADVANCED,ALL_LEVELS"'] };
@@ -127,6 +141,10 @@ export class CourseImportService {
         }
         guide.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
         guide.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
+        guide.getRow(1).height = 24;
+        guide.eachRow((row, rowNumber) => {
+            if (rowNumber > 1) row.alignment = { vertical: 'top', wrapText: true };
+        });
         return Buffer.from(await workbook.xlsx.writeBuffer());
     }
 
@@ -214,7 +232,8 @@ export class CourseImportService {
                     answerAr: TEXT(r.answerAr), answerEn: TEXT(r.answerEn), orderIndex: NUM(r.orderIndex, i) ?? i,
                 })).filter(r => r.questionAr || r.questionEn || r.answerAr || r.answerEn) as any,
                 gallery: galleryRows.filter(r => TEXT(r.CourseKey) === key).map((r, i) => ({
-                    url: TEXT(r.url), orderIndex: NUM(r.orderIndex, i) ?? i,
+                    url: TEXT(r.url), altAr: TEXT(r.altAr) || undefined, altEn: TEXT(r.altEn) || undefined,
+                    orderIndex: NUM(r.orderIndex, i) ?? i,
                 })).filter(r => /^https?:\/\//i.test(r.url)) as any,
                 chapters: chapters.map(({ chapterKey: _chapterKey, ...chapter }) => chapter) as any,
             });
@@ -250,9 +269,22 @@ export class CourseImportService {
 
     private parseLinks(value: string) {
         if (!value) return undefined;
-        return value.split(/[\n|;]/).map((item, index) => {
-            const [url, label] = item.split(/\s+-\s+/, 2);
-            return { url: url.trim(), labelAr: label?.trim() || `مرفق ${index + 1}`, labelEn: label?.trim() || `Link ${index + 1}` };
+        return value.split(/\n|;/).map((item, index) => {
+            const parts = item.split('|').map(part => part.trim());
+            const [url, labelAr, labelEn] = parts;
+            if (parts.length > 1) {
+                return {
+                    url,
+                    labelAr: labelAr || `مرفق ${index + 1}`,
+                    labelEn: labelEn || labelAr || `Link ${index + 1}`,
+                };
+            }
+            const [legacyUrl, legacyLabel] = item.split(/\s+-\s+/, 2);
+            return {
+                url: legacyUrl.trim(),
+                labelAr: legacyLabel?.trim() || `مرفق ${index + 1}`,
+                labelEn: legacyLabel?.trim() || `Link ${index + 1}`,
+            };
         }).filter(link => /^https?:\/\//i.test(link.url));
     }
 }

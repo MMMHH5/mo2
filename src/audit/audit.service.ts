@@ -16,6 +16,8 @@ export interface AdminActivityRecord {
     details?: Prisma.InputJsonValue;
 }
 
+export type AdminActivityPreviousValues = Record<string, string | number | boolean>;
+
 const isJsonObject = (value: Prisma.JsonValue | null): value is Prisma.JsonObject =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -58,6 +60,61 @@ export class AuditService {
             });
         } catch (error) {
             this.logger.error(`Failed to record admin activity: ${record.action}`, error);
+        }
+    }
+
+    async resolveAdminActivityPreviousValues(
+        targetType: string,
+        targetId: string,
+        fields: string[],
+    ): Promise<AdminActivityPreviousValues> {
+        const safeFields = new Set(fields);
+        try {
+            let snapshot: Record<string, unknown> | null = null;
+            if (targetType === 'دورة') {
+                snapshot = await this.prisma.course.findUnique({
+                    where: { id: targetId },
+                    select: {
+                        titleAr: true, titleEn: true, categoryAr: true, categoryEn: true,
+                        level: true, contentType: true, language: true, hoursOfContent: true,
+                        durationAr: true, durationEn: true, certificateIssued: true, quizzesIncluded: true,
+                        projectsIncluded: true, assignmentsIncluded: true, liveSessionsIncluded: true,
+                        downloadableResources: true, lifetimeAccess: true, communityAccess: true,
+                        coverImageUrl: true, introVideoUrl: true, videoFileUrl: true,
+                    },
+                });
+            } else if (targetType === 'دفعة دورة') {
+                snapshot = await this.prisma.courseOpening.findUnique({
+                    where: { id: targetId },
+                    select: {
+                        nameAr: true, nameEn: true, status: true, isPublished: true,
+                        startDate: true, endDate: true, enrollmentDeadline: true, price: true,
+                        priceOld: true, maxStudents: true, refundWindowDays: true, deliveryMode: true,
+                        announcementStartAt: true, announcementEndAt: true, currency: true,
+                    },
+                });
+            } else {
+                return {};
+            }
+            if (!snapshot) return {};
+
+            const previousValues: AdminActivityPreviousValues = {};
+            for (const field of safeFields) {
+                const value = snapshot[field];
+                if (['coverImageUrl', 'introVideoUrl', 'videoFileUrl'].includes(field)) {
+                    previousValues[field] = value ? 'تم تعيين رابط الوسيط' : 'لا يوجد رابط';
+                } else if (value instanceof Date) {
+                    previousValues[field] = value.toISOString();
+                } else if (typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))) {
+                    previousValues[field] = typeof value === 'string' ? value.slice(0, 120) : value;
+                } else if (value && typeof value === 'object' && value.constructor?.name === 'Decimal') {
+                    previousValues[field] = String(value).slice(0, 120);
+                }
+            }
+            return previousValues;
+        } catch (error) {
+            this.logger.error(`Failed to resolve previous admin activity values for ${targetType}`, error);
+            return {};
         }
     }
 

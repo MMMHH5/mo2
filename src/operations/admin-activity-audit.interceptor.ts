@@ -72,6 +72,8 @@ const FIELD_LABELS: Record<string, string> = {
     descriptionEn: 'الوصف بالإنجليزية',
     excerptAr: 'الملخص بالعربية',
     excerptEn: 'الملخص بالإنجليزية',
+    categoryAr: 'التصنيف بالعربية',
+    categoryEn: 'التصنيف بالإنجليزية',
     email: 'البريد الإلكتروني',
     role: 'الصلاحية',
     isActive: 'حالة الحساب',
@@ -100,6 +102,21 @@ const FIELD_LABELS: Record<string, string> = {
     level: 'المستوى',
     language: 'اللغة',
     contentType: 'نوع المحتوى',
+    syllabusAr: 'المنهج بالعربية',
+    syllabusEn: 'المنهج بالإنجليزية',
+    durationAr: 'المدة بالعربية',
+    durationEn: 'المدة بالإنجليزية',
+    coverImageUrl: 'صورة غلاف الدورة',
+    introVideoUrl: 'الفيديو التعريفي',
+    videoFileUrl: 'ملف فيديو الدورة',
+    certificateIssued: 'إصدار شهادة إتمام',
+    quizzesIncluded: 'تضمين اختبارات',
+    projectsIncluded: 'تضمين مشاريع',
+    assignmentsIncluded: 'تضمين واجبات',
+    liveSessionsIncluded: 'تضمين جلسات مباشرة',
+    downloadableResources: 'تضمين موارد قابلة للتنزيل',
+    lifetimeAccess: 'إتاحة وصول دائم',
+    communityAccess: 'إتاحة مجتمع الدورة',
     deliveryMode: 'نمط الدراسة',
     hoursOfContent: 'ساعات المحتوى',
     refundWindowDays: 'مدة استرداد المبلغ بالأيام',
@@ -115,6 +132,8 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const VALUE_FIELDS = new Set(Object.keys(FIELD_LABELS));
+const COLLECTION_FIELDS = new Set(['modules', 'chapters', 'objectives', 'prerequisites', 'audiences', 'faqs', 'gallery']);
+const MEDIA_FIELDS = new Set(['coverImageUrl', 'introVideoUrl', 'videoFileUrl']);
 const UNSAFE_VALUE_FIELD = /description|excerpt|syllabus|content|comment|notes?|meet.?link|image|file|gallery|modules|chapters|objectives|prerequisites|audiences|faqs/i;
 const SENSITIVE_FIELD = /password|secret|token|auth|totp|two.?factor|otp|verification.?code|card|cvv|receipt|file|upload|image|document|attachment|phone|address|birth|metadata|bank|iban|accountNumber/i;
 const IGNORED_ROUTE = /(^|\/)(validate|preview|export|calculate|search|track|unlock|recover-password)(\/|$)/i;
@@ -133,13 +152,21 @@ export class AdminActivityAuditInterceptor implements NestInterceptor {
         const record = createAdminActivityRecord(request);
         if (!record) return next.handle();
 
-        const priorTargetLabel = request.method.toUpperCase() === 'DELETE' && record.targetId
+        const method = request.method.toUpperCase();
+        const priorTargetLabel = method === 'DELETE' && record.targetId
             ? this.audit.resolveAdminActivityTargetLabel(record.targetType, record.targetId)
             : Promise.resolve(undefined);
+        const requestedFields = isRecord(request.body)
+            ? Object.keys(request.body).filter((field) => VALUE_FIELDS.has(field))
+            : [];
+        const previousValues = (method === 'PATCH' || method === 'PUT') && record.targetId
+            ? this.audit.resolveAdminActivityPreviousValues(record.targetType, record.targetId, requestedFields)
+            : Promise.resolve({});
 
-        return from(priorTargetLabel).pipe(
-            mergeMap((priorLabel) => {
+        return from(Promise.all([priorTargetLabel, previousValues])).pipe(
+            mergeMap(([priorLabel, priorValues]) => {
                 if (priorLabel) record.targetLabel = priorLabel;
+                record.details = addPreviousValues(record.details, priorValues);
                 return next.handle().pipe(
                     mergeMap(async (response: unknown) => {
                         const responseId = getStringProperty(response, 'id');
@@ -187,7 +214,14 @@ export function createAdminActivityRecord(request: AuthenticatedRequest): AdminA
         ...(change.previousValue !== undefined ? { previousValue: change.previousValue } : {}),
         ...(change.newValue !== undefined ? { newValue: change.newValue } : {}),
     }));
-    const summary = `${user.email} (${role}) نفّذ إجراء «${action}»${targetLabel ? ` على «${targetLabel}»` : ''}. تم تنفيذ الطلب بنجاح.`;
+    const changeSummary = changes
+        .filter((change) => VALUE_FIELDS.has(change.field))
+        .slice(0, 6)
+        .map((change) => change.value !== undefined
+            ? `${change.label}: ${String(change.value)}`
+            : `${change.label}: تم تحديثه`)
+        .join('، ');
+    const summary = `${user.email} (${role}) نفّذ إجراء «${action}»${targetLabel ? ` على «${targetLabel}»` : ''}. تم تنفيذ الطلب بنجاح.${changeSummary ? ` التفاصيل: ${changeSummary}.` : ''}`;
 
     return {
         action,
@@ -278,19 +312,66 @@ function findTargetLabel(
 function captureChanges(body: Record<string, unknown>): ChangeDetail[] {
     const changes: ChangeDetail[] = [];
     for (const [field, rawValue] of Object.entries(body)) {
-        if (SENSITIVE_FIELD.test(field) || rawValue === null || rawValue === undefined) continue;
+        if ((SENSITIVE_FIELD.test(field) && !MEDIA_FIELDS.has(field)) || rawValue === null || rawValue === undefined) continue;
 
         const change: ChangeDetail = {
             field: field.slice(0, 80),
             label: FIELD_LABELS[field] ?? `حقل: ${field}`,
         };
-        if (VALUE_FIELDS.has(field) && !UNSAFE_VALUE_FIELD.test(field) && isSafeScalar(rawValue)) {
+        if (COLLECTION_FIELDS.has(field) && Array.isArray(rawValue)) {
+            change.value = summarizeCollection(field, rawValue);
+            change.newValue = change.value;
+        } else if (MEDIA_FIELDS.has(field) && typeof rawValue === 'string') {
+            change.value = rawValue.trim() ? 'تم تعيين رابط الوسيط' : 'تم مسح رابط الوسيط';
+            change.newValue = change.value;
+        } else if (
+            VALUE_FIELDS.has(field)
+            && (field === 'contentType' || !UNSAFE_VALUE_FIELD.test(field))
+            && isSafeScalar(rawValue)
+        ) {
             change.value = typeof rawValue === 'string' ? rawValue.trim().slice(0, 120) : rawValue;
             change.newValue = change.value;
         }
         changes.push(change);
     }
     return changes.slice(0, 30);
+}
+
+function summarizeCollection(field: string, value: unknown[]): string {
+    const count = value.length;
+    if (field === 'chapters') {
+        const lessonCount = value.reduce<number>((total, chapter) => (
+            total + (isRecord(chapter) && Array.isArray(chapter.modules) ? chapter.modules.length : 0)
+        ), 0);
+        return `${count} ${count === 1 ? 'فصل' : 'فصول'} و${lessonCount} ${lessonCount === 1 ? 'درس' : 'دروس'}`;
+    }
+    if (field === 'modules') return `${count} ${count === 1 ? 'درس' : 'دروس'}`;
+    const labels: Record<string, [string, string]> = {
+        objectives: ['هدف', 'أهداف'],
+        prerequisites: ['متطلب سابق', 'متطلبات سابقة'],
+        audiences: ['فئة مستهدفة', 'فئات مستهدفة'],
+        faqs: ['سؤال شائع', 'أسئلة شائعة'],
+        gallery: ['صورة', 'صور'],
+    };
+    const [singular, plural] = labels[field] ?? ['عنصر', 'عناصر'];
+    return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function addPreviousValues(
+    details: Prisma.InputJsonValue | undefined,
+    previousValues: Record<string, string | number | boolean>,
+): Prisma.InputJsonValue | undefined {
+    if (!isRecord(details)) return details;
+    const detailRecord = details as Record<string, unknown>;
+    if (!Array.isArray(detailRecord.changes)) return details;
+    return {
+        ...detailRecord,
+        changes: detailRecord.changes.map((change: unknown) => {
+            if (!isRecord(change) || typeof change.field !== 'string') return change;
+            const previousValue = previousValues[change.field];
+            return previousValue === undefined ? change : { ...change, previousValue };
+        }),
+    } as Prisma.InputJsonObject;
 }
 
 function isSafeScalar(value: unknown): value is string | number | boolean {

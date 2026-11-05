@@ -734,7 +734,8 @@ function OperationsCenterPage() {
                                                                     )}
                                                                     {(change.newValue !== undefined || change.value !== undefined) && (
                                                                         <div className="text-xs text-green-700 dark:text-green-300">
-                                                                            بعد: {String(change.newValue ?? change.value)}
+                                                                            {change.previousValue !== undefined ? 'بعد: ' : 'القيمة المسجلة: '}
+                                                                            {String(change.newValue ?? change.value)}
                                                                         </div>
                                                                     )}
                                                                     {change.previousValue === undefined && change.newValue === undefined && change.value === undefined && (
