@@ -26,7 +26,8 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
         // Delay rendering to allow useAuth context to hydrate from localStorage
         const timer = setTimeout(() => {
             if (!isAuthenticated) {
-                router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+                const destination = `${pathname}${window.location.search}`;
+                router.push(`/login?redirect=${encodeURIComponent(destination)}`);
             } else if (allowed && !user) {
                 // A token with no readable user object: the role cannot be
                 // confirmed, so the safe answer is no.
