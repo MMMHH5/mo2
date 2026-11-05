@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import ExcelJS from 'exceljs';
+import * as ExcelJS from 'exceljs';
 import { CourseContentType, CourseLevel } from '@prisma/client';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
