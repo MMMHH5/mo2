@@ -100,7 +100,7 @@ services:
     region: frankfurt
     rootDir: frontend
     buildCommand: npm ci --include=dev && npm run build && mkdir -p .next/standalone/frontend/.next && cp -R .next/static .next/standalone/frontend/.next/static && cp -R public .next/standalone/frontend/public
-    startCommand: node .next/standalone/frontend/server.js
+    startCommand: HOSTNAME=0.0.0.0 node .next/standalone/frontend/server.js
     healthCheckPath: /ar
     autoDeploy: true
     envVars:
@@ -130,7 +130,7 @@ services:
     region: frankfurt
     rootDir: frontend
     buildCommand: npm ci --include=dev && npm run build && mkdir -p .next/standalone/frontend/.next && cp -R .next/static .next/standalone/frontend/.next/static && cp -R public .next/standalone/frontend/public
-    startCommand: node .next/standalone/frontend/server.js
+    startCommand: HOSTNAME=0.0.0.0 node .next/standalone/frontend/server.js
     healthCheckPath: /ar
     autoDeploy: true
     envVars:

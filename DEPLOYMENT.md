@@ -27,7 +27,8 @@ authenticated download routes; R2 itself is not exposed as a public bucket.
 
 The frontend build commands copy `.next/static` and `public` into the standalone
 server output so the production server can serve its JavaScript, CSS, and public
-assets after deployment.
+assets after deployment. The start command binds the server to `0.0.0.0` so
+Render's proxy can reach the process inside its container.
 
 ### Before creating the Blueprint
 
