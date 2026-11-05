@@ -5,6 +5,12 @@ import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 
 const TEXT = (value: unknown) => String(value ?? '').trim();
+const BOOL = (value: unknown, fallback = false) => {
+    const normalized = TEXT(value).toUpperCase();
+    if (['TRUE', '1', 'YES', 'نعم'].includes(normalized)) return true;
+    if (['FALSE', '0', 'NO', 'لا'].includes(normalized)) return false;
+    return fallback;
+};
 const NUM = (value: unknown, fallback?: number) => {
     if (value === null || value === undefined || String(value).trim() === '') return fallback;
     const n = Number(value);
@@ -27,19 +33,40 @@ export class CourseImportService {
         guide.addRow(['نوع المحتوى', 'LIVE للدورات المباشرة أو RECORDED للدورات المسجلة']);
         guide.addRow(['المستوى', 'BEGINNER أو INTERMEDIATE أو ADVANCED أو EXPERT']);
         guide.addRow(['الترتيب', 'رقم صحيح يبدأ من 0']);
-        guide.addRow(['الملفات', 'لا يمكن رفع الملفات داخل Excel. أضف الروابط النصية، ثم ارفع الصور والملفات من شاشة تعديل الدورة بعد الاستيراد']);
+        guide.addRow(['الملفات والصور', 'يمكن وضع روابط الصور والملفات العامة فقط كنص. الملفات المرفوعة فعلياً تُدار لاحقاً من شاشة تعديل الدورة.']);
+        guide.addRow(['Objectives / Prerequisites / Audiences', 'سطر لكل عنصر مع CourseKey والترجمة العربية والإنجليزية والترتيب.']);
+        guide.addRow(['FAQs', 'سطر لكل سؤال، ويجب ملء السؤال والإجابة بالعربية والإنجليزية.']);
+        guide.addRow(['LessonOutcomes', 'اربط نتيجة الدرس بـ CourseKey و chapterKey و lessonKey الموجودين في ورقتي Chapters و Lessons.']);
+        guide.addRow(['Lesson links', 'روابط الدرس بصيغة URL - الاسم المتعددة مفصولة بـ | أو سطر جديد.']);
+        guide.addRow(['Lesson files', 'الصيغة: https://example.com/file.pdf | اسم عربي | English name. تُفصل عدة ملفات بفاصلة منقوطة أو سطر جديد.']);
+        guide.addRow(['القيم المنطقية', 'استخدم TRUE أو FALSE في حقول المميزات.']);
 
         const courses = workbook.addWorksheet('Courses', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
         courses.columns = [
-            { header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'titleAr', key: 'titleAr', width: 32 },
-            { header: 'titleEn', key: 'titleEn', width: 32 }, { header: 'excerptAr', key: 'excerptAr', width: 40 },
-            { header: 'excerptEn', key: 'excerptEn', width: 40 }, { header: 'descriptionAr', key: 'descriptionAr', width: 48 },
-            { header: 'descriptionEn', key: 'descriptionEn', width: 48 }, { header: 'categoryAr', key: 'categoryAr', width: 22 },
-            { header: 'categoryEn', key: 'categoryEn', width: 22 }, { header: 'level', key: 'level', width: 18 },
-            { header: 'contentType', key: 'contentType', width: 18 }, { header: 'language', key: 'language', width: 18 },
-            { header: 'hoursOfContent', key: 'hoursOfContent', width: 18 }, { header: 'videoUrl', key: 'videoUrl', width: 36 },
+            { header: 'CourseKey', key: 'courseKey', width: 18 },
+            { header: 'titleAr', key: 'titleAr', width: 32 }, { header: 'titleEn', key: 'titleEn', width: 32 },
+            { header: 'excerptAr', key: 'excerptAr', width: 40 }, { header: 'excerptEn', key: 'excerptEn', width: 40 },
+            { header: 'descriptionAr', key: 'descriptionAr', width: 48 }, { header: 'descriptionEn', key: 'descriptionEn', width: 48 },
+            { header: 'categoryAr', key: 'categoryAr', width: 22 }, { header: 'categoryEn', key: 'categoryEn', width: 22 },
+            { header: 'level', key: 'level', width: 18 }, { header: 'contentType', key: 'contentType', width: 18 },
+            { header: 'language', key: 'language', width: 18 }, { header: 'hoursOfContent', key: 'hoursOfContent', width: 18 },
+            { header: 'durationAr', key: 'durationAr', width: 20 }, { header: 'durationEn', key: 'durationEn', width: 20 },
+            { header: 'syllabusAr', key: 'syllabusAr', width: 48 }, { header: 'syllabusEn', key: 'syllabusEn', width: 48 },
+            { header: 'coverImageUrl', key: 'coverImageUrl', width: 36 }, { header: 'introVideoUrl', key: 'introVideoUrl', width: 36 },
+            { header: 'videoFileUrl', key: 'videoFileUrl', width: 36 },
+            { header: 'certificateIssued', key: 'certificateIssued', width: 18 }, { header: 'quizzesIncluded', key: 'quizzesIncluded', width: 18 },
+            { header: 'projectsIncluded', key: 'projectsIncluded', width: 18 }, { header: 'assignmentsIncluded', key: 'assignmentsIncluded', width: 20 },
+            { header: 'liveSessionsIncluded', key: 'liveSessionsIncluded', width: 20 }, { header: 'downloadableResources', key: 'downloadableResources', width: 22 },
+            { header: 'lifetimeAccess', key: 'lifetimeAccess', width: 18 }, { header: 'communityAccess', key: 'communityAccess', width: 18 },
         ];
-        courses.addRow({ courseKey: 'CO-001', titleAr: 'عنوان الدورة', titleEn: 'Course title', level: 'BEGINNER', contentType: 'RECORDED', language: 'Bilingual', hoursOfContent: 10 });
+        courses.addRow({
+            courseKey: 'CO-001', titleAr: 'عنوان الدورة', titleEn: 'Course title', excerptAr: 'ملخص قصير بالعربية', excerptEn: 'Short course summary',
+            descriptionAr: 'وصف كامل للدورة بالعربية', descriptionEn: 'Complete English course description', categoryAr: 'البرمجة', categoryEn: 'Programming',
+            level: 'BEGINNER', contentType: 'RECORDED', language: 'Bilingual', hoursOfContent: 10, durationAr: '10 ساعات', durationEn: '10 hours',
+            syllabusAr: 'المنهج والمحتوى التفصيلي', syllabusEn: 'Detailed syllabus and content', coverImageUrl: '', introVideoUrl: '', videoFileUrl: '',
+            certificateIssued: 'TRUE', quizzesIncluded: 'TRUE', projectsIncluded: 'TRUE', assignmentsIncluded: 'FALSE', liveSessionsIncluded: 'FALSE',
+            downloadableResources: 'TRUE', lifetimeAccess: 'TRUE', communityAccess: 'TRUE',
+        });
 
         const chapters = workbook.addWorksheet('Chapters', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
         chapters.columns = [
@@ -57,17 +84,46 @@ export class CourseImportService {
             { header: 'videoUrl', key: 'videoUrl', width: 36 }, { header: 'orderIndex', key: 'orderIndex', width: 14 },
             { header: 'durationMinutes', key: 'durationMinutes', width: 18 }, { header: 'links', key: 'links', width: 50 },
         ];
-        lessons.addRow({ courseKey: 'CO-001', chapterKey: 'CH-001', titleAr: 'الدرس الأول', titleEn: 'First lesson', videoUrl: '', orderIndex: 0, durationMinutes: 30, links: '' });
+        lessons.columns.splice(2, 0, { header: 'lessonKey', key: 'lessonKey', width: 18 });
+        lessons.columns.push({ header: 'files', key: 'files', width: 70 });
+        lessons.addRow({ courseKey: 'CO-001', chapterKey: 'CH-001', lessonKey: 'LE-001', titleAr: 'الدرس الأول', titleEn: 'First lesson', videoUrl: '', orderIndex: 0, durationMinutes: 30, links: '', files: '' });
 
-        for (const sheet of [courses, chapters, lessons]) {
+        const objectives = workbook.addWorksheet('Objectives', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        objectives.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'objectiveAr', key: 'objectiveAr', width: 45 }, { header: 'objectiveEn', key: 'objectiveEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
+        objectives.addRow({ courseKey: 'CO-001', objectiveAr: 'فهم أساسيات الدورة', objectiveEn: 'Understand the course fundamentals', orderIndex: 0 });
+
+        const prerequisites = workbook.addWorksheet('Prerequisites', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        prerequisites.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'prerequisiteAr', key: 'prerequisiteAr', width: 45 }, { header: 'prerequisiteEn', key: 'prerequisiteEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
+        prerequisites.addRow({ courseKey: 'CO-001', prerequisiteAr: 'لا توجد متطلبات مسبقة', prerequisiteEn: 'No prior requirements', orderIndex: 0 });
+
+        const audiences = workbook.addWorksheet('Audiences', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        audiences.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'audienceAr', key: 'audienceAr', width: 45 }, { header: 'audienceEn', key: 'audienceEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
+        audiences.addRow({ courseKey: 'CO-001', audienceAr: 'المبتدئون والمهتمون بالمجال', audienceEn: 'Beginners and interested learners', orderIndex: 0 });
+
+        const faqs = workbook.addWorksheet('FAQs', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        faqs.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'questionAr', key: 'questionAr', width: 45 }, { header: 'questionEn', key: 'questionEn', width: 45 }, { header: 'answerAr', key: 'answerAr', width: 55 }, { header: 'answerEn', key: 'answerEn', width: 55 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
+        faqs.addRow({ courseKey: 'CO-001', questionAr: 'هل يمكنني التسجيل؟', questionEn: 'Can I enroll?', answerAr: 'نعم، متاح التسجيل حسب فتحات الدورة.', answerEn: 'Yes, enrollment is available according to course openings.', orderIndex: 0 });
+
+        const gallery = workbook.addWorksheet('Gallery', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        gallery.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'url', key: 'url', width: 55 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
+
+        const lessonOutcomes = workbook.addWorksheet('LessonOutcomes', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        lessonOutcomes.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 }, { header: 'lessonKey', key: 'lessonKey', width: 18 }, { header: 'descriptionAr', key: 'descriptionAr', width: 45 }, { header: 'descriptionEn', key: 'descriptionEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
+        lessonOutcomes.addRow({ courseKey: 'CO-001', chapterKey: 'CH-001', lessonKey: 'LE-001', descriptionAr: 'نتيجة التعلم للدرس', descriptionEn: 'Lesson learning outcome', orderIndex: 0 });
+
+        for (const sheet of [courses, chapters, lessons, objectives, prerequisites, audiences, faqs, gallery, lessonOutcomes]) {
             sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
             sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
             sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
-            sheet.autoFilter = { from: 'A1', to: `${String.fromCharCode(64 + sheet.columnCount)}1` };
+            const colLetter = sheet.getColumn(sheet.columnCount).letter;
+            sheet.autoFilter = { from: 'A1', to: `${colLetter}1` };
         }
         for (let row = 2; row <= 500; row += 1) {
-            courses.getCell(row, 10).dataValidation = { type: 'list', allowBlank: true, formulae: ['"BEGINNER,INTERMEDIATE,ADVANCED,EXPERT"'] };
+            courses.getCell(row, 10).dataValidation = { type: 'list', allowBlank: true, formulae: ['"BEGINNER,INTERMEDIATE,ADVANCED,ALL_LEVELS"'] };
             courses.getCell(row, 11).dataValidation = { type: 'list', allowBlank: false, formulae: ['"LIVE,RECORDED"'] };
+            for (let column = 21; column <= 28; column += 1) {
+                courses.getCell(row, column).dataValidation = { type: 'list', allowBlank: true, formulae: ['"TRUE,FALSE"'] };
+            }
         }
         guide.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
         guide.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
@@ -86,6 +142,12 @@ export class CourseImportService {
         const seenKeys = new Set<string>();
         const chapterRows = this.rows(workbook.getWorksheet('Chapters'));
         const lessonRows = this.rows(workbook.getWorksheet('Lessons'));
+        const lessonOutcomeRows = this.rows(workbook.getWorksheet('LessonOutcomes'));
+        const objectiveRows = this.rows(workbook.getWorksheet('Objectives'));
+        const prerequisiteRows = this.rows(workbook.getWorksheet('Prerequisites'));
+        const audienceRows = this.rows(workbook.getWorksheet('Audiences'));
+        const faqRows = this.rows(workbook.getWorksheet('FAQs'));
+        const galleryRows = this.rows(workbook.getWorksheet('Gallery'));
 
         for (const [index, row] of courseRows.entries()) {
             const line = index + 2;
@@ -115,6 +177,10 @@ export class CourseImportService {
                         videoUrl: TEXT(l.videoUrl) || undefined, orderIndex: NUM(l.orderIndex, lessonIndex) ?? lessonIndex,
                         durationMinutes: NUM(l.durationMinutes),
                         links: this.parseLinks(TEXT(l.links)),
+                        files: this.parseFiles(TEXT(l.files)),
+                        outcomes: lessonOutcomeRows.filter(o => TEXT(o.CourseKey) === key && TEXT(o.chapterKey) === chapterKey && TEXT(o.lessonKey) === TEXT(l.lessonKey)).map((o, i) => ({
+                            descriptionAr: TEXT(o.descriptionAr), descriptionEn: TEXT(o.descriptionEn), orderIndex: NUM(o.orderIndex, i) ?? i,
+                        })).filter(o => o.descriptionAr || o.descriptionEn),
                     })),
                 };
             });
@@ -126,6 +192,30 @@ export class CourseImportService {
                 categoryAr: TEXT(row.getCell(8).value) || undefined, categoryEn: TEXT(row.getCell(9).value) || undefined,
                 level, contentType, language: TEXT(row.getCell(12).value) || undefined,
                 hoursOfContent: NUM(row.getCell(13).value),
+                durationAr: TEXT(row.getCell(14).value) || undefined, durationEn: TEXT(row.getCell(15).value) || undefined,
+                syllabusAr: TEXT(row.getCell(16).value) || undefined, syllabusEn: TEXT(row.getCell(17).value) || undefined,
+                coverImageUrl: TEXT(row.getCell(18).value) || undefined, introVideoUrl: TEXT(row.getCell(19).value) || undefined,
+                videoFileUrl: TEXT(row.getCell(20).value) || undefined,
+                certificateIssued: BOOL(row.getCell(21).value), quizzesIncluded: BOOL(row.getCell(22).value),
+                projectsIncluded: BOOL(row.getCell(23).value), assignmentsIncluded: BOOL(row.getCell(24).value),
+                liveSessionsIncluded: BOOL(row.getCell(25).value), downloadableResources: BOOL(row.getCell(26).value),
+                lifetimeAccess: BOOL(row.getCell(27).value), communityAccess: BOOL(row.getCell(28).value),
+                objectives: objectiveRows.filter(r => TEXT(r.CourseKey) === key).map((r, i) => ({
+                    objectiveAr: TEXT(r.objectiveAr), objectiveEn: TEXT(r.objectiveEn), orderIndex: NUM(r.orderIndex, i) ?? i,
+                })).filter(r => r.objectiveAr || r.objectiveEn) as any,
+                prerequisites: prerequisiteRows.filter(r => TEXT(r.CourseKey) === key).map((r, i) => ({
+                    prerequisiteAr: TEXT(r.prerequisiteAr), prerequisiteEn: TEXT(r.prerequisiteEn), orderIndex: NUM(r.orderIndex, i) ?? i,
+                })).filter(r => r.prerequisiteAr || r.prerequisiteEn) as any,
+                audiences: audienceRows.filter(r => TEXT(r.CourseKey) === key).map((r, i) => ({
+                    audienceAr: TEXT(r.audienceAr), audienceEn: TEXT(r.audienceEn), orderIndex: NUM(r.orderIndex, i) ?? i,
+                })).filter(r => r.audienceAr || r.audienceEn) as any,
+                faqs: faqRows.filter(r => TEXT(r.CourseKey) === key).map((r, i) => ({
+                    questionAr: TEXT(r.questionAr), questionEn: TEXT(r.questionEn),
+                    answerAr: TEXT(r.answerAr), answerEn: TEXT(r.answerEn), orderIndex: NUM(r.orderIndex, i) ?? i,
+                })).filter(r => r.questionAr || r.questionEn || r.answerAr || r.answerEn) as any,
+                gallery: galleryRows.filter(r => TEXT(r.CourseKey) === key).map((r, i) => ({
+                    url: TEXT(r.url), orderIndex: NUM(r.orderIndex, i) ?? i,
+                })).filter(r => /^https?:\/\//i.test(r.url)) as any,
                 chapters: chapters.map(({ chapterKey: _chapterKey, ...chapter }) => chapter) as any,
             });
         }
@@ -148,6 +238,14 @@ export class CourseImportService {
             if (Object.values(value).some(v => String(v ?? '').trim())) out.push(value);
         });
         return out;
+    }
+
+    private parseFiles(value: string) {
+        if (!value) return undefined;
+        return value.split(/\n|;/).map((item) => {
+            const [url, nameAr, nameEn] = item.split('|').map(part => part.trim());
+            return { url, nameAr: nameAr || '', nameEn: nameEn || '' };
+        }).filter(file => /^https?:\/\//i.test(file.url));
     }
 
     private parseLinks(value: string) {
