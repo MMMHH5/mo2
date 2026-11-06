@@ -35,6 +35,22 @@ describe('course import workbook', () => {
         );
         assert.equal(String(courseSheet.getCell(2, 5).value ?? ''), '');
         assert.ok(courseSheet.getCell(11, 5).dataValidation, 'content type should use a dropdown');
+        const courseFields = new Set<string>();
+        courseSheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1) courseFields.add(String(row.getCell(1).value ?? ''));
+        });
+        assert.deepEqual([...courseFields].filter(Boolean).sort(), [
+            'assignmentsIncluded', 'categoryAr', 'categoryEn', 'certificateIssued', 'communityAccess',
+            'contentType', 'coverImageUrl', 'descriptionAr', 'descriptionEn', 'downloadableResources',
+            'durationAr', 'durationEn', 'excerptAr', 'excerptEn', 'hoursOfContent', 'introVideoUrl',
+            'language', 'level', 'lifetimeAccess', 'liveSessionsIncluded', 'projectsIncluded',
+            'quizzesIncluded', 'syllabusAr', 'syllabusEn', 'titleAr', 'titleEn', 'videoFileUrl',
+        ].sort());
+        assert.ok(
+            Array.from({ length: courseSheet.rowCount }, (_, index) => String(courseSheet.getCell(index + 1, 2).value ?? ''))
+                .includes('أقسام المحتوى التفصيلي'),
+            'the main form should make every detailed content sheet discoverable',
+        );
         assert.equal(workbook.getWorksheet('الفصول')!.getColumn(1).hidden, true, 'internal course IDs should not be shown');
         assert.equal(workbook.getWorksheet('الدروس')!.getColumn(3).hidden, false, 'chapter link should use a readable title');
         assert.ok(workbook.getWorksheet('الدروس')!.getCell(2, 3).note);
@@ -111,6 +127,10 @@ describe('course import workbook', () => {
         workbook.getWorksheet('الصور')!.addRow([
             '', '/uploads/courses/gallery/course-gallery.jpg', 'صورة توضيحية', 'Illustration', 0,
         ]);
+        workbook.getWorksheet('أهداف التعلم')!.addRow(['', 'يتقن المتعلم المهارة', 'Learns the skill', 0]);
+        workbook.getWorksheet('المتطلبات')!.addRow(['', 'معرفة أساسية', 'Basic knowledge', 0]);
+        workbook.getWorksheet('الفئة المستهدفة')!.addRow(['', 'المبتدئون', 'Beginners', 0]);
+        workbook.getWorksheet('الأسئلة الشائعة')!.addRow(['', 'هل توجد شهادة؟', 'Is there a certificate?', 'نعم', 'Yes', 0]);
 
         const result = await service.import(Buffer.from(await workbook.xlsx.writeBuffer()), 'instructor-1');
 
@@ -121,6 +141,10 @@ describe('course import workbook', () => {
             altEn: 'Illustration',
             orderIndex: 0,
         }]);
+        assert.equal(createdCourse?.objectives[0].objectiveAr, 'يتقن المتعلم المهارة');
+        assert.equal(createdCourse?.prerequisites[0].prerequisiteEn, 'Basic knowledge');
+        assert.equal(createdCourse?.audiences[0].audienceAr, 'المبتدئون');
+        assert.equal(createdCourse?.faqs[0].answerEn, 'Yes');
         assert.equal(createdCourse?.chapters[0].titleAr, 'مقدمة');
         assert.equal(createdCourse?.chapters[0].modules[0].titleAr, 'الدرس الأول');
         assert.deepEqual(createdCourse?.chapters[0].modules[0].links, [{

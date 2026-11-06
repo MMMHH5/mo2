@@ -233,6 +233,32 @@ export class CourseImportService {
                 row.getCell(5).dataValidation = { type: 'list', allowBlank: true, formulae: ['"نعم,لا"'] };
             }
         }
+        const contentSections = [
+            ['الفصول', 'ورقة الفصول: أضف عنوان كل فصل بالعربية والإنجليزية وحدد ترتيبه.'],
+            ['الدروس', 'ورقة الدروس: أضف كل درس في صف مستقل، واكتب عنوان الفصل بالعربية كما هو في ورقة الفصول. تشمل الحقول العنوان والوصف والفيديو والمدة والروابط والملفات.'],
+            ['مخرجات الدروس', 'ورقة مخرجات الدروس: أضف مخرج تعلم لكل درس، واربطه بعنوان الفصل والدرس بالعربية.'],
+            ['أهداف التعلم', 'ورقة أهداف التعلم: أضف كل هدف للدورة بالعربية والإنجليزية في صف مستقل.'],
+            ['المتطلبات', 'ورقة المتطلبات: أضف كل متطلب سابق بالعربية والإنجليزية في صف مستقل.'],
+            ['الفئة المستهدفة', 'ورقة الفئة المستهدفة: أضف كل فئة بالعربية والإنجليزية في صف مستقل.'],
+            ['الأسئلة الشائعة', 'ورقة الأسئلة الشائعة: أضف السؤال والإجابة بالعربية والإنجليزية لكل صف.'],
+            ['الصور', 'ورقة الصور: أضف رابط الصورة أو مسارها المرفوع مع وصف بديل بالعربية والإنجليزية.'],
+        ];
+        const sectionsHeading = courses.addRow(['', 'أقسام المحتوى التفصيلي', 'املأ الأوراق المناسبة أدناه؛ يمكن إضافة عدة صفوف لكل عنصر.']);
+        sectionsHeading.height = 30;
+        sectionsHeading.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        sectionsHeading.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
+        sectionsHeading.alignment = { vertical: 'middle', wrapText: true };
+        for (const [sheetName, instructions] of contentSections) {
+            const row = courses.addRow(['', sheetName, instructions]);
+            row.height = sheetName === 'الدروس' || sheetName === 'مخرجات الدروس' ? 48 : 34;
+            row.getCell(2).font = { bold: true, color: { argb: 'FF17365D' } };
+            row.getCell(2).alignment = { vertical: 'middle', wrapText: true };
+            row.getCell(3).alignment = { vertical: 'middle', wrapText: true };
+            row.eachCell({ includeEmpty: true }, cell => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F7FB' } };
+                cell.border = { bottom: { style: 'hair', color: { argb: 'FFD7E0EB' } } };
+            });
+        }
         courses.getRow(1).height = 34;
         courses.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
         courses.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
