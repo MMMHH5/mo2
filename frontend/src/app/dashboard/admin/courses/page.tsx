@@ -128,7 +128,7 @@ export default function AdminCoursesPage() {
                                 className="ps-9 pe-3 py-2.5 border border-gray-300 dark:border-white/10 rounded-xl text-sm w-full sm:w-56 bg-white dark:bg-brand-navy-dark text-brand-navy dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-brand-gold outline-none transition"
                             />
                         </div>
-                        <button type="button" onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-xl border border-brand-gold/40 px-4 py-2.5 text-sm font-bold text-brand-navy transition hover:bg-brand-gold/10 dark:text-white"><Download size={16} /> قالب Excel</button>
+                        <button type="button" onClick={downloadTemplate} title="قالب عربي مرتب يوضح بيانات الدورة ومكان تعبئة كل حقل" className="inline-flex items-center gap-2 rounded-xl border border-brand-gold/40 px-4 py-2.5 text-sm font-bold text-brand-navy transition hover:bg-brand-gold/10 dark:text-white"><Download size={16} /> قالب تعبئة الدورة Excel</button>
                         <button type="button" disabled={importing} onClick={() => importRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-brand-gold bg-white px-4 py-2.5 text-sm font-bold text-brand-navy transition hover:bg-brand-gold/10 disabled:opacity-60 dark:bg-brand-navy-dark dark:text-white">
                             {importing ? <LoaderCircle size={16} className="animate-spin" /> : <Upload size={16} />} {importing ? 'جارٍ الاستيراد...' : 'استيراد دورات'}
                         </button>

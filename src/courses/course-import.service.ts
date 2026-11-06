@@ -28,6 +28,82 @@ const isAllowedAssetUrl = (value: string) => {
     return /^\/uploads\/(?!private(?:\/|$))(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._/-]+$/i.test(value);
 };
 
+const SHEET_NAMES: Record<string, string> = {
+    Instructions: 'ابدأ هنا',
+    Courses: 'بيانات الدورة',
+    Chapters: 'الفصول',
+    Lessons: 'الدروس',
+    Objectives: 'أهداف التعلم',
+    Prerequisites: 'المتطلبات',
+    Audiences: 'الفئة المستهدفة',
+    FAQs: 'الأسئلة الشائعة',
+    Gallery: 'الصور',
+    LessonOutcomes: 'مخرجات الدروس',
+};
+
+const FIELD_LABELS: Record<string, string> = {
+    CourseKey: 'مفتاح الدورة (للربط بين الأوراق)',
+    chapterKey: 'مفتاح الفصل',
+    lessonKey: 'مفتاح الدرس',
+    titleAr: 'العنوان بالعربية',
+    titleEn: 'العنوان بالإنجليزية',
+    excerptAr: 'نبذة قصيرة بالعربية',
+    excerptEn: 'نبذة قصيرة بالإنجليزية',
+    descriptionAr: 'الوصف بالعربية',
+    descriptionEn: 'الوصف بالإنجليزية',
+    categoryAr: 'التصنيف بالعربية',
+    categoryEn: 'التصنيف بالإنجليزية',
+    level: 'مستوى الدورة',
+    contentType: 'نوع المحتوى',
+    language: 'لغة الدورة',
+    hoursOfContent: 'ساعات المحتوى',
+    durationAr: 'المدة بالعربية',
+    durationEn: 'المدة بالإنجليزية',
+    syllabusAr: 'المنهج بالعربية',
+    syllabusEn: 'المنهج بالإنجليزية',
+    coverImageUrl: 'رابط صورة الغلاف',
+    introVideoUrl: 'رابط الفيديو التعريفي',
+    videoFileUrl: 'رابط ملف فيديو الدورة',
+    certificateIssued: 'إصدار شهادة؟',
+    quizzesIncluded: 'تتضمن اختبارات؟',
+    projectsIncluded: 'تتضمن مشاريع؟',
+    assignmentsIncluded: 'تتضمن واجبات؟',
+    liveSessionsIncluded: 'تتضمن لقاءات مباشرة؟',
+    downloadableResources: 'تتضمن ملفات للتنزيل؟',
+    lifetimeAccess: 'الوصول مدى الحياة؟',
+    communityAccess: 'تتضمن مجتمعًا؟',
+    orderIndex: 'الترتيب (يبدأ من 0)',
+    objectiveAr: 'الهدف بالعربية',
+    objectiveEn: 'الهدف بالإنجليزية',
+    prerequisiteAr: 'المتطلب بالعربية',
+    prerequisiteEn: 'المتطلب بالإنجليزية',
+    audienceAr: 'الفئة بالعربية',
+    audienceEn: 'الفئة بالإنجليزية',
+    questionAr: 'السؤال بالعربية',
+    questionEn: 'السؤال بالإنجليزية',
+    answerAr: 'الإجابة بالعربية',
+    answerEn: 'الإجابة بالإنجليزية',
+    url: 'رابط الصورة أو الملف',
+    altAr: 'وصف الصورة بالعربية',
+    altEn: 'وصف الصورة بالإنجليزية',
+    videoUrl: 'رابط فيديو الدرس',
+    durationMinutes: 'مدة الدرس بالدقائق',
+    links: 'روابط الدرس',
+    files: 'ملفات الدرس',
+};
+
+const REQUIRED_FIELDS: Record<string, Set<string>> = {
+    Courses: new Set(['CourseKey', 'titleAr', 'titleEn', 'contentType']),
+    Chapters: new Set(['CourseKey', 'chapterKey', 'titleAr', 'titleEn']),
+    Lessons: new Set(['CourseKey', 'chapterKey', 'lessonKey', 'titleAr', 'titleEn']),
+    Objectives: new Set(['CourseKey', 'objectiveAr', 'objectiveEn']),
+    Prerequisites: new Set(['CourseKey', 'prerequisiteAr', 'prerequisiteEn']),
+    Audiences: new Set(['CourseKey', 'audienceAr', 'audienceEn']),
+    FAQs: new Set(['CourseKey', 'questionAr', 'questionEn', 'answerAr', 'answerEn']),
+    Gallery: new Set(['CourseKey', 'url']),
+    LessonOutcomes: new Set(['CourseKey', 'chapterKey', 'lessonKey', 'descriptionAr', 'descriptionEn']),
+};
+
 const FIELD_GUIDE: Record<string, string> = {
     CourseKey: 'مفتاح داخلي قصير وفريد للدورة، مثل CO-001. انسخه كما هو في كل صف تابع للدورة.',
     titleAr: 'عنوان الدورة بالعربية (مطلوب).',
@@ -87,28 +163,26 @@ export class CourseImportService {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'LaxaLab Academy';
         workbook.created = new Date();
-        const guide = workbook.addWorksheet('Instructions', { views: [{ rightToLeft: true }] });
+        const guide = workbook.addWorksheet(SHEET_NAMES.Instructions, { views: [{ rightToLeft: true }] });
         guide.columns = [{ width: 36 }, { width: 105 }];
-        guide.addRow(['القاعدة', 'الشرح']);
-        guide.addRow(['نطاق القالب', 'هذا القالب ينشئ محتوى الدورة فقط. لا ينشئ دفعات أو أسعاراً أو مواعيد أو تسجيلات؛ أضفها من إدارة الدورات بعد الاستيراد.']);
-        guide.addRow(['ابدأ من هنا', 'أدخل كل دورة مرة واحدة في ورقة Courses. الصفوف في بقية الأوراق اختيارية؛ لا تضف إلا البيانات التي تحتاجها.']);
-        guide.addRow(['صفوف الإدخال', 'أوراق الإدخال فارغة عمداً حتى لا تُستورد أمثلة على أنها دورات حقيقية. ابدأ من الصف 2، وكل صف مكتمل يُعامل كبيانات فعلية.']);
-        guide.addRow(['أسماء الأعمدة', 'لا تغيّر أسماء الأعمدة أو ترتيبها؛ يستخدم الاستيراد هذه الأسماء والترتيب لقراءة البيانات. اضغط على عنوان العمود لعرض شرحه بالعربية.']);
-        guide.addRow(['CourseKey', 'معرّف قصير وفريد لكل دورة مثل CO-001. اكتبه في Courses ثم انسخه حرفياً في كل صف تابع لها.']);
-        guide.addRow(['الحقول المطلوبة', 'في Courses: CourseKey والعنوان بالعربية والعنوان بالإنجليزية ونوع المحتوى. الحقول الأخرى اختيارية ما لم تكن تضيف عنصراً مترجماً.']);
-        guide.addRow(['طريقة تنظيم التفاصيل', 'صف واحد لكل هدف أو متطلب أو فئة أو سؤال أو صورة أو فصل. اربط كل صف بالدورة عبر CourseKey.']);
-        guide.addRow(['الفصول والدروس', 'أدخل الفصل في Chapters مع chapterKey، ثم أضف دروسه في Lessons باستخدام CourseKey نفسه وchapterKey نفسه.']);
-        guide.addRow(['مخرجات الدرس', 'أدخل النتيجة في LessonOutcomes واربطها بالمفاتيح الثلاثة المطابقة: CourseKey وchapterKey وlessonKey.']);
-        guide.addRow(['الترتيب', 'orderIndex يبدأ من 0. اتركه فارغاً إذا كان ترتيب الصفوف في الورقة مناسباً.']);
-        guide.addRow(['نوع المحتوى', 'LIVE للدورة المباشرة أو RECORDED للمسجلة. الدرس المسجل يمكنه استخدام videoUrl؛ لا تضع فيديو درس في دورة LIVE.']);
-        guide.addRow(['المستوى', 'BEGINNER أو INTERMEDIATE أو ADVANCED أو ALL_LEVELS.']);
-        guide.addRow(['الميزات', 'استخدم TRUE أو FALSE. ترك الخانة فارغة يعني FALSE؛ لا توجد ميزات مفعلة تلقائياً.']);
-        guide.addRow(['الوسائط', 'يمكن استخدام رابط http/https أو مسار ملف سبق رفعه يبدأ بـ /uploads/. ملف Excel لا يرفع الصور أو الفيديوهات نفسها.']);
-        guide.addRow(['الروابط والملفات', 'كل عنصر في سطر مستقل بصيغة URL | الاسم بالعربية | الاسم بالإنجليزية. لا تستخدم الفاصلة المنقوطة داخل الرابط.']);
-        guide.addRow(['الترجمات', 'عند إضافة عنوان أو هدف أو سؤال أو إجابة أو نتيجة تعلم، أدخل النصين العربي والإنجليزي.']);
-        guide.addRow(['طريقة الرفع', 'استورد الملف بعد مراجعة البيانات. بعد إنشاء الدورة، أضف الدفعة والسعر والمواعيد والمدرّس من شاشة إدارة الدورة.']);
+        guide.addRow(['الخطوة', 'ماذا تفعل؟']);
+        guide.addRow(['1. معلومات الدورة', 'افتح ورقة «بيانات الدورة» واملأ صفاً واحداً لكل دورة. الحقول الإلزامية موضحة بعلامة * وباللون الذهبي.']);
+        guide.addRow(['2. تفاصيل إضافية', 'أكمل الأوراق التي تحتاجها فقط: الأهداف، المتطلبات، الفئة المستهدفة، الأسئلة الشائعة، الصور، الفصول، الدروس ومخرجاتها.']);
+        guide.addRow(['3. اربط البيانات', 'انسخ «مفتاح الدورة» نفسه في كل صف يتبع الدورة. للدروس استخدم مفتاح الفصل، ولمخرجات الدرس استخدم مفاتيح الدورة والفصل والدرس.']);
+        guide.addRow(['4. ابدأ التعبئة من الصف الثالث', 'الصف الثاني يوضح أسماء الخانات بالعربية. اكتب بياناتك في الخانات الصفراء ابتداءً من الصف 3، وصف واحد لكل عنصر.']);
+        guide.addRow(['5. راجع ثم استورد', 'احفظ الملف بصيغة XLSX ثم اختر «استيراد دورات». لا تغيّر ترتيب الأعمدة أو أسماء الأوراق.']);
+        guide.addRow(['ماذا تعني الألوان؟', 'الأصفر الفاتح خانات إدخال. الذهبي يدل على حقل مطلوب. رؤوس الأعمدة بالعربية، ويمكن تحديد الاختيارات من القوائم المنسدلة.']);
+        guide.addRow(['حقول الدورة المطلوبة', 'مفتاح الدورة، العنوان بالعربية، العنوان بالإنجليزية، ونوع المحتوى. أدخل النصين العربي والإنجليزي للعناوين والحقول الثنائية.']);
+        guide.addRow(['مفتاح الدورة', 'اكتب معرّفاً قصيراً وفريداً مثل CO-001 في ورقة «بيانات الدورة»، وانسخه كما هو في كل ورقة أخرى تخصها.']);
+        guide.addRow(['الفصول والدروس', 'أضف كل فصل كسطر في «الفصول» مع مفتاح مثل CH-001. أضف الدروس في «الدروس» مع مفتاح الفصل نفسه ومفتاح درس مثل LE-001.']);
+        guide.addRow(['الصفوف المتكررة', 'كل صف يعني عنصراً واحداً: هدفاً أو متطلباً أو فئة أو سؤالاً أو صورة أو فصلاً أو درساً. اترك الصف فارغاً إن لم تكن تحتاج العنصر.']);
+        guide.addRow(['المستوى ونوع المحتوى', 'المستوى: BEGINNER أو INTERMEDIATE أو ADVANCED أو ALL_LEVELS. نوع المحتوى: LIVE للمباشر أو RECORDED للمسجل.']);
+        guide.addRow(['الميزات', 'اختر TRUE أو FALSE من القائمة. ترك الخانة فارغة يعامل على أنه FALSE.']);
+        guide.addRow(['الصور والملفات', 'أدخل رابط http/https أو مسار ملف سبق رفعه يبدأ بـ /uploads/. هذا القالب لا يرفع الملفات نفسها.']);
+        guide.addRow(['روابط وملفات الدرس', 'كل عنصر في سطر مستقل بالصيغة: الرابط | الاسم بالعربية | الاسم بالإنجليزية.']);
+        guide.addRow(['الدفعات والتسجيل', 'القالب مخصص لمحتوى الدورة. بعد إنشائها أضف الدفعة والسعر والمواعيد والمدرّس من إدارة الدورات.']);
 
-        const courses = workbook.addWorksheet('Courses', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const courses = workbook.addWorksheet(SHEET_NAMES.Courses, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         courses.columns = [
             { header: 'CourseKey', key: 'courseKey', width: 18 },
             { header: 'titleAr', key: 'titleAr', width: 32 }, { header: 'titleEn', key: 'titleEn', width: 32 },
@@ -126,14 +200,14 @@ export class CourseImportService {
             { header: 'liveSessionsIncluded', key: 'liveSessionsIncluded', width: 20 }, { header: 'downloadableResources', key: 'downloadableResources', width: 22 },
             { header: 'lifetimeAccess', key: 'lifetimeAccess', width: 18 }, { header: 'communityAccess', key: 'communityAccess', width: 18 },
         ];
-        const chapters = workbook.addWorksheet('Chapters', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const chapters = workbook.addWorksheet(SHEET_NAMES.Chapters, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         chapters.columns = [
             { header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 },
             { header: 'titleAr', key: 'titleAr', width: 32 }, { header: 'titleEn', key: 'titleEn', width: 32 },
             { header: 'orderIndex', key: 'orderIndex', width: 14 },
         ];
 
-        const lessons = workbook.addWorksheet('Lessons', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const lessons = workbook.addWorksheet(SHEET_NAMES.Lessons, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         lessons.columns = [
             { header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 },
             { header: 'lessonKey', key: 'lessonKey', width: 18 },
@@ -144,19 +218,19 @@ export class CourseImportService {
             { header: 'files', key: 'files', width: 70 },
         ];
 
-        const objectives = workbook.addWorksheet('Objectives', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const objectives = workbook.addWorksheet(SHEET_NAMES.Objectives, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         objectives.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'objectiveAr', key: 'objectiveAr', width: 45 }, { header: 'objectiveEn', key: 'objectiveEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
 
-        const prerequisites = workbook.addWorksheet('Prerequisites', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const prerequisites = workbook.addWorksheet(SHEET_NAMES.Prerequisites, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         prerequisites.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'prerequisiteAr', key: 'prerequisiteAr', width: 45 }, { header: 'prerequisiteEn', key: 'prerequisiteEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
 
-        const audiences = workbook.addWorksheet('Audiences', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const audiences = workbook.addWorksheet(SHEET_NAMES.Audiences, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         audiences.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'audienceAr', key: 'audienceAr', width: 45 }, { header: 'audienceEn', key: 'audienceEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
 
-        const faqs = workbook.addWorksheet('FAQs', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const faqs = workbook.addWorksheet(SHEET_NAMES.FAQs, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         faqs.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'questionAr', key: 'questionAr', width: 45 }, { header: 'questionEn', key: 'questionEn', width: 45 }, { header: 'answerAr', key: 'answerAr', width: 55 }, { header: 'answerEn', key: 'answerEn', width: 55 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
 
-        const gallery = workbook.addWorksheet('Gallery', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const gallery = workbook.addWorksheet(SHEET_NAMES.Gallery, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         gallery.columns = [
             { header: 'CourseKey', key: 'courseKey', width: 18 },
             { header: 'url', key: 'url', width: 55 },
@@ -165,15 +239,24 @@ export class CourseImportService {
             { header: 'orderIndex', key: 'orderIndex', width: 14 },
         ];
 
-        const lessonOutcomes = workbook.addWorksheet('LessonOutcomes', { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+        const lessonOutcomes = workbook.addWorksheet(SHEET_NAMES.LessonOutcomes, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
         lessonOutcomes.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 }, { header: 'lessonKey', key: 'lessonKey', width: 18 }, { header: 'descriptionAr', key: 'descriptionAr', width: 45 }, { header: 'descriptionEn', key: 'descriptionEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
 
         for (const sheet of [courses, chapters, lessons, objectives, prerequisites, audiences, faqs, gallery, lessonOutcomes]) {
-            sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
-            sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
-            sheet.getRow(1).height = 24;
-            sheet.views = [{ state: 'frozen', xSplit: sheet.name === 'Courses' ? 3 : 1, ySplit: 1, rightToLeft: true, zoomScale: 85 }];
+            const internalName = Object.keys(SHEET_NAMES).find(name => SHEET_NAMES[name] === sheet.name)!;
+            const internalHeaders = sheet.getRow(1).values as unknown[];
+            const visibleHeaders = sheet.getRow(2);
+            visibleHeaders.values = internalHeaders.slice(1).map(header => {
+                const key = String(header);
+                const label = FIELD_LABELS[key] ?? key;
+                return REQUIRED_FIELDS[internalName]?.has(key) ? `${label} *` : label;
+            });
+            sheet.getRow(1).hidden = true;
+            visibleHeaders.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+            visibleHeaders.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
+            visibleHeaders.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            visibleHeaders.height = 42;
+            sheet.views = [{ state: 'frozen', xSplit: internalName === 'Courses' ? 3 : 1, ySplit: 2, rightToLeft: true, zoomScale: 85 }];
             const sheetFieldGuide: Record<string, Record<string, string>> = {
                 Chapters: {
                     titleAr: 'عنوان الفصل بالعربية (مطلوب).',
@@ -189,16 +272,27 @@ export class CourseImportService {
                 },
             };
             sheet.getRow(1).eachCell((cell) => {
-                const description = sheetFieldGuide[sheet.name]?.[String(cell.value)] ?? FIELD_GUIDE[String(cell.value)];
-                if (description) cell.note = description;
+                const description = sheetFieldGuide[internalName]?.[String(cell.value)] ?? FIELD_GUIDE[String(cell.value)];
+                if (!description) return;
+                const visibleCell = visibleHeaders.getCell(cell.col);
+                visibleCell.note = description;
+                if (REQUIRED_FIELDS[internalName]?.has(String(cell.value))) {
+                    visibleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB8860B' } };
+                }
             });
             const colLetter = sheet.getColumn(sheet.columnCount).letter;
-            sheet.autoFilter = { from: 'A1', to: `${colLetter}${Math.max(sheet.rowCount, 2)}` };
-            sheet.eachRow((row, rowNumber) => {
-                if (rowNumber > 1) row.alignment = { vertical: 'top', wrapText: true };
-            });
+            sheet.autoFilter = { from: 'A2', to: `${colLetter}52` };
+            for (let rowNumber = 3; rowNumber <= 52; rowNumber += 1) {
+                const row = sheet.getRow(rowNumber);
+                row.height = 28;
+                row.eachCell({ includeEmpty: true }, cell => {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowNumber % 2 ? 'FFFFFBEB' : 'FFFFFDF5' } };
+                    cell.alignment = { vertical: 'top', wrapText: true };
+                    cell.border = { bottom: { style: 'hair', color: { argb: 'FFE7DDBF' } } };
+                });
+            }
         }
-        for (let row = 2; row <= 500; row += 1) {
+        for (let row = 3; row <= 500; row += 1) {
             courses.getCell(row, 10).dataValidation = { type: 'list', allowBlank: true, formulae: ['"BEGINNER,INTERMEDIATE,ADVANCED,ALL_LEVELS"'] };
             courses.getCell(row, 11).dataValidation = { type: 'list', allowBlank: true, formulae: ['"LIVE,RECORDED"'] };
             for (let column = 21; column <= 28; column += 1) {
@@ -209,7 +303,12 @@ export class CourseImportService {
         guide.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
         guide.getRow(1).height = 24;
         guide.eachRow((row, rowNumber) => {
-            if (rowNumber > 1) row.alignment = { vertical: 'top', wrapText: true };
+            if (rowNumber > 1) {
+                row.height = 34;
+                row.alignment = { vertical: 'top', wrapText: true };
+                row.getCell(1).font = { bold: true, color: { argb: 'FF17365D' } };
+                row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowNumber % 2 ? 'FFF3F6FA' : 'FFFFFFFF' } };
+            }
         });
         return Buffer.from(await workbook.xlsx.writeBuffer());
     }
@@ -218,24 +317,25 @@ export class CourseImportService {
         let workbook: ExcelJS.Workbook;
         try { workbook = new ExcelJS.Workbook(); await workbook.xlsx.load(buffer as any); }
         catch { throw new BadRequestException('ملف Excel غير صالح أو تالف.'); }
-        const coursesSheet = workbook.getWorksheet('Courses');
-        if (!coursesSheet) throw new BadRequestException('ورقة Courses مفقودة من القالب.');
-        const courseRows = coursesSheet.getRows(2, Math.max(0, coursesSheet.rowCount - 1)) ?? [];
+        const coursesSheet = this.getSheet(workbook, 'Courses');
+        if (!coursesSheet) throw new BadRequestException('ورقة بيانات الدورة (Courses) مفقودة من القالب.');
+        const firstCourseRow = this.firstDataRow(coursesSheet);
+        const courseRows = coursesSheet.getRows(firstCourseRow, Math.max(0, coursesSheet.rowCount - firstCourseRow + 1)) ?? [];
         const parsedCourses: CreateCourseDto[] = [];
         const errors: string[] = [];
         const seenKeys = new Set<string>();
         const importedCourseKeys = new Set<string>();
-        const chapterRows = this.rows(workbook.getWorksheet('Chapters'));
-        const lessonRows = this.rows(workbook.getWorksheet('Lessons'));
-        const lessonOutcomeRows = this.rows(workbook.getWorksheet('LessonOutcomes'));
-        const objectiveRows = this.rows(workbook.getWorksheet('Objectives'));
-        const prerequisiteRows = this.rows(workbook.getWorksheet('Prerequisites'));
-        const audienceRows = this.rows(workbook.getWorksheet('Audiences'));
-        const faqRows = this.rows(workbook.getWorksheet('FAQs'));
-        const galleryRows = this.rows(workbook.getWorksheet('Gallery'));
+        const chapterRows = this.rows(this.getSheet(workbook, 'Chapters'));
+        const lessonRows = this.rows(this.getSheet(workbook, 'Lessons'));
+        const lessonOutcomeRows = this.rows(this.getSheet(workbook, 'LessonOutcomes'));
+        const objectiveRows = this.rows(this.getSheet(workbook, 'Objectives'));
+        const prerequisiteRows = this.rows(this.getSheet(workbook, 'Prerequisites'));
+        const audienceRows = this.rows(this.getSheet(workbook, 'Audiences'));
+        const faqRows = this.rows(this.getSheet(workbook, 'FAQs'));
+        const galleryRows = this.rows(this.getSheet(workbook, 'Gallery'));
 
         for (const [index, row] of courseRows.entries()) {
-            const line = index + 2;
+            const line = index + firstCourseRow;
             const key = TEXT(row.getCell(1).value);
             const hasData = Array.from({ length: coursesSheet.columnCount }, (_, column) => row.getCell(column + 1).value)
                 .some(value => TEXT(value) !== '');
@@ -265,10 +365,10 @@ export class CourseImportService {
                 const lessons = lessonRows.filter(l => TEXT(l.CourseKey) === key && TEXT(l.chapterKey) === chapterKey);
                 lessons.forEach((lesson, lessonIndex) => {
                     if (TEXT(lesson.videoUrl) && !isAllowedAssetUrl(TEXT(lesson.videoUrl))) {
-                        errors.push(`Lessons:${lessonIndex + 2}: رابط الفيديو غير صالح`);
+                        errors.push(`Lessons:${this.rowNumber(lesson, lessonIndex)}: رابط الفيديو غير صالح`);
                     }
-                    if (TEXT(lesson.files)) this.validateDelimitedAssetUrls(TEXT(lesson.files), `Lessons:${lessonIndex + 2}: files`, errors);
-                    if (TEXT(lesson.links)) this.validateDelimitedAssetUrls(TEXT(lesson.links), `Lessons:${lessonIndex + 2}: links`, errors, true);
+                    if (TEXT(lesson.files)) this.validateDelimitedAssetUrls(TEXT(lesson.files), `Lessons:${this.rowNumber(lesson, lessonIndex)}: files`, errors);
+                    if (TEXT(lesson.links)) this.validateDelimitedAssetUrls(TEXT(lesson.links), `Lessons:${this.rowNumber(lesson, lessonIndex)}: links`, errors, true);
                 });
                 return {
                     chapterKey,
@@ -338,7 +438,7 @@ export class CourseImportService {
             rows.forEach((row, index) => {
                 const key = TEXT(row.CourseKey);
                 if (!key || !importedCourseKeys.has(key)) {
-                    errors.push(`${sheetName}:${index + 2}: CourseKey مفقود أو لا يطابق دورة في ورقة Courses`);
+                    errors.push(`${sheetName}:${this.rowNumber(row, index)}: CourseKey مفقود أو لا يطابق دورة في ورقة Courses`);
                 }
             });
         }
@@ -347,8 +447,8 @@ export class CourseImportService {
             const courseKey = TEXT(row.CourseKey);
             const chapterKey = TEXT(row.chapterKey);
             if (!importedCourseKeys.has(courseKey)) return;
-            if (!chapterKey) errors.push(`Chapters:${index + 2}: chapterKey مطلوب`);
-            if (!TEXT(row.titleAr) || !TEXT(row.titleEn)) errors.push(`Chapters:${index + 2}: عنوان الفصل بالعربية والإنجليزية مطلوب`);
+            if (!chapterKey) errors.push(`Chapters:${this.rowNumber(row, index)}: chapterKey مطلوب`);
+            if (!TEXT(row.titleAr) || !TEXT(row.titleEn)) errors.push(`Chapters:${this.rowNumber(row, index)}: عنوان الفصل بالعربية والإنجليزية مطلوب`);
             if (chapterKey) validChapterKeys.add(`${courseKey}\u0000${chapterKey}`);
         });
         const validLessonKeys = new Set<string>();
@@ -358,17 +458,17 @@ export class CourseImportService {
             const lessonKey = TEXT(row.lessonKey);
             if (!importedCourseKeys.has(courseKey)) return;
             if (!validChapterKeys.has(`${courseKey}\u0000${chapterKey}`)) {
-                errors.push(`Lessons:${index + 2}: chapterKey لا يطابق فصلاً في ورقة Chapters`);
+                errors.push(`Lessons:${this.rowNumber(row, index)}: chapterKey لا يطابق فصلاً في ورقة Chapters`);
             }
-            if (!lessonKey) errors.push(`Lessons:${index + 2}: lessonKey مطلوب`);
-            if (!TEXT(row.titleAr) || !TEXT(row.titleEn)) errors.push(`Lessons:${index + 2}: عنوان الدرس بالعربية والإنجليزية مطلوب`);
+            if (!lessonKey) errors.push(`Lessons:${this.rowNumber(row, index)}: lessonKey مطلوب`);
+            if (!TEXT(row.titleAr) || !TEXT(row.titleEn)) errors.push(`Lessons:${this.rowNumber(row, index)}: عنوان الدرس بالعربية والإنجليزية مطلوب`);
             if (lessonKey) validLessonKeys.add(`${courseKey}\u0000${chapterKey}\u0000${lessonKey}`);
         });
         lessonOutcomeRows.forEach((row, index) => {
             const lessonKey = `${TEXT(row.CourseKey)}\u0000${TEXT(row.chapterKey)}\u0000${TEXT(row.lessonKey)}`;
-            if (!validLessonKeys.has(lessonKey)) errors.push(`LessonOutcomes:${index + 2}: مفاتيح الدورة والفصل والدرس لا تطابق درساً موجوداً`);
+            if (!validLessonKeys.has(lessonKey)) errors.push(`LessonOutcomes:${this.rowNumber(row, index)}: مفاتيح الدورة والفصل والدرس لا تطابق درساً موجوداً`);
             if (!TEXT(row.descriptionAr) || !TEXT(row.descriptionEn)) {
-                errors.push(`LessonOutcomes:${index + 2}: نتيجة التعلم بالعربية والإنجليزية مطلوبة`);
+                errors.push(`LessonOutcomes:${this.rowNumber(row, index)}: نتيجة التعلم بالعربية والإنجليزية مطلوبة`);
             }
         });
         for (const [sheetName, rows, arabicField, englishField] of [
@@ -379,14 +479,14 @@ export class CourseImportService {
             rows.forEach((row, index) => {
                 if (!importedCourseKeys.has(TEXT(row.CourseKey))) return;
                 if (!TEXT(row[arabicField]) || !TEXT(row[englishField])) {
-                    errors.push(`${sheetName}:${index + 2}: يجب إدخال النص بالعربية والإنجليزية`);
+                    errors.push(`${sheetName}:${this.rowNumber(row, index)}: يجب إدخال النص بالعربية والإنجليزية`);
                 }
             });
         }
         faqRows.forEach((row, index) => {
             if (!importedCourseKeys.has(TEXT(row.CourseKey))) return;
             if (!TEXT(row.questionAr) || !TEXT(row.questionEn) || !TEXT(row.answerAr) || !TEXT(row.answerEn)) {
-                errors.push(`FAQs:${index + 2}: السؤال والإجابة بالعربية والإنجليزية مطلوبة`);
+                errors.push(`FAQs:${this.rowNumber(row, index)}: السؤال والإجابة بالعربية والإنجليزية مطلوبة`);
             }
         });
         if (!parsedCourses.length && !errors.length) errors.push('لا توجد دورات مكتملة في ورقة Courses.');
@@ -397,17 +497,33 @@ export class CourseImportService {
         return { imported: created.length, courses: created.map(c => ({ id: c.id, titleAr: c.titleAr })) };
     }
 
+    private getSheet(workbook: ExcelJS.Workbook, internalName: string): ExcelJS.Worksheet | undefined {
+        return workbook.getWorksheet(SHEET_NAMES[internalName]) ?? workbook.getWorksheet(internalName);
+    }
+
+    private firstDataRow(sheet: ExcelJS.Worksheet): number {
+        return sheet.getRow(1).hidden ? 3 : 2;
+    }
+
     private rows(sheet: ExcelJS.Worksheet | undefined): Record<string, unknown>[] {
         if (!sheet) return [];
         const headers = sheet.getRow(1).values as unknown[];
         const out: Record<string, unknown>[] = [];
+        const firstDataRow = this.firstDataRow(sheet);
         sheet.eachRow((row, rowNumber) => {
-            if (rowNumber === 1) return;
+            if (rowNumber < firstDataRow) return;
             const value: Record<string, unknown> = {};
             headers.slice(1).forEach((header, index) => { value[String(header)] = row.getCell(index + 1).value; });
-            if (Object.values(value).some(v => String(v ?? '').trim())) out.push(value);
+            if (Object.values(value).some(v => String(v ?? '').trim())) {
+                Object.defineProperty(value, '__excelRowNumber', { value: rowNumber });
+                out.push(value);
+            }
         });
         return out;
+    }
+
+    private rowNumber(row: Record<string, unknown>, index: number): number {
+        return Number(row.__excelRowNumber ?? index + 2);
     }
 
     private parseFiles(value: string) {
