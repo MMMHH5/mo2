@@ -10,7 +10,13 @@ export type CertificateDesign =
     | 'heritage'
     | 'ribbon'
     | 'wave'
-    | 'mosaic';
+    | 'mosaic'
+    | 'swiss'
+    | 'diploma'
+    | 'nordic'
+    | 'corporate'
+    | 'seal'
+    | 'arch';
 
 type Props = {
     design: CertificateDesign;
@@ -31,6 +37,12 @@ export const CERTIFICATE_DESIGNS: Array<{ id: CertificateDesign; nameAr: string;
     { id: 'ribbon', nameAr: 'وسام', nameEn: 'Ribbon' },
     { id: 'wave', nameAr: 'موجي', nameEn: 'Wave' },
     { id: 'mosaic', nameAr: 'فسيفساء', nameEn: 'Mosaic' },
+    { id: 'swiss', nameAr: 'سويسري مؤسسي', nameEn: 'Swiss Corporate' },
+    { id: 'diploma', nameAr: 'دبلوم أكاديمي', nameEn: 'Academic Diploma' },
+    { id: 'nordic', nameAr: 'اسكندنافي', nameEn: 'Nordic' },
+    { id: 'corporate', nameAr: 'مؤسسي عالمي', nameEn: 'Global Corporate' },
+    { id: 'seal', nameAr: 'ختم شرف', nameEn: 'Honor Seal' },
+    { id: 'arch', nameAr: 'قوس كلاسيكي', nameEn: 'Classic Arch' },
 ];
 
 export default function CertificateDesignFrame({ design, primaryColor, accentColor }: Props) {
@@ -108,6 +120,50 @@ export default function CertificateDesignFrame({ design, primaryColor, accentCol
                         <span key={index} className="absolute top-[4%] h-2 w-2 rotate-45" style={{ left: `${40 + index * 4}%`, backgroundColor: index % 2 ? accentColor : primaryColor }} />
                     ))}
                     <div className="absolute inset-x-[7%] bottom-[4%] h-[2px]" style={{ background: accentLine }} />
+                </>
+            )}
+            {design === 'swiss' && (
+                <>
+                    <div className="absolute inset-y-0 left-0 w-[1.2%]" style={{ backgroundColor: primaryColor }} />
+                    <div className="absolute inset-x-[8%] top-[12%] h-[3px]" style={{ backgroundColor: accentColor }} />
+                    <div className="absolute inset-x-[8%] bottom-[12%] h-px" style={{ backgroundColor: `${primaryColor}55` }} />
+                </>
+            )}
+            {design === 'diploma' && (
+                <>
+                    <div className="absolute inset-[4%] rounded-[50%/8%] border-2" style={{ borderColor: `${accentColor}AA` }} />
+                    <div className="absolute inset-[5.5%] rounded-[50%/8%] border" style={{ borderColor: `${primaryColor}55` }} />
+                    <div className="absolute left-1/2 top-[3.4%] h-3 w-3 -translate-x-1/2 rotate-45" style={{ backgroundColor: accentColor }} />
+                </>
+            )}
+            {design === 'nordic' && (
+                <>
+                    <div className="absolute inset-x-[6%] top-[6%] h-px" style={{ backgroundColor: `${primaryColor}66` }} />
+                    <div className="absolute inset-x-[6%] bottom-[6%] h-px" style={{ backgroundColor: `${primaryColor}66` }} />
+                    <div className="absolute left-[6%] top-[6%] h-[14%] w-[8%] border-l border-t" style={{ borderColor: accentColor }} />
+                    <div className="absolute right-[6%] top-[6%] h-[14%] w-[8%] border-r border-t" style={{ borderColor: accentColor }} />
+                    <div className="absolute bottom-[6%] left-[6%] h-[14%] w-[8%] border-b border-l" style={{ borderColor: accentColor }} />
+                    <div className="absolute bottom-[6%] right-[6%] h-[14%] w-[8%] border-b border-r" style={{ borderColor: accentColor }} />
+                </>
+            )}
+            {design === 'corporate' && (
+                <>
+                    <div className="absolute inset-x-0 top-0 h-[4%]" style={{ backgroundColor: primaryColor }} />
+                    <div className="absolute inset-x-0 bottom-0 h-[2%]" style={{ backgroundColor: accentColor }} />
+                    <div className="absolute right-[5%] top-[8%] h-[9%] w-[9%] rounded-full border-2" style={{ borderColor: accentColor }} />
+                </>
+            )}
+            {design === 'seal' && (
+                <>
+                    <div className="absolute left-1/2 top-[5%] h-[12%] aspect-square -translate-x-1/2 rounded-full border-2" style={{ borderColor: accentColor }} />
+                    <div className="absolute left-1/2 top-[6.5%] h-[9%] aspect-square -translate-x-1/2 rounded-full border" style={{ borderColor: `${primaryColor}77` }} />
+                    <div className="absolute inset-x-[15%] bottom-[8%] h-[2px]" style={{ background: accentLine }} />
+                </>
+            )}
+            {design === 'arch' && (
+                <>
+                    <div className="absolute left-[10%] right-[10%] top-[4%] h-[19%] rounded-t-full border-2 border-b-0" style={{ borderColor: accentColor }} />
+                    <div className="absolute left-[12%] right-[12%] top-[6%] h-[17%] rounded-t-full border border-b-0" style={{ borderColor: `${primaryColor}66` }} />
                 </>
             )}
         </div>

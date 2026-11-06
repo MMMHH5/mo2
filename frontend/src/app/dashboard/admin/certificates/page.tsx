@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import CertificateDesignFrame, { CERTIFICATE_DESIGNS, type CertificateDesign } from '@/components/CertificateDesignFrame';
+import CertificateSeal, { type CertificateSealShape } from '@/components/CertificateSeal';
 
 type AssetKind = 'teacherSignature' | 'directorSignature' | 'academyStamp';
 type BrandingAsset = { name: string; url: string };
@@ -28,9 +29,31 @@ type CertificateVisualStyle = {
     fontFamily: string;
     fontUrl: string | null;
     fontLibrary: BrandingAsset[];
+    fontSizes: Record<string, number>;
+    fontWeights: Record<string, number>;
+    customElements: CustomCertificateElement[];
+    showSeal: boolean;
+    sealMode: 'platform' | 'uploaded';
+    sealShape: CertificateSealShape;
+    sealColor: string;
+    sealFillColor: string;
+    sealBorderStyle: 'double' | 'solid' | 'dashed';
+    sealSize: number;
+    sealOpacity: number;
+    sealRotation: number;
+    sealImageHue: number;
+    sealTextAr: string;
+    sealTextEn: string;
 };
-const CERTIFICATE_ELEMENTS = ['logo', 'brand', 'title', 'recipient', 'course', 'description', 'signatures', 'qr'] as const;
-type CertificateElementKey = typeof CERTIFICATE_ELEMENTS[number];
+const CERTIFICATE_ELEMENTS = ['logo', 'brand', 'title', 'recipient', 'course', 'description', 'signatures', 'qr', 'stamp'] as const;
+type CertificateElementKey = typeof CERTIFICATE_ELEMENTS[number] | `custom-${string}`;
+type CustomCertificateElement = {
+    id: string;
+    labelAr: string;
+    labelEn: string;
+    textAr: string;
+    textEn: string;
+};
 const DEFAULT_CERTIFICATE_LOGO = '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png';
 const BUILT_IN_LOGOS = [
     { nameAr: 'LaxaLab Academy — أفقي أساسي', nameEn: 'LaxaLab Academy — Primary horizontal', url: DEFAULT_CERTIFICATE_LOGO },
@@ -68,6 +91,21 @@ const DEFAULT_VISUAL_STYLE: CertificateVisualStyle = {
     fontFamily: "'Georgia', 'Times New Roman', serif",
     fontUrl: null,
     fontLibrary: [],
+    fontSizes: { brand: 24, title: 18, recipient: 38, course: 24, description: 15 },
+    fontWeights: { brand: 700, title: 700, recipient: 700, course: 700, description: 400 },
+    customElements: [],
+    showSeal: true,
+    sealMode: 'platform',
+    sealShape: 'round',
+    sealColor: '#B42318',
+    sealFillColor: '#FFF9F2',
+    sealBorderStyle: 'double',
+    sealSize: 150,
+    sealOpacity: 0.78,
+    sealRotation: -8,
+    sealImageHue: 0,
+    sealTextAr: 'ختم الأكاديمية',
+    sealTextEn: 'OFFICIAL SEAL',
 };
 type CertificatePreset = { id: string; name: string; designKey: 'classic' | 'royal' | 'modern'; layout: CertificateLayout };
 type CertificateTemplate = {
@@ -122,7 +160,7 @@ const EMPTY_TEMPLATE: CertificateTemplate = {
     directorSignatureUrl: null,
     academyStampUrl: null,
     designKey: 'classic',
-    layout: { logo: { x: 50, y: 9 }, brand: { x: 50, y: 13 }, title: { x: 50, y: 19 }, recipient: { x: 50, y: 43 }, course: { x: 50, y: 58 }, description: { x: 50, y: 69 }, signatures: { x: 50, y: 87 }, qr: { x: 87, y: 87 } },
+    layout: { logo: { x: 50, y: 9 }, brand: { x: 50, y: 13 }, title: { x: 50, y: 19 }, recipient: { x: 50, y: 43 }, course: { x: 50, y: 58 }, description: { x: 50, y: 69 }, signatures: { x: 50, y: 87 }, qr: { x: 87, y: 87 }, stamp: { x: 16, y: 82 } },
 };
 
 function SignaturePad({
@@ -310,9 +348,27 @@ export default function AdminCertificatesPage() {
     const [busyBrandAsset, setBusyBrandAsset] = useState<'logo' | 'font' | null>(null);
     const [error, setError] = useState('');
 
+    const savedVisualStyle = template.layout.__visualStyle && typeof template.layout.__visualStyle === 'object'
+        ? template.layout.__visualStyle as Partial<CertificateVisualStyle>
+        : {};
     const visualStyle: CertificateVisualStyle = {
         ...DEFAULT_VISUAL_STYLE,
-        ...((template.layout.__visualStyle ?? {}) as Partial<CertificateVisualStyle>),
+        ...savedVisualStyle,
+        fontSizes: savedVisualStyle.fontSizes && typeof savedVisualStyle.fontSizes === 'object' ? savedVisualStyle.fontSizes : DEFAULT_VISUAL_STYLE.fontSizes,
+        fontWeights: savedVisualStyle.fontWeights && typeof savedVisualStyle.fontWeights === 'object' ? savedVisualStyle.fontWeights : DEFAULT_VISUAL_STYLE.fontWeights,
+        customElements: Array.isArray(savedVisualStyle.customElements) ? savedVisualStyle.customElements : [],
+        showSeal: typeof savedVisualStyle.showSeal === 'boolean' ? savedVisualStyle.showSeal : DEFAULT_VISUAL_STYLE.showSeal,
+        sealMode: savedVisualStyle.sealMode === 'uploaded' ? 'uploaded' : 'platform',
+        sealShape: savedVisualStyle.sealShape ?? DEFAULT_VISUAL_STYLE.sealShape,
+        sealColor: savedVisualStyle.sealColor ?? DEFAULT_VISUAL_STYLE.sealColor,
+        sealFillColor: savedVisualStyle.sealFillColor ?? DEFAULT_VISUAL_STYLE.sealFillColor,
+        sealBorderStyle: savedVisualStyle.sealBorderStyle ?? DEFAULT_VISUAL_STYLE.sealBorderStyle,
+        sealSize: savedVisualStyle.sealSize ?? DEFAULT_VISUAL_STYLE.sealSize,
+        sealOpacity: savedVisualStyle.sealOpacity ?? DEFAULT_VISUAL_STYLE.sealOpacity,
+        sealRotation: savedVisualStyle.sealRotation ?? DEFAULT_VISUAL_STYLE.sealRotation,
+        sealImageHue: savedVisualStyle.sealImageHue ?? DEFAULT_VISUAL_STYLE.sealImageHue,
+        sealTextAr: savedVisualStyle.sealTextAr ?? DEFAULT_VISUAL_STYLE.sealTextAr,
+        sealTextEn: savedVisualStyle.sealTextEn ?? DEFAULT_VISUAL_STYLE.sealTextEn,
     };
 
     const updateVisualStyle = (patch: Partial<CertificateVisualStyle>) => {
@@ -320,6 +376,61 @@ export default function AdminCertificatesPage() {
             ...current,
             layout: { ...current.layout, __visualStyle: { ...visualStyle, ...patch } },
         }));
+    };
+
+    const selectedCustomElement = visualStyle.customElements.find((element) => `custom-${element.id}` === selectedElement);
+    const isTextElement = selectedElement !== 'logo' && selectedElement !== 'signatures' && selectedElement !== 'qr' && selectedElement !== 'stamp';
+    const selectedFontSize = visualStyle.fontSizes[selectedElement] ?? 18;
+    const selectedFontWeight = visualStyle.fontWeights[selectedElement] ?? (selectedCustomElement ? 600 : 700);
+
+    const addCustomElement = () => {
+        const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`;
+        const element: CustomCertificateElement = {
+            id,
+            labelAr: isAr ? 'عنصر جديد' : 'New element',
+            labelEn: 'New element',
+            textAr: 'اكتب النص هنا',
+            textEn: 'Enter text here',
+        };
+        const key = `custom-${id}` as const;
+        const index = visualStyle.customElements.length;
+        setTemplate((current) => ({
+            ...current,
+            layout: {
+                ...current.layout,
+                [key]: { x: 50, y: Math.min(82, 72 + index * 5) },
+                __visualStyle: { ...visualStyle, customElements: [...visualStyle.customElements, element] },
+            },
+        }));
+        setSelectedElement(key);
+    };
+
+    const updateCustomElement = (id: string, patch: Partial<CustomCertificateElement>) => {
+        updateVisualStyle({
+            customElements: visualStyle.customElements.map((element) =>
+                element.id === id ? { ...element, ...patch } : element),
+        });
+    };
+
+    const removeCustomElement = (id: string) => {
+        const key = `custom-${id}`;
+        const layout = { ...template.layout };
+        delete layout[key];
+        setTemplate((current) => ({
+            ...current,
+            layout: {
+                ...layout,
+                __visualStyle: {
+                    ...visualStyle,
+                    customElements: visualStyle.customElements.filter((element) => element.id !== id),
+                },
+            },
+        }));
+        setSelectedElement('title');
+    };
+
+    const setSelectedTypography = (field: 'fontSizes' | 'fontWeights', value: number) => {
+        updateVisualStyle({ [field]: { ...visualStyle[field], [selectedElement]: value } });
     };
 
     const loadPage = useCallback(async () => {
@@ -501,7 +612,7 @@ export default function AdminCertificatesPage() {
     };
 
     const resetLayout = () => {
-        setTemplate((current) => ({ ...current, layout: { ...EMPTY_TEMPLATE.layout } }));
+        setTemplate((current) => ({ ...current, layout: { ...EMPTY_TEMPLATE.layout, __visualStyle: visualStyle } }));
         toast.success(isAr ? 'تمت إعادة العناصر إلى وضعها الافتراضي.' : 'Elements returned to the default layout.');
     };
 
@@ -522,7 +633,7 @@ export default function AdminCertificatesPage() {
     };
 
     const applyPreset = async (preset: CertificatePreset) => {
-        setTemplate((current) => ({ ...current, designKey: preset.designKey, layout: preset.layout }));
+        setTemplate((current) => ({ ...current, designKey: preset.designKey, layout: { ...preset.layout, __visualStyle: visualStyle } }));
         toast.success(isAr ? 'تم تطبيق القالب في المعاينة.' : 'Template applied to the preview.');
     };
 
@@ -569,6 +680,10 @@ export default function AdminCertificatesPage() {
     };
 
     const title = (course: Pick<CourseRow, 'titleAr' | 'titleEn'>) => isAr ? course.titleAr || course.titleEn : course.titleEn || course.titleAr;
+    const previewElementKeys: CertificateElementKey[] = [
+        ...CERTIFICATE_ELEMENTS,
+        ...visualStyle.customElements.map((element) => `custom-${element.id}` as const),
+    ];
     if (loading) {
         return <div className="flex min-h-80 items-center justify-center text-gray-500"><LoaderCircle className="animate-spin" /> <span className="ms-3">{isAr ? 'جارٍ تحميل إدارة الشهادات...' : 'Loading certificate management...'}</span></div>;
     }
@@ -711,11 +826,16 @@ export default function AdminCertificatesPage() {
                                 primaryColor={visualStyle.primaryColor}
                                 accentColor={visualStyle.accentColor}
                             />
-                            {CERTIFICATE_ELEMENTS.map((key) => {
+                            {previewElementKeys.map((key) => {
                                 if (key === 'logo' && !visualStyle.showLogo) return null;
+                                if (key === 'stamp' && !visualStyle.showSeal) return null;
                                 const rawPosition = template.layout[key] ?? EMPTY_TEMPLATE.layout[key];
                                 const pos = rawPosition && 'x' in rawPosition ? rawPosition : { x: 50, y: 50 };
-                                const labels: Record<typeof key, string> = {
+                                const customElement = typeof key === 'string' && key.startsWith('custom-')
+                                    ? visualStyle.customElements.find((element) => `custom-${element.id}` === key)
+                                    : undefined;
+                                const elementIsText = key !== 'logo' && key !== 'signatures' && key !== 'qr';
+                                const labels: Partial<Record<CertificateElementKey, string>> = {
                                     logo: isAr ? 'شعار المنصة' : 'Platform logo',
                                     brand: isAr ? template.academyNameAr || 'اسم الأكاديمية' : template.academyNameEn || 'Academy',
                                     title: isAr ? template.titleAr || 'عنوان الشهادة' : template.titleEn || 'Certificate title',
@@ -724,7 +844,11 @@ export default function AdminCertificatesPage() {
                                     description: isAr ? 'نص الاعتماد والشهادة' : 'Accreditation wording',
                                     signatures: isAr ? 'التوقيعات والختم' : 'Signatures & seal',
                                     qr: 'QR',
+                                    stamp: isAr ? 'ختم الأكاديمية' : 'Academy seal',
                                 };
+                                const previewText = customElement
+                                    ? (isAr ? customElement.textAr : customElement.textEn)
+                                    : labels[key];
                                 return (
                                     <div
                                         key={key}
@@ -733,8 +857,17 @@ export default function AdminCertificatesPage() {
                                         onPointerMove={(event) => { if (draggingLayoutKey === key) moveLayoutItem(key, event); }}
                                         onPointerUp={() => setDraggingLayoutKey(null)}
                                         onPointerCancel={() => setDraggingLayoutKey(null)}
-                                        className={`absolute z-10 touch-none cursor-move select-none border border-dashed px-2 py-1 text-center shadow-sm transition hover:bg-white ${selectedElement === key || draggingLayoutKey === key ? 'border-brand-gold bg-white ring-2 ring-brand-gold/30' : 'border-brand-gold/50 bg-white/90'} ${draggingLayoutKey === key ? 'scale-105' : ''} ${key === 'recipient' ? 'text-xl font-serif font-bold' : key === 'course' ? 'text-base font-bold' : 'text-xs'}`}
-                                        style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%, -50%)', minWidth: key === 'qr' ? 46 : 120, color: key === 'recipient' || key === 'course' ? visualStyle.textColor : undefined }}
+                                        className={`absolute z-10 touch-none cursor-move select-none border border-dashed px-2 py-1 text-center shadow-sm transition hover:bg-white ${selectedElement === key || draggingLayoutKey === key ? 'border-brand-gold bg-white ring-2 ring-brand-gold/30' : 'border-brand-gold/50 bg-white/90'} ${draggingLayoutKey === key ? 'scale-105' : ''}`}
+                                        style={{
+                                            left: `${pos.x}%`,
+                                            top: `${pos.y}%`,
+                                            transform: `translate(-50%, -50%)${key === 'stamp' ? ` rotate(${visualStyle.sealRotation}deg)` : ''}`,
+                                            minWidth: key === 'qr' ? 46 : 120,
+                                            color: elementIsText ? visualStyle.textColor : undefined,
+                                            fontSize: elementIsText ? `${visualStyle.fontSizes[key] ?? (key === 'recipient' ? 38 : key === 'course' ? 28 : 18)}px` : undefined,
+                                            fontWeight: elementIsText ? visualStyle.fontWeights[key] ?? (key === 'description' ? 400 : 700) : undefined,
+                                            opacity: key === 'stamp' ? visualStyle.sealOpacity : undefined,
+                                        }}
                                         title={isAr ? 'اسحب لتغيير المكان' : 'Drag to reposition'}
                                     >
                                         <GripVertical className="mr-auto inline-block text-brand-gold-dark" size={12} />
@@ -747,7 +880,29 @@ export default function AdminCertificatesPage() {
                                                 className={`mx-auto block ${visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'rounded' ? 'rounded-lg' : 'rounded-none'} h-12 w-40 object-contain`}
                                                 alt={isAr ? 'شعار المنصة' : 'Platform logo'}
                                             />
-                                        ) : labels[key]}
+                                        ) : key === 'stamp' ? (
+                                            visualStyle.sealMode === 'uploaded' && template.academyStampUrl ? (
+                                                <Image
+                                                    src={brandingAssetSrc(template.academyStampUrl)}
+                                                    alt={isAr ? 'ختم الأكاديمية المرفوع' : 'Uploaded academy seal'}
+                                                    width={240}
+                                                    height={240}
+                                                    unoptimized
+                                                    className="mx-auto object-contain"
+                                                    style={{ width: Math.round(visualStyle.sealSize * 0.52), height: Math.round(visualStyle.sealSize * 0.52), backgroundColor: visualStyle.sealFillColor, filter: `hue-rotate(${visualStyle.sealImageHue}deg)` }}
+                                                />
+                                            ) : (
+                                                <CertificateSeal
+                                                    logoUrl={brandingAssetSrc(visualStyle.logoUrl || DEFAULT_CERTIFICATE_LOGO)}
+                                                    text={isAr ? visualStyle.sealTextAr : visualStyle.sealTextEn}
+                                                    color={visualStyle.sealColor}
+                                                    fillColor={visualStyle.sealFillColor}
+                                                    shape={visualStyle.sealShape}
+                                                    borderStyle={visualStyle.sealBorderStyle}
+                                                    size={Math.round(visualStyle.sealSize * 0.52)}
+                                                />
+                                            )
+                                        ) : previewText}
                                     </div>
                                 );
                             })}
@@ -758,8 +913,11 @@ export default function AdminCertificatesPage() {
                         <div>
                             <h3 className="mb-3 text-sm font-black text-brand-navy dark:text-white">{isAr ? 'عناصر الشهادة' : 'Certificate elements'}</h3>
                             <div className="grid grid-cols-2 gap-2">
-                                {CERTIFICATE_ELEMENTS.map((key) => {
-                                    const labels: Record<CertificateElementKey, [string, string]> = {
+                                {previewElementKeys.map((key) => {
+                                    const customElement = typeof key === 'string' && key.startsWith('custom-')
+                                        ? visualStyle.customElements.find((element) => `custom-${element.id}` === key)
+                                        : undefined;
+                                    const labels: Partial<Record<typeof key, [string, string]>> = {
                                         logo: ['شعار المنصة', 'Platform logo'],
                                         brand: ['اسم الأكاديمية', 'Academy name'],
                                         title: ['عنوان الشهادة', 'Certificate title'],
@@ -768,7 +926,11 @@ export default function AdminCertificatesPage() {
                                         description: ['نص الشهادة', 'Certificate wording'],
                                         signatures: ['التوقيعات والختم', 'Signatures & seal'],
                                         qr: ['رمز التحقق QR', 'Verification QR'],
+                                        stamp: ['ختم الأكاديمية', 'Academy seal'],
                                     };
+                                    const label = customElement
+                                        ? [customElement.labelAr, customElement.labelEn]
+                                        : labels[key];
                                     return (
                                         <button
                                             key={key}
@@ -776,15 +938,152 @@ export default function AdminCertificatesPage() {
                                             onClick={() => setSelectedElement(key)}
                                             className={`rounded-xl border px-3 py-2 text-start text-xs font-bold transition ${selectedElement === key ? 'border-brand-gold bg-brand-gold/10 text-brand-navy dark:text-white' : 'border-gray-200 text-gray-600 dark:border-white/10 dark:text-gray-300'}`}
                                         >
-                                            {labels[key][isAr ? 0 : 1]}
+                                            {label?.[isAr ? 0 : 1] ?? ''}
                                         </button>
                                     );
                                 })}
+                                <button type="button" onClick={addCustomElement} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-brand-gold px-3 py-2 text-xs font-black text-brand-navy hover:bg-brand-gold/10 dark:text-white">
+                                    <Type size={14} /> {isAr ? 'إضافة عنصر نصي جديد' : 'Add a custom text element'}
+                                </button>
                             </div>
                             <label className="mt-3 flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
                                 <input type="checkbox" checked={visualStyle.showLogo} onChange={(event) => updateVisualStyle({ showLogo: event.target.checked })} />
                                 {isAr ? 'إظهار شعار المنصة في الشهادة' : 'Show platform logo on certificate'}
                             </label>
+                            {selectedCustomElement && (
+                                <div className="mt-4 space-y-3 rounded-xl border border-brand-gold/30 p-3">
+                                    <h4 className="text-xs font-black text-brand-navy dark:text-white">{isAr ? 'محتوى العنصر الجديد' : 'Custom element content'}</h4>
+                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                        {isAr ? 'اسم العنصر' : 'Element label'}
+                                        <input value={isAr ? selectedCustomElement.labelAr : selectedCustomElement.labelEn} onChange={(event) => updateCustomElement(selectedCustomElement.id, isAr ? { labelAr: event.target.value } : { labelEn: event.target.value })} maxLength={60} className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark" />
+                                    </label>
+                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                        {isAr ? 'النص بالعربية' : 'Arabic text'}
+                                        <textarea value={selectedCustomElement.textAr} onChange={(event) => updateCustomElement(selectedCustomElement.id, { textAr: event.target.value })} maxLength={300} rows={2} dir="rtl" className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark" />
+                                    </label>
+                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                        {isAr ? 'النص بالإنجليزية' : 'English text'}
+                                        <textarea value={selectedCustomElement.textEn} onChange={(event) => updateCustomElement(selectedCustomElement.id, { textEn: event.target.value })} maxLength={300} rows={2} dir="ltr" className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark" />
+                                    </label>
+                                    <button type="button" onClick={() => removeCustomElement(selectedCustomElement.id)} className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400">
+                                        <Trash2 size={14} /> {isAr ? 'حذف العنصر' : 'Remove element'}
+                                    </button>
+                                </div>
+                            )}
+                            {isTextElement && (
+                                <div className="mt-4 space-y-3 rounded-xl border border-gray-100 p-3 dark:border-white/10">
+                                    <h4 className="flex items-center gap-2 text-xs font-black text-gray-700 dark:text-gray-200"><Type size={14} /> {isAr ? 'تنسيق النص المحدد' : 'Selected text formatting'}</h4>
+                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                        {isAr ? `حجم الخط: ${selectedFontSize}px` : `Font size: ${selectedFontSize}px`}
+                                        <input type="range" min="10" max="64" value={selectedFontSize} onChange={(event) => setSelectedTypography('fontSizes', Number(event.target.value))} className="mt-2 w-full accent-brand-gold" />
+                                    </label>
+                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                        {isAr ? 'سمك الخط' : 'Font weight'}
+                                        <select value={selectedFontWeight} onChange={(event) => setSelectedTypography('fontWeights', Number(event.target.value))} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-white/10 dark:bg-brand-navy-dark">
+                                            {[400, 500, 600, 700, 800, 900].map((weight) => <option key={weight} value={weight}>{weight} — {weight < 600 ? (isAr ? 'عادي' : 'Regular') : weight < 800 ? (isAr ? 'متوسط' : 'Medium') : (isAr ? 'عريض' : 'Bold')}</option>)}
+                                        </select>
+                                    </label>
+                                </div>
+                            )}
+                            <div className="mt-4 space-y-3 rounded-xl border border-brand-gold/30 p-3">
+                                <h4 className="text-xs font-black text-brand-navy dark:text-white">{isAr ? 'إعدادات ختم الأكاديمية' : 'Academy seal settings'}</h4>
+                                <label className="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                                    <input type="checkbox" checked={visualStyle.showSeal} onChange={(event) => updateVisualStyle({ showSeal: event.target.checked })} />
+                                    {isAr ? 'إظهار الختم على الشهادة' : 'Show seal on certificates'}
+                                </label>
+                                <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                    {isAr ? 'مصدر الختم' : 'Seal source'}
+                                    <select value={visualStyle.sealMode} onChange={(event) => updateVisualStyle({ sealMode: event.target.value as CertificateVisualStyle['sealMode'] })} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark">
+                                        <option value="platform">{isAr ? 'ختم المنصة بالشعار' : 'Platform seal with logo'}</option>
+                                        <option value="uploaded">{isAr ? 'صورة ختم مرفوعة' : 'Uploaded seal image'}</option>
+                                    </select>
+                                </label>
+                                {visualStyle.sealMode === 'platform' ? (
+                                    <>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? 'شكل الختم' : 'Seal shape'}
+                                            <select value={visualStyle.sealShape} onChange={(event) => updateVisualStyle({ sealShape: event.target.value as CertificateSealShape })} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark">
+                                                <option value="round">{isAr ? 'دائري' : 'Round'}</option>
+                                                <option value="rosette">{isAr ? 'وردة مسننة' : 'Rosette'}</option>
+                                                <option value="square">{isAr ? 'مربع بزوايا ناعمة' : 'Rounded square'}</option>
+                                                <option value="ribbon">{isAr ? 'شريطي' : 'Ribbon'}</option>
+                                                <option value="minimal">{isAr ? 'بسيط' : 'Minimal'}</option>
+                                            </select>
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? 'نمط الإطار' : 'Border style'}
+                                            <select value={visualStyle.sealBorderStyle} onChange={(event) => updateVisualStyle({ sealBorderStyle: event.target.value as CertificateVisualStyle['sealBorderStyle'] })} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark">
+                                                <option value="double">{isAr ? 'مزدوج' : 'Double'}</option>
+                                                <option value="solid">{isAr ? 'متصل' : 'Solid'}</option>
+                                                <option value="dashed">{isAr ? 'متقطع' : 'Dashed'}</option>
+                                            </select>
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <label className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                                                <span className="mb-1.5 block">{isAr ? 'لون الختم' : 'Seal color'}</span>
+                                                <input type="color" value={visualStyle.sealColor} onChange={(event) => updateVisualStyle({ sealColor: event.target.value })} className="h-9 w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-1 dark:border-white/10" />
+                                            </label>
+                                            <label className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                                                <span className="mb-1.5 block">{isAr ? 'لون الخلفية' : 'Fill color'}</span>
+                                                <input type="color" value={visualStyle.sealFillColor} onChange={(event) => updateVisualStyle({ sealFillColor: event.target.value })} className="h-9 w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-1 dark:border-white/10" />
+                                            </label>
+                                        </div>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? `الحجم: ${visualStyle.sealSize}px` : `Size: ${visualStyle.sealSize}px`}
+                                            <input type="range" min="60" max="260" value={visualStyle.sealSize} onChange={(event) => updateVisualStyle({ sealSize: Number(event.target.value) })} className="mt-2 w-full accent-brand-gold" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? `الشفافية: ${Math.round(visualStyle.sealOpacity * 100)}%` : `Opacity: ${Math.round(visualStyle.sealOpacity * 100)}%`}
+                                            <input type="range" min="10" max="100" value={Math.round(visualStyle.sealOpacity * 100)} onChange={(event) => updateVisualStyle({ sealOpacity: Number(event.target.value) / 100 })} className="mt-2 w-full accent-brand-gold" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? `الدوران: ${visualStyle.sealRotation}°` : `Rotation: ${visualStyle.sealRotation}°`}
+                                            <input type="range" min="-180" max="180" value={visualStyle.sealRotation} onChange={(event) => updateVisualStyle({ sealRotation: Number(event.target.value) })} className="mt-2 w-full accent-brand-gold" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? 'النص العربي على الختم' : 'Arabic seal text'}
+                                            <input value={visualStyle.sealTextAr} onChange={(event) => updateVisualStyle({ sealTextAr: event.target.value })} maxLength={40} dir="rtl" className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? 'النص الإنجليزي على الختم' : 'English seal text'}
+                                            <input value={visualStyle.sealTextEn} onChange={(event) => updateVisualStyle({ sealTextEn: event.target.value })} maxLength={40} dir="ltr" className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark" />
+                                        </label>
+                                    </>
+                                ) : (
+                                    <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
+                                        {template.academyStampUrl
+                                            ? (isAr ? 'سيتم استخدام صورة الختم المرفوعة أدناه. يمكنك تغيير حجمها وشفافيتها ودورانها من الإعدادات.' : 'The uploaded seal below will be used. Adjust its size, opacity and rotation with the controls below.')
+                                            : (isAr ? 'ارفع صورة الختم من قسم التوقيعات والختم أسفل الصفحة لتظهر هنا.' : 'Upload a seal image in the Signatures & seal section below to display it here.')}
+                                    </p>
+                                )}
+                                {visualStyle.sealMode === 'uploaded' && (
+                                    <>
+                                        <label className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            <span className="mb-1.5 block">{isAr ? 'لون خلفية الصورة' : 'Image background color'}</span>
+                                            <input type="color" value={visualStyle.sealFillColor} onChange={(event) => updateVisualStyle({ sealFillColor: event.target.value })} className="h-9 w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-1 dark:border-white/10" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? `تغيير درجة لون الصورة: ${visualStyle.sealImageHue}°` : `Image hue: ${visualStyle.sealImageHue}°`}
+                                            <input type="range" min="0" max="360" value={visualStyle.sealImageHue} onChange={(event) => updateVisualStyle({ sealImageHue: Number(event.target.value) })} className="mt-2 w-full accent-brand-gold" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? `الحجم: ${visualStyle.sealSize}px` : `Size: ${visualStyle.sealSize}px`}
+                                            <input type="range" min="60" max="260" value={visualStyle.sealSize} onChange={(event) => updateVisualStyle({ sealSize: Number(event.target.value) })} className="mt-2 w-full accent-brand-gold" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? `الشفافية: ${Math.round(visualStyle.sealOpacity * 100)}%` : `Opacity: ${Math.round(visualStyle.sealOpacity * 100)}%`}
+                                            <input type="range" min="10" max="100" value={Math.round(visualStyle.sealOpacity * 100)} onChange={(event) => updateVisualStyle({ sealOpacity: Number(event.target.value) / 100 })} className="mt-2 w-full accent-brand-gold" />
+                                        </label>
+                                        <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                            {isAr ? `الدوران: ${visualStyle.sealRotation}°` : `Rotation: ${visualStyle.sealRotation}°`}
+                                            <input type="range" min="-180" max="180" value={visualStyle.sealRotation} onChange={(event) => updateVisualStyle({ sealRotation: Number(event.target.value) })} className="mt-2 w-full accent-brand-gold" />
+                                        </label>
+                                    </>
+                                )}
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                    {isAr ? 'يمكنك سحب عنصر الختم داخل المعاينة لتغيير موضعه.' : 'Drag the seal element in the preview to reposition it.'}
+                                </p>
+                            </div>
                         </div>
                         <div>
                             <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-brand-navy dark:text-white"><Palette size={16} /> {isAr ? 'اختر شكل الشهادة' : 'Choose a certificate design'}</h3>

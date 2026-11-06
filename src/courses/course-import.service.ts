@@ -16,6 +16,8 @@ const NUM = (value: unknown, fallback?: number) => {
     const n = Number(value);
     return Number.isFinite(n) ? n : undefined;
 };
+type CourseImportRow = { getCell: (column: number) => { value: unknown } };
+
 const isAllowedAssetUrl = (value: string) => {
     if (/^https?:\/\//i.test(value)) {
         try {
@@ -29,8 +31,7 @@ const isAllowedAssetUrl = (value: string) => {
 };
 
 const SHEET_NAMES: Record<string, string> = {
-    Instructions: 'ابدأ هنا',
-    Courses: 'بيانات الدورة',
+    Courses: 'نموذج الدورة',
     Chapters: 'الفصول',
     Lessons: 'الدروس',
     Objectives: 'أهداف التعلم',
@@ -42,9 +43,6 @@ const SHEET_NAMES: Record<string, string> = {
 };
 
 const FIELD_LABELS: Record<string, string> = {
-    CourseKey: 'مفتاح الدورة (للربط بين الأوراق)',
-    chapterKey: 'مفتاح الفصل',
-    lessonKey: 'مفتاح الدرس',
     titleAr: 'العنوان بالعربية',
     titleEn: 'العنوان بالإنجليزية',
     excerptAr: 'نبذة قصيرة بالعربية',
@@ -73,6 +71,8 @@ const FIELD_LABELS: Record<string, string> = {
     lifetimeAccess: 'الوصول مدى الحياة؟',
     communityAccess: 'تتضمن مجتمعًا؟',
     orderIndex: 'الترتيب (يبدأ من 0)',
+    chapterTitleAr: 'عنوان الفصل المرتبط',
+    lessonTitleAr: 'عنوان الدرس المرتبط',
     objectiveAr: 'الهدف بالعربية',
     objectiveEn: 'الهدف بالإنجليزية',
     prerequisiteAr: 'المتطلب بالعربية',
@@ -93,16 +93,24 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const REQUIRED_FIELDS: Record<string, Set<string>> = {
-    Courses: new Set(['CourseKey', 'titleAr', 'titleEn', 'contentType']),
-    Chapters: new Set(['CourseKey', 'chapterKey', 'titleAr', 'titleEn']),
-    Lessons: new Set(['CourseKey', 'chapterKey', 'lessonKey', 'titleAr', 'titleEn']),
-    Objectives: new Set(['CourseKey', 'objectiveAr', 'objectiveEn']),
-    Prerequisites: new Set(['CourseKey', 'prerequisiteAr', 'prerequisiteEn']),
-    Audiences: new Set(['CourseKey', 'audienceAr', 'audienceEn']),
-    FAQs: new Set(['CourseKey', 'questionAr', 'questionEn', 'answerAr', 'answerEn']),
-    Gallery: new Set(['CourseKey', 'url']),
-    LessonOutcomes: new Set(['CourseKey', 'chapterKey', 'lessonKey', 'descriptionAr', 'descriptionEn']),
+    Courses: new Set(['titleAr', 'titleEn', 'contentType']),
+    Chapters: new Set(['titleAr', 'titleEn']),
+    Lessons: new Set(['chapterTitleAr', 'titleAr', 'titleEn']),
+    Objectives: new Set(['objectiveAr', 'objectiveEn']),
+    Prerequisites: new Set(['prerequisiteAr', 'prerequisiteEn']),
+    Audiences: new Set(['audienceAr', 'audienceEn']),
+    FAQs: new Set(['questionAr', 'questionEn', 'answerAr', 'answerEn']),
+    Gallery: new Set(['url']),
+    LessonOutcomes: new Set(['chapterTitleAr', 'lessonTitleAr', 'descriptionAr', 'descriptionEn']),
 };
+
+const COURSE_HEADERS = [
+    'CourseKey', 'titleAr', 'titleEn', 'excerptAr', 'excerptEn', 'descriptionAr', 'descriptionEn',
+    'categoryAr', 'categoryEn', 'level', 'contentType', 'language', 'hoursOfContent', 'durationAr',
+    'durationEn', 'syllabusAr', 'syllabusEn', 'coverImageUrl', 'introVideoUrl', 'videoFileUrl',
+    'certificateIssued', 'quizzesIncluded', 'projectsIncluded', 'assignmentsIncluded',
+    'liveSessionsIncluded', 'downloadableResources', 'lifetimeAccess', 'communityAccess',
+];
 
 const FIELD_GUIDE: Record<string, string> = {
     CourseKey: 'مفتاح داخلي قصير وفريد للدورة، مثل CO-001. انسخه كما هو في كل صف تابع للدورة.',
@@ -133,6 +141,8 @@ const FIELD_GUIDE: Record<string, string> = {
     communityAccess: 'هل تتضمن مجتمعاً؟ TRUE أو FALSE. الفراغ يعني FALSE.',
     chapterKey: 'مفتاح فصل فريد داخل الدورة، مثل CH-001. استخدمه لربط الدروس بهذا الفصل.',
     lessonKey: 'مفتاح درس فريد داخل الفصل، مثل LE-001. يلزم لربط مخرجات الدرس.',
+    chapterTitleAr: 'اكتب عنوان الفصل بالعربية كما أدخلته في ورقة الفصول لربط هذا العنصر به.',
+    lessonTitleAr: 'اكتب عنوان الدرس بالعربية كما أدخلته في ورقة الدروس لربط مخرج التعلم به.',
     orderIndex: 'ترتيب العنصر، يبدأ من 0. يمكن تركه فارغاً ليُستخدم ترتيب الصف.',
     url: 'رابط http/https أو مسار ملف مرفوع يبدأ بـ /uploads/.',
     altAr: 'وصف بديل للصورة بالعربية لتحسين الوصول. اختياري.',
@@ -163,153 +173,165 @@ export class CourseImportService {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'LaxaLab Academy';
         workbook.created = new Date();
-        const guide = workbook.addWorksheet(SHEET_NAMES.Instructions, { views: [{ rightToLeft: true }] });
-        guide.columns = [{ width: 36 }, { width: 105 }];
-        guide.addRow(['الخطوة', 'ماذا تفعل؟']);
-        guide.addRow(['1. معلومات الدورة', 'افتح ورقة «بيانات الدورة» واملأ صفاً واحداً لكل دورة. الحقول الإلزامية موضحة بعلامة * وباللون الذهبي.']);
-        guide.addRow(['2. تفاصيل إضافية', 'أكمل الأوراق التي تحتاجها فقط: الأهداف، المتطلبات، الفئة المستهدفة، الأسئلة الشائعة، الصور، الفصول، الدروس ومخرجاتها.']);
-        guide.addRow(['3. اربط البيانات', 'انسخ «مفتاح الدورة» نفسه في كل صف يتبع الدورة. للدروس استخدم مفتاح الفصل، ولمخرجات الدرس استخدم مفاتيح الدورة والفصل والدرس.']);
-        guide.addRow(['4. ابدأ التعبئة من الصف الثالث', 'الصف الثاني يوضح أسماء الخانات بالعربية. اكتب بياناتك في الخانات الصفراء ابتداءً من الصف 3، وصف واحد لكل عنصر.']);
-        guide.addRow(['5. راجع ثم استورد', 'احفظ الملف بصيغة XLSX ثم اختر «استيراد دورات». لا تغيّر ترتيب الأعمدة أو أسماء الأوراق.']);
-        guide.addRow(['ماذا تعني الألوان؟', 'الأصفر الفاتح خانات إدخال. الذهبي يدل على حقل مطلوب. رؤوس الأعمدة بالعربية، ويمكن تحديد الاختيارات من القوائم المنسدلة.']);
-        guide.addRow(['حقول الدورة المطلوبة', 'مفتاح الدورة، العنوان بالعربية، العنوان بالإنجليزية، ونوع المحتوى. أدخل النصين العربي والإنجليزي للعناوين والحقول الثنائية.']);
-        guide.addRow(['مفتاح الدورة', 'اكتب معرّفاً قصيراً وفريداً مثل CO-001 في ورقة «بيانات الدورة»، وانسخه كما هو في كل ورقة أخرى تخصها.']);
-        guide.addRow(['الفصول والدروس', 'أضف كل فصل كسطر في «الفصول» مع مفتاح مثل CH-001. أضف الدروس في «الدروس» مع مفتاح الفصل نفسه ومفتاح درس مثل LE-001.']);
-        guide.addRow(['الصفوف المتكررة', 'كل صف يعني عنصراً واحداً: هدفاً أو متطلباً أو فئة أو سؤالاً أو صورة أو فصلاً أو درساً. اترك الصف فارغاً إن لم تكن تحتاج العنصر.']);
-        guide.addRow(['المستوى ونوع المحتوى', 'المستوى: BEGINNER أو INTERMEDIATE أو ADVANCED أو ALL_LEVELS. نوع المحتوى: LIVE للمباشر أو RECORDED للمسجل.']);
-        guide.addRow(['الميزات', 'اختر TRUE أو FALSE من القائمة. ترك الخانة فارغة يعامل على أنه FALSE.']);
-        guide.addRow(['الصور والملفات', 'أدخل رابط http/https أو مسار ملف سبق رفعه يبدأ بـ /uploads/. هذا القالب لا يرفع الملفات نفسها.']);
-        guide.addRow(['روابط وملفات الدرس', 'كل عنصر في سطر مستقل بالصيغة: الرابط | الاسم بالعربية | الاسم بالإنجليزية.']);
-        guide.addRow(['الدفعات والتسجيل', 'القالب مخصص لمحتوى الدورة. بعد إنشائها أضف الدفعة والسعر والمواعيد والمدرّس من إدارة الدورات.']);
-
-        const courses = workbook.addWorksheet(SHEET_NAMES.Courses, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
+        const courses = workbook.addWorksheet(SHEET_NAMES.Courses, { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
         courses.columns = [
-            { header: 'CourseKey', key: 'courseKey', width: 18 },
-            { header: 'titleAr', key: 'titleAr', width: 32 }, { header: 'titleEn', key: 'titleEn', width: 32 },
-            { header: 'excerptAr', key: 'excerptAr', width: 40 }, { header: 'excerptEn', key: 'excerptEn', width: 40 },
-            { header: 'descriptionAr', key: 'descriptionAr', width: 48 }, { header: 'descriptionEn', key: 'descriptionEn', width: 48 },
-            { header: 'categoryAr', key: 'categoryAr', width: 22 }, { header: 'categoryEn', key: 'categoryEn', width: 22 },
-            { header: 'level', key: 'level', width: 18 }, { header: 'contentType', key: 'contentType', width: 18 },
-            { header: 'language', key: 'language', width: 18 }, { header: 'hoursOfContent', key: 'hoursOfContent', width: 18 },
-            { header: 'durationAr', key: 'durationAr', width: 20 }, { header: 'durationEn', key: 'durationEn', width: 20 },
-            { header: 'syllabusAr', key: 'syllabusAr', width: 48 }, { header: 'syllabusEn', key: 'syllabusEn', width: 48 },
-            { header: 'coverImageUrl', key: 'coverImageUrl', width: 36 }, { header: 'introVideoUrl', key: 'introVideoUrl', width: 36 },
-            { header: 'videoFileUrl', key: 'videoFileUrl', width: 36 },
-            { header: 'certificateIssued', key: 'certificateIssued', width: 18 }, { header: 'quizzesIncluded', key: 'quizzesIncluded', width: 18 },
-            { header: 'projectsIncluded', key: 'projectsIncluded', width: 18 }, { header: 'assignmentsIncluded', key: 'assignmentsIncluded', width: 20 },
-            { header: 'liveSessionsIncluded', key: 'liveSessionsIncluded', width: 20 }, { header: 'downloadableResources', key: 'downloadableResources', width: 22 },
-            { header: 'lifetimeAccess', key: 'lifetimeAccess', width: 18 }, { header: 'communityAccess', key: 'communityAccess', width: 18 },
+            { header: '__course_form_v1__', key: 'fieldKey', width: 24 },
+            { header: 'القسم', key: 'section', width: 22 },
+            { header: 'البيان المطلوب', key: 'label', width: 36 },
+            { header: 'إلزامي؟', key: 'required', width: 14 },
+            { header: 'اكتب بيانات الدورة هنا', key: 'value', width: 58 },
         ];
-        const chapters = workbook.addWorksheet(SHEET_NAMES.Chapters, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        chapters.columns = [
-            { header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 },
-            { header: 'titleAr', key: 'titleAr', width: 32 }, { header: 'titleEn', key: 'titleEn', width: 32 },
-            { header: 'orderIndex', key: 'orderIndex', width: 14 },
+        courses.getCell(1, 1).value = '__course_form_v1__';
+        courses.getColumn(1).hidden = true;
+        const courseFields: { key: string; section: string; required?: boolean }[] = [
+            { key: 'titleAr', section: 'العناوين', required: true },
+            { key: 'titleEn', section: 'العناوين', required: true },
+            { key: 'excerptAr', section: 'الوصف' },
+            { key: 'excerptEn', section: 'الوصف' },
+            { key: 'descriptionAr', section: 'الوصف' },
+            { key: 'descriptionEn', section: 'الوصف' },
+            { key: 'categoryAr', section: 'التصنيف' },
+            { key: 'categoryEn', section: 'التصنيف' },
+            { key: 'level', section: 'التصنيف' },
+            { key: 'contentType', section: 'التصنيف', required: true },
+            { key: 'language', section: 'التصنيف' },
+            { key: 'hoursOfContent', section: 'المدة' },
+            { key: 'durationAr', section: 'المدة' },
+            { key: 'durationEn', section: 'المدة' },
+            { key: 'syllabusAr', section: 'المنهج' },
+            { key: 'syllabusEn', section: 'المنهج' },
+            { key: 'coverImageUrl', section: 'الوسائط' },
+            { key: 'introVideoUrl', section: 'الوسائط' },
+            { key: 'videoFileUrl', section: 'الوسائط' },
+            { key: 'certificateIssued', section: 'مميزات الدورة' },
+            { key: 'quizzesIncluded', section: 'مميزات الدورة' },
+            { key: 'projectsIncluded', section: 'مميزات الدورة' },
+            { key: 'assignmentsIncluded', section: 'مميزات الدورة' },
+            { key: 'liveSessionsIncluded', section: 'مميزات الدورة' },
+            { key: 'downloadableResources', section: 'مميزات الدورة' },
+            { key: 'lifetimeAccess', section: 'مميزات الدورة' },
+            { key: 'communityAccess', section: 'مميزات الدورة' },
         ];
+        for (const field of courseFields) {
+            const row = courses.addRow([
+                field.key,
+                field.section,
+                `${FIELD_LABELS[field.key]}${field.required ? ' *' : ''}`,
+                field.required ? 'نعم' : 'اختياري',
+                '',
+            ]);
+            row.height = ['descriptionAr', 'descriptionEn', 'syllabusAr', 'syllabusEn'].includes(field.key) ? 58 : 34;
+            row.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: field.required ? 'FFFFF0C2' : 'FFFFFBEB' } };
+            row.getCell(5).alignment = { vertical: 'top', wrapText: true };
+            row.getCell(5).note = FIELD_GUIDE[field.key] ?? '';
+            row.getCell(3).font = { bold: field.required, color: { argb: field.required ? 'FF9A6700' : 'FF17365D' } };
+            if (field.key === 'contentType') {
+                row.getCell(5).dataValidation = { type: 'list', allowBlank: false, formulae: ['"مباشر,مسجل"'] };
+            } else if (field.key === 'level') {
+                row.getCell(5).dataValidation = { type: 'list', allowBlank: true, formulae: ['"مبتدئ,متوسط,متقدم,جميع المستويات"'] };
+            } else if (field.key.endsWith('Included') || field.key === 'certificateIssued') {
+                row.getCell(5).dataValidation = { type: 'list', allowBlank: true, formulae: ['"نعم,لا"'] };
+            }
+        }
+        courses.getRow(1).height = 34;
+        courses.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        courses.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
+        courses.getRow(1).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        courses.views = [{ state: 'frozen', ySplit: 1, rightToLeft: true, zoomScale: 90 }];
 
-        const lessons = workbook.addWorksheet(SHEET_NAMES.Lessons, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        lessons.columns = [
-            { header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 },
-            { header: 'lessonKey', key: 'lessonKey', width: 18 },
-            { header: 'titleAr', key: 'titleAr', width: 32 }, { header: 'titleEn', key: 'titleEn', width: 32 },
-            { header: 'descriptionAr', key: 'descriptionAr', width: 44 }, { header: 'descriptionEn', key: 'descriptionEn', width: 44 },
-            { header: 'videoUrl', key: 'videoUrl', width: 36 }, { header: 'orderIndex', key: 'orderIndex', width: 14 },
-            { header: 'durationMinutes', key: 'durationMinutes', width: 18 }, { header: 'links', key: 'links', width: 50 },
-            { header: 'files', key: 'files', width: 70 },
+        const definitions: { name: string; fields: { header: string; width: number }[] }[] = [
+            { name: 'Chapters', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'chapterKey', width: 18 },
+                { header: 'titleAr', width: 34 }, { header: 'titleEn', width: 34 }, { header: 'orderIndex', width: 18 },
+            ] },
+            { name: 'Lessons', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'chapterKey', width: 18 },
+                { header: 'chapterTitleAr', width: 34 }, { header: 'lessonKey', width: 18 },
+                { header: 'titleAr', width: 34 }, { header: 'titleEn', width: 34 },
+                { header: 'descriptionAr', width: 42 }, { header: 'descriptionEn', width: 42 },
+                { header: 'videoUrl', width: 42 }, { header: 'orderIndex', width: 18 },
+                { header: 'durationMinutes', width: 22 }, { header: 'links', width: 48 }, { header: 'files', width: 58 },
+            ] },
+            { name: 'Objectives', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'objectiveAr', width: 45 },
+                { header: 'objectiveEn', width: 45 }, { header: 'orderIndex', width: 18 },
+            ] },
+            { name: 'Prerequisites', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'prerequisiteAr', width: 45 },
+                { header: 'prerequisiteEn', width: 45 }, { header: 'orderIndex', width: 18 },
+            ] },
+            { name: 'Audiences', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'audienceAr', width: 45 },
+                { header: 'audienceEn', width: 45 }, { header: 'orderIndex', width: 18 },
+            ] },
+            { name: 'FAQs', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'questionAr', width: 40 },
+                { header: 'questionEn', width: 40 }, { header: 'answerAr', width: 48 },
+                { header: 'answerEn', width: 48 }, { header: 'orderIndex', width: 18 },
+            ] },
+            { name: 'Gallery', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'url', width: 55 },
+                { header: 'altAr', width: 38 }, { header: 'altEn', width: 38 }, { header: 'orderIndex', width: 18 },
+            ] },
+            { name: 'LessonOutcomes', fields: [
+                { header: 'CourseKey', width: 18 }, { header: 'chapterKey', width: 18 },
+                { header: 'chapterTitleAr', width: 34 }, { header: 'lessonKey', width: 18 },
+                { header: 'lessonTitleAr', width: 34 }, { header: 'descriptionAr', width: 45 },
+                { header: 'descriptionEn', width: 45 }, { header: 'orderIndex', width: 18 },
+            ] },
         ];
-
-        const objectives = workbook.addWorksheet(SHEET_NAMES.Objectives, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        objectives.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'objectiveAr', key: 'objectiveAr', width: 45 }, { header: 'objectiveEn', key: 'objectiveEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
-
-        const prerequisites = workbook.addWorksheet(SHEET_NAMES.Prerequisites, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        prerequisites.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'prerequisiteAr', key: 'prerequisiteAr', width: 45 }, { header: 'prerequisiteEn', key: 'prerequisiteEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
-
-        const audiences = workbook.addWorksheet(SHEET_NAMES.Audiences, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        audiences.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'audienceAr', key: 'audienceAr', width: 45 }, { header: 'audienceEn', key: 'audienceEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
-
-        const faqs = workbook.addWorksheet(SHEET_NAMES.FAQs, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        faqs.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'questionAr', key: 'questionAr', width: 45 }, { header: 'questionEn', key: 'questionEn', width: 45 }, { header: 'answerAr', key: 'answerAr', width: 55 }, { header: 'answerEn', key: 'answerEn', width: 55 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
-
-        const gallery = workbook.addWorksheet(SHEET_NAMES.Gallery, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        gallery.columns = [
-            { header: 'CourseKey', key: 'courseKey', width: 18 },
-            { header: 'url', key: 'url', width: 55 },
-            { header: 'altAr', key: 'altAr', width: 38 },
-            { header: 'altEn', key: 'altEn', width: 38 },
-            { header: 'orderIndex', key: 'orderIndex', width: 14 },
-        ];
-
-        const lessonOutcomes = workbook.addWorksheet(SHEET_NAMES.LessonOutcomes, { views: [{ state: 'frozen', ySplit: 2, rightToLeft: true }] });
-        lessonOutcomes.columns = [{ header: 'CourseKey', key: 'courseKey', width: 18 }, { header: 'chapterKey', key: 'chapterKey', width: 18 }, { header: 'lessonKey', key: 'lessonKey', width: 18 }, { header: 'descriptionAr', key: 'descriptionAr', width: 45 }, { header: 'descriptionEn', key: 'descriptionEn', width: 45 }, { header: 'orderIndex', key: 'orderIndex', width: 14 }];
-
-        for (const sheet of [courses, chapters, lessons, objectives, prerequisites, audiences, faqs, gallery, lessonOutcomes]) {
-            const internalName = Object.keys(SHEET_NAMES).find(name => SHEET_NAMES[name] === sheet.name)!;
-            const internalHeaders = sheet.getRow(1).values as unknown[];
+        const dataSheets: ExcelJS.Worksheet[] = [];
+        for (const definition of definitions) {
+            const sheetName = SHEET_NAMES[definition.name];
+            const sheet = workbook.addWorksheet(sheetName, {
+                views: [{ state: 'frozen', ySplit: 2, rightToLeft: true, zoomScale: 85 }],
+            });
+            sheet.columns = definition.fields.map(field => ({ header: field.header, width: field.width }));
+            for (const field of ['CourseKey', 'chapterKey', 'lessonKey']) {
+                const index = definition.fields.findIndex(candidate => candidate.header === field);
+                if (index >= 0) sheet.getColumn(index + 1).hidden = true;
+            }
             const visibleHeaders = sheet.getRow(2);
-            visibleHeaders.values = internalHeaders.slice(1).map(header => {
-                const key = String(header);
-                const label = FIELD_LABELS[key] ?? key;
-                return REQUIRED_FIELDS[internalName]?.has(key) ? `${label} *` : label;
+            visibleHeaders.values = definition.fields.map(field => {
+                const label = FIELD_LABELS[field.header] ?? field.header;
+                return REQUIRED_FIELDS[definition.name]?.has(field.header) ? `${label} *` : label;
             });
             sheet.getRow(1).hidden = true;
             visibleHeaders.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
             visibleHeaders.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
             visibleHeaders.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
             visibleHeaders.height = 42;
-            sheet.views = [{ state: 'frozen', xSplit: internalName === 'Courses' ? 3 : 1, ySplit: 2, rightToLeft: true, zoomScale: 85 }];
-            const sheetFieldGuide: Record<string, Record<string, string>> = {
-                Chapters: {
-                    titleAr: 'عنوان الفصل بالعربية (مطلوب).',
-                    titleEn: 'Chapter title in English (required).',
-                },
-                Lessons: {
-                    titleAr: 'عنوان الدرس بالعربية (مطلوب).',
-                    titleEn: 'Lesson title in English (required).',
-                },
-                LessonOutcomes: {
-                    descriptionAr: 'مخرج التعلم بالعربية (مطلوب).',
-                    descriptionEn: 'Learning outcome in English (required).',
-                },
-            };
-            sheet.getRow(1).eachCell((cell) => {
-                const description = sheetFieldGuide[internalName]?.[String(cell.value)] ?? FIELD_GUIDE[String(cell.value)];
-                if (!description) return;
-                const visibleCell = visibleHeaders.getCell(cell.col);
-                visibleCell.note = description;
-                if (REQUIRED_FIELDS[internalName]?.has(String(cell.value))) {
-                    visibleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB8860B' } };
-                }
-            });
             const colLetter = sheet.getColumn(sheet.columnCount).letter;
             sheet.autoFilter = { from: 'A2', to: `${colLetter}52` };
+            for (const [index, field] of definition.fields.entries()) {
+                const description = FIELD_GUIDE[field.header];
+                if (description) visibleHeaders.getCell(index + 1).note = description;
+                if (REQUIRED_FIELDS[definition.name]?.has(field.header)) {
+                    visibleHeaders.getCell(index + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB8860B' } };
+                }
+            }
             for (let rowNumber = 3; rowNumber <= 52; rowNumber += 1) {
                 const row = sheet.getRow(rowNumber);
-                row.height = 28;
+                row.height = 30;
                 row.eachCell({ includeEmpty: true }, cell => {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowNumber % 2 ? 'FFFFFBEB' : 'FFFFFDF5' } };
                     cell.alignment = { vertical: 'top', wrapText: true };
                     cell.border = { bottom: { style: 'hair', color: { argb: 'FFE7DDBF' } } };
                 });
             }
+            dataSheets.push(sheet);
         }
+        const chapterSheet = dataSheets.find(sheet => sheet.name === SHEET_NAMES.Chapters)!;
+        const lessonSheet = dataSheets.find(sheet => sheet.name === SHEET_NAMES.Lessons)!;
+        const outcomeSheet = dataSheets.find(sheet => sheet.name === SHEET_NAMES.LessonOutcomes)!;
+        chapterSheet.getColumn(1).hidden = true;
+        lessonSheet.getColumn(1).hidden = true;
+        outcomeSheet.getColumn(1).hidden = true;
         for (let row = 3; row <= 500; row += 1) {
-            courses.getCell(row, 10).dataValidation = { type: 'list', allowBlank: true, formulae: ['"BEGINNER,INTERMEDIATE,ADVANCED,ALL_LEVELS"'] };
-            courses.getCell(row, 11).dataValidation = { type: 'list', allowBlank: true, formulae: ['"LIVE,RECORDED"'] };
-            for (let column = 21; column <= 28; column += 1) {
-                courses.getCell(row, column).dataValidation = { type: 'list', allowBlank: true, formulae: ['"TRUE,FALSE"'] };
-            }
+            lessonSheet.getCell(row, 3).note = 'اكتب اسم الفصل بالعربية كما أدخلته في ورقة الفصول لربط الدرس به.';
+            outcomeSheet.getCell(row, 3).note = 'اكتب اسم الفصل بالعربية كما أدخلته في ورقة الفصول.';
+            outcomeSheet.getCell(row, 5).note = 'اكتب اسم الدرس بالعربية كما أدخلته في ورقة الدروس.';
         }
-        guide.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        guide.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
-        guide.getRow(1).height = 24;
-        guide.eachRow((row, rowNumber) => {
-            if (rowNumber > 1) {
-                row.height = 34;
-                row.alignment = { vertical: 'top', wrapText: true };
-                row.getCell(1).font = { bold: true, color: { argb: 'FF17365D' } };
-                row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowNumber % 2 ? 'FFF3F6FA' : 'FFFFFFFF' } };
-            }
-        });
         return Buffer.from(await workbook.xlsx.writeBuffer());
     }
 
@@ -319,8 +341,8 @@ export class CourseImportService {
         catch { throw new BadRequestException('ملف Excel غير صالح أو تالف.'); }
         const coursesSheet = this.getSheet(workbook, 'Courses');
         if (!coursesSheet) throw new BadRequestException('ورقة بيانات الدورة (Courses) مفقودة من القالب.');
-        const firstCourseRow = this.firstDataRow(coursesSheet);
-        const courseRows = coursesSheet.getRows(firstCourseRow, Math.max(0, coursesSheet.rowCount - firstCourseRow + 1)) ?? [];
+        const isCourseForm = coursesSheet.getCell(1, 1).value === '__course_form_v1__';
+        const courseRows = this.courseRows(coursesSheet);
         const parsedCourses: CreateCourseDto[] = [];
         const errors: string[] = [];
         const seenKeys = new Set<string>();
@@ -334,13 +356,62 @@ export class CourseImportService {
         const faqRows = this.rows(this.getSheet(workbook, 'FAQs'));
         const galleryRows = this.rows(this.getSheet(workbook, 'Gallery'));
 
-        for (const [index, row] of courseRows.entries()) {
-            const line = index + firstCourseRow;
+        const generatedCourseKey = isCourseForm ? 'COURSE-001' : undefined;
+        const singleCourseKey = courseRows.length === 1
+            ? generatedCourseKey ?? (TEXT(courseRows[0].row.getCell(1).value) || 'COURSE-001')
+            : undefined;
+        const childRows = [
+            ...chapterRows, ...lessonRows, ...lessonOutcomeRows, ...objectiveRows, ...prerequisiteRows,
+            ...audienceRows, ...faqRows, ...galleryRows,
+        ];
+        if (singleCourseKey) {
+            for (const row of childRows) {
+                if (!TEXT(row.CourseKey)) row.CourseKey = singleCourseKey;
+            }
+        }
+        if (isCourseForm) {
+            chapterRows.forEach((row, index) => {
+                if (!TEXT(row.chapterKey)) row.chapterKey = `CH-${String(index + 1).padStart(3, '0')}`;
+            });
+            lessonRows.forEach((row, index) => {
+                if (!TEXT(row.chapterKey)) {
+                    const chapterTitle = TEXT(row.chapterTitleAr);
+                    const matchingChapters = chapterRows.filter(chapter => TEXT(chapter.titleAr) === chapterTitle);
+                    if (matchingChapters.length === 1) row.chapterKey = matchingChapters[0].chapterKey;
+                    else if (!chapterTitle && chapterRows.length === 1) row.chapterKey = chapterRows[0].chapterKey;
+                    else errors.push(`Lessons:${this.rowNumber(row, index)}: اكتب عنوان الفصل المرتبط كما هو في ورقة الفصول`);
+                }
+                if (!TEXT(row.lessonKey)) {
+                    const chapterLessons = lessonRows.slice(0, index).filter(lesson =>
+                        TEXT(lesson.CourseKey) === TEXT(row.CourseKey) && TEXT(lesson.chapterKey) === TEXT(row.chapterKey),
+                    ).length;
+                    row.lessonKey = `LE-${TEXT(row.chapterKey)}-${String(chapterLessons + 1).padStart(3, '0')}`;
+                }
+            });
+            lessonOutcomeRows.forEach((row, index) => {
+                if (!TEXT(row.chapterKey)) {
+                    const chapterTitle = TEXT(row.chapterTitleAr);
+                    const matchingChapters = chapterRows.filter(chapter => TEXT(chapter.titleAr) === chapterTitle);
+                    if (matchingChapters.length === 1) row.chapterKey = matchingChapters[0].chapterKey;
+                }
+                if (!TEXT(row.lessonKey)) {
+                    const matchingLessons = lessonRows.filter(lesson =>
+                        TEXT(lesson.CourseKey) === TEXT(row.CourseKey)
+                        && TEXT(lesson.chapterKey) === TEXT(row.chapterKey)
+                        && TEXT(lesson.titleAr) === TEXT(row.lessonTitleAr),
+                    );
+                    if (matchingLessons.length === 1) row.lessonKey = matchingLessons[0].lessonKey;
+                    else errors.push(`LessonOutcomes:${this.rowNumber(row, index)}: اكتب عنوان الدرس المرتبط كما هو في ورقة الدروس`);
+                }
+            });
+        }
+
+        for (const { row, line } of courseRows) {
             const key = TEXT(row.getCell(1).value);
-            const hasData = Array.from({ length: coursesSheet.columnCount }, (_, column) => row.getCell(column + 1).value)
+            const hasData = Array.from({ length: COURSE_HEADERS.length }, (_, column) => row.getCell(column + 1).value)
                 .some(value => TEXT(value) !== '');
             if (!hasData) continue;
-            if (!key) { errors.push(`Courses:${line}: CourseKey مطلوب`); continue; }
+            if (!key) { errors.push(`Courses:${line}: تعذر تحديد الدورة`); continue; }
             if (seenKeys.has(key)) { errors.push(`Courses:${line}: CourseKey مكرر (${key})`); continue; }
             seenKeys.add(key);
             const titleAr = TEXT(row.getCell(2).value), titleEn = TEXT(row.getCell(3).value);
@@ -498,7 +569,50 @@ export class CourseImportService {
     }
 
     private getSheet(workbook: ExcelJS.Workbook, internalName: string): ExcelJS.Worksheet | undefined {
-        return workbook.getWorksheet(SHEET_NAMES[internalName]) ?? workbook.getWorksheet(internalName);
+        const previousLocalizedName = internalName === 'Courses' ? 'بيانات الدورة' : undefined;
+        return workbook.getWorksheet(SHEET_NAMES[internalName])
+            ?? (previousLocalizedName ? workbook.getWorksheet(previousLocalizedName) : undefined)
+            ?? workbook.getWorksheet(internalName);
+    }
+
+    private courseRows(sheet: ExcelJS.Worksheet): { row: CourseImportRow; line: number }[] {
+        if (sheet.getCell(1, 1).value === '__course_form_v1__') {
+            const values = Array<unknown>(COURSE_HEADERS.length).fill('');
+            values[0] = 'COURSE-001';
+            const fieldIndexes = new Map(COURSE_HEADERS.map((field, index) => [field, index]));
+            let hasInput = false;
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber < 2) return;
+                const field = TEXT(row.getCell(1).value);
+                const index = fieldIndexes.get(field);
+                if (index === undefined) return;
+                let value: unknown = row.getCell(5).value;
+                if (field === 'contentType') {
+                    value = value === 'مباشر' ? 'LIVE' : value === 'مسجل' ? 'RECORDED' : value;
+                } else if (field === 'level') {
+                    const levels: Record<string, string> = {
+                        'مبتدئ': 'BEGINNER',
+                        'متوسط': 'INTERMEDIATE',
+                        'متقدم': 'ADVANCED',
+                        'جميع المستويات': 'ALL_LEVELS',
+                    };
+                    value = levels[TEXT(value)] ?? value;
+                } else if (typeof value === 'string' && ['نعم', 'لا'].includes(value.trim())) {
+                    value = value.trim() === 'نعم' ? 'TRUE' : 'FALSE';
+                }
+                values[index] = value;
+                if (TEXT(value)) hasInput = true;
+            });
+            if (!hasInput) return [];
+            const row: CourseImportRow = {
+                getCell: column => ({ value: values[column - 1] }),
+            };
+            return [{ row, line: 2 }];
+        }
+
+        const firstRow = this.firstDataRow(sheet);
+        const rows = sheet.getRows(firstRow, Math.max(0, sheet.rowCount - firstRow + 1)) ?? [];
+        return rows.map((row, index) => ({ row, line: firstRow + index }));
     }
 
     private firstDataRow(sheet: ExcelJS.Worksheet): number {

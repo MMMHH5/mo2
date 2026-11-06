@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api';
 import BrandLogo from '@/components/BrandLogo';
 import CertificateDesignFrame, { type CertificateDesign } from '@/components/CertificateDesignFrame';
+import CertificateSeal, { type CertificateSealShape } from '@/components/CertificateSeal';
 
 export interface CertificateTemplateData {
     academyNameAr: string;
@@ -19,6 +20,12 @@ export interface CertificateTemplateData {
     designKey?: 'classic' | 'royal' | 'modern';
     layout?: Record<string, { x: number; y: number } | unknown>;
 }
+
+type CertificateCustomElement = {
+    id: string;
+    textAr: string;
+    textEn: string;
+};
 
 export interface CertificateProps {
     studentName: string;
@@ -87,6 +94,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
     const certificateTitle = isAr ? template?.titleAr : template?.titleEn;
     const certificateDescription = isAr ? template?.descriptionAr : template?.descriptionEn;
     const savedStyle = template?.layout?.__visualStyle;
+    const sealSettingsConfigured = Boolean(savedStyle && typeof savedStyle === 'object' && ('showSeal' in savedStyle || 'sealMode' in savedStyle));
     const visualStyle = {
         primaryColor: savedStyle && typeof savedStyle === 'object' && 'primaryColor' in savedStyle && typeof savedStyle.primaryColor === 'string' ? savedStyle.primaryColor : '#12305A',
         accentColor: savedStyle && typeof savedStyle === 'object' && 'accentColor' in savedStyle && typeof savedStyle.accentColor === 'string' ? savedStyle.accentColor : '#C6A15B',
@@ -100,7 +108,26 @@ export default function CertificateBilingual({ studentName, courseName, instruct
         certificateDesign: savedStyle && typeof savedStyle === 'object' && 'certificateDesign' in savedStyle && typeof savedStyle.certificateDesign === 'string' ? savedStyle.certificateDesign as CertificateDesign : 'classic',
         fontFamily: savedStyle && typeof savedStyle === 'object' && 'fontFamily' in savedStyle && typeof savedStyle.fontFamily === 'string' ? savedStyle.fontFamily : "'Georgia', 'Times New Roman', serif",
         fontUrl: savedStyle && typeof savedStyle === 'object' && 'fontUrl' in savedStyle && typeof savedStyle.fontUrl === 'string' ? savedStyle.fontUrl : null,
+        fontSizes: savedStyle && typeof savedStyle === 'object' && 'fontSizes' in savedStyle && savedStyle.fontSizes && typeof savedStyle.fontSizes === 'object' ? savedStyle.fontSizes as Record<string, number> : {},
+        fontWeights: savedStyle && typeof savedStyle === 'object' && 'fontWeights' in savedStyle && savedStyle.fontWeights && typeof savedStyle.fontWeights === 'object' ? savedStyle.fontWeights as Record<string, number> : {},
+        customElements: savedStyle && typeof savedStyle === 'object' && 'customElements' in savedStyle && Array.isArray(savedStyle.customElements) ? savedStyle.customElements as CertificateCustomElement[] : [],
+        showSeal: savedStyle && typeof savedStyle === 'object' && 'showSeal' in savedStyle && typeof savedStyle.showSeal === 'boolean' ? savedStyle.showSeal : Boolean(template?.academyStampUrl),
+        sealMode: savedStyle && typeof savedStyle === 'object' && 'sealMode' in savedStyle && savedStyle.sealMode === 'uploaded' ? 'uploaded' : savedStyle && typeof savedStyle === 'object' && 'sealMode' in savedStyle && savedStyle.sealMode === 'platform' ? 'platform' : template?.academyStampUrl ? 'uploaded' : 'platform',
+        sealShape: savedStyle && typeof savedStyle === 'object' && 'sealShape' in savedStyle && typeof savedStyle.sealShape === 'string' ? savedStyle.sealShape as CertificateSealShape : 'round',
+        sealColor: savedStyle && typeof savedStyle === 'object' && 'sealColor' in savedStyle && typeof savedStyle.sealColor === 'string' ? savedStyle.sealColor : '#B42318',
+        sealFillColor: savedStyle && typeof savedStyle === 'object' && 'sealFillColor' in savedStyle && typeof savedStyle.sealFillColor === 'string' ? savedStyle.sealFillColor : '#FFF9F2',
+        sealBorderStyle: savedStyle && typeof savedStyle === 'object' && 'sealBorderStyle' in savedStyle && (savedStyle.sealBorderStyle === 'double' || savedStyle.sealBorderStyle === 'solid' || savedStyle.sealBorderStyle === 'dashed') ? savedStyle.sealBorderStyle as 'double' | 'solid' | 'dashed' : 'double',
+        sealSize: savedStyle && typeof savedStyle === 'object' && 'sealSize' in savedStyle && typeof savedStyle.sealSize === 'number' ? Math.min(260, Math.max(60, savedStyle.sealSize)) : 150,
+        sealOpacity: savedStyle && typeof savedStyle === 'object' && 'sealOpacity' in savedStyle && typeof savedStyle.sealOpacity === 'number' ? Math.min(1, Math.max(0.1, savedStyle.sealOpacity)) : 0.78,
+        sealRotation: savedStyle && typeof savedStyle === 'object' && 'sealRotation' in savedStyle && typeof savedStyle.sealRotation === 'number' ? Math.min(180, Math.max(-180, savedStyle.sealRotation)) : -8,
+        sealImageHue: savedStyle && typeof savedStyle === 'object' && 'sealImageHue' in savedStyle && typeof savedStyle.sealImageHue === 'number' ? Math.min(360, Math.max(0, savedStyle.sealImageHue)) : 0,
+        sealTextAr: savedStyle && typeof savedStyle === 'object' && 'sealTextAr' in savedStyle && typeof savedStyle.sealTextAr === 'string' ? savedStyle.sealTextAr : 'ختم الأكاديمية',
+        sealTextEn: savedStyle && typeof savedStyle === 'object' && 'sealTextEn' in savedStyle && typeof savedStyle.sealTextEn === 'string' ? savedStyle.sealTextEn : 'OFFICIAL SEAL',
     };
+    const textStyle = (key: string, defaultSize: number, defaultWeight: number) => ({
+        fontSize: `${Math.min(64, Math.max(10, Number(visualStyle.fontSizes[key]) || defaultSize))}px`,
+        fontWeight: Math.min(900, Math.max(400, Number(visualStyle.fontWeights[key]) || defaultWeight)),
+    });
     const logoClass = visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'square' ? 'rounded-none' : 'rounded-lg';
     const frameBorderStyle = visualStyle.frameStyle === 'dashed' ? 'dashed' : visualStyle.frameStyle === 'ornate' ? 'double' : 'solid';
     const logoSrc = visualStyle.logoUrl.startsWith('/uploads/certificates/branding/') && !visualStyle.logoUrl.includes('..')
@@ -118,6 +145,12 @@ export default function CertificateBilingual({ studentName, courseName, instruct
         if (!point || typeof point !== 'object' || !('x' in point) || !('y' in point)) return 0;
         const value = point[axis] ?? baseline;
         return typeof value === 'number' ? (value - baseline) * 5.6 : 0;
+    };
+    const layoutPosition = (key: string, axis: 'x' | 'y', fallback: number) => {
+        const point = template?.layout?.[key];
+        if (!point || typeof point !== 'object') return fallback;
+        const value = axis === 'x' && 'x' in point ? point.x : axis === 'y' && 'y' in point ? point.y : undefined;
+        return typeof value === 'number' ? Math.min(100, Math.max(0, value)) : fallback;
     };
     const [scale, setScale] = useState(1);
     const certRef = useRef<HTMLDivElement>(null);
@@ -226,7 +259,15 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     <p className="mt-1 text-[9px] font-bold" style={{ color: visualStyle.accentColor }}>{isAr ? 'توقيع المدير' : 'Director signature'}</p>
                                 </div>
                             </div>
-                            {template?.academyStampUrl && <Image src={`${API_BASE_URL}${template.academyStampUrl}`} alt={isAr ? 'ختم الأكاديمية' : 'Academy seal'} width={120} height={120} unoptimized className="mx-auto h-16 w-16 object-contain" />}
+                            {visualStyle.showSeal && (
+                                <div className="mx-auto" style={{ opacity: sealSettingsConfigured ? visualStyle.sealOpacity : 1, transform: `rotate(${sealSettingsConfigured ? visualStyle.sealRotation : 0}deg)` }}>
+                                    {visualStyle.sealMode === 'uploaded' && template?.academyStampUrl ? (
+                                        <Image src={`${API_BASE_URL}${template.academyStampUrl}`} alt={isAr ? 'ختم الأكاديمية' : 'Academy seal'} width={260} height={260} unoptimized className="object-contain" style={{ width: sealSettingsConfigured ? Math.min(120, visualStyle.sealSize * 0.45) : 64, height: sealSettingsConfigured ? Math.min(120, visualStyle.sealSize * 0.45) : 64, backgroundColor: sealSettingsConfigured ? visualStyle.sealFillColor : undefined, filter: sealSettingsConfigured ? `hue-rotate(${visualStyle.sealImageHue}deg)` : undefined }} />
+                                    ) : visualStyle.sealMode === 'platform' ? (
+                                        <CertificateSeal logoUrl={logoSrc} text={isAr ? visualStyle.sealTextAr : visualStyle.sealTextEn} color={visualStyle.sealColor} fillColor={visualStyle.sealFillColor} shape={visualStyle.sealShape} borderStyle={visualStyle.sealBorderStyle} size={Math.min(120, visualStyle.sealSize * 0.45)} />
+                                    ) : null}
+                                </div>
+                            )}
                             <div className="flex items-center justify-center gap-4 border-t border-dashed pt-5" style={{ borderColor: colorWithOpacity(visualStyle.primaryColor, 0.15) }}>
                                 <div className="shrink-0 rounded border bg-white p-1.5 shadow-sm" style={{ borderColor: colorWithOpacity(visualStyle.primaryColor, 0.1) }}>
                                     <QRCodeSVG url={verificationUrl} lang={lang} color={visualStyle.primaryColor} />
@@ -259,6 +300,39 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                         }}
                     >
                         <CertificateDesignFrame design={visualStyle.certificateDesign} primaryColor={visualStyle.primaryColor} accentColor={visualStyle.accentColor} />
+                        {visualStyle.showSeal && sealSettingsConfigured && (
+                            <div
+                                className="absolute z-20"
+                                style={{
+                                    left: `${layoutPosition('stamp', 'x', 16)}%`,
+                                    top: `${layoutPosition('stamp', 'y', 82)}%`,
+                                    transform: `translate(-50%, -50%) rotate(${visualStyle.sealRotation}deg)`,
+                                    opacity: visualStyle.sealOpacity,
+                                }}
+                            >
+                                {visualStyle.sealMode === 'uploaded' && template?.academyStampUrl ? (
+                                    <Image
+                                        src={`${API_BASE_URL}${template.academyStampUrl}`}
+                                        alt={isAr ? 'ختم الأكاديمية' : 'Academy seal'}
+                                        width={260}
+                                        height={260}
+                                        unoptimized
+                                        className="object-contain"
+                                        style={{ width: visualStyle.sealSize, height: visualStyle.sealSize, backgroundColor: visualStyle.sealFillColor, filter: `hue-rotate(${visualStyle.sealImageHue}deg)` }}
+                                    />
+                                ) : visualStyle.sealMode === 'platform' ? (
+                                    <CertificateSeal
+                                        logoUrl={logoSrc}
+                                        text={isAr ? visualStyle.sealTextAr : visualStyle.sealTextEn}
+                                        color={visualStyle.sealColor}
+                                        fillColor={visualStyle.sealFillColor}
+                                        shape={visualStyle.sealShape}
+                                        borderStyle={visualStyle.sealBorderStyle}
+                                        size={visualStyle.sealSize}
+                                    />
+                                ) : null}
+                            </div>
+                        )}
 
                         {/* === DECORATIVE BORDER === */}
                         {visualStyle.frameStyle !== 'none' && (
@@ -303,6 +377,28 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             className="relative z-10 h-full flex flex-col items-center justify-between"
                             style={{ inset: '24px', position: 'absolute', padding: isAr ? '40px 48px 32px' : '40px 48px 32px' }}
                         >
+                            {visualStyle.customElements.map((element) => {
+                                const position = template?.layout?.[`custom-${element.id}`];
+                                if (!position || typeof position !== 'object' || !('x' in position) || !('y' in position)) return null;
+                                const x = typeof position.x === 'number' ? Math.min(92, Math.max(8, position.x)) : 50;
+                                const y = typeof position.y === 'number' ? Math.min(94, Math.max(6, position.y)) : 50;
+                                return (
+                                    <div
+                                        key={element.id}
+                                        className="absolute max-w-[80%] -translate-x-1/2 -translate-y-1/2 text-center"
+                                        style={{
+                                            left: `${x}%`,
+                                            top: `${y}%`,
+                                            color: visualStyle.textColor,
+                                            fontFamily: certificateFontFamily,
+                                            ...textStyle(`custom-${element.id}`, 18, 600),
+                                        }}
+                                        dir={isAr ? 'rtl' : 'ltr'}
+                                    >
+                                        {isAr ? element.textAr : element.textEn}
+                                    </div>
+                                );
+                            })}
 
                             {/* ===== TOP SECTION: Logo + Title ===== */}
                             <div className="text-center w-full" style={{ transform: `translate(${layoutOffset('brand', 'x', 50)}px, ${layoutOffset('brand', 'y', 9) + layoutOffset('title', 'y', 19)}px)` }}>
@@ -313,7 +409,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                             <Image src={logoSrc} alt={isAr ? 'شعار المنصة' : 'Platform logo'} width={400} height={110} unoptimized className={`h-16 w-52 ${logoClass} object-contain`} />
                                         </div>
                                     )}
-                                    <h1 className="text-2xl font-black tracking-tight" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily }}>
+                                    <h1 className="text-2xl tracking-tight" style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily, ...textStyle('brand', 24, 700) }}>
                                         {academyName || 'Laxalab Academy'}
                                     </h1>
                                 </div>
@@ -328,7 +424,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* Certificate Title */}
                                 <h2
                                     className="text-[11px] font-bold uppercase tracking-[0.4em] mb-1"
-                                    style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily }}
+                                    style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily, ...textStyle('title', 18, 700) }}
                                 >
                                     {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion')}
                                 </h2>
@@ -352,7 +448,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                         style={{
                                             color: visualStyle.textColor,
                                             fontFamily: certificateFontFamily,
-                                            fontWeight: 700,
+                                            ...textStyle('recipient', 38, 700),
                                         }}
                                     >
                                         {studentName}
@@ -371,10 +467,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* === Course Name === */}
                                 <p
                                     className="text-[22px] font-bold mb-3"
-                                    style={{
-                                        color: visualStyle.textColor,
-                                        fontFamily: certificateFontFamily,
-                                    }}
+                                    style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily, ...textStyle('course', 24, 700) }}
                                 >
                                     {courseName}
                                 </p>
@@ -382,7 +475,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* Description */}
                                 <p
                                     className="text-[11px] leading-relaxed max-w-md mb-4"
-                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.55), fontFamily: certificateFontFamily }}
+                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.55), fontFamily: certificateFontFamily, ...textStyle('description', 15, 400) }}
                                 >
                                     {certificateDescription || (isAr
                                         ? 'بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.'
@@ -428,7 +521,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     <div className="rounded border bg-white p-1.5 shadow-sm" style={{ borderColor: colorWithOpacity(visualStyle.primaryColor, 0.1) }}>
                                         <QRCodeSVG url={verificationUrl} lang={lang} color={visualStyle.primaryColor} />
                                     </div>
-                                    {template?.academyStampUrl && <Image src={`${API_BASE_URL}${template.academyStampUrl}`} alt={isAr ? 'ختم الأكاديمية' : 'Academy seal'} width={100} height={100} unoptimized className="h-14 w-14 object-contain" />}
+                                    {!sealSettingsConfigured && template?.academyStampUrl && <Image src={`${API_BASE_URL}${template.academyStampUrl}`} alt={isAr ? 'ختم الأكاديمية' : 'Academy seal'} width={100} height={100} unoptimized className="h-14 w-14 object-contain" />}
                                     <p className="text-[7px] font-mono font-bold tracking-[0.15em]" style={{ color: colorWithOpacity(visualStyle.textColor, 0.55) }}>
                                         {isAr ? 'امسح للتحقق' : 'SCAN TO VERIFY'}
                                     </p>
