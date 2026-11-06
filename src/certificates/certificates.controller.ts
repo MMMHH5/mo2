@@ -117,7 +117,7 @@ export class CertificatesController {
             if (CERTIFICATE_IMAGE_MIMES.includes(file.mimetype)) callback(null, true);
             else callback(new BadRequestException('Only PNG, JPEG, and WEBP images are allowed.'), false);
         },
-        limits: { fileSize: 2 * 1024 * 1024, fieldSize: 64 * 1024, files: 1, parts: 2 },
+        limits: { fileSize: 2 * 1024 * 1024, fieldSize: 64 * 1024, fields: 1, files: 1, parts: 2 },
     }))
     async saveMySignature(@UploadedFile() file: Express.Multer.File, @Request() req: any) {
         if (!file) throw new BadRequestException('An image file is required.');

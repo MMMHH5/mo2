@@ -64,7 +64,7 @@ export class AdminCoursesController {
     @Post('import')
     @UseInterceptors(FileInterceptor('file', {
         storage: require('multer').memoryStorage(),
-        limits: { fileSize: 15 * 1024 * 1024, files: 1, fields: 10 },
+        limits: { fileSize: 15 * 1024 * 1024, fieldSize: 64 * 1024, files: 1, fields: 10 },
         fileFilter: (_req, file, callback) => {
             callback(null, file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || file.originalname.toLowerCase().endsWith('.xlsx'));
         },
