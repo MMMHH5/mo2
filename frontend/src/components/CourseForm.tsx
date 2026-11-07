@@ -187,7 +187,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
         let active = true;
         const load = async () => {
             try {
-                const res = await api.get(`/courses/${courseId}`);
+                const res = await api.get(`/courses/${courseId}`, { params: { includeUnpublished: true } });
                 const data = res.data as CourseInitial;
                 if (!active) return;
                 reset(buildValues(data));
