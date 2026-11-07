@@ -1,0 +1,107 @@
+{
+  "titleAr": "مقدمة في الأمن السيبراني",
+  "titleEn": "Introduction to Cybersecurity",
+  "excerptAr": "تعرف على مبادئ الأمن السيبراني.",
+  "excerptEn": "Learn cybersecurity fundamentals.",
+  "descriptionAr": "وصف الدورة بالعربية.",
+  "descriptionEn": "Course description in English.",
+  "categoryAr": "الأمن السيبراني",
+  "categoryEn": "Cybersecurity",
+  "level": "BEGINNER",
+  "contentType": "RECORDED",
+  "language": "Arabic",
+  "hoursOfContent": 2,
+  "durationAr": "أسبوعان",
+  "durationEn": "2 weeks",
+  "syllabusAr": "",
+  "syllabusEn": "",
+  "coverImageUrl": "",
+  "introVideoUrl": "",
+  "videoFileUrl": "",
+  "certificateIssued": true,
+  "quizzesIncluded": false,
+  "projectsIncluded": false,
+  "assignmentsIncluded": false,
+  "liveSessionsIncluded": false,
+  "downloadableResources": false,
+  "lifetimeAccess": false,
+  "communityAccess": false,
+  "objectives": [
+    {
+      "objectiveAr": "تحليل التنبيهات الأمنية",
+      "objectiveEn": "Analyze security alerts",
+      "orderIndex": 0
+    }
+  ],
+  "prerequisites": [
+    {
+      "prerequisiteAr": "معرفة أساسية بالحاسب",
+      "prerequisiteEn": "Basic computer knowledge",
+      "orderIndex": 0
+    }
+  ],
+  "audiences": [],
+  "chapters": [
+    {
+      "importKey": "module-1",
+      "titleAr": "مقدمة",
+      "titleEn": "Introduction",
+      "orderIndex": 0,
+      "modules": [
+        {
+          "importKey": "lesson-1",
+          "titleAr": "الدرس الأول",
+          "titleEn": "Lesson 1",
+          "descriptionAr": "محتوى الدرس بالعربية.",
+          "descriptionEn": "Lesson content in English.",
+          "durationMinutes": 20,
+          "orderIndex": 0,
+          "outcomes": [],
+          "files": [],
+          "links": []
+        }
+      ]
+    }
+  ],
+  "quizzes": [
+    {
+      "quizKey": "quiz-1",
+      "titleAr": "اختبار المقدمة",
+      "titleEn": "Introduction Quiz",
+      "passScore": 60,
+      "isFinal": false,
+      "moduleRef": "lesson-1",
+      "orderIndex": 0,
+      "questions": [
+        {
+          "type": "SINGLE_CHOICE",
+          "textAr": "ما الهدف من المراقبة الأمنية؟",
+          "textEn": "What is the goal of security monitoring?",
+          "options": [
+            {
+              "textAr": "اكتشاف الأنشطة المشبوهة",
+              "textEn": "Detect suspicious activity"
+            },
+            {
+              "textAr": "لا شيء مما سبق",
+              "textEn": "None of the above"
+            }
+          ],
+          "correctIndex": 0,
+          "orderIndex": 0
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "lessonKey": "lesson-1",
+      "type": "LINK",
+      "url": "https://example.com",
+      "labelAr": "مرجع الدرس",
+      "labelEn": "Lesson reference"
+    }
+  ],
+  "faqs": [],
+  "gallery": []
+}

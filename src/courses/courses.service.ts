@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { createHash, randomUUID } from 'crypto';
 import { Prisma, CourseContentType, CourseOpeningStatus, DeliveryMode, EnrollmentStatus, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -39,8 +39,8 @@ export class CoursesService {
         private notifications: NotificationsService,
     ) { }
 
-    async create(data: CreateCourseDto, instructorId: string) {
-        const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, ...rest } = data;
+    async create(data: CreateCourseDto, instructorId: string, importIdentity?: { key: string; payloadHash: string }) {
+        const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, quizzes, ...rest } = data;
 
         assertLessonVideosAllowed(data.contentType, [
             ...(modules ?? []).map((m) => ({ videoUrl: m.videoUrl })),
@@ -55,27 +55,129 @@ export class CoursesService {
         // 500. Creating the id here lets buildChapters connect it explicitly.
         const id = randomUUID();
 
-        return this.prisma.course.create({
-            data: {
-                ...rest,
-                id,
-                instructorId,
-                modules: this.buildModules(modules),
-                chapters: this.buildChapters(chapters, id),
-                objectives: this.buildObjectives(objectives),
-                prerequisites: this.buildPrerequisites(prerequisites),
-                audiences: this.buildAudiences(audiences),
-                faqs: this.buildFaqs(faqs),
-                gallery: this.buildGallery(gallery),
-            },
+        const courseData = {
+            ...rest,
+            id,
+            instructorId,
+            modules: this.buildModules(modules),
+            chapters: this.buildChapters(chapters, id),
+            objectives: this.buildObjectives(objectives),
+            prerequisites: this.buildPrerequisites(prerequisites),
+            audiences: this.buildAudiences(audiences),
+            faqs: this.buildFaqs(faqs),
+            gallery: this.buildGallery(gallery),
+        };
+        if (!quizzes?.length && !importIdentity) {
+            return this.prisma.course.create({ data: courseData });
+        }
+
+        return this.prisma.$transaction(async (transaction) => {
+            const course = await transaction.course.create({ data: courseData });
+            const importedModules = quizzes?.length ? await transaction.module.findMany({
+                where: { courseId: id, chapterId: { not: null } },
+                select: {
+                    id: true,
+                    titleAr: true,
+                    titleEn: true,
+                    orderIndex: true,
+                    chapter: { select: { titleAr: true, titleEn: true, orderIndex: true } },
+                },
+            }) : [];
+            const moduleIds = new Map<string, string>();
+            for (const chapter of chapters ?? []) {
+                for (const lesson of chapter.modules ?? []) {
+                    const match = importedModules.find((created) =>
+                        created.chapter?.orderIndex === (chapter.orderIndex ?? 0)
+                        && created.chapter.titleAr === chapter.titleAr
+                        && created.chapter.titleEn === chapter.titleEn
+                        && created.orderIndex === (lesson.orderIndex ?? 0)
+                        && created.titleAr === lesson.titleAr
+                        && created.titleEn === lesson.titleEn,
+                    );
+                    if (match && lesson.importKey) moduleIds.set(lesson.importKey, match.id);
+                }
+            }
+            for (const quiz of quizzes ?? []) {
+                const moduleId = quiz.isFinal ? undefined : moduleIds.get(quiz.moduleRef ?? '');
+                if (!quiz.isFinal && !moduleId) {
+                    throw new BadRequestException(`Quiz "${quiz.titleEn}" refers to a lesson that was not created.`);
+                }
+                await transaction.quiz.create({
+                    data: {
+                        titleAr: quiz.titleAr,
+                        titleEn: quiz.titleEn,
+                        descriptionAr: quiz.descriptionAr,
+                        descriptionEn: quiz.descriptionEn,
+                        passScore: quiz.passScore ?? 60,
+                        isFinal: quiz.isFinal ?? false,
+                        orderIndex: quiz.orderIndex ?? 0,
+                        course: { connect: { id } },
+                        ...(moduleId ? { module: { connect: { id: moduleId } } } : {}),
+                        questions: {
+                            create: quiz.questions.map((question, index) => ({
+                                type: question.type,
+                                textAr: question.textAr,
+                                textEn: question.textEn,
+                                options: question.options as Prisma.InputJsonValue,
+                                correctIndex: question.correctIndex,
+                                explanationAr: question.explanationAr,
+                                explanationEn: question.explanationEn,
+                                orderIndex: question.orderIndex ?? index,
+                            })),
+                        },
+                    },
+                });
+            }
+            if (importIdentity) {
+                await transaction.courseImportRequest.create({
+                    data: {
+                        idempotencyKey: importIdentity.key,
+                        payloadHash: importIdentity.payloadHash,
+                        courseId: id,
+                    },
+                });
+            }
+            return course;
         });
+    }
+
+    async createImported(data: CreateCourseDto, instructorId: string, idempotencyKey: string) {
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+            throw new BadRequestException('Import idempotency key must be a UUID.');
+        }
+        const payloadHash = createHash('sha256').update(JSON.stringify(data)).digest('hex');
+        const findExisting = async () => this.prisma.courseImportRequest.findUnique({
+            where: { idempotencyKey },
+            include: { course: true },
+        });
+        const returnExisting = (request: Awaited<ReturnType<typeof findExisting>>) => {
+            if (!request) return undefined;
+            if (request.payloadHash !== payloadHash) {
+                throw new ConflictException('This import key was already used with different course data.');
+            }
+            return request.course;
+        };
+        const existing = returnExisting(await findExisting());
+        if (existing) return existing;
+        try {
+            return this.create(data, instructorId, { key: idempotencyKey, payloadHash });
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+                const racedRequest = returnExisting(await findExisting());
+                if (racedRequest) return racedRequest;
+            }
+            throw error;
+        }
     }
 
     async update(id: string, data: UpdateCourseDto, viewer?: CourseViewer) {
         const existing = await this.prisma.course.findUnique({ where: { id } });
         if (!existing || existing.archivedAt) throw new NotFoundException('Course not found');
 
-        const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, ...rest } = data;
+        const { modules, chapters, objectives, prerequisites, audiences, faqs, gallery, quizzes, ...rest } = data;
+        if (quizzes?.length) {
+            throw new BadRequestException('Quiz editing is not supported on course updates.');
+        }
 
         // The lesson videos and the meeting schedule are two sides of the same
         // promise, so a type change has to respect what is already stored: a

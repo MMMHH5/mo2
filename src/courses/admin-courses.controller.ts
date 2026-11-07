@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Delete, UseGuards, Request, Ip, UseInterceptors, UploadedFile, BadRequestException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Delete, UseGuards, Request, Ip, UseInterceptors, UploadedFile, BadRequestException, Query, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CoursesService } from './courses.service';
@@ -55,6 +55,79 @@ export class AdminCoursesController {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             disposition: 'attachment; filename="LaxaLab-Course-Import-Template.xlsx"',
         });
+    }
+
+    @ApiOperation({ summary: 'Download a JSON, Markdown, or structured Excel course template' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_WRITE)
+    @Get('import/templates/:format')
+    async downloadCourseTemplate(@Param('format') format: string) {
+        const templates = {
+            json: {
+                buffer: this.courseImportService.jsonTemplate(),
+                type: 'application/json; charset=utf-8',
+                filename: 'course-template.json',
+            },
+            md: {
+                buffer: this.courseImportService.markdownTemplate(),
+                type: 'text/markdown; charset=utf-8',
+                filename: 'course-template.md',
+            },
+            xlsx: {
+                buffer: await this.courseImportService.structuredTemplate(),
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                filename: 'course-template.xlsx',
+            },
+        };
+        const template = templates[format as keyof typeof templates];
+        if (!template) throw new BadRequestException('الصيغ المتاحة للقوالب: json وmd وxlsx.');
+        return new StreamableFile(template.buffer, {
+            type: template.type,
+            disposition: `attachment; filename="${template.filename}"`,
+        });
+    }
+
+    @ApiOperation({ summary: 'Parse and validate a course file without saving it' })
+    @ApiConsumes('multipart/form-data')
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_WRITE)
+    @Post('import/preview')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: require('multer').memoryStorage(),
+        limits: { fileSize: 15 * 1024 * 1024, fieldSize: 64 * 1024, files: 1, fields: 10 },
+        fileFilter: (_req, file, callback) => {
+            const supported = /\.(json|md|xlsx)$/i.test(file.originalname);
+            callback(supported ? null : new BadRequestException('الصيغ المدعومة هي JSON وMarkdown وExcel (.xlsx).'), supported);
+        },
+    }))
+    previewImport(@UploadedFile() file: Express.Multer.File) {
+        if (!file?.buffer) throw new BadRequestException('يرجى اختيار ملف JSON أو Markdown أو Excel (.xlsx).');
+        return this.courseImportService.previewFile(file.originalname, file.buffer);
+    }
+
+    @ApiOperation({ summary: 'Revalidate edited course import preview data' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_WRITE)
+    @Post('import/validate')
+    validateImport(@Body() body: unknown) {
+        return this.courseImportService.validateImportData(body);
+    }
+
+    @ApiOperation({ summary: 'Create a validated imported course exactly once per idempotency key' })
+    @Roles(Role.ADMIN, Role.COURSE_MANAGER)
+    @RequirePermissions(PERMISSIONS.COURSES_WRITE)
+    @Post('import/confirm')
+    confirmImport(
+        @Body() body: unknown,
+        @Request() req: any,
+        @Headers('idempotency-key') idempotencyKey: string,
+    ) {
+        if (!idempotencyKey) throw new BadRequestException('Import idempotency key is required.');
+        const validation = this.courseImportService.validateImportData(body);
+        if (!validation.valid) {
+            throw new BadRequestException({ message: 'تعذر إنشاء الدورة؛ صحح أخطاء البيانات أولاً.', errors: validation.errors });
+        }
+        return this.coursesService.createImported(validation.data, req.user.userId, idempotencyKey);
     }
 
     @ApiOperation({ summary: 'Create courses in bulk from a validated Excel workbook' })

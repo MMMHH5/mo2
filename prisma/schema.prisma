@@ -316,8 +316,17 @@ model Course {
   learningSessions    LearningSession[]
   refundRequests      RefundRequest[]
   courseInterests     CourseInterest[]
+  importRequests      CourseImportRequest[]
 
   @@index([archivedAt])
+}
+
+model CourseImportRequest {
+  idempotencyKey String   @id
+  payloadHash    String
+  courseId       String   @unique
+  createdAt      DateTime @default(now())
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model CourseOpening {

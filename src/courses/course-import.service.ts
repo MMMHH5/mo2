@@ -4,6 +4,324 @@ import { CourseContentType, CourseLevel } from '@prisma/client';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 
+const IMPORT_MAX_BYTES = 15 * 1024 * 1024;
+const COURSE_FIELDS = [
+    'titleAr', 'titleEn', 'excerptAr', 'excerptEn', 'descriptionAr', 'descriptionEn',
+    'categoryAr', 'categoryEn', 'level', 'contentType', 'language', 'hoursOfContent',
+    'durationAr', 'durationEn', 'syllabusAr', 'syllabusEn', 'coverImageUrl',
+    'introVideoUrl', 'videoFileUrl', 'certificateIssued', 'quizzesIncluded',
+    'projectsIncluded', 'assignmentsIncluded', 'liveSessionsIncluded',
+    'downloadableResources', 'lifetimeAccess', 'communityAccess',
+] as const;
+const COURSE_INFO_FIELDS = new Set<string>(COURSE_FIELDS);
+const objectValue = (value: unknown): Record<string, unknown> | undefined =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : undefined;
+const isNonEmptyString = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
+const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
+const pickFields = (value: unknown, fields: readonly string[]) => {
+    const source = objectValue(value);
+    if (!source) return {};
+    return Object.fromEntries(fields.filter(field => source[field] !== undefined).map(field => [field, source[field]]));
+};
+const IMPORT_RESOURCE_FIELDS = ['lessonKey', 'type', 'url', 'nameAr', 'nameEn', 'labelAr', 'labelEn'] as const;
+const IMPORT_REQUIRED_COLUMNS: Record<string, Set<string>> = {
+    Objectives: new Set(['objectiveAr', 'objectiveEn']),
+    Requirements: new Set(['prerequisiteAr', 'prerequisiteEn']),
+    Modules: new Set(['importKey', 'titleAr', 'titleEn']),
+    Lessons: new Set(['importKey', 'chapterKey', 'titleAr', 'titleEn']),
+    Quizzes: new Set(['quizKey', 'titleAr', 'titleEn']),
+    Questions: new Set(['quizKey', 'type', 'textAr', 'textEn', 'options', 'correctIndex']),
+    Resources: new Set(['lessonKey', 'type', 'url']),
+    Audiences: new Set(['audienceAr', 'audienceEn']),
+    FAQs: new Set(['questionAr', 'questionEn', 'answerAr', 'answerEn']),
+    Gallery: new Set(['url']),
+};
+const IMPORT_COLUMN_GUIDE: Record<string, string> = {
+    Field: 'اسم حقل الدورة كما هو في بنية الاستيراد.',
+    Value: 'قيمة الحقل في صف Course Info.',
+    contentType: 'نوع تقديم الدورة: LIVE أو RECORDED.',
+    level: 'المستوى: BEGINNER أو INTERMEDIATE أو ADVANCED أو ALL_LEVELS.',
+    importKey: 'مفتاح نصي فريد يستخدم لربط العناصر.',
+    chapterKey: 'يجب أن يطابق importKey في ورقة Modules.',
+    lessonKey: 'يجب أن يطابق importKey في ورقة Lessons.',
+    quizKey: 'مفتاح فريد للاختبار، تستخدمه ورقة Questions للربط.',
+    type: 'نوع السؤال أو المورد؛ استخدم القائمة المنسدلة.',
+    descriptionAr: 'محتوى الدرس بالعربية.',
+    descriptionEn: 'Lesson content in English.',
+    videoUrl: 'رابط فيديو الدرس أو مسار ملف موجود.',
+    durationMinutes: 'مدة الدرس بالدقائق كعدد صحيح.',
+    outcomes: 'مصفوفة JSON من مخرجات التعلم باللغتين.',
+    files: 'مصفوفة JSON من الملفات بروابطها وأسمائها.',
+    links: 'مصفوفة JSON من الروابط وتسمياتها.',
+    options: 'مصفوفة JSON من خيارات السؤال، كل خيار له textAr وtextEn.',
+    correctIndex: 'رقم الخيار الصحيح، يبدأ من صفر.',
+    passScore: 'درجة النجاح من 0 إلى 100.',
+    isFinal: 'TRUE أو FALSE؛ الاختبار النهائي لا يحتاج moduleRef.',
+    moduleRef: 'importKey للدرس الذي يرتبط به الاختبار.',
+    explanationAr: 'شرح الإجابة بالعربية.',
+    explanationEn: 'Explanation in English.',
+    orderIndex: 'الترتيب يبدأ من صفر؛ لا تكرر الرقم ضمن الوحدة.',
+    url: 'رابط HTTP/HTTPS أو مسار آمن يبدأ بـ /uploads/.',
+    nameAr: 'اسم الملف بالعربية.',
+    nameEn: 'اسم الملف بالإنجليزية.',
+    labelAr: 'تسمية الرابط بالعربية.',
+    labelEn: 'Link label in English.',
+    titleAr: 'العنوان بالعربية.',
+    titleEn: 'Title in English.',
+    objectiveAr: 'هدف التعلم بالعربية.',
+    objectiveEn: 'Learning objective in English.',
+    prerequisiteAr: 'المتطلب السابق بالعربية.',
+    prerequisiteEn: 'Prerequisite in English.',
+    audienceAr: 'الفئة المستهدفة بالعربية.',
+    audienceEn: 'Target audience in English.',
+    questionAr: 'السؤال بالعربية.',
+    questionEn: 'Question in English.',
+    answerAr: 'الإجابة بالعربية.',
+    answerEn: 'Answer in English.',
+    altAr: 'وصف بديل للصورة بالعربية.',
+    altEn: 'English image alternative text.',
+};
+export const COURSE_IMPORT_JSON_TEMPLATE = JSON.stringify({
+    titleAr: 'مقدمة في الأمن السيبراني',
+    titleEn: 'Introduction to Cybersecurity',
+    excerptAr: 'تعرف على مبادئ الأمن السيبراني.',
+    excerptEn: 'Learn cybersecurity fundamentals.',
+    descriptionAr: 'وصف الدورة بالعربية.',
+    descriptionEn: 'Course description in English.',
+    categoryAr: 'الأمن السيبراني',
+    categoryEn: 'Cybersecurity',
+    level: 'BEGINNER',
+    contentType: 'RECORDED',
+    language: 'Arabic',
+    hoursOfContent: 2,
+    durationAr: 'أسبوعان',
+    durationEn: '2 weeks',
+    syllabusAr: '',
+    syllabusEn: '',
+    coverImageUrl: '',
+    introVideoUrl: '',
+    videoFileUrl: '',
+    certificateIssued: true,
+    quizzesIncluded: false,
+    projectsIncluded: false,
+    assignmentsIncluded: false,
+    liveSessionsIncluded: false,
+    downloadableResources: false,
+    lifetimeAccess: false,
+    communityAccess: false,
+    objectives: [{ objectiveAr: 'تحليل التنبيهات الأمنية', objectiveEn: 'Analyze security alerts', orderIndex: 0 }],
+    prerequisites: [{ prerequisiteAr: 'معرفة أساسية بالحاسب', prerequisiteEn: 'Basic computer knowledge', orderIndex: 0 }],
+    audiences: [],
+    chapters: [{
+        importKey: 'module-1',
+        titleAr: 'مقدمة',
+        titleEn: 'Introduction',
+        orderIndex: 0,
+        modules: [{
+            importKey: 'lesson-1',
+            titleAr: 'الدرس الأول',
+            titleEn: 'Lesson 1',
+            descriptionAr: 'محتوى الدرس بالعربية.',
+            descriptionEn: 'Lesson content in English.',
+            durationMinutes: 20,
+            orderIndex: 0,
+            outcomes: [],
+            files: [],
+            links: [],
+        }],
+    }],
+    quizzes: [{
+        quizKey: 'quiz-1',
+        titleAr: 'اختبار المقدمة',
+        titleEn: 'Introduction Quiz',
+        passScore: 60,
+        isFinal: false,
+        moduleRef: 'lesson-1',
+        orderIndex: 0,
+        questions: [{
+            type: 'SINGLE_CHOICE',
+            textAr: 'ما الهدف من المراقبة الأمنية؟',
+            textEn: 'What is the goal of security monitoring?',
+            options: [
+                { textAr: 'اكتشاف الأنشطة المشبوهة', textEn: 'Detect suspicious activity' },
+                { textAr: 'لا شيء مما سبق', textEn: 'None of the above' },
+            ],
+            correctIndex: 0,
+            orderIndex: 0,
+        }],
+    }],
+    resources: [{
+        lessonKey: 'lesson-1',
+        type: 'LINK',
+        url: 'https://example.com',
+        labelAr: 'مرجع الدرس',
+        labelEn: 'Lesson reference',
+    }],
+    faqs: [],
+    gallery: [],
+}, null, 2);
+export const COURSE_IMPORT_MARKDOWN_TEMPLATE = `# Course Information
+
+Put course fields inside a JSON code block. Required fields: \`titleAr\`, \`titleEn\`, and \`contentType\`. \`contentType\` is \`LIVE\` or \`RECORDED\`; \`level\` is \`BEGINNER\`, \`INTERMEDIATE\`, \`ADVANCED\`, or \`ALL_LEVELS\`.
+
+\`\`\`json
+{
+  "titleAr": "مقدمة في الأمن السيبراني",
+  "titleEn": "Introduction to Cybersecurity",
+  "excerptAr": "نبذة قصيرة",
+  "excerptEn": "Short summary",
+  "categoryAr": "الأمن السيبراني",
+  "categoryEn": "Cybersecurity",
+  "level": "BEGINNER",
+  "contentType": "RECORDED",
+  "language": "Arabic",
+  "hoursOfContent": 2,
+  "durationAr": "أسبوعان",
+  "durationEn": "2 weeks",
+  "syllabusAr": "",
+  "syllabusEn": "",
+  "coverImageUrl": "",
+  "introVideoUrl": "",
+  "videoFileUrl": "",
+  "certificateIssued": true,
+  "quizzesIncluded": false,
+  "projectsIncluded": false,
+  "assignmentsIncluded": false,
+  "liveSessionsIncluded": false,
+  "downloadableResources": false,
+  "lifetimeAccess": false,
+  "communityAccess": false
+}
+\`\`\`
+
+# Course Description
+
+\`\`\`json
+{
+  "descriptionAr": "الوصف التفصيلي بالعربية",
+  "descriptionEn": "Full description in English",
+  "syllabusAr": "المنهج بالعربية",
+  "syllabusEn": "Syllabus in English"
+}
+\`\`\`
+
+# Learning Objectives
+
+\`\`\`json
+[
+  { "objectiveAr": "تحليل التنبيهات", "objectiveEn": "Analyze alerts", "orderIndex": 0 }
+]
+\`\`\`
+
+# Requirements
+
+\`\`\`json
+[
+  { "prerequisiteAr": "معرفة أساسية بالحاسب", "prerequisiteEn": "Basic computer knowledge", "orderIndex": 0 }
+]
+\`\`\`
+
+# Target Audience
+
+\`\`\`json
+[
+  { "audienceAr": "المبتدئون", "audienceEn": "Beginners", "orderIndex": 0 }
+]
+\`\`\`
+
+# Modules
+
+\`\`\`json
+[
+  {
+    "importKey": "module-1",
+    "titleAr": "مقدمة",
+    "titleEn": "Introduction",
+    "orderIndex": 0,
+    "modules": [
+      {
+        "importKey": "lesson-1",
+        "titleAr": "الدرس الأول",
+        "titleEn": "Lesson 1",
+        "descriptionAr": "محتوى الدرس",
+        "descriptionEn": "Lesson content",
+        "durationMinutes": 20,
+        "orderIndex": 0,
+        "outcomes": [],
+        "files": [],
+        "links": []
+      }
+    ]
+  }
+]
+\`\`\`
+
+# Quizzes
+
+The quiz types are \`SINGLE_CHOICE\`, \`MULTIPLE_CHOICE\`, and \`TRUE_FALSE\`. Questions are stored inside each quiz. \`moduleRef\` must match a lesson \`importKey\` for a lesson quiz. A final course quiz uses \`"isFinal": true\` and does not need \`moduleRef\`.
+
+\`\`\`json
+[
+  {
+    "quizKey": "quiz-1",
+    "titleAr": "اختبار المقدمة",
+    "titleEn": "Introduction Quiz",
+    "passScore": 60,
+    "isFinal": false,
+    "moduleRef": "lesson-1",
+    "orderIndex": 0,
+    "questions": [
+      {
+        "type": "SINGLE_CHOICE",
+        "textAr": "ما الهدف من المراقبة؟",
+        "textEn": "What is the goal of monitoring?",
+        "options": [
+          { "textAr": "اكتشاف التهديدات", "textEn": "Detect threats" },
+          { "textAr": "لا شيء", "textEn": "Nothing" }
+        ],
+        "correctIndex": 0,
+        "orderIndex": 0
+      }
+    ]
+  }
+]
+\`\`\`
+
+# Questions
+
+Questions belong to quizzes and are entered in each quiz's \`questions\` array.
+
+# Resources
+
+Attach resources to lessons using \`lessonKey\`, which must match a lesson \`importKey\`. \`type\` is \`FILE\` or \`LINK\`. URLs must use HTTP(S) or a safe \`/uploads/\` path.
+
+\`\`\`json
+[
+  {
+    "lessonKey": "lesson-1",
+    "type": "LINK",
+    "url": "https://example.com",
+    "labelAr": "مرجع الدرس",
+    "labelEn": "Lesson reference"
+  }
+]
+\`\`\`
+
+# FAQs
+
+\`\`\`json
+[]
+\`\`\`
+
+# Gallery
+
+\`\`\`json
+[]
+\`\`\`
+`;
+
 const TEXT = (value: unknown) => String(value ?? '').trim();
 const BOOL = (value: unknown, fallback = false) => {
     const normalized = TEXT(value).toUpperCase();
@@ -17,6 +335,9 @@ const NUM = (value: unknown, fallback?: number) => {
     return Number.isFinite(n) ? n : undefined;
 };
 type CourseImportRow = { getCell: (column: number) => { value: unknown } };
+type ImportValidationResult =
+    | { valid: true; data: CreateCourseDto; errors: string[]; warnings: string[]; missing: string[] }
+    | { valid: false; data: Partial<CreateCourseDto>; errors: string[]; warnings: string[]; missing: string[] };
 
 const isAllowedAssetUrl = (value: string) => {
     if (/^https?:\/\//i.test(value)) {
@@ -168,6 +489,605 @@ const FIELD_GUIDE: Record<string, string> = {
 @Injectable()
 export class CourseImportService {
     constructor(private readonly coursesService: CoursesService) {}
+
+    jsonTemplate(): Buffer {
+        return Buffer.from(COURSE_IMPORT_JSON_TEMPLATE, 'utf8');
+    }
+
+    markdownTemplate(): Buffer {
+        return Buffer.from(COURSE_IMPORT_MARKDOWN_TEMPLATE, 'utf8');
+    }
+
+    validateImportData(data: unknown) {
+        return this.normalizeAndValidate(data);
+    }
+
+    async previewFile(filename: string, buffer: Buffer) {
+        if (!buffer?.length || buffer.length > IMPORT_MAX_BYTES) {
+            throw new BadRequestException('حجم الملف فارغ أو يتجاوز الحد الأقصى 15MB.');
+        }
+        const extension = filename.split('.').pop()?.toLowerCase();
+        let raw: unknown;
+        if (extension === 'json') {
+            const text = buffer.toString('utf8');
+            if (text.includes('\u0000')) throw new BadRequestException('ملف JSON غير صالح.');
+            try {
+                raw = JSON.parse(text);
+            } catch {
+                throw new BadRequestException('تعذر قراءة JSON: تحقق من الأقواس والفواصل وعلامات الاقتباس.');
+            }
+        } else if (extension === 'md') {
+            const text = buffer.toString('utf8');
+            if (text.includes('\u0000')) throw new BadRequestException('ملف Markdown غير صالح.');
+            raw = this.parseMarkdown(text);
+        } else if (extension === 'xlsx') {
+            if (buffer.length < 4 || buffer[0] !== 0x50 || buffer[1] !== 0x4b) {
+                throw new BadRequestException('محتوى الملف لا يطابق صيغة Excel .xlsx.');
+            }
+            raw = await this.parseStructuredWorkbook(buffer);
+        } else {
+            throw new BadRequestException('الصيغ المدعومة هي JSON وMarkdown وExcel (.xlsx).');
+        }
+        return this.normalizeAndValidate(raw);
+    }
+
+    async structuredTemplate(): Promise<Buffer> {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'LaxaLab Academy';
+        workbook.created = new Date();
+        const sheets: { name: string; headers: string[]; sample: unknown[] }[] = [
+            { name: 'Course Info', headers: ['Field', 'Value'], sample: ['titleAr', 'مقدمة في الأمن السيبراني'] },
+            { name: 'Objectives', headers: ['objectiveAr', 'objectiveEn', 'orderIndex'], sample: ['تحليل التنبيهات الأمنية', 'Analyze security alerts', 0] },
+            { name: 'Requirements', headers: ['prerequisiteAr', 'prerequisiteEn', 'orderIndex'], sample: ['معرفة أساسية بالحاسب', 'Basic computer knowledge', 0] },
+            { name: 'Modules', headers: ['importKey', 'titleAr', 'titleEn', 'orderIndex'], sample: ['module-1', 'مقدمة', 'Introduction', 0] },
+            { name: 'Lessons', headers: ['importKey', 'chapterKey', 'titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'videoUrl', 'durationMinutes', 'orderIndex', 'outcomes', 'files', 'links'], sample: ['lesson-1', 'module-1', 'الدرس الأول', 'Lesson 1', '', '', '', 20, 0, '[]', '[]', '[]'] },
+            { name: 'Quizzes', headers: ['quizKey', 'titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'passScore', 'isFinal', 'orderIndex', 'moduleRef'], sample: ['quiz-1', 'اختبار المقدمة', 'Introduction Quiz', '', '', 60, false, 0, 'lesson-1'] },
+            { name: 'Questions', headers: ['quizKey', 'type', 'textAr', 'textEn', 'options', 'correctIndex', 'explanationAr', 'explanationEn', 'orderIndex'], sample: ['quiz-1', 'SINGLE_CHOICE', 'ما الهدف من المراقبة؟', 'What is the goal of monitoring?', '[{"textAr":"اكتشاف الأنشطة المشبوهة","textEn":"Detect suspicious activity"},{"textAr":"لا شيء","textEn":"Nothing"}]', 0, '', '', 0] },
+            { name: 'Resources', headers: ['lessonKey', 'type', 'url', 'nameAr', 'nameEn', 'labelAr', 'labelEn'], sample: ['lesson-1', 'LINK', 'https://example.com', '', '', 'مرجع الدرس', 'Lesson reference'] },
+            { name: 'Audiences', headers: ['audienceAr', 'audienceEn', 'orderIndex'], sample: ['المبتدئون', 'Beginners', 0] },
+            { name: 'FAQs', headers: ['questionAr', 'questionEn', 'answerAr', 'answerEn', 'orderIndex'], sample: ['هل توجد شهادة؟', 'Is there a certificate?', 'نعم', 'Yes', 0] },
+            { name: 'Gallery', headers: ['url', 'altAr', 'altEn', 'orderIndex'], sample: ['/uploads/courses/gallery/example.webp', 'صورة الدورة', 'Course image', 0] },
+        ];
+        for (const [index, definition] of sheets.entries()) {
+            const sheet = workbook.addWorksheet(definition.name, { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
+            sheet.columns = definition.headers.map(header => ({ header, width: Math.max(20, Math.min(42, header.length + 12)) }));
+            sheet.getRow(1).height = 30;
+            definition.headers.forEach((header, columnIndex) => {
+                const cell = sheet.getRow(1).getCell(columnIndex + 1);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                const required = IMPORT_REQUIRED_COLUMNS[definition.name]?.has(header) ?? false;
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: required ? 'FFB8860B' : 'FF17365D' },
+                };
+                cell.alignment = { vertical: 'middle', wrapText: true };
+                const fieldDescription = IMPORT_COLUMN_GUIDE[header] ?? 'راجع اسم الحقل ومثال الصف الأول.';
+                cell.note = `${required ? 'مطلوب | Required' : 'اختياري | Optional'}: ${fieldDescription}\nمثال: ${definition.sample[columnIndex] ?? ''}`;
+            });
+            if (index === 0) {
+                const examples: Record<string, string> = {
+                    titleAr: 'مقدمة في الأمن السيبراني',
+                    titleEn: 'Introduction to Cybersecurity',
+                    excerptAr: 'تعرف على مبادئ الأمن السيبراني.',
+                    excerptEn: 'Learn cybersecurity fundamentals.',
+                    contentType: 'RECORDED',
+                    level: 'BEGINNER',
+                    language: 'Arabic',
+                    hoursOfContent: '2',
+                };
+                const courseRows = COURSE_FIELDS.map(field => [field, examples[field] ?? '']);
+                courseRows.forEach(row => sheet.addRow(row));
+            } else {
+                sheet.addRow(definition.sample);
+            }
+            if (definition.name === 'Course Info') {
+                sheet.getColumn(1).width = 28;
+                sheet.getColumn(2).width = 48;
+                sheet.getCell('B2').note = 'استبدل قيمة المثال قبل الاستيراد. الحقول المطلوبة: titleAr، titleEn، contentType.';
+                const fieldRows = new Map<string, number>();
+                COURSE_FIELDS.forEach((field, fieldIndex) => fieldRows.set(field, fieldIndex + 2));
+                for (const [field, rowNumber] of fieldRows) {
+                    const required = ['titleAr', 'titleEn', 'contentType'].includes(field);
+                    sheet.getCell(rowNumber, 1).note = `${required ? 'مطلوب | Required' : 'اختياري | Optional'}: ${FIELD_GUIDE[field] ?? field}`;
+                    if (required) {
+                        for (let column = 1; column <= 2; column += 1) {
+                            sheet.getCell(rowNumber, column).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0C2' } };
+                        }
+                    }
+                }
+                const contentTypeRow = fieldRows.get('contentType')!;
+                sheet.getCell(contentTypeRow, 2).dataValidation = {
+                    type: 'list',
+                    allowBlank: false,
+                    formulae: ['"LIVE,RECORDED"'],
+                };
+                const levelRow = fieldRows.get('level')!;
+                sheet.getCell(levelRow, 2).dataValidation = {
+                    type: 'list',
+                    allowBlank: true,
+                    formulae: ['"BEGINNER,INTERMEDIATE,ADVANCED,ALL_LEVELS"'],
+                };
+                for (const field of ['titleAr', 'titleEn']) {
+                    sheet.getCell(fieldRows.get(field)!, 2).note = 'مطلوب.';
+                }
+            }
+            if (definition.name === 'Questions') {
+                for (let rowNumber = 2; rowNumber <= 200; rowNumber += 1) {
+                    sheet.getCell(rowNumber, 2).dataValidation = {
+                        type: 'list',
+                        allowBlank: true,
+                        formulae: ['"SINGLE_CHOICE,MULTIPLE_CHOICE,TRUE_FALSE"'],
+                    };
+                }
+            }
+            if (definition.name === 'Resources') {
+                for (let rowNumber = 2; rowNumber <= 200; rowNumber += 1) {
+                    sheet.getCell(rowNumber, 2).dataValidation = {
+                        type: 'list',
+                        allowBlank: true,
+                        formulae: ['"FILE,LINK"'],
+                    };
+                }
+            }
+            sheet.autoFilter = { from: 'A1', to: `${sheet.getColumn(sheet.columnCount).letter}${Math.max(sheet.rowCount, 20)}` };
+            for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber += 1) {
+                sheet.getRow(rowNumber).alignment = { vertical: 'top', wrapText: true };
+            }
+        }
+        return Buffer.from(await workbook.xlsx.writeBuffer());
+    }
+
+    private parseMarkdown(markdown: string): unknown {
+        if (((markdown.match(/```/g) ?? []).length % 2) !== 0) {
+            throw new BadRequestException('كتلة Markdown غير مكتملة: تأكد من إغلاق كل كتلة JSON بعلامات ```.');
+        }
+        const sectionNames: Record<string, string> = {
+            'course information': 'course',
+            'course description': 'description',
+            'learning objectives': 'objectives',
+            requirements: 'prerequisites',
+            'target audience': 'audiences',
+            modules: 'chapters',
+            quizzes: 'quizzes',
+            questions: 'questions',
+            resources: 'resources',
+            faqs: 'faqs',
+            gallery: 'gallery',
+        };
+        const sections = new Map<string, string>();
+        const unsupportedSections: string[] = [];
+        let active: string | undefined;
+        for (const line of markdown.split(/\r?\n/)) {
+            const heading = line.match(/^#{1,3}\s+(.+?)\s*#*\s*$/);
+            if (heading) {
+                active = sectionNames[heading[1].trim().toLowerCase()];
+                if (!active) unsupportedSections.push(heading[1].trim());
+                if (active) sections.set(active, '');
+            } else if (active) {
+                sections.set(active, `${sections.get(active)}\n${line}`);
+            }
+        }
+        if (unsupportedSections.length) {
+            throw new BadRequestException(`عناوين Markdown غير مدعومة: ${unsupportedSections.join('، ')}. استخدم عناوين القالب.`);
+        }
+        if (!sections.has('course')) {
+            throw new BadRequestException('ملف Markdown يحتاج إلى قسم # Course Information.');
+        }
+        const parsed: Record<string, unknown> = {};
+        for (const [section, content] of sections) {
+            const blocks = [...content.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)];
+            const text = blocks.length ? blocks.map(block => block[1]).join('\n') : content.trim();
+            if (!text) continue;
+            if (!blocks.length && !/^[{[]/.test(text)) continue;
+            try {
+                parsed[section] = JSON.parse(text);
+            } catch {
+                throw new BadRequestException(`محتوى قسم Markdown "${section}" غير صالح. استخدم JSON صالحاً داخل كتلة \`\`\`json.`);
+            }
+        }
+        const course = objectValue(parsed.course) ?? {};
+        const description = objectValue(parsed.description) ?? {};
+        Object.assign(course, pickFields(description, ['excerptAr', 'excerptEn', 'descriptionAr', 'descriptionEn', 'syllabusAr', 'syllabusEn']));
+        if (parsed.questions) {
+            const quizzes = asArray(parsed.quizzes).map(value => ({ ...objectValue(value) }));
+            const byKey = new Map(quizzes.map(quiz => [TEXT(quiz.quizKey), quiz]));
+            for (const item of asArray(parsed.questions)) {
+                const questionSet = objectValue(item);
+                const quiz = questionSet && byKey.get(TEXT(questionSet.quizKey));
+                if (quiz) quiz.questions = asArray(quiz.questions).concat(asArray(questionSet.questions));
+            }
+            parsed.quizzes = quizzes;
+        }
+        return {
+            ...course,
+            objectives: parsed.objectives,
+            prerequisites: parsed.prerequisites,
+            audiences: parsed.audiences,
+            chapters: parsed.chapters,
+            quizzes: parsed.quizzes,
+            resources: parsed.resources,
+            faqs: parsed.faqs,
+            gallery: parsed.gallery,
+        };
+    }
+
+    private async parseStructuredWorkbook(buffer: Buffer): Promise<Record<string, unknown>> {
+        let workbook: ExcelJS.Workbook;
+        try {
+            workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(buffer as any);
+        } catch {
+            throw new BadRequestException('ملف Excel غير صالح أو تالف.');
+        }
+        const requiredSheets = ['Course Info', 'Objectives', 'Requirements', 'Modules', 'Lessons', 'Quizzes', 'Questions', 'Resources'];
+        const missing = requiredSheets.filter(name => !workbook.getWorksheet(name));
+        if (missing.length) {
+            throw new BadRequestException({ message: 'ملف Excel لا يحتوي أوراق القالب المطلوبة.', errors: missing.map(name => `ورقة ${name} مفقودة`) });
+        }
+        const requiredHeaders: Record<string, string[]> = {
+            'Course Info': ['Field', 'Value'],
+            Objectives: ['objectiveAr', 'objectiveEn'],
+            Requirements: ['prerequisiteAr', 'prerequisiteEn'],
+            Modules: ['importKey', 'titleAr', 'titleEn'],
+            Lessons: ['importKey', 'chapterKey', 'titleAr', 'titleEn'],
+            Quizzes: ['quizKey', 'titleAr', 'titleEn'],
+            Questions: ['quizKey', 'type', 'textAr', 'textEn', 'options', 'correctIndex'],
+            Resources: ['lessonKey', 'type', 'url'],
+        };
+        const headerErrors: string[] = [];
+        for (const [sheetName, required] of Object.entries(requiredHeaders)) {
+            const sheet = workbook.getWorksheet(sheetName)!;
+            const headers = ((sheet.getRow(1).values as unknown[]) ?? []).slice(1).map(TEXT);
+            const duplicates = headers.filter((header, index) => header && headers.indexOf(header) !== index);
+            if (duplicates.length) headerErrors.push(`${sheetName}: أعمدة مكررة (${[...new Set(duplicates)].join(', ')}).`);
+            const absent = required.filter(header => !headers.includes(header));
+            if (absent.length) headerErrors.push(`${sheetName}: أعمدة مطلوبة مفقودة (${absent.join(', ')}).`);
+        }
+        if (headerErrors.length) {
+            throw new BadRequestException({ message: 'عناوين أعمدة ملف Excel لا تطابق القالب.', errors: headerErrors });
+        }
+        const rows = (name: string) => {
+            const sheet = workbook.getWorksheet(name)!;
+            const headers = sheet.getRow(1).values as unknown[];
+            const keys = headers.slice(1).map(TEXT);
+            const result: Record<string, unknown>[] = [];
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber === 1) return;
+                const item = Object.fromEntries(keys.map((key, index) => {
+                    const value = row.getCell(index + 1).value;
+                    if (typeof value === 'string' && ['outcomes', 'files', 'links', 'options'].includes(key) && value.trim()) {
+                        try { return [key, JSON.parse(value)]; } catch { return [key, value]; }
+                    }
+                    return [key, value];
+                }));
+                if (Object.values(item).some(value => TEXT(value) !== '')) result.push(item);
+            });
+            return result;
+        };
+        const course: Record<string, unknown> = {};
+        for (const entry of rows('Course Info')) {
+            if (typeof entry.Field === 'string' && COURSE_INFO_FIELDS.has(entry.Field)) course[entry.Field] = entry.Value;
+        }
+        const moduleRows = rows('Modules');
+        const lessonRows = rows('Lessons');
+        const quizRows = rows('Quizzes');
+        const questionRows = rows('Questions');
+        const workbookErrors: string[] = [];
+        const chapterKeys = new Set<string>();
+        moduleRows.forEach((chapter, index) => {
+            const key = TEXT(chapter.importKey);
+            if (!key) workbookErrors.push(`Modules:${index + 2}: importKey مطلوب.`);
+            else if (chapterKeys.has(key)) workbookErrors.push(`Modules:${index + 2}: importKey مكرر (${key}).`);
+            if (key) chapterKeys.add(key);
+        });
+        const lessonKeys = new Set<string>();
+        lessonRows.forEach((lesson, index) => {
+            const key = TEXT(lesson.importKey);
+            const chapterKey = TEXT(lesson.chapterKey);
+            if (!key) workbookErrors.push(`Lessons:${index + 2}: importKey مطلوب.`);
+            else if (lessonKeys.has(key)) workbookErrors.push(`Lessons:${index + 2}: importKey مكرر (${key}).`);
+            lessonKeys.add(key);
+            if (!chapterKeys.has(chapterKey)) workbookErrors.push(`Lessons:${index + 2}: chapterKey لا يطابق وحدة في Modules.`);
+        });
+        const quizKeys = new Set<string>();
+        quizRows.forEach((quiz, index) => {
+            const key = TEXT(quiz.quizKey);
+            if (!key) workbookErrors.push(`Quizzes:${index + 2}: quizKey مطلوب.`);
+            else if (quizKeys.has(key)) workbookErrors.push(`Quizzes:${index + 2}: quizKey مكرر (${key}).`);
+            if (key) quizKeys.add(key);
+        });
+        questionRows.forEach((question, index) => {
+            if (!quizKeys.has(TEXT(question.quizKey))) {
+                workbookErrors.push(`Questions:${index + 2}: quizKey لا يطابق اختباراً في Quizzes.`);
+            }
+        });
+        if (workbookErrors.length) {
+            throw new BadRequestException({ message: 'تعذر ربط صفوف ملف Excel.', errors: workbookErrors });
+        }
+        const chapters = moduleRows.map(chapter => ({
+            ...chapter,
+            modules: lessonRows.filter(lesson => TEXT(lesson.chapterKey) === TEXT(chapter.importKey)),
+        }));
+        const quizzes = quizRows.map(quiz => ({
+            ...quiz,
+            questions: questionRows.filter(question => TEXT(question.quizKey) === TEXT(quiz.quizKey)),
+        }));
+        const resources = rows('Resources');
+        return {
+            ...course,
+            objectives: rows('Objectives'),
+            prerequisites: rows('Requirements'),
+            chapters,
+            quizzes,
+            resources,
+            audiences: workbook.getWorksheet('Audiences') ? rows('Audiences') : [],
+            faqs: workbook.getWorksheet('FAQs') ? rows('FAQs') : [],
+            gallery: workbook.getWorksheet('Gallery') ? rows('Gallery') : [],
+        };
+    }
+
+    private normalizeAndValidate(raw: unknown): ImportValidationResult {
+        const source = objectValue(raw);
+        if (!source) throw new BadRequestException('يجب أن يحتوي الملف على كائن دورة واحد.');
+        const data = pickFields(source, COURSE_FIELDS) as Partial<CreateCourseDto> & Record<string, any>;
+        const errors: string[] = [];
+        const warnings: string[] = [];
+        const missing: string[] = [];
+        const orderIndex = (value: unknown, fallback: number, label: string) => {
+            if (value === undefined || value === null || value === '') return fallback;
+            const parsed = NUM(value);
+            if (parsed === undefined || !Number.isInteger(parsed) || parsed < 0) {
+                errors.push(`${label} يجب أن يكون عددًا صحيحًا غير سالب.`);
+                return fallback;
+            }
+            return parsed;
+        };
+        const validateOptionalText = (value: Record<string, any>, fields: string[], label: string) => {
+            for (const field of fields) {
+                if (value[field] !== undefined && value[field] !== null && typeof value[field] !== 'string') {
+                    errors.push(`${label}.${field} يجب أن تكون نصاً.`);
+                }
+            }
+        };
+
+        for (const field of COURSE_FIELDS) {
+            if (data[field] === undefined || data[field] === null || data[field] === '') continue;
+            if (['hoursOfContent'].includes(field)) continue;
+            if (['certificateIssued', 'quizzesIncluded', 'projectsIncluded', 'assignmentsIncluded',
+                'liveSessionsIncluded', 'downloadableResources', 'lifetimeAccess', 'communityAccess'].includes(field)) continue;
+            if (typeof data[field] !== 'string') errors.push(`${field} يجب أن تكون نصاً.`);
+            else (data as any)[field] = data[field].trim();
+        }
+        for (const field of ['titleAr', 'titleEn', 'contentType'] as const) {
+            if (!TEXT(data[field])) {
+                errors.push(`الحقل ${field} مطلوب.`);
+                missing.push(field);
+            }
+        }
+        const contentType = TEXT(data.contentType).toUpperCase();
+        if (contentType && !Object.values(CourseContentType).includes(contentType as CourseContentType)) {
+            errors.push('contentType يجب أن يكون LIVE أو RECORDED.');
+        } else if (contentType) data.contentType = contentType as CourseContentType;
+        const levelValue: unknown = data.level;
+        if (levelValue === null || levelValue === '') {
+            delete data.level;
+        } else if (levelValue !== undefined) {
+            const level = TEXT(levelValue).toUpperCase();
+            if (!Object.values(CourseLevel).includes(level as CourseLevel)) errors.push('level غير صالح.');
+            else data.level = level as CourseLevel;
+        }
+        const hoursValue: unknown = data.hoursOfContent;
+        if (hoursValue === null || hoursValue === '') {
+            delete data.hoursOfContent;
+        } else if (hoursValue !== undefined) {
+            const hours = NUM(hoursValue);
+            if (hours === undefined || !Number.isInteger(hours) || hours < 1) errors.push('hoursOfContent يجب أن يكون عدداً صحيحاً موجباً.');
+            else data.hoursOfContent = hours;
+        }
+        for (const field of ['certificateIssued', 'quizzesIncluded', 'projectsIncluded', 'assignmentsIncluded',
+            'liveSessionsIncluded', 'downloadableResources', 'lifetimeAccess', 'communityAccess'] as const) {
+            const value: unknown = data[field];
+            if (value === undefined || value === null || value === '') {
+                delete data[field];
+            } else if (typeof value !== 'boolean') {
+                const normalized = TEXT(value).toUpperCase();
+                if (['TRUE', '1', 'YES', 'نعم'].includes(normalized)) (data as any)[field] = true;
+                else if (['FALSE', '0', 'NO', 'لا'].includes(normalized)) (data as any)[field] = false;
+                else errors.push(`${field} يجب أن تكون true أو false.`);
+            }
+        }
+
+        const textList = (field: string, arField: string, enField: string) => asArray(source[field])
+            .map((item, index) => {
+                const row = pickFields(item, [arField, enField, 'orderIndex']) as Record<string, any>;
+                row.orderIndex = orderIndex(row.orderIndex, index, `${field}[${index}].orderIndex`);
+                if (!isNonEmptyString(row[arField]) || !isNonEmptyString(row[enField])) errors.push(`${field}[${index}] يحتاج النصين العربي والإنجليزي.`);
+                return row;
+            });
+        data.objectives = textList('objectives', 'objectiveAr', 'objectiveEn') as any;
+        data.prerequisites = textList('prerequisites', 'prerequisiteAr', 'prerequisiteEn') as any;
+        data.audiences = textList('audiences', 'audienceAr', 'audienceEn') as any;
+        data.faqs = asArray(source.faqs).map((item, index) => {
+            const row = pickFields(item, ['questionAr', 'questionEn', 'answerAr', 'answerEn', 'orderIndex']) as Record<string, any>;
+            row.orderIndex = orderIndex(row.orderIndex, index, `faqs[${index}].orderIndex`);
+            validateOptionalText(row, ['questionAr', 'questionEn', 'answerAr', 'answerEn'], `faqs[${index}]`);
+            if (!isNonEmptyString(row.questionAr) || !isNonEmptyString(row.questionEn)
+                || !isNonEmptyString(row.answerAr) || !isNonEmptyString(row.answerEn)) errors.push(`faqs[${index}] غير مكتمل.`);
+            return row;
+        }) as CreateCourseDto['faqs'];
+        data.gallery = asArray(source.gallery).map((item, index) => {
+            const row = pickFields(item, ['url', 'altAr', 'altEn', 'orderIndex']) as Record<string, any>;
+            row.orderIndex = orderIndex(row.orderIndex, index, `gallery[${index}].orderIndex`);
+            validateOptionalText(row, ['altAr', 'altEn'], `gallery[${index}]`);
+            if (!isAllowedAssetUrl(TEXT(row.url))) errors.push(`gallery[${index}].url يجب أن يكون رابط http/https أو مسار /uploads/ صالحاً.`);
+            return row;
+        }) as CreateCourseDto['gallery'];
+        const lessonKeys = new Set<string>();
+        const importChapterKeys = new Set<string>();
+        const chapterOrderIndexes = new Set<number>();
+        data.chapters = asArray(source.chapters).map((item, chapterIndex) => {
+            const chapter = pickFields(item, ['titleAr', 'titleEn', 'orderIndex', 'importKey']) as Record<string, any>;
+            chapter.orderIndex = orderIndex(chapter.orderIndex, chapterIndex, `chapters[${chapterIndex}].orderIndex`);
+            if (chapterOrderIndexes.has(chapter.orderIndex)) errors.push(`ترتيب الوحدة ${chapter.orderIndex} مكرر.`);
+            chapterOrderIndexes.add(chapter.orderIndex);
+            chapter.importKey = TEXT(chapter.importKey) || `chapter-${chapterIndex + 1}`;
+            if (importChapterKeys.has(chapter.importKey)) errors.push(`importKey الوحدة مكرر: ${chapter.importKey}`);
+            importChapterKeys.add(chapter.importKey);
+            validateOptionalText(chapter, ['importKey'], `chapters[${chapterIndex}]`);
+            if (!isNonEmptyString(chapter.titleAr) || !isNonEmptyString(chapter.titleEn)) errors.push(`chapters[${chapterIndex}] يحتاج عنواناً بالعربية والإنجليزية.`);
+            const moduleOrderIndexes = new Set<number>();
+            chapter.modules = asArray(objectValue(item)?.modules).map((lesson, lessonIndex) => {
+                const module = pickFields(lesson, ['titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'videoUrl',
+                    'durationMinutes', 'orderIndex', 'importKey', 'files', 'links', 'outcomes']) as Record<string, any>;
+                module.orderIndex = orderIndex(module.orderIndex, lessonIndex, `chapters[${chapterIndex}].modules[${lessonIndex}].orderIndex`);
+                if (moduleOrderIndexes.has(module.orderIndex)) errors.push(`ترتيب الدرس ${module.orderIndex} مكرر في الوحدة ${chapter.titleAr}.`);
+                moduleOrderIndexes.add(module.orderIndex);
+                module.importKey = TEXT(module.importKey) || `${chapter.importKey}-lesson-${lessonIndex + 1}`;
+                validateOptionalText(module, ['descriptionAr', 'descriptionEn', 'importKey'], `chapters[${chapterIndex}].modules[${lessonIndex}]`);
+                if (!isNonEmptyString(module.titleAr) || !isNonEmptyString(module.titleEn)) errors.push(`chapters[${chapterIndex}].modules[${lessonIndex}] يحتاج عنواناً باللغتين.`);
+                if (lessonKeys.has(module.importKey)) errors.push(`importKey الدرس مكرر: ${module.importKey}`);
+                lessonKeys.add(module.importKey);
+                if (module.videoUrl && !isAllowedAssetUrl(TEXT(module.videoUrl))) errors.push(`رابط فيديو الدرس ${module.importKey} غير صالح.`);
+                if (module.durationMinutes === null || module.durationMinutes === '') {
+                    delete module.durationMinutes;
+                } else if (module.durationMinutes !== undefined) {
+                    const duration = NUM(module.durationMinutes);
+                    if (duration === undefined || !Number.isInteger(duration) || duration < 0) errors.push(`مدة الدرس ${module.importKey} غير صالحة.`);
+                    else module.durationMinutes = duration;
+                }
+                module.files = asArray(module.files).map(file => pickFields(file, ['url', 'nameAr', 'nameEn']));
+                module.links = asArray(module.links).map(link => pickFields(link, ['url', 'labelAr', 'labelEn']));
+                for (const asset of [...module.files, ...module.links]) {
+                    if (!isAllowedAssetUrl(TEXT((asset as any).url))) errors.push(`رابط مورد الدرس ${module.importKey} غير صالح.`);
+                    validateOptionalText(asset as Record<string, any>, ['nameAr', 'nameEn', 'labelAr', 'labelEn'], `مورد الدرس ${module.importKey}`);
+                }
+                module.outcomes = asArray(module.outcomes).map((outcome, outcomeIndex) => {
+                    const normalized = pickFields(outcome, ['descriptionAr', 'descriptionEn']);
+                    if (!isNonEmptyString(normalized.descriptionAr) || !isNonEmptyString(normalized.descriptionEn)) {
+                        errors.push(`مخرج التعلم ${outcomeIndex + 1} في الدرس ${module.importKey} يحتاج النصين.`);
+                    }
+                    return normalized;
+                });
+                return module;
+            });
+            return chapter;
+        }) as any;
+        const normalizedChapters = data.chapters ?? [];
+        for (const resource of asArray(source.resources)) {
+            const row = pickFields(resource, IMPORT_RESOURCE_FIELDS) as Record<string, any>;
+            validateOptionalText(row, ['lessonKey', 'type', 'url', 'nameAr', 'nameEn', 'labelAr', 'labelEn'], 'resources');
+            const lesson = normalizedChapters.flatMap(chapter => chapter.modules ?? []).find(module => module.importKey === TEXT(row.lessonKey));
+            if (!lesson) {
+                errors.push(`المورد يشير إلى lessonKey غير موجود: ${TEXT(row.lessonKey)}.`);
+                continue;
+            }
+            if (!isAllowedAssetUrl(TEXT(row.url))) {
+                errors.push(`رابط المورد ${TEXT(row.lessonKey)} غير صالح.`);
+                continue;
+            }
+            if (TEXT(row.type).toUpperCase() === 'FILE') {
+                lesson.files ??= [];
+                lesson.files.push({ url: row.url, nameAr: row.nameAr, nameEn: row.nameEn });
+            } else if (TEXT(row.type).toUpperCase() === 'LINK') {
+                lesson.links ??= [];
+                lesson.links.push({ url: row.url, labelAr: row.labelAr, labelEn: row.labelEn });
+            } else {
+                errors.push(`نوع المورد يجب أن يكون FILE أو LINK (lessonKey: ${TEXT(row.lessonKey)}).`);
+            }
+        }
+        const quizKeys = new Set<string>();
+        data.quizzes = asArray(source.quizzes).map((item, quizIndex) => {
+            const quiz = pickFields(item, ['titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'passScore',
+                'isFinal', 'orderIndex', 'moduleRef', 'questions', 'quizKey']) as Record<string, any>;
+            quiz.orderIndex = orderIndex(quiz.orderIndex, quizIndex, `quizzes[${quizIndex}].orderIndex`);
+            quiz.passScore = quiz.passScore === undefined || quiz.passScore === null || quiz.passScore === ''
+                ? 60
+                : NUM(quiz.passScore);
+            validateOptionalText(quiz, ['titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'moduleRef'], `quizzes[${quizIndex}]`);
+            if (!Number.isInteger(quiz.passScore) || quiz.passScore < 0 || quiz.passScore > 100) {
+                errors.push(`درجة النجاح في الاختبار "${quiz.titleAr ?? quizIndex + 1}" يجب أن تكون بين 0 و100.`);
+            }
+            if (quiz.isFinal === undefined || quiz.isFinal === null || quiz.isFinal === '') quiz.isFinal = !quiz.moduleRef;
+            else if (typeof quiz.isFinal !== 'boolean') {
+                const normalized = TEXT(quiz.isFinal).toUpperCase();
+                if (['TRUE', '1', 'YES', 'نعم'].includes(normalized)) quiz.isFinal = true;
+                else if (['FALSE', '0', 'NO', 'لا'].includes(normalized)) quiz.isFinal = false;
+                else errors.push(`isFinal للاختبار "${quiz.titleAr ?? quizIndex + 1}" يجب أن تكون true أو false.`);
+            }
+            if (!isNonEmptyString(quiz.titleAr) || !isNonEmptyString(quiz.titleEn)) errors.push(`quizzes[${quizIndex}] يحتاج عنواناً باللغتين.`);
+            if (quiz.quizKey) {
+                if (quizKeys.has(TEXT(quiz.quizKey))) errors.push(`quizKey الاختبار مكرر: ${TEXT(quiz.quizKey)}.`);
+                quizKeys.add(TEXT(quiz.quizKey));
+            }
+            if (!quiz.isFinal && !lessonKeys.has(TEXT(quiz.moduleRef))) errors.push(`الاختبار ${quiz.titleAr} يحتاج moduleRef يشير إلى importKey درس صالح.`);
+            if (quiz.isFinal && quiz.moduleRef) warnings.push(`تم تجاهل moduleRef للاختبار النهائي "${quiz.titleAr}".`);
+            quiz.questions = asArray(quiz.questions).map((question, questionIndex) => {
+                const q = pickFields(question, ['type', 'textAr', 'textEn', 'options', 'correctIndex',
+                    'explanationAr', 'explanationEn', 'orderIndex']) as Record<string, any>;
+                if (!isNonEmptyString(q.type)) errors.push(`نوع السؤال ${questionIndex + 1} في "${quiz.titleAr}" مطلوب.`);
+                q.type = TEXT(q.type).toUpperCase();
+                validateOptionalText(q, ['textAr', 'textEn', 'explanationAr', 'explanationEn'], `quizzes[${quizIndex}].questions[${questionIndex}]`);
+                q.orderIndex = orderIndex(q.orderIndex, questionIndex, `quizzes[${quizIndex}].questions[${questionIndex}].orderIndex`);
+                const options: Record<string, unknown>[] = asArray(q.options)
+                    .map(option => pickFields(option, ['textAr', 'textEn']));
+                q.options = options;
+                if (!['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE'].includes(q.type)) errors.push(`نوع السؤال غير مدعوم في ${quiz.titleAr}.`);
+                if (!isNonEmptyString(q.textAr) || !isNonEmptyString(q.textEn)) errors.push(`السؤال ${questionIndex + 1} في "${quiz.titleAr}" يحتاج نصاً باللغتين.`);
+                if (q.options.length < 2) errors.push(`السؤال ${questionIndex + 1} في "${quiz.titleAr}" يحتاج خيارين على الأقل.`);
+                if (options.some(option => !isNonEmptyString(option.textAr) || !isNonEmptyString(option.textEn))) {
+                    errors.push(`خيارات السؤال ${questionIndex + 1} في "${quiz.titleAr}" تحتاج نصاً باللغتين.`);
+                }
+                if (q.correctIndex === undefined || q.correctIndex === '') errors.push(`الإجابة الصحيحة للسؤال ${questionIndex + 1} في "${quiz.titleAr}" مطلوبة.`);
+                if (q.correctIndex !== undefined && q.correctIndex !== '') {
+                    const correctIndex = NUM(q.correctIndex);
+                    if (correctIndex === undefined || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= q.options.length) {
+                        errors.push(`correctIndex للسؤال ${questionIndex + 1} في "${quiz.titleAr}" خارج نطاق الخيارات.`);
+                    } else q.correctIndex = correctIndex;
+                }
+                return q;
+            });
+            return quiz;
+        }) as any;
+
+        for (const field of ['coverImageUrl', 'introVideoUrl', 'videoFileUrl'] as const) {
+            if (data[field] && !isAllowedAssetUrl(TEXT(data[field]))) errors.push(`${field} يجب أن يكون رابط http/https أو مسار /uploads/ صالحاً.`);
+        }
+        if (!data.objectives?.length) warnings.push('لم تتم إضافة أهداف تعليمية.');
+        if (!data.chapters?.length) warnings.push('لم تتم إضافة وحدات أو دروس.');
+        if (data.chapters?.some(chapter => !chapter.modules?.length)) warnings.push('يوجد فصل واحد أو أكثر بلا دروس.');
+        for (const field of ['descriptionAr', 'descriptionEn', 'categoryAr', 'categoryEn', 'language', 'hoursOfContent'] as const) {
+            if (data[field] === undefined || data[field] === null || data[field] === '') missing.push(field);
+        }
+        if (!data.objectives?.length) missing.push('objectives');
+        if (!data.chapters?.length) missing.push('chapters');
+        const openingOnlyFields = [
+            'price', 'priceOld', 'currency', 'isPublished', 'status', 'instructorName', 'instructorId',
+            'startDate', 'endDate', 'enrollmentDeadline', 'maxStudents',
+        ];
+        if (openingOnlyFields.some(field => source[field] !== undefined)) {
+            warnings.push('السعر وحالة النشر والمدرب لا تنتمي إلى سجل الدورة في النظام؛ لم يتم إنشاء دفعة أو تغيير المدرب الحالي.');
+        }
+        if (asArray(source.references).length) warnings.push('المراجع العامة غير مدعومة بجدول مستقل؛ أضف الروابط والملفات إلى موارد الدروس.');
+        const knownCourseFields = new Set([
+            ...COURSE_FIELDS, 'objectives', 'prerequisites', 'audiences', 'chapters', 'quizzes',
+            'resources', 'references', 'faqs', 'gallery', ...openingOnlyFields,
+        ]);
+        const unsupportedCourseFields = Object.keys(source).filter(field => !knownCourseFields.has(field));
+        if (unsupportedCourseFields.length) warnings.push(`حقول غير معروفة تم تجاهلها: ${unsupportedCourseFields.join(', ')}.`);
+        if (asArray(source.quizzes).some(quiz => objectValue(quiz)?.timeLimit !== undefined)) {
+            warnings.push('مدة الاختبار غير محفوظة في مخطط قاعدة البيانات الحالي.');
+        }
+        if (asArray(source.quizzes).some(quiz =>
+            asArray(objectValue(quiz)?.questions).some(question => objectValue(question)?.correctIndexes !== undefined),
+        )) {
+            warnings.push('قاعدة البيانات تحفظ مؤشر إجابة صحيحة واحداً فقط لكل سؤال؛ لم يتم استيراد correctIndexes المتعددة.');
+        }
+        if (errors.length) {
+            return { data, errors, warnings, missing, valid: false };
+        }
+        return { data: data as CreateCourseDto, errors, warnings, missing, valid: true };
+    }
 
     async template(): Promise<Buffer> {
         const workbook = new ExcelJS.Workbook();

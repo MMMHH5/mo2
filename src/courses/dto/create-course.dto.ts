@@ -1,6 +1,6 @@
 import {
     IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsBoolean, IsEnum, IsArray,
-    ValidateNested, IsInt,
+    ValidateNested, IsInt, IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -17,6 +17,81 @@ export class CreateLearningOutcomeDto {
     @IsString()
     @IsNotEmpty()
     descriptionEn!: string;
+}
+
+export class CreateImportedQuizQuestionDto {
+    @IsIn(['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE'])
+    type!: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+
+    @IsString()
+    @IsNotEmpty()
+    textAr!: string;
+
+    @IsString()
+    @IsNotEmpty()
+    textEn!: string;
+
+    @IsArray()
+    options!: { textAr: string; textEn: string }[];
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    correctIndex?: number;
+
+    @IsOptional()
+    @IsString()
+    explanationAr?: string;
+
+    @IsOptional()
+    @IsString()
+    explanationEn?: string;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    orderIndex?: number;
+}
+
+export class CreateImportedQuizDto {
+    @IsString()
+    @IsNotEmpty()
+    titleAr!: string;
+
+    @IsString()
+    @IsNotEmpty()
+    titleEn!: string;
+
+    @IsOptional()
+    @IsString()
+    descriptionAr?: string;
+
+    @IsOptional()
+    @IsString()
+    descriptionEn?: string;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    passScore?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    isFinal?: boolean;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    orderIndex?: number;
+
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateImportedQuizQuestionDto)
+    questions!: CreateImportedQuizQuestionDto[];
+
+    @IsOptional()
+    @IsString()
+    moduleRef?: string;
 }
 
 export class CreateModuleDto {
@@ -71,6 +146,10 @@ export class CreateModuleDto {
     @IsOptional()
     @IsArray()
     links?: { url: string; labelAr?: string; labelEn?: string }[];
+
+    @IsOptional()
+    @IsString()
+    importKey?: string;
 }
 
 export class CreateChapterDto {
@@ -96,6 +175,10 @@ export class CreateChapterDto {
     @ValidateNested({ each: true })
     @Type(() => CreateModuleDto)
     modules?: CreateModuleDto[];
+
+    @IsOptional()
+    @IsString()
+    importKey?: string;
 }
 
 export class CreateObjectiveDto {
@@ -394,6 +477,13 @@ export class CreateCourseDto {
     @ValidateNested({ each: true })
     @Type(() => CreateGalleryImageDto)
     gallery?: CreateGalleryImageDto[];
+
+    @ApiPropertyOptional({ type: [CreateImportedQuizDto], description: 'Imported course or lesson quizzes' })
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateImportedQuizDto)
+    quizzes?: CreateImportedQuizDto[];
 }
 
 /// PATCH input: every field optional — sending a single field must update
