@@ -163,6 +163,7 @@ type CourseCertificates = {
     course: { id: string; titleAr: string; titleEn: string };
     certificates: CertificateRow[];
 };
+type CertificateManagementTab = 'content' | 'designer' | 'assets' | 'records';
 
 const EMPTY_TEMPLATE: CertificateTemplate = {
     academyNameAr: 'أكاديمية Laxalab',
@@ -353,6 +354,7 @@ export default function AdminCertificatesPage() {
     const [draggingLayoutKey, setDraggingLayoutKey] = useState<keyof CertificateLayout | null>(null);
     const [selectedElement, setSelectedElement] = useState<CertificateElementKey>('logo');
     const [studioView, setStudioView] = useState<'edit' | 'final'>('edit');
+    const [managementTab, setManagementTab] = useState<CertificateManagementTab>('content');
     const [overview, setOverview] = useState<Overview | null>(null);
     const [selectedInstructorId, setSelectedInstructorId] = useState('');
     const [records, setRecords] = useState<Record<string, CourseCertificates>>({});
@@ -849,7 +851,41 @@ export default function AdminCertificatesPage() {
                 })}
             </section>
 
-            <section className="rounded-3xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
+            <nav role="tablist" aria-label={isAr ? 'أقسام إدارة الشهادات' : 'Certificate management sections'} className="grid grid-cols-2 gap-2 rounded-2xl border border-gray-200 bg-white p-2 dark:border-white/5 dark:bg-brand-navy-dark sm:grid-cols-4">
+                {([
+                    { id: 'content', icon: PenLine, label: isAr ? 'المحتوى والنصوص' : 'Content & wording', hint: isAr ? 'بيانات الشهادة' : 'Certificate details' },
+                    { id: 'designer', icon: LayoutTemplate, label: isAr ? 'مصمم الشهادة' : 'Certificate designer', hint: isAr ? 'القوالب والتنسيق' : 'Templates & layout' },
+                    { id: 'assets', icon: Stamp, label: isAr ? 'التوقيعات والختم' : 'Signatures & seal', hint: isAr ? 'الهوية الرسمية' : 'Official assets' },
+                    { id: 'records', icon: FileBadge, label: isAr ? 'سجل الشهادات' : 'Certificate register', hint: isAr ? 'المتابعة والتحقق' : 'Manage issued certificates' },
+                ] as const).map((tab) => {
+                    const Icon = tab.icon;
+                    const selected = managementTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            role="tab"
+                            id={`certificate-tab-${tab.id}`}
+                            aria-controls="certificate-management-panel"
+                            aria-selected={selected}
+                            onClick={() => setManagementTab(tab.id)}
+                            className={`flex min-h-[72px] items-center gap-3 rounded-xl px-3 py-3 text-start transition sm:px-4 ${selected
+                                ? 'bg-brand-navy text-white shadow-sm dark:bg-brand-gold dark:text-brand-navy-dark'
+                                : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5'}`}
+                        >
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-white/10 dark:bg-brand-navy/10' : 'bg-gray-100 text-brand-navy dark:bg-white/5 dark:text-brand-gold-light'}`}>
+                                <Icon size={19} />
+                            </span>
+                            <span className="min-w-0">
+                                <span className="block text-sm font-black">{tab.label}</span>
+                                <span className={`mt-0.5 block text-xs ${selected ? 'text-white/70 dark:text-brand-navy/70' : 'text-gray-500 dark:text-gray-400'}`}>{tab.hint}</span>
+                            </span>
+                        </button>
+                    );
+                })}
+            </nav>
+
+            {managementTab === 'content' && <section role="tabpanel" id="certificate-management-panel" aria-labelledby="certificate-tab-content" className="rounded-3xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
                 <div className="mb-6 flex items-start gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light"><PenLine size={19} /></span>
                     <div>
@@ -902,9 +938,9 @@ export default function AdminCertificatesPage() {
                         </button>
                     </div>
                 </form>
-            </section>
+            </section>}
 
-            <section className="rounded-3xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
+            {managementTab === 'designer' && <section role="tabpanel" id="certificate-management-panel" aria-labelledby="certificate-tab-designer" className="rounded-3xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-navy-dark sm:p-7">
                 {visualStyle.fontUrl?.startsWith('/uploads/certificates/branding/') && !visualStyle.fontUrl.includes('..') && (
                     <style>{`@font-face { font-family: 'LaxaCertificateCustom'; src: url("${brandingAssetSrc(visualStyle.fontUrl)}"); font-display: swap; }`}</style>
                 )}
@@ -1516,9 +1552,9 @@ export default function AdminCertificatesPage() {
                         </div>
                     </aside>
                 </div>}
-            </section>
+            </section>}
 
-            <section className="space-y-4">
+            {managementTab === 'assets' && <section role="tabpanel" id="certificate-management-panel" aria-labelledby="certificate-tab-assets" className="space-y-4">
                 <div className="flex items-start gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"><Stamp size={19} /></span>
                     <div>
@@ -1567,9 +1603,9 @@ export default function AdminCertificatesPage() {
                 <p className="rounded-xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
                     {isAr ? 'ملاحظة: الصور المعروضة توقيعات وختم مرئي على الشهادة وليست توقيعاً رقمياً تشفيرياً.' : 'Note: these are visual signature and seal images, not cryptographic digital signatures.'}
                 </p>
-            </section>
+            </section>}
 
-            <section className="overflow-hidden rounded-3xl border border-gray-200 bg-white dark:border-white/5 dark:bg-brand-navy-dark">
+            {managementTab === 'records' && <section role="tabpanel" id="certificate-management-panel" aria-labelledby="certificate-tab-records" className="overflow-hidden rounded-3xl border border-gray-200 bg-white dark:border-white/5 dark:bg-brand-navy-dark">
                 <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5 dark:border-white/5 sm:px-7">
                     <div>
                         <h2 className="text-xl font-black text-brand-navy dark:text-white">{isAr ? 'سجل الشهادات الصادرة' : 'Issued certificate register'}</h2>
@@ -1625,7 +1661,7 @@ export default function AdminCertificatesPage() {
                         })}
                     </div>
                 )}
-            </section>
+            </section>}
         </div>
     );
 }

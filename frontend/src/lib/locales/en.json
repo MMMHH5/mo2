@@ -315,7 +315,12 @@
         "nav_communication": "Communication",
         "nav_account_payments": "Account & payments",
         "nav_teaching": "Teaching",
-        "nav_account": "Account"
+        "nav_account": "Account",
+        "current_page": "Current page",
+        "nav_people": "People management",
+        "nav_operations": "Finance & operations",
+        "nav_configuration": "Configuration",
+        "nav_content": "Content"
     },
     "submissionsInbox": {
         "title": "Student Submissions",

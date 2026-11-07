@@ -116,19 +116,19 @@ export default function Home() {
           {isAr ? 'معاينة مسودة الصفحة الرئيسية — لا يراها الزوار قبل النشر.' : 'Homepage draft preview — visitors will not see this until published.'}
         </div>
       )}
-      <div className="mt-8 flex flex-col gap-32">
+      <div className="mt-4 flex flex-col gap-16 md:gap-24">
       {/* Announcement Banner */}
       <div style={sectionStyle('hero')} className="flex flex-col">
-      <div className={`-mt-12 -mx-6 mb-8 rounded-b-3xl overflow-hidden ${dark ? 'shadow-lg shadow-black/20' : 'shadow-sm'}`}>
+      <div className="mx-auto mb-6 w-full max-w-6xl sm:mb-8">
         <AnnouncementBanner variant="public" />
       </div>
 
-      <div className="flex flex-col items-center justify-center min-h-[70vh] relative animate-fade-in-up overflow-hidden">
+      <div className={`relative flex min-h-[min(66vh,680px)] flex-col items-center justify-center overflow-hidden rounded-[2rem] border px-5 py-14 text-center animate-fade-in-up sm:px-8 md:py-20 ${dark ? 'border-white/10 bg-gradient-to-br from-brand-navy/80 via-[#10284c] to-brand-navy-dark shadow-2xl shadow-black/20' : 'border-gray-100 bg-gradient-to-br from-white via-[#fbfcff] to-brand-gold/10 shadow-xl shadow-brand-navy/5'}`}>
         {/* Decorative background blobs */}
-        <div className={`absolute top-10 left-10 w-72 h-72 rounded-full blur-[80px] -z-10 animate-float ${dark ? 'bg-brand-gold/10' : 'bg-brand-gold/10'}`} style={{ animationDuration: '6s' }}></div>
-        <div className={`absolute bottom-10 right-10 w-96 h-96 rounded-full blur-[100px] -z-10 animate-float ${dark ? 'bg-brand-navy-light/15' : 'bg-brand-navy-light/5'}`} style={{ animationDuration: '8s', animationDelay: '2s' }}></div>
+        <div className={`absolute left-10 top-10 z-0 h-72 w-72 rounded-full blur-[80px] animate-float ${dark ? 'bg-brand-gold/10' : 'bg-brand-gold/10'}`} style={{ animationDuration: '6s' }}></div>
+        <div className={`absolute bottom-10 right-10 z-0 h-96 w-96 rounded-full blur-[100px] animate-float ${dark ? 'bg-brand-navy-light/15' : 'bg-brand-navy-light/5'}`} style={{ animationDuration: '8s', animationDelay: '2s' }}></div>
 
-        <div className="max-w-4xl mx-auto text-center space-y-8 z-10 px-4">
+        <div className="z-10 mx-auto max-w-4xl space-y-7">
           <div className={`inline-flex items-center gap-2 px-5 py-2 rounded-full ${badgeCls} font-bold text-sm shadow-sm animate-scale-in`}>
             <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-75"></span>
@@ -137,7 +137,7 @@ export default function Home() {
             {text('hero_badge')}
           </div>
 
-          <h2 className={`text-5xl md:text-7xl font-black tracking-tight leading-tight ${heroTitleCls}`}>
+          <h2 className={`text-4xl font-black leading-[1.2] tracking-tight sm:text-5xl md:text-6xl ${heroTitleCls}`}>
             {text('hero_title')}
             {/* The brand word used to be re-typed here as styled text, which
                 read as a second, unofficial logo next to the real one in the
@@ -145,30 +145,26 @@ export default function Home() {
             <img
               src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
               alt="Laxalab Academy"
-              className="block mt-5 mx-auto h-14 md:h-20 lg:h-24 w-auto max-w-[80vw] object-contain"
+              className="mx-auto mt-4 block h-12 w-auto max-w-[75vw] object-contain sm:h-14 md:h-16"
             />
           </h2>
 
-          <p className={`text-xl md:text-2xl max-w-2xl mx-auto font-medium leading-relaxed ${heroDescCls}`}>
+          <p className={`mx-auto max-w-2xl text-lg font-medium leading-relaxed sm:text-xl ${heroDescCls}`}>
             {text('hero_desc')}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
-            <Link href="/courses">
-              <button className={`flex items-center gap-2 font-black text-lg px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group ${exploreBtnCls}`}>
-                {text('hero_explore')}
-                <ChevronRight className="rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
-              </button>
+          <div className="flex flex-col items-center justify-center gap-3 pt-2 sm:flex-row sm:gap-4">
+            <Link href="/courses" className={`group inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-black shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:text-lg ${exploreBtnCls}`}>
+              {text('hero_explore')}
+              <ChevronRight className="rtl:rotate-180 transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
             </Link>
-            <Link href="/join-as-instructor">
-              <button className={`flex items-center gap-2 border font-bold text-lg px-8 py-4 rounded-2xl hover:shadow-lg transition-all duration-300 ${joinBtnCls}`}>
-                <GraduationCap size={22} />
-                {text('hero_instructor')}
-              </button>
+            <Link href="/join-as-instructor" className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-7 py-3.5 text-base font-bold transition-all duration-300 hover:shadow-lg sm:text-lg ${joinBtnCls}`}>
+              <GraduationCap size={22} />
+              {text('hero_instructor')}
             </Link>
           </div>
 
-          <div className={`flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-4 text-sm font-semibold ${dark ? 'text-brand-mist' : 'text-gray-600'}`}>
+          <div className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-2 text-xs font-semibold sm:text-sm ${dark ? 'text-brand-mist' : 'text-gray-600'}`}>
             <span className="inline-flex items-center gap-2"><Shield size={16} className="text-brand-gold" />{text('trust_payment')}</span>
             <span className="inline-flex items-center gap-2"><Award size={16} className="text-brand-gold" />{text('trust_instructors')}</span>
             <span className="inline-flex items-center gap-2"><PlayCircle size={16} className="text-brand-gold" />{text('trust_anytime')}</span>
@@ -179,8 +175,8 @@ export default function Home() {
 
         {/* Features Section */}
         <section style={sectionStyle('features')} className="relative">
-          <div className="text-center mb-16">
-            <h3 className={`text-3xl md:text-4xl font-black mb-4 ${dark ? 'text-white' : 'text-brand-navy'}`}>
+          <div className="mb-10 text-center md:mb-14">
+            <h3 className={`mb-3 text-3xl font-black sm:text-4xl ${dark ? 'text-white' : 'text-brand-navy'}`}>
               {text('why_heading')}
             </h3>
             <img
@@ -191,14 +187,14 @@ export default function Home() {
             <p className={`max-w-xl mx-auto text-lg leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{text('why_desc')}</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {[
               { icon: BookOpen, titleKey: 'feature_1_title', descKey: 'feature_1_desc' },
               { icon: Shield, titleKey: 'feature_2_title', descKey: 'feature_2_desc' },
               { icon: Award, titleKey: 'feature_3_title', descKey: 'feature_3_desc' }
             ].map((feature, i) => (
-              <div key={i} className={`border rounded-3xl p-8 transition-all duration-500 group transform hover:-translate-y-2 ${cardCls}`}>
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 ${featIconCls}`}>
+              <div key={i} className={`group transform rounded-3xl border p-7 transition-all duration-300 hover:-translate-y-1.5 ${cardCls}`}>
+                <div className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105 ${featIconCls}`}>
                   <feature.icon size={28} />
                 </div>
                 <h3 className={`text-xl font-black mb-3 ${cardTitleCls}`}>{text(feature.titleKey)}</h3>
@@ -211,7 +207,7 @@ export default function Home() {
         {/* Stats Section */}
         {homepageConfig.stats.some((item) => item.mode !== 'HIDDEN') && homepageConfig.sections.find((item) => item.id === 'stats')?.visible !== false && (
           <section style={sectionStyle('stats')} className="relative">
-            <div className="bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] rounded-3xl p-6 md:p-10 md:p-14 shadow-2xl shadow-black/40 overflow-hidden relative border border-white/10">
+              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-brand-navy via-[#0e2a52] to-[#0a1e3c] p-6 shadow-2xl shadow-black/30 sm:p-10 lg:p-14">
               <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/10 rounded-full blur-[80px]"></div>
               <div className="absolute bottom-0 left-0 w-72 h-72 bg-brand-navy-light/20 rounded-full blur-[100px]"></div>
 
@@ -232,7 +228,7 @@ export default function Home() {
                       <div className="w-16 h-16 rounded-2xl bg-white/10 text-brand-gold flex items-center justify-center mx-auto mb-5 group-hover:bg-brand-gold group-hover:text-brand-navy transition-all duration-500 shadow-inner block">
                         <stat.icon size={28} />
                       </div>
-                      <p className="text-3xl md:text-4xl md:text-5xl font-black text-white mb-2 tracking-tight drop-shadow-md">{formatNumber(value, locale)}</p>
+                      <p className="mb-2 text-3xl font-black tracking-tight text-white drop-shadow-md sm:text-4xl">{formatNumber(value, locale)}</p>
                       <p className="text-sm font-bold text-gray-300 tracking-wide uppercase">{text(stat.labelKey)}</p>
                     </div>
                     )];
@@ -245,12 +241,12 @@ export default function Home() {
 
         {/* Featured Courses Section */}
         <section style={sectionStyle('courses')} className="relative">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-14 text-center sm:text-left">
+          <div className="mb-10 flex flex-col gap-4 text-center sm:mb-12 sm:flex-row sm:items-end sm:justify-between sm:text-start">
             <div className="space-y-2">
-              <h3 className={`text-3xl md:text-4xl font-black ${dark ? 'text-white' : 'text-brand-navy'}`}>{text('home_courses_heading')}</h3>
+              <h3 className={`text-3xl font-black sm:text-4xl ${dark ? 'text-white' : 'text-brand-navy'}`}>{text('home_courses_heading')}</h3>
               <p className={`max-w-xl text-lg leading-relaxed ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{text('home_courses_desc')}</p>
             </div>
-            <Link href="/courses" className={`inline-flex items-center gap-2 font-bold text-sm px-6 py-3 rounded-xl border transition-all duration-300 whitespace-nowrap ${dark ? 'border-white/10 text-gray-300 hover:border-brand-gold hover:text-brand-gold-light' : 'border-gray-200 text-brand-navy hover:border-brand-gold hover:text-brand-gold-dark'}`}>
+            <Link href="/courses" className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-6 py-3 text-sm font-bold transition-all duration-300 ${dark ? 'border-white/10 text-gray-300 hover:border-brand-gold hover:text-brand-gold-light' : 'border-gray-200 text-brand-navy hover:border-brand-gold hover:text-brand-gold-dark'}`}>
               {text('home_courses_view_all')}
               <ChevronRight className="rtl:rotate-180" size={16} />
             </Link>
@@ -436,7 +432,7 @@ export default function Home() {
                       <social.icon size={16} />
                     </span>
                     <span className="truncate">{social.label}</span>
-                    <span className={`ml-auto hidden sm:block text-xs font-semibold ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{social.handle}</span>
+                    <span className={`ms-auto hidden text-xs font-semibold sm:block ${dark ? 'text-gray-500' : 'text-gray-400'}`}>{social.handle}</span>
                   </a>
                 ))}
               </div>
@@ -454,16 +450,12 @@ export default function Home() {
             </div>
             <h3 className="text-3xl md:text-4xl font-black text-white">{text('cta_heading')}</h3>
             <p className="text-gray-300 text-lg">{text('cta_desc')}</p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/register">
-                <button className="bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-navy-dark font-black text-lg px-12 py-4 rounded-xl shadow-lg shadow-brand-gold/20 hover:shadow-xl hover:shadow-brand-gold/30 hover:-translate-y-1 transition-all duration-300">
-                  {text('cta_register')}
-                </button>
+            <div className="flex flex-col items-center justify-center gap-3 pt-2 sm:flex-row sm:gap-4">
+              <Link href="/register" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-gradient-to-r from-brand-gold to-brand-gold-light px-9 py-3.5 text-base font-black text-brand-navy-dark shadow-lg shadow-brand-gold/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-gold/30 sm:text-lg">
+                {text('cta_register')}
               </Link>
-              <Link href="/courses">
-                <button className="bg-white/5 border border-white/10 text-white font-bold text-lg px-10 py-4 rounded-xl hover:border-brand-gold hover:text-brand-gold-light transition-all duration-300">
-                  {text('cta_browse')}
-                </button>
+              <Link href="/courses" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-9 py-3.5 text-base font-bold text-white transition-all duration-300 hover:border-brand-gold hover:text-brand-gold-light sm:text-lg">
+                {text('cta_browse')}
               </Link>
             </div>
           </div>

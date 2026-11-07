@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { api, getErrorMessage } from '@/lib/api';
-import { buildAdminNavLinks, buildNavLinks, groupInstructorNavLinks, groupStudentNavLinks } from '@/lib/nav-links';
+import { buildAdminNavLinks, buildNavLinks, groupAdminNavLinks, groupInstructorNavLinks, groupStudentNavLinks, isNavLinkActive } from '@/lib/nav-links';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
 import { createPortal } from 'react-dom';
@@ -73,7 +73,7 @@ export default function MobileSidebar() {
         ? groupStudentNavLinks(links, t)
         : roleKey === 'INSTRUCTOR'
             ? groupInstructorNavLinks(links, t)
-            : [{ title: '', links }];
+            : groupAdminNavLinks(links, t);
     return (
         <>
             <button
@@ -90,13 +90,17 @@ export default function MobileSidebar() {
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="fixed inset-0 bg-black/50" onClick={() => setOpen(false)} />
                     <div id="mobile-navigation" role="dialog" aria-modal="true" aria-label="Navigation menu" className={`fixed top-0 bottom-0 start-0 w-[min(85%,20rem)] overflow-y-auto overscroll-contain shadow-2xl ${dark ? 'bg-surface-sunken text-ink' : 'bg-surface-raised text-ink'}`}>
-                        <div className={`flex items-center justify-between p-5 border-b ${'border-line'}`}>
-                            <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between border-b border-line p-5">
+                            <div className="flex min-w-0 flex-col gap-2">
                                 <img
                                     src={dark ? '/logos/LaxaLab_Academy_Horizontal_Reverse_4K.png' : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png'}
                                     alt="Laxalab Academy"
                                     className="h-8 w-auto object-contain"
                                 />
+                                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-gold/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-brand-gold-dark dark:text-brand-gold-light">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+                                    {t('roles.' + user.role.toLowerCase())}
+                                </span>
                             </div>
                             <button onClick={() => setOpen(false)} className="transition text-ink hover:text-ink" aria-label="Close">
                                 <X size={24} />
@@ -107,21 +111,21 @@ export default function MobileSidebar() {
                             {sections.map((section) => (
                                 <div key={section.title || 'navigation-links'} className="space-y-1">
                                     {section.title && (
-                                        <h2 className="px-3.5 pb-1 pt-3 text-[10px] font-black uppercase tracking-wider text-ink-muted/70">
+                                        <h2 className="px-3.5 pb-1 pt-3 text-[10px] font-black uppercase tracking-[0.12em] text-ink-muted/70">
                                             {section.title}
                                         </h2>
                                     )}
                                     {section.links.map((link) => {
-                                        const isActive = (pathname.startsWith(link.href) && link.href !== '/dashboard') || pathname === link.href;
+                                        const isActive = isNavLinkActive(pathname, link, links);
                                         const Icon = link.icon;
                                         return (
-                                            <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
+                                            <Link key={link.href} href={link.href} onClick={() => setOpen(false)} aria-current={isActive ? 'page' : undefined}>
                                                 <div className={`flex items-center gap-3 rounded-xl px-3.5 py-3 font-bold transition-colors ${isActive
-                                                        ? dark ? 'bg-brand-gold/20 text-gold-ink' : 'bg-brand-gold/10 text-gold-ink'
+                                                        ? dark ? 'bg-brand-gold/20 text-brand-gold-light' : 'bg-brand-navy text-white'
                                                         : 'text-ink-muted hover:bg-ink/[0.06] hover:text-ink'
                                                     }`}>
-                                                    <Icon size={19} />
-                                                    <span>{link.name}</span>
+                                                    <Icon size={18} className="shrink-0" />
+                                                    <span className="min-w-0 flex-1 truncate text-sm">{link.name}</span>
                                                     {link.href === '/dashboard/inbox' && unread > 0 && (
                                                         <span className="ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gold px-1.5 text-[10px] font-black text-ink-on-gold">
                                                             {unread > 99 ? '99+' : unread}

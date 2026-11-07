@@ -39,6 +39,24 @@ export interface NavSection {
     links: NavLink[];
 }
 
+export function isNavLinkActive(pathname: string, link: NavLink, links: NavLink[]) {
+    if (pathname === link.href) return true;
+    if (link.href === '/dashboard' || link.href === '/dashboard/admin' || !pathname.startsWith(`${link.href}/`)) {
+        return false;
+    }
+    return !links.some((candidate) =>
+        candidate.href !== link.href
+        && candidate.href.startsWith(`${link.href}/`)
+        && (pathname === candidate.href || pathname.startsWith(`${candidate.href}/`)),
+    );
+}
+
+export function getActiveNavLink(pathname: string, links: NavLink[]) {
+    return [...links]
+        .sort((left, right) => right.href.length - left.href.length)
+        .find((link) => isNavLinkActive(pathname, link, links));
+}
+
 export function groupStudentNavLinks(
     links: NavLink[],
     t: (key: string) => string,
@@ -95,6 +113,69 @@ export function groupInstructorNavLinks(
         {
             title: t('sidebar.nav_account'),
             hrefs: ['/dashboard/profile'],
+        },
+    ];
+
+    return sections.flatMap((section) => {
+        const sectionLinks = section.hrefs
+            .map((href) => links.find((link) => link.href === href))
+            .filter((link): link is NavLink => !!link);
+        return sectionLinks.length ? [{ title: section.title, links: sectionLinks }] : [];
+    });
+}
+
+export function groupAdminNavLinks(
+    links: NavLink[],
+    t: (key: string) => string,
+): NavSection[] {
+    const sections = [
+        {
+            title: t('sidebar.nav_overview'),
+            hrefs: ['/dashboard/admin', '/dashboard/admin/homepage'],
+        },
+        {
+            title: t('sidebar.nav_learning'),
+            hrefs: [
+                '/dashboard/admin/courses',
+                '/dashboard/admin/course-interests',
+                '/dashboard/admin/learning-paths',
+                '/dashboard/admin/openings',
+                '/dashboard/admin/ended',
+                '/dashboard/admin/evaluations',
+                '/dashboard/admin/certificates',
+            ],
+        },
+        {
+            title: t('sidebar.nav_people'),
+            hrefs: [
+                '/dashboard/admin/users',
+                '/dashboard/admin/users/students',
+                '/dashboard/admin/users/instructors',
+                '/dashboard/admin/users/staff',
+                '/dashboard/admin/instructors',
+            ],
+        },
+        {
+            title: t('sidebar.nav_communication'),
+            hrefs: [
+                '/dashboard/admin/tickets',
+                '/dashboard/admin/contact-requests',
+                '/dashboard/admin/requests',
+                '/dashboard/admin/chats',
+                '/dashboard/admin/announcements',
+            ],
+        },
+        {
+            title: t('sidebar.nav_operations'),
+            hrefs: ['/dashboard/admin/finance', '/dashboard/admin/gateways', '/dashboard/admin/audit'],
+        },
+        {
+            title: t('sidebar.nav_configuration'),
+            hrefs: ['/dashboard/admin/system'],
+        },
+        {
+            title: t('sidebar.nav_content'),
+            hrefs: ['/dashboard/admin/blog'],
         },
     ];
 

@@ -314,7 +314,12 @@
         "nav_communication": "التواصل",
         "nav_account_payments": "الحساب والمدفوعات",
         "nav_teaching": "التدريس",
-        "nav_account": "الحساب"
+        "nav_account": "الحساب",
+        "current_page": "الصفحة الحالية",
+        "nav_people": "إدارة المستخدمين",
+        "nav_operations": "المالية والعمليات",
+        "nav_configuration": "الإعدادات",
+        "nav_content": "المحتوى"
     },
     "submissionsInbox": {
         "title": "تسليمات الطلاب",
