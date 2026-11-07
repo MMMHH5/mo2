@@ -199,9 +199,9 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
     const inputCls = "w-full px-3 py-2.5 bg-surface-raised border border-brand-mist rounded-xl focus:ring-2 focus:ring-brand-gold focus:border-brand-gold outline-none transition text-placeholder:ink-subtle";
 
     return (
-        <div className="grid lg:grid-cols-[300px_1fr] gap-6">
+        <div className="grid min-w-0 lg:grid-cols-[300px_minmax(0,1fr)] gap-4 sm:gap-6">
             {/* Outline */}
-            <aside className="space-y-4">
+            <aside className="hidden space-y-4 lg:block">
                 <div className="bg-surface-raised border border-brand-mist rounded-[1.5rem] p-5 shadow-sm lg:sticky lg:top-24">
                     <div className="flex items-center justify-between mb-4 pb-3 border-b border-brand-mist/70">
                         <h3 className="font-black text-ink flex items-center gap-2">
@@ -270,11 +270,15 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
             </aside>
 
             {/* Mobile picker */}
-            <div className="lg:hidden">
+            <div className="min-w-0 lg:hidden">
+                <label htmlFor="course-lesson-picker" className="mb-2 block text-sm font-bold text-ink">
+                    {t('lessons.outline_heading')}
+                </label>
                 <select
+                    id="course-lesson-picker"
                     value={selected?.id ?? ''}
                     onChange={(e) => setSelectedId(e.target.value)}
-                    className="w-full px-3 py-3 bg-surface-raised border border-brand-mist rounded-xl font-bold text-ink focus:ring-2 focus:ring-brand-gold outline-none"
+                    className="w-full min-w-0 px-3 py-3 bg-surface-raised border border-brand-mist rounded-xl font-bold text-ink focus:ring-2 focus:ring-brand-gold outline-none"
                 >
                     {grouped.map((ch, ci) => (
                         <optgroup key={ci} label={pick(ch, 'title') || t('lessons.lesson_label')}>
@@ -291,25 +295,25 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
             {/* Lesson content */}
             <div className="min-w-0">
                 {selected ? (
-                    <article className="border border-brand-mist rounded-[1.5rem] overflow-hidden bg-surface-raised shadow-lg shadow-brand-navy/5">
-                        <div className="px-5 md:px-6 py-5 bg-gradient-to-r from-brand-gold/15 via-brand-mist/40 to-transparent border-b border-brand-mist/60 flex items-start gap-4">
+                    <article className="min-w-0 border border-brand-mist rounded-[1.5rem] overflow-hidden bg-surface-raised shadow-lg shadow-brand-navy/5">
+                        <div className="px-4 sm:px-5 md:px-6 py-4 sm:py-5 bg-gradient-to-r from-brand-gold/15 via-brand-mist/40 to-transparent border-b border-brand-mist/60 flex items-start gap-3 sm:gap-4">
                             <div className="bg-surface text-accent w-11 h-11 rounded-2xl flex items-center justify-center font-black flex-shrink-0 shadow-md shadow-brand-navy/20">
                                 {allModules.findIndex((m) => m.id === selected.id) + 1}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <h3 className="font-black text-ink text-xl">{pick(selected, 'title')}</h3>
+                                    <h3 className="min-w-0 break-words font-black text-ink text-lg sm:text-xl">{pick(selected, 'title')}</h3>
                                     {!isLive && !!selected.durationMinutes && (
                                         <span className="inline-flex items-center gap-1 text-xs font-bold text-ink-muted bg-ink/[0.06] rounded-full px-2.5 py-0.5">
                                             <Clock size={12} /> {selected.durationMinutes} {t('lessons.minutes_short')}
                                         </span>
                                     )}
                                 </div>
-                                {pick(selected, 'description') && <p className="text-sm text-ink-subtle mt-1">{pick(selected, 'description')}</p>}
+                                {pick(selected, 'description') && <p className="break-words text-sm text-ink-subtle mt-1">{pick(selected, 'description')}</p>}
                             </div>
                         </div>
 
-                        <div className="p-5 space-y-6">
+                        <div className="min-w-0 p-4 sm:p-5 space-y-5 sm:space-y-6">
                             {/* What the lesson actually is, so a live course does not
                                 read as a video course with the video missing. */}
                             {isLive && (
@@ -332,7 +336,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                         {(selected.outcomes || []).map((o, oi) => (
                                             <li key={oi} className="flex items-start gap-2 text-sm text-ink-muted">
                                                 <CheckCircle size={13} className="text-accent mt-0.5 shrink-0" />
-                                                <span>{pick(o, 'description')}</span>
+                                                <span className="min-w-0 break-words">{pick(o, 'description')}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -371,7 +375,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                             <div className="flex flex-wrap gap-2">
                                                 {selected.files.map((f, fi) => (
                                                     <a key={fi} href={f.url.startsWith('/') ? API_BASE_URL + f.url : f.url} target="_blank" rel="noreferrer"
-                                                        className="inline-flex items-center gap-1.5 text-sm font-bold text-ink border border-brand-mist rounded-lg px-3 py-2 hover:border-brand-gold hover:text-accent transition">
+                                                        className="inline-flex max-w-full items-center gap-1.5 break-all text-sm font-bold text-ink border border-brand-mist rounded-lg px-3 py-2 hover:border-brand-gold hover:text-accent transition">
                                                         <Download size={14} /> {pick(f, 'name') || f.url.split('/').pop() || f.url}
                                                     </a>
                                                 ))}
@@ -387,7 +391,7 @@ export default function LessonExplorer({ courseId, modules, chapters = null, ope
                                             <div className="flex flex-wrap gap-2">
                                                 {selected.links.map((lk, li) => (
                                                     <a key={li} href={lk.url} target="_blank" rel="noreferrer"
-                                                        className="inline-flex items-center gap-1.5 text-sm font-bold text-ink border border-brand-mist rounded-lg px-3 py-2 hover:border-brand-gold hover:text-accent transition">
+                                                        className="inline-flex max-w-full items-center gap-1.5 break-all text-sm font-bold text-ink border border-brand-mist rounded-lg px-3 py-2 hover:border-brand-gold hover:text-accent transition">
                                                         <Link2 size={14} /> {pick(lk, 'label') || lk.url}
                                                     </a>
                                                 ))}
