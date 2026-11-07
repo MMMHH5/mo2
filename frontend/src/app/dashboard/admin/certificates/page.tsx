@@ -9,10 +9,12 @@ import { api, API_BASE_URL, getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
 import CertificateDesignFrame, { CERTIFICATE_DESIGNS, type CertificateDesign } from '@/components/CertificateDesignFrame';
 import CertificateSeal, { type CertificateSealShape } from '@/components/CertificateSeal';
+import CertificateBilingual from '@/components/CertificateBilingual';
 
 type AssetKind = 'teacherSignature' | 'directorSignature' | 'academyStamp';
 type BrandingAsset = { name: string; url: string };
-type CertificateLayout = Record<string, { x: number; y: number } | CertificateVisualStyle>;
+type CertificateLayout = Record<string, { x: number; y: number; zIndex?: number } | CertificateVisualStyle>;
+type CertificateImageElement = { id: string; name: string; url: string };
 type CertificateVisualStyle = {
     primaryColor: string;
     accentColor: string;
@@ -32,6 +34,12 @@ type CertificateVisualStyle = {
     fontSizes: Record<string, number>;
     fontWeights: Record<string, number>;
     customElements: CustomCertificateElement[];
+    customImages: CertificateImageElement[];
+    imageSizes: Record<string, number>;
+    pageSize: 'A4' | 'Letter' | 'A3' | 'custom';
+    pageOrientation: 'landscape' | 'portrait';
+    pageWidth: number;
+    pageHeight: number;
     showSeal: boolean;
     sealMode: 'platform' | 'uploaded';
     sealShape: CertificateSealShape;
@@ -46,7 +54,7 @@ type CertificateVisualStyle = {
     sealTextEn: string;
 };
 const CERTIFICATE_ELEMENTS = ['logo', 'brand', 'title', 'recipient', 'course', 'description', 'signatures', 'qr', 'stamp'] as const;
-type CertificateElementKey = typeof CERTIFICATE_ELEMENTS[number] | `custom-${string}`;
+type CertificateElementKey = typeof CERTIFICATE_ELEMENTS[number] | `custom-${string}` | `image-${string}`;
 type CustomCertificateElement = {
     id: string;
     labelAr: string;
@@ -94,6 +102,12 @@ const DEFAULT_VISUAL_STYLE: CertificateVisualStyle = {
     fontSizes: { brand: 24, title: 18, recipient: 38, course: 24, description: 15 },
     fontWeights: { brand: 700, title: 700, recipient: 700, course: 700, description: 400 },
     customElements: [],
+    customImages: [],
+    imageSizes: {},
+    pageSize: 'A4',
+    pageOrientation: 'landscape',
+    pageWidth: 1123,
+    pageHeight: 794,
     showSeal: true,
     sealMode: 'platform',
     sealShape: 'round',
@@ -338,6 +352,7 @@ export default function AdminCertificatesPage() {
     const [presetName, setPresetName] = useState('');
     const [draggingLayoutKey, setDraggingLayoutKey] = useState<keyof CertificateLayout | null>(null);
     const [selectedElement, setSelectedElement] = useState<CertificateElementKey>('logo');
+    const [studioView, setStudioView] = useState<'edit' | 'final'>('edit');
     const [overview, setOverview] = useState<Overview | null>(null);
     const [selectedInstructorId, setSelectedInstructorId] = useState('');
     const [records, setRecords] = useState<Record<string, CourseCertificates>>({});
@@ -357,6 +372,12 @@ export default function AdminCertificatesPage() {
         fontSizes: savedVisualStyle.fontSizes && typeof savedVisualStyle.fontSizes === 'object' ? savedVisualStyle.fontSizes : DEFAULT_VISUAL_STYLE.fontSizes,
         fontWeights: savedVisualStyle.fontWeights && typeof savedVisualStyle.fontWeights === 'object' ? savedVisualStyle.fontWeights : DEFAULT_VISUAL_STYLE.fontWeights,
         customElements: Array.isArray(savedVisualStyle.customElements) ? savedVisualStyle.customElements : [],
+        customImages: Array.isArray(savedVisualStyle.customImages) ? savedVisualStyle.customImages : [],
+        imageSizes: savedVisualStyle.imageSizes && typeof savedVisualStyle.imageSizes === 'object' ? savedVisualStyle.imageSizes : {},
+        pageSize: savedVisualStyle.pageSize === 'Letter' || savedVisualStyle.pageSize === 'A3' || savedVisualStyle.pageSize === 'custom' ? savedVisualStyle.pageSize : 'A4',
+        pageOrientation: savedVisualStyle.pageOrientation === 'portrait' ? 'portrait' : 'landscape',
+        pageWidth: Number.isFinite(savedVisualStyle.pageWidth) ? Math.min(2400, Math.max(600, Number(savedVisualStyle.pageWidth))) : DEFAULT_VISUAL_STYLE.pageWidth,
+        pageHeight: Number.isFinite(savedVisualStyle.pageHeight) ? Math.min(2400, Math.max(600, Number(savedVisualStyle.pageHeight))) : DEFAULT_VISUAL_STYLE.pageHeight,
         showSeal: typeof savedVisualStyle.showSeal === 'boolean' ? savedVisualStyle.showSeal : DEFAULT_VISUAL_STYLE.showSeal,
         sealMode: savedVisualStyle.sealMode === 'uploaded' ? 'uploaded' : 'platform',
         sealShape: savedVisualStyle.sealShape ?? DEFAULT_VISUAL_STYLE.sealShape,
@@ -379,7 +400,8 @@ export default function AdminCertificatesPage() {
     };
 
     const selectedCustomElement = visualStyle.customElements.find((element) => `custom-${element.id}` === selectedElement);
-    const isTextElement = selectedElement !== 'logo' && selectedElement !== 'signatures' && selectedElement !== 'qr' && selectedElement !== 'stamp';
+    const selectedImage = visualStyle.customImages.find((image) => `image-${image.id}` === selectedElement);
+    const isTextElement = selectedElement !== 'logo' && selectedElement !== 'signatures' && selectedElement !== 'qr' && selectedElement !== 'stamp' && !selectedImage;
     const selectedFontSize = visualStyle.fontSizes[selectedElement] ?? 18;
     const selectedFontWeight = visualStyle.fontWeights[selectedElement] ?? (selectedCustomElement ? 600 : 700);
 
@@ -427,6 +449,74 @@ export default function AdminCertificatesPage() {
             },
         }));
         setSelectedElement('title');
+    };
+
+    const addCustomImage = async (file: File) => {
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+            toast.error(isAr ? 'ارفع صورة PNG أو JPG أو WEBP لا يتجاوز حجمها 5 ميجابايت.' : 'Upload a PNG, JPG, or WEBP image up to 5 MB.');
+            return;
+        }
+        setBusyBrandAsset('logo');
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            const response = await api.post<BrandingAsset & { kind: string }>('/certificates/template/branding-assets?kind=logo', form, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const image: CertificateImageElement = {
+                id: crypto.randomUUID(),
+                name: file.name,
+                url: response.data.url,
+            };
+            const key = `image-${image.id}`;
+            setTemplate((current) => ({
+                ...current,
+                layout: {
+                    ...current.layout,
+                    [key]: { x: 50, y: 50 },
+                    __visualStyle: {
+                        ...visualStyle,
+                        customImages: [...visualStyle.customImages, image],
+                        imageSizes: { ...visualStyle.imageSizes, [image.id]: 160 },
+                    },
+                },
+            }));
+            setSelectedElement(key as CertificateElementKey);
+            toast.success(isAr ? 'أضيفت الصورة إلى مساحة التصميم.' : 'Image added to the design canvas.');
+        } catch (requestError) {
+            toast.error(getErrorMessage(requestError) || (isAr ? 'تعذر رفع الصورة.' : 'Could not upload the image.'));
+        } finally {
+            setBusyBrandAsset(null);
+        }
+    };
+
+    const removeCustomImage = (id: string) => {
+        const key = `image-${id}`;
+        const layout = { ...template.layout };
+        delete layout[key];
+        const imageSizes = { ...visualStyle.imageSizes };
+        delete imageSizes[id];
+        setTemplate((current) => ({
+            ...current,
+            layout: {
+                ...layout,
+                __visualStyle: {
+                    ...visualStyle,
+                    customImages: visualStyle.customImages.filter((image) => image.id !== id),
+                    imageSizes,
+                },
+            },
+        }));
+        setSelectedElement('title');
+    };
+
+    const adjustLayer = (key: CertificateElementKey, offset: number) => {
+        const position = template.layout[key];
+        const point = position && 'x' in position ? position : { x: 50, y: 50, zIndex: 10 };
+        setTemplate((current) => ({
+            ...current,
+            layout: { ...current.layout, [key]: { ...point, zIndex: Math.max(1, Math.min(30, (point.zIndex ?? 10) + offset)) } },
+        }));
     };
 
     const setSelectedTypography = (field: 'fontSizes' | 'fontWeights', value: number) => {
@@ -601,7 +691,21 @@ export default function AdminCertificatesPage() {
         const bounds = canvas.getBoundingClientRect();
         const x = Math.max(8, Math.min(92, ((event.clientX - bounds.left) / bounds.width) * 100));
         const y = Math.max(6, Math.min(94, ((event.clientY - bounds.top) / bounds.height) * 100));
-        setTemplate((current) => ({ ...current, layout: { ...current.layout, [key]: { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 } } }));
+        setTemplate((current) => {
+            const existing = current.layout[key];
+            const point = existing && 'x' in existing ? existing : undefined;
+            return {
+                ...current,
+                layout: {
+                    ...current.layout,
+                    [key]: {
+                        ...(point ? { zIndex: point.zIndex } : {}),
+                        x: Math.round(x * 10) / 10,
+                        y: Math.round(y * 10) / 10,
+                    },
+                },
+            };
+        });
     };
 
     const beginLayoutDrag = (key: keyof CertificateLayout, event: React.PointerEvent<HTMLDivElement>) => {
@@ -612,7 +716,20 @@ export default function AdminCertificatesPage() {
     };
 
     const resetLayout = () => {
-        setTemplate((current) => ({ ...current, layout: { ...EMPTY_TEMPLATE.layout, __visualStyle: visualStyle } }));
+        const customPositions = [
+            ...visualStyle.customElements.map((element) => {
+                const key = `custom-${element.id}`;
+                return [key, template.layout[key] ?? { x: 50, y: 50 }] as const;
+            }),
+            ...visualStyle.customImages.map((image) => {
+                const key = `image-${image.id}`;
+                return [key, template.layout[key] ?? { x: 50, y: 50 }] as const;
+            }),
+        ];
+        setTemplate((current) => ({
+            ...current,
+            layout: { ...EMPTY_TEMPLATE.layout, ...Object.fromEntries(customPositions), __visualStyle: visualStyle },
+        }));
         toast.success(isAr ? 'تمت إعادة العناصر إلى وضعها الافتراضي.' : 'Elements returned to the default layout.');
     };
 
@@ -633,7 +750,11 @@ export default function AdminCertificatesPage() {
     };
 
     const applyPreset = async (preset: CertificatePreset) => {
-        setTemplate((current) => ({ ...current, designKey: preset.designKey, layout: { ...preset.layout, __visualStyle: visualStyle } }));
+        setTemplate((current) => ({
+            ...current,
+            designKey: preset.designKey,
+            layout: { ...preset.layout, __visualStyle: preset.layout.__visualStyle ?? visualStyle },
+        }));
         toast.success(isAr ? 'تم تطبيق القالب في المعاينة.' : 'Template applied to the preview.');
     };
 
@@ -680,9 +801,11 @@ export default function AdminCertificatesPage() {
     };
 
     const title = (course: Pick<CourseRow, 'titleAr' | 'titleEn'>) => isAr ? course.titleAr || course.titleEn : course.titleEn || course.titleAr;
+    const previewInstructor = overview?.instructors.find((instructor) => instructor.id === selectedInstructorId);
     const previewElementKeys: CertificateElementKey[] = [
         ...CERTIFICATE_ELEMENTS,
         ...visualStyle.customElements.map((element) => `custom-${element.id}` as const),
+        ...visualStyle.customImages.map((image) => `image-${image.id}` as const),
     ];
     if (loading) {
         return <div className="flex min-h-80 items-center justify-center text-gray-500"><LoaderCircle className="animate-spin" /> <span className="ms-3">{isAr ? 'جارٍ تحميل إدارة الشهادات...' : 'Loading certificate management...'}</span></div>;
@@ -793,16 +916,47 @@ export default function AdminCertificatesPage() {
                             <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{isAr ? 'اسحب العناصر بالماوس أو اللمس لتغيير مواقعها، واختر شكلاً بصرياً واحفظه كقالب قابل لإعادة الاستخدام.' : 'Drag elements with a mouse or touch to reposition them, choose a visual style, and save reusable templates.'}</p>
                         </div>
                     </div>
-                    <button type="button" onClick={resetLayout} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:border-brand-gold hover:text-brand-gold-dark dark:border-white/10 dark:text-gray-300">
-                        <RotateCcw size={15} /> {isAr ? 'إعادة المواضع' : 'Reset positions'}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                        <div className="inline-flex rounded-xl border border-gray-200 p-1 dark:border-white/10">
+                            <button type="button" onClick={() => setStudioView('edit')} className={`rounded-lg px-3 py-2 text-xs font-bold ${studioView === 'edit' ? 'bg-brand-navy text-white dark:bg-brand-gold dark:text-brand-navy-dark' : 'text-gray-600 dark:text-gray-300'}`}>
+                                {isAr ? 'تحرير' : 'Edit'}
+                            </button>
+                            <button type="button" onClick={() => setStudioView('final')} className={`rounded-lg px-3 py-2 text-xs font-bold ${studioView === 'final' ? 'bg-brand-navy text-white dark:bg-brand-gold dark:text-brand-navy-dark' : 'text-gray-600 dark:text-gray-300'}`}>
+                                {isAr ? 'المعاينة النهائية' : 'Final preview'}
+                            </button>
+                        </div>
+                        {studioView === 'edit' && (
+                            <button type="button" onClick={resetLayout} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 hover:border-brand-gold hover:text-brand-gold-dark dark:border-white/10 dark:text-gray-300">
+                                <RotateCcw size={15} /> {isAr ? 'إعادة المواضع' : 'Reset positions'}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+                {studioView === 'final' ? (
+                    <div className="rounded-2xl bg-slate-200 p-3 dark:bg-black/20 sm:p-5">
+                        <CertificateBilingual
+                            studentName={isAr ? 'اسم الطالب التجريبي' : 'Sample Student'}
+                            courseName={isAr ? 'اسم الدورة التدريبية' : 'Sample Course'}
+                            instructorName={previewInstructor?.name || (isAr ? 'اسم المدرّس' : 'Instructor Name')}
+                            instructorSignatureUrl={previewInstructor?.signatureUrl}
+                            issueDate="2025-01-01"
+                            verificationCode="PREVIEW-2025"
+                            verificationUrl="https://laxalab.example/verify-certificate?code=PREVIEW-2025"
+                            lang={isAr ? 'ar' : 'en'}
+                            template={template}
+                            editorPreview
+                        />
+                    </div>
+                ) : <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
                     <div className="overflow-auto rounded-2xl bg-slate-200 p-3 dark:bg-black/20 sm:p-5">
                         <div
-                            style={{ backgroundColor: visualStyle.backgroundColor, fontFamily: visualStyle.fontFamily }}
-                            className={`relative mx-auto aspect-[1.414/1] w-full max-w-[760px] overflow-hidden shadow-2xl ${template.designKey === 'modern' ? 'rounded-lg' : ''}`}
+                            style={{
+                                backgroundColor: visualStyle.backgroundColor,
+                                fontFamily: visualStyle.fontFamily,
+                                aspectRatio: `${visualStyle.pageWidth} / ${visualStyle.pageHeight}`,
+                            }}
+                            className={`relative mx-auto w-full max-w-[760px] overflow-hidden shadow-2xl ${template.designKey === 'modern' ? 'rounded-lg' : ''}`}
                         >
                             {visualStyle.frameStyle !== 'none' && (
                                 <>
@@ -834,7 +988,10 @@ export default function AdminCertificatesPage() {
                                 const customElement = typeof key === 'string' && key.startsWith('custom-')
                                     ? visualStyle.customElements.find((element) => `custom-${element.id}` === key)
                                     : undefined;
-                                const elementIsText = key !== 'logo' && key !== 'signatures' && key !== 'qr';
+                                const customImage = typeof key === 'string' && key.startsWith('image-')
+                                    ? visualStyle.customImages.find((image) => `image-${image.id}` === key)
+                                    : undefined;
+                                const elementIsText = key !== 'logo' && key !== 'signatures' && key !== 'qr' && key !== 'stamp' && !customImage;
                                 const labels: Partial<Record<CertificateElementKey, string>> = {
                                     logo: isAr ? 'شعار المنصة' : 'Platform logo',
                                     brand: isAr ? template.academyNameAr || 'اسم الأكاديمية' : template.academyNameEn || 'Academy',
@@ -848,7 +1005,7 @@ export default function AdminCertificatesPage() {
                                 };
                                 const previewText = customElement
                                     ? (isAr ? customElement.textAr : customElement.textEn)
-                                    : labels[key];
+                                    : customImage?.name ?? labels[key];
                                 return (
                                     <div
                                         key={key}
@@ -862,11 +1019,13 @@ export default function AdminCertificatesPage() {
                                             left: `${pos.x}%`,
                                             top: `${pos.y}%`,
                                             transform: `translate(-50%, -50%)${key === 'stamp' ? ` rotate(${visualStyle.sealRotation}deg)` : ''}`,
-                                            minWidth: key === 'qr' ? 46 : 120,
+                                            zIndex: pos.zIndex ?? 10,
+                                            minWidth: key === 'qr' ? 46 : customImage ? undefined : 120,
                                             color: elementIsText ? visualStyle.textColor : undefined,
-                                            fontSize: elementIsText ? `${visualStyle.fontSizes[key] ?? (key === 'recipient' ? 38 : key === 'course' ? 28 : 18)}px` : undefined,
+                                            fontSize: elementIsText ? `${(visualStyle.fontSizes[key] ?? (key === 'recipient' ? 38 : key === 'course' ? 28 : 18)) * Math.min(1, 760 / visualStyle.pageWidth)}px` : undefined,
                                             fontWeight: elementIsText ? visualStyle.fontWeights[key] ?? (key === 'description' ? 400 : 700) : undefined,
                                             opacity: key === 'stamp' ? visualStyle.sealOpacity : undefined,
+                                            padding: customImage ? 0 : undefined,
                                         }}
                                         title={isAr ? 'اسحب لتغيير المكان' : 'Drag to reposition'}
                                     >
@@ -879,6 +1038,16 @@ export default function AdminCertificatesPage() {
                                                 unoptimized
                                                 className={`mx-auto block ${visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'rounded' ? 'rounded-lg' : 'rounded-none'} h-12 w-40 object-contain`}
                                                 alt={isAr ? 'شعار المنصة' : 'Platform logo'}
+                                            />
+                                        ) : customImage ? (
+                                            <Image
+                                                src={brandingAssetSrc(customImage.url)}
+                                                alt={customImage.name}
+                                                width={600}
+                                                height={600}
+                                                unoptimized
+                                                className="block max-w-none object-contain"
+                                                style={{ width: `${(visualStyle.imageSizes[customImage.id] ?? 160) * Math.min(1, 760 / visualStyle.pageWidth)}px`, height: `${(visualStyle.imageSizes[customImage.id] ?? 160) * Math.min(1, 760 / visualStyle.pageWidth)}px` }}
                                             />
                                         ) : key === 'stamp' ? (
                                             visualStyle.sealMode === 'uploaded' && template.academyStampUrl ? (
@@ -917,6 +1086,9 @@ export default function AdminCertificatesPage() {
                                     const customElement = typeof key === 'string' && key.startsWith('custom-')
                                         ? visualStyle.customElements.find((element) => `custom-${element.id}` === key)
                                         : undefined;
+                                    const customImage = typeof key === 'string' && key.startsWith('image-')
+                                        ? visualStyle.customImages.find((image) => `image-${image.id}` === key)
+                                        : undefined;
                                     const labels: Partial<Record<typeof key, [string, string]>> = {
                                         logo: ['شعار المنصة', 'Platform logo'],
                                         brand: ['اسم الأكاديمية', 'Academy name'],
@@ -930,7 +1102,9 @@ export default function AdminCertificatesPage() {
                                     };
                                     const label = customElement
                                         ? [customElement.labelAr, customElement.labelEn]
-                                        : labels[key];
+                                        : customImage
+                                            ? [customImage.name, customImage.name]
+                                            : labels[key];
                                     return (
                                         <button
                                             key={key}
@@ -945,6 +1119,15 @@ export default function AdminCertificatesPage() {
                                 <button type="button" onClick={addCustomElement} className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-brand-gold px-3 py-2 text-xs font-black text-brand-navy hover:bg-brand-gold/10 dark:text-white">
                                     <Type size={14} /> {isAr ? 'إضافة عنصر نصي جديد' : 'Add a custom text element'}
                                 </button>
+                                <label className="col-span-2 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 px-3 py-2 text-xs font-black text-gray-700 hover:border-brand-gold dark:border-white/10 dark:text-white">
+                                    {busyBrandAsset === 'logo' ? <LoaderCircle size={14} className="animate-spin" /> : <ImagePlus size={14} />}
+                                    {isAr ? 'إضافة صورة أو زخرفة' : 'Add image or decoration'}
+                                    <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={busyBrandAsset !== null} onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        if (file) void addCustomImage(file);
+                                        event.currentTarget.value = '';
+                                    }} />
+                                </label>
                             </div>
                             <label className="mt-3 flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
                                 <input type="checkbox" checked={visualStyle.showLogo} onChange={(event) => updateVisualStyle({ showLogo: event.target.checked })} />
@@ -970,6 +1153,28 @@ export default function AdminCertificatesPage() {
                                     </button>
                                 </div>
                             )}
+                            {selectedImage && (
+                                <div className="mt-4 space-y-3 rounded-xl border border-brand-gold/30 p-3">
+                                    <h4 className="text-xs font-black text-brand-navy dark:text-white">{isAr ? 'خصائص الصورة' : 'Image properties'}</h4>
+                                    <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                        {isAr ? `الحجم: ${visualStyle.imageSizes[selectedImage.id] ?? 160}px` : `Size: ${visualStyle.imageSizes[selectedImage.id] ?? 160}px`}
+                                        <input type="range" min="40" max="600" value={visualStyle.imageSizes[selectedImage.id] ?? 160} onChange={(event) => updateVisualStyle({ imageSizes: { ...visualStyle.imageSizes, [selectedImage.id]: Number(event.target.value) } })} className="mt-2 w-full accent-brand-gold" />
+                                    </label>
+                                    <button type="button" onClick={() => removeCustomImage(selectedImage.id)} className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400">
+                                        <Trash2 size={14} /> {isAr ? 'حذف الصورة من التصميم' : 'Remove image from design'}
+                                    </button>
+                                </div>
+                            )}
+                            <div className="mt-4 rounded-xl border border-gray-100 p-3 dark:border-white/10">
+                                <h4 className="mb-2 text-xs font-black text-gray-700 dark:text-gray-200">{isAr ? 'الطبقات' : 'Layers'}</h4>
+                                <p className="mb-3 text-[11px] leading-5 text-gray-500 dark:text-gray-400">
+                                    {isAr ? 'حدد عنصرًا ثم غيّر ترتيبه أمام العناصر الأخرى. استخدم الأسهم لترتيب الطبقة.' : 'Select an element, then change its stacking order using the arrows.'}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => adjustLayer(selectedElement, 1)} className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold dark:border-white/10">{isAr ? 'إلى الأمام ↑' : 'Bring forward ↑'}</button>
+                                    <button type="button" onClick={() => adjustLayer(selectedElement, -1)} className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold dark:border-white/10">{isAr ? 'إلى الخلف ↓' : 'Send backward ↓'}</button>
+                                </div>
+                            </div>
                             {isTextElement && (
                                 <div className="mt-4 space-y-3 rounded-xl border border-gray-100 p-3 dark:border-white/10">
                                     <h4 className="flex items-center gap-2 text-xs font-black text-gray-700 dark:text-gray-200"><Type size={14} /> {isAr ? 'تنسيق النص المحدد' : 'Selected text formatting'}</h4>
@@ -1134,6 +1339,71 @@ export default function AdminCertificatesPage() {
                                     </label>
                                 ))}
                             </div>
+                            <div className="rounded-2xl border border-gray-200 p-3 dark:border-white/10">
+                                <h3 className="mb-3 text-sm font-black text-brand-navy dark:text-white">{isAr ? 'حجم واتجاه الشهادة' : 'Certificate size and orientation'}</h3>
+                                <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                    {isAr ? 'حجم الصفحة' : 'Page size'}
+                                    <select
+                                        value={visualStyle.pageSize}
+                                        onChange={(event) => {
+                                            const pageSize = event.target.value as CertificateVisualStyle['pageSize'];
+                                            if (pageSize === 'custom') {
+                                                updateVisualStyle({ pageSize });
+                                                return;
+                                            }
+                                            const dimensions = pageSize === 'A3' ? [1587, 1122] : pageSize === 'Letter' ? [1056, 816] : [1123, 794];
+                                            const [landscapeWidth, landscapeHeight] = dimensions;
+                                            updateVisualStyle({
+                                                pageSize,
+                                                pageWidth: visualStyle.pageOrientation === 'landscape' ? landscapeWidth : landscapeHeight,
+                                                pageHeight: visualStyle.pageOrientation === 'landscape' ? landscapeHeight : landscapeWidth,
+                                            });
+                                        }}
+                                        className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark"
+                                    >
+                                        <option value="A4">A4</option>
+                                        <option value="Letter">Letter</option>
+                                        <option value="A3">A3</option>
+                                        <option value="custom">{isAr ? 'مخصص' : 'Custom'}</option>
+                                    </select>
+                                </label>
+                                <label className="mt-3 block text-xs font-bold text-gray-600 dark:text-gray-300">
+                                    {isAr ? 'اتجاه الصفحة' : 'Orientation'}
+                                    <select
+                                        value={visualStyle.pageOrientation}
+                                        onChange={(event) => {
+                                            const pageOrientation = event.target.value as CertificateVisualStyle['pageOrientation'];
+                                            const needsSwap = (pageOrientation === 'landscape' && visualStyle.pageWidth < visualStyle.pageHeight)
+                                                || (pageOrientation === 'portrait' && visualStyle.pageWidth > visualStyle.pageHeight);
+                                            updateVisualStyle({
+                                                pageOrientation,
+                                                ...(needsSwap ? { pageWidth: visualStyle.pageHeight, pageHeight: visualStyle.pageWidth } : {}),
+                                            });
+                                        }}
+                                        className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark"
+                                    >
+                                        <option value="landscape">{isAr ? 'أفقي' : 'Landscape'}</option>
+                                        <option value="portrait">{isAr ? 'عمودي' : 'Portrait'}</option>
+                                    </select>
+                                </label>
+                                {visualStyle.pageSize === 'custom' && (
+                                    <div className="mt-3 grid grid-cols-2 gap-3">
+                                        {([
+                                            ['pageWidth', isAr ? 'العرض (px)' : 'Width (px)'],
+                                            ['pageHeight', isAr ? 'الارتفاع (px)' : 'Height (px)'],
+                                        ] as const).map(([field, label]) => (
+                                            <label key={field} className="text-xs font-bold text-gray-600 dark:text-gray-300">
+                                                {label}
+                                                <input type="number" min="600" max="2400" step="1" value={visualStyle[field]} onChange={(event) => {
+                                                    const value = Number(event.target.value);
+                                                    if (Number.isFinite(value)) updateVisualStyle({ [field]: Math.max(600, Math.min(2400, value)) });
+                                                }} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10 dark:bg-brand-navy-dark" />
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                                <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">{visualStyle.pageWidth} × {visualStyle.pageHeight} px</p>
+                            </div>
                             <label className="mt-3 block text-xs font-bold text-gray-600 dark:text-gray-300">
                                 {isAr ? 'شكل الإطار' : 'Frame shape'}
                                 <select value={visualStyle.frameStyle} onChange={(event) => updateVisualStyle({ frameStyle: event.target.value as CertificateVisualStyle['frameStyle'] })} className="mt-1.5 w-full rounded-lg border border-gray-200 px-3 py-2 text-xs dark:border-white/10 dark:bg-brand-navy-dark">
@@ -1245,7 +1515,7 @@ export default function AdminCertificatesPage() {
                             </div>
                         </div>
                     </aside>
-                </div>
+                </div>}
             </section>
 
             <section className="space-y-4">

@@ -18,7 +18,7 @@ export interface CertificateTemplateData {
     directorSignatureUrl: string | null;
     academyStampUrl: string | null;
     designKey?: 'classic' | 'royal' | 'modern';
-    layout?: Record<string, { x: number; y: number } | unknown>;
+    layout?: Record<string, unknown>;
 }
 
 type CertificateCustomElement = {
@@ -26,6 +26,7 @@ type CertificateCustomElement = {
     textAr: string;
     textEn: string;
 };
+type CertificateImageElement = { id: string; name: string; url: string };
 
 export interface CertificateProps {
     studentName: string;
@@ -37,6 +38,7 @@ export interface CertificateProps {
     instructorSignatureUrl?: string | null;
     lang: 'ar' | 'en';
     template?: CertificateTemplateData;
+    editorPreview?: boolean;
 }
 
 function formatDate(dateStr: string, lang: 'ar' | 'en'): string {
@@ -88,7 +90,12 @@ function colorWithOpacity(color: string, opacity: number): string {
     return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${opacity})`;
 }
 
-export default function CertificateBilingual({ studentName, courseName, instructorName, instructorSignatureUrl, issueDate, verificationCode, verificationUrl, lang, template }: CertificateProps) {
+function layoutZIndex(position: unknown, fallback = 11): number {
+    if (!position || typeof position !== 'object' || !('zIndex' in position) || typeof position.zIndex !== 'number') return fallback;
+    return Math.min(30, Math.max(1, position.zIndex));
+}
+
+export default function CertificateBilingual({ studentName, courseName, instructorName, instructorSignatureUrl, issueDate, verificationCode, verificationUrl, lang, template, editorPreview = false }: CertificateProps) {
     const isAr = lang === 'ar';
     const academyName = isAr ? template?.academyNameAr : template?.academyNameEn;
     const certificateTitle = isAr ? template?.titleAr : template?.titleEn;
@@ -111,6 +118,11 @@ export default function CertificateBilingual({ studentName, courseName, instruct
         fontSizes: savedStyle && typeof savedStyle === 'object' && 'fontSizes' in savedStyle && savedStyle.fontSizes && typeof savedStyle.fontSizes === 'object' ? savedStyle.fontSizes as Record<string, number> : {},
         fontWeights: savedStyle && typeof savedStyle === 'object' && 'fontWeights' in savedStyle && savedStyle.fontWeights && typeof savedStyle.fontWeights === 'object' ? savedStyle.fontWeights as Record<string, number> : {},
         customElements: savedStyle && typeof savedStyle === 'object' && 'customElements' in savedStyle && Array.isArray(savedStyle.customElements) ? savedStyle.customElements as CertificateCustomElement[] : [],
+        customImages: savedStyle && typeof savedStyle === 'object' && 'customImages' in savedStyle && Array.isArray(savedStyle.customImages) ? savedStyle.customImages as CertificateImageElement[] : [],
+        imageSizes: savedStyle && typeof savedStyle === 'object' && 'imageSizes' in savedStyle && savedStyle.imageSizes && typeof savedStyle.imageSizes === 'object' ? savedStyle.imageSizes as Record<string, number> : {},
+        pageWidth: savedStyle && typeof savedStyle === 'object' && 'pageWidth' in savedStyle && typeof savedStyle.pageWidth === 'number' ? Math.min(2400, Math.max(600, savedStyle.pageWidth)) : 1123,
+        pageHeight: savedStyle && typeof savedStyle === 'object' && 'pageHeight' in savedStyle && typeof savedStyle.pageHeight === 'number' ? Math.min(2400, Math.max(600, savedStyle.pageHeight)) : 794,
+        pageOrientation: savedStyle && typeof savedStyle === 'object' && 'pageOrientation' in savedStyle && savedStyle.pageOrientation === 'portrait' ? 'portrait' : 'landscape',
         showSeal: savedStyle && typeof savedStyle === 'object' && 'showSeal' in savedStyle && typeof savedStyle.showSeal === 'boolean' ? savedStyle.showSeal : Boolean(template?.academyStampUrl),
         sealMode: savedStyle && typeof savedStyle === 'object' && 'sealMode' in savedStyle && savedStyle.sealMode === 'uploaded' ? 'uploaded' : savedStyle && typeof savedStyle === 'object' && 'sealMode' in savedStyle && savedStyle.sealMode === 'platform' ? 'platform' : template?.academyStampUrl ? 'uploaded' : 'platform',
         sealShape: savedStyle && typeof savedStyle === 'object' && 'sealShape' in savedStyle && typeof savedStyle.sealShape === 'string' ? savedStyle.sealShape as CertificateSealShape : 'round',
@@ -125,7 +137,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
         sealTextEn: savedStyle && typeof savedStyle === 'object' && 'sealTextEn' in savedStyle && typeof savedStyle.sealTextEn === 'string' ? savedStyle.sealTextEn : 'OFFICIAL SEAL',
     };
     const textStyle = (key: string, defaultSize: number, defaultWeight: number) => ({
-        fontSize: `${Math.min(64, Math.max(10, Number(visualStyle.fontSizes[key]) || defaultSize))}px`,
+        fontSize: `${Math.min(64, Math.max(10, Number(visualStyle.fontSizes[key]) || defaultSize)) * visualStyle.pageWidth / 1123}px`,
         fontWeight: Math.min(900, Math.max(400, Number(visualStyle.fontWeights[key]) || defaultWeight)),
     });
     const logoClass = visualStyle.logoShape === 'circle' ? 'rounded-full' : visualStyle.logoShape === 'square' ? 'rounded-none' : 'rounded-lg';
@@ -144,7 +156,14 @@ export default function CertificateBilingual({ studentName, courseName, instruct
         const point = template?.layout?.[key];
         if (!point || typeof point !== 'object' || !('x' in point) || !('y' in point)) return 0;
         const value = point[axis] ?? baseline;
-        return typeof value === 'number' ? (value - baseline) * 5.6 : 0;
+        const dimension = axis === 'x' ? visualStyle.pageWidth : visualStyle.pageHeight;
+        return typeof value === 'number' ? ((value - baseline) * dimension) / 100 : 0;
+    };
+    const layoutLayer = (key: string) => {
+        const point = template?.layout?.[key];
+        return point && typeof point === 'object' && 'zIndex' in point && typeof point.zIndex === 'number'
+            ? Math.min(30, Math.max(1, point.zIndex))
+            : 10;
     };
     const layoutPosition = (key: string, axis: 'x' | 'y', fallback: number) => {
         const point = template?.layout?.[key];
@@ -155,7 +174,8 @@ export default function CertificateBilingual({ studentName, courseName, instruct
     const [scale, setScale] = useState(1);
     const certRef = useRef<HTMLDivElement>(null);
 
-    const handlePrint = useCallback(() => {
+    const handlePrint = useCallback(async () => {
+        await document.fonts.ready;
         window.print();
     }, []);
 
@@ -164,26 +184,27 @@ export default function CertificateBilingual({ studentName, courseName, instruct
         if (!el) return;
         const fit = () => {
             const w = el.getBoundingClientRect().width;
-            setScale(Math.min(1, w / 1056));
+            setScale(Math.min(1, w / visualStyle.pageWidth));
         };
         fit();
         const ro = new ResizeObserver(fit);
         ro.observe(el);
         window.addEventListener('resize', fit);
         return () => { ro.disconnect(); window.removeEventListener('resize', fit); };
-    }, []);
+    }, [visualStyle.pageWidth]);
 
     useEffect(() => {
+        if (editorPreview) return;
         document.title = isAr
             ? `${certificateTitle || 'شهادة إتمام الدورة'} - ${courseName} | ${academyName || 'Laxalab'}`
             : `${certificateTitle || 'Certificate of Completion'} - ${courseName} | ${academyName || 'Laxalab'}`;
-    }, [isAr, courseName, academyName, certificateTitle]);
+    }, [isAr, courseName, academyName, certificateTitle, editorPreview]);
 
     return (
         <>
             {fontSrc && <style>{`@font-face { font-family: 'LaxaCertificateCustom'; src: url("${fontSrc}") format("${fontFormat}"); font-display: swap; }`}</style>}
             {/* Controls — hidden on print */}
-            <div className="no-print fixed top-0 inset-x-0 z-50 bg-brand-navy-dark/95 backdrop-blur-xl border-b border-white/10">
+            {!editorPreview && <div className="no-print fixed top-0 inset-x-0 z-50 bg-brand-navy-dark/95 backdrop-blur-xl border-b border-white/10">
                 <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <BrandLogo className="h-8 w-8 rounded-lg" variant="mark" dark />
@@ -202,19 +223,27 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
                             </svg>
-                            {isAr ? 'طباعة' : 'Print'}
+                            {isAr ? 'طباعة / حفظ PDF' : 'Print / Save PDF'}
                         </button>
                     </div>
                 </div>
-            </div>
+            </div>}
+
+            {editorPreview && (
+                <div className="no-print mb-3 flex justify-end">
+                    <button onClick={handlePrint} className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-bold text-white dark:bg-brand-gold dark:text-brand-navy-dark">
+                        {isAr ? 'طباعة / حفظ PDF' : 'Print / Save PDF'}
+                    </button>
+                </div>
+            )}
 
             {/* Spacer for fixed header */}
-            <div className="no-print h-14" />
+            {!editorPreview && <div className="no-print h-14" />}
 
             {/* Certificate */}
-            <div className="min-h-screen bg-gray-200 flex items-center justify-center p-4 overflow-hidden print:bg-white print:p-0 print:overflow-visible">
+            <div className={editorPreview ? 'w-full overflow-auto' : 'min-h-screen bg-gray-200 flex items-center justify-center p-4 overflow-hidden print:bg-white print:p-0 print:overflow-visible'}>
                 {/* Mobile stacked certificate (screen only, below md) */}
-                <div className="md:hidden print:hidden w-full max-w-md mx-auto relative z-10">
+                <div className={`${editorPreview ? 'hidden' : 'md:hidden print:hidden'} w-full max-w-md mx-auto relative z-10`}>
                     <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{ backgroundColor: visualStyle.backgroundColor, border: visualStyle.frameStyle === 'none' ? 'none' : `8px ${frameBorderStyle} ${visualStyle.primaryColor}` }}>
                         <CertificateDesignFrame design={visualStyle.certificateDesign} primaryColor={visualStyle.primaryColor} accentColor={visualStyle.accentColor} />
                         <div className="absolute inset-x-0 top-0 z-10 h-1.5" style={{ backgroundColor: visualStyle.accentColor }} />
@@ -284,16 +313,20 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                     </div>
                 </div>
 
-                <div ref={certRef} className="w-full relative print:relative hidden md:block print:block">
-                    <div className="print:hidden" style={{ height: `${748 * scale}px` }} />
+                <div
+                    ref={certRef}
+                    id={editorPreview ? 'certificate-output-preview' : undefined}
+                    className={`certificate-print-container relative w-full print:relative ${editorPreview ? 'block' : 'hidden md:block print:block'}`}
+                    style={{ height: `${visualStyle.pageHeight * scale}px` }}
+                >
                     <div
                         className="certificate-wrap bg-white shadow-2xl print:shadow-none print:w-full"
                         style={{
                             position: 'absolute' as const,
                             top: 0,
                             left: 0,
-                            width: '1056px',
-                            height: '748px',
+                            width: `${visualStyle.pageWidth}px`,
+                            height: `${visualStyle.pageHeight}px`,
                             transform: `scale(${scale})`,
                             transformOrigin: 'top left',
                             backgroundColor: visualStyle.backgroundColor,
@@ -302,12 +335,13 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                         <CertificateDesignFrame design={visualStyle.certificateDesign} primaryColor={visualStyle.primaryColor} accentColor={visualStyle.accentColor} />
                         {visualStyle.showSeal && sealSettingsConfigured && (
                             <div
-                                className="absolute z-20"
+                                className="absolute"
                                 style={{
                                     left: `${layoutPosition('stamp', 'x', 16)}%`,
                                     top: `${layoutPosition('stamp', 'y', 82)}%`,
                                     transform: `translate(-50%, -50%) rotate(${visualStyle.sealRotation}deg)`,
                                     opacity: visualStyle.sealOpacity,
+                                    zIndex: layoutLayer('stamp'),
                                 }}
                             >
                                 {visualStyle.sealMode === 'uploaded' && template?.academyStampUrl ? (
@@ -374,8 +408,8 @@ export default function CertificateBilingual({ studentName, courseName, instruct
 
                         {/* === CONTENT === */}
                         <div
-                            className="relative z-10 h-full flex flex-col items-center justify-between"
-                            style={{ inset: '24px', position: 'absolute', padding: isAr ? '40px 48px 32px' : '40px 48px 32px' }}
+                            className="relative h-full flex flex-col items-center justify-between"
+                            style={{ inset: 0, position: 'absolute', boxSizing: 'border-box', padding: isAr ? '40px 48px 32px' : '40px 48px 32px' }}
                         >
                             {visualStyle.customElements.map((element) => {
                                 const position = template?.layout?.[`custom-${element.id}`];
@@ -391,6 +425,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                             top: `${y}%`,
                                             color: visualStyle.textColor,
                                             fontFamily: certificateFontFamily,
+                                            zIndex: layoutZIndex(position),
                                             ...textStyle(`custom-${element.id}`, 18, 600),
                                         }}
                                         dir={isAr ? 'rtl' : 'ltr'}
@@ -399,13 +434,38 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     </div>
                                 );
                             })}
+                            {visualStyle.customImages.map((image) => {
+                                const position = template?.layout?.[`image-${image.id}`];
+                                if (!position || typeof position !== 'object' || !('x' in position) || !('y' in position)) return null;
+                                const x = typeof position.x === 'number' ? Math.min(100, Math.max(0, position.x)) : 50;
+                                const y = typeof position.y === 'number' ? Math.min(100, Math.max(0, position.y)) : 50;
+                                const size = Math.min(600, Math.max(40, Number(visualStyle.imageSizes[image.id]) || 160));
+                                const imageSrc = image.url.startsWith('/uploads/certificates/branding/') && !image.url.includes('..')
+                                    ? `${API_BASE_URL}${image.url}`
+                                    : '/logos/LaxaLab_Academy_Horizontal_Primary_4K.png';
+                                return (
+                                    <div
+                                        key={image.id}
+                                        className="absolute -translate-x-1/2 -translate-y-1/2"
+                                        style={{
+                                            left: `${x}%`,
+                                            top: `${y}%`,
+                                            width: size,
+                                            height: size,
+                                            zIndex: layoutZIndex(position),
+                                        }}
+                                    >
+                                        <Image src={imageSrc} alt={image.name} width={600} height={600} unoptimized className="h-full w-full object-contain" />
+                                    </div>
+                                );
+                            })}
 
                             {/* ===== TOP SECTION: Logo + Title ===== */}
-                            <div className="text-center w-full" style={{ transform: `translate(${layoutOffset('brand', 'x', 50)}px, ${layoutOffset('brand', 'y', 9) + layoutOffset('title', 'y', 19)}px)` }}>
+                            <div className="relative w-full text-center" style={{ zIndex: layoutLayer('brand'), transform: `translate(${layoutOffset('brand', 'x', 50)}px, ${layoutOffset('brand', 'y', 9)}px)` }}>
                                 {/* Logo + Brand */}
                                 <div className={`flex items-center justify-center gap-3 mb-4 ${isAr ? 'flex-row-reverse' : ''}`}>
                                     {visualStyle.showLogo && (
-                                        <div style={{ transform: `translate(${layoutOffset('logo', 'x', 50)}px, ${layoutOffset('logo', 'y', 9)}px)` }}>
+                                        <div style={{ zIndex: layoutLayer('logo'), transform: `translate(${layoutOffset('logo', 'x', 50)}px, ${layoutOffset('logo', 'y', 9)}px)` }}>
                                             <Image src={logoSrc} alt={isAr ? 'شعار المنصة' : 'Platform logo'} width={400} height={110} unoptimized className={`h-16 w-52 ${logoClass} object-contain`} />
                                         </div>
                                     )}
@@ -424,14 +484,14 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* Certificate Title */}
                                 <h2
                                     className="text-[11px] font-bold uppercase tracking-[0.4em] mb-1"
-                                    style={{ color: visualStyle.accentColor, fontFamily: certificateFontFamily, ...textStyle('title', 18, 700) }}
+                                    style={{ position: 'relative', zIndex: layoutLayer('title'), transform: `translate(${layoutOffset('title', 'x', 50)}px, ${layoutOffset('title', 'y', 19)}px)`, color: visualStyle.accentColor, fontFamily: certificateFontFamily, ...textStyle('title', 18, 700) }}
                                 >
                                     {certificateTitle || (isAr ? 'شهادة إتمام الدورة' : 'Certificate of Completion')}
                                 </h2>
                             </div>
 
                             {/* ===== MIDDLE SECTION: Body ===== */}
-                            <div className={`text-center flex-1 flex flex-col items-center justify-center w-full max-w-xl ${isAr ? 'direction-rtl' : ''}`} dir={isAr ? 'rtl' : 'ltr'} style={{ transform: `translate(${layoutOffset('recipient', 'x', 50) + layoutOffset('course', 'x', 50)}px, ${(layoutOffset('recipient', 'y', 43) + layoutOffset('course', 'y', 58)) / 2}px)` }}>
+                            <div className={`text-center flex-1 flex flex-col items-center justify-center w-full max-w-xl ${isAr ? 'direction-rtl' : ''}`} dir={isAr ? 'rtl' : 'ltr'} style={{ position: 'relative', zIndex: layoutLayer('recipient') }}>
 
                                 {/* "This is to certify that" */}
                                 <p
@@ -446,6 +506,9 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                     <p
                                         className="text-[38px] leading-tight mb-1"
                                         style={{
+                                            position: 'relative',
+                                            zIndex: layoutLayer('recipient'),
+                                            transform: `translate(${layoutOffset('recipient', 'x', 50)}px, ${layoutOffset('recipient', 'y', 43)}px)`,
                                             color: visualStyle.textColor,
                                             fontFamily: certificateFontFamily,
                                             ...textStyle('recipient', 38, 700),
@@ -467,7 +530,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* === Course Name === */}
                                 <p
                                     className="text-[22px] font-bold mb-3"
-                                    style={{ color: visualStyle.textColor, fontFamily: certificateFontFamily, ...textStyle('course', 24, 700) }}
+                                    style={{ position: 'relative', zIndex: layoutLayer('course'), transform: `translate(${layoutOffset('course', 'x', 50)}px, ${layoutOffset('course', 'y', 58)}px)`, color: visualStyle.textColor, fontFamily: certificateFontFamily, ...textStyle('course', 24, 700) }}
                                 >
                                     {courseName}
                                 </p>
@@ -475,7 +538,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 {/* Description */}
                                 <p
                                     className="text-[11px] leading-relaxed max-w-md mb-4"
-                                    style={{ color: colorWithOpacity(visualStyle.textColor, 0.55), fontFamily: certificateFontFamily, ...textStyle('description', 15, 400) }}
+                                    style={{ position: 'relative', zIndex: layoutLayer('description'), transform: `translate(${layoutOffset('description', 'x', 50)}px, ${layoutOffset('description', 'y', 69)}px)`, color: colorWithOpacity(visualStyle.textColor, 0.55), fontFamily: certificateFontFamily, ...textStyle('description', 15, 400) }}
                                 >
                                     {certificateDescription || (isAr
                                         ? 'بما في ذلك جميع المتطلبات الدراسية والتمارين العملية والاختبارات التقييمية اللازمة لإتمام الدورة بنجاح.'
@@ -494,7 +557,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                             </div>
 
                             {/* ===== BOTTOM SECTION: Signatures + QR + Date ===== */}
-                            <div className={`w-full flex items-end justify-between gap-6 ${isAr ? 'flex-row-reverse' : ''}`} dir="ltr" style={{ transform: `translate(${layoutOffset('signatures', 'x', 50) + layoutOffset('qr', 'x', 87) - 37}px, ${layoutOffset('signatures', 'y', 87)}px)` }}>
+                            <div className={`relative w-full flex items-end justify-between gap-6 ${isAr ? 'flex-row-reverse' : ''}`} dir="ltr" style={{ zIndex: layoutLayer('signatures'), transform: `translate(${layoutOffset('signatures', 'x', 50)}px, ${layoutOffset('signatures', 'y', 87)}px)` }}>
 
                                 {/* Left: Instructor Signature */}
                                 <div className="flex-1 text-center" dir={isAr ? 'rtl' : 'ltr'}>
@@ -517,7 +580,7 @@ export default function CertificateBilingual({ studentName, courseName, instruct
                                 </div>
 
                                 {/* Center: QR Code + Laxalab Seal */}
-                                <div className="flex flex-col items-center gap-1 shrink-0">
+                                <div className="flex shrink-0 flex-col items-center gap-1" style={{ position: 'relative', zIndex: layoutLayer('qr'), transform: `translate(${layoutOffset('qr', 'x', 87)}px, ${layoutOffset('qr', 'y', 87)}px)` }}>
                                     <div className="rounded border bg-white p-1.5 shadow-sm" style={{ borderColor: colorWithOpacity(visualStyle.primaryColor, 0.1) }}>
                                         <QRCodeSVG url={verificationUrl} lang={lang} color={visualStyle.primaryColor} />
                                     </div>
@@ -550,12 +613,18 @@ export default function CertificateBilingual({ studentName, courseName, instruct
             {/* Print styles */}
             <style>{`
                 @media print {
-                    @page { size: landscape; margin: 0; }
+                    @page { size: ${visualStyle.pageWidth / 96}in ${visualStyle.pageHeight / 96}in; margin: 0; }
                     body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                     .no-print { display: none !important; }
-                    .certificate-wrap { box-shadow: none !important; width: 100% !important; margin: 0 !important; position: relative !important; transform: none !important; height: 748px !important; }
+                    .certificate-print-container { width: ${visualStyle.pageWidth}px !important; height: ${visualStyle.pageHeight}px !important; }
+                    .certificate-wrap { box-shadow: none !important; width: ${visualStyle.pageWidth}px !important; height: ${visualStyle.pageHeight}px !important; margin: 0 !important; position: relative !important; transform: none !important; }
                     .min-h-screen { background: white !important; padding: 0 !important; display: block !important; }
                     .min-h-screen > div { margin: 0 !important; }
+                    ${editorPreview ? `
+                    body * { visibility: hidden !important; }
+                    #certificate-output-preview, #certificate-output-preview * { visibility: visible !important; }
+                    #certificate-output-preview { position: fixed !important; top: 0 !important; left: 0 !important; width: ${visualStyle.pageWidth}px !important; height: ${visualStyle.pageHeight}px !important; }
+                    ` : ''}
                 }
             `}</style>
         </>
