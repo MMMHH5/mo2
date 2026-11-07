@@ -1,45 +1,47 @@
 # Course Information
 
-Put course fields inside a JSON code block. Required fields: `titleAr`, `titleEn`, and `contentType`. `contentType` is `LIVE` or `RECORDED`; `level` is `BEGINNER`, `INTERMEDIATE`, `ADVANCED`, or `ALL_LEVELS`.
+Put course fields inside the JSON code block. Required fields: `titleAr`, `titleEn`, and `contentType`. Use `LIVE` or `RECORDED` for `contentType`, and `BEGINNER`, `INTERMEDIATE`, `ADVANCED`, or `ALL_LEVELS` for `level`.
 
 ```json
 {
-  "titleAr": "مقدمة في الأمن السيبراني",
-  "titleEn": "Introduction to Cybersecurity",
-  "excerptAr": "نبذة قصيرة",
-  "excerptEn": "Short summary",
-  "categoryAr": "الأمن السيبراني",
-  "categoryEn": "Cybersecurity",
-  "level": "BEGINNER",
-  "contentType": "RECORDED",
-  "language": "Arabic",
-  "hoursOfContent": 2,
-  "durationAr": "أسبوعان",
-  "durationEn": "2 weeks",
+  "titleAr": "",
+  "titleEn": "",
+  "excerptAr": "",
+  "excerptEn": "",
+  "categoryAr": "",
+  "categoryEn": "",
+  "level": "",
+  "contentType": "",
+  "language": "",
+  "hoursOfContent": "",
+  "durationAr": "",
+  "durationEn": "",
   "syllabusAr": "",
   "syllabusEn": "",
   "coverImageUrl": "",
   "introVideoUrl": "",
   "videoFileUrl": "",
-  "certificateIssued": true,
-  "quizzesIncluded": false,
-  "projectsIncluded": false,
-  "assignmentsIncluded": false,
-  "liveSessionsIncluded": false,
-  "downloadableResources": false,
-  "lifetimeAccess": false,
-  "communityAccess": false
+  "certificateIssued": "",
+  "quizzesIncluded": "",
+  "projectsIncluded": "",
+  "assignmentsIncluded": "",
+  "liveSessionsIncluded": "",
+  "downloadableResources": "",
+  "lifetimeAccess": "",
+  "communityAccess": ""
 }
 ```
 
 # Course Description
 
+The description fields can also be supplied in the course information block above.
+
 ```json
 {
-  "descriptionAr": "الوصف التفصيلي بالعربية",
-  "descriptionEn": "Full description in English",
-  "syllabusAr": "المنهج بالعربية",
-  "syllabusEn": "Syllabus in English"
+  "descriptionAr": "",
+  "descriptionEn": "",
+  "syllabusAr": "",
+  "syllabusEn": ""
 }
 ```
 
@@ -47,7 +49,7 @@ Put course fields inside a JSON code block. Required fields: `titleAr`, `titleEn
 
 ```json
 [
-  { "objectiveAr": "تحليل التنبيهات", "objectiveEn": "Analyze alerts", "orderIndex": 0 }
+  { "objectiveAr": "", "objectiveEn": "", "orderIndex": "" }
 ]
 ```
 
@@ -55,7 +57,7 @@ Put course fields inside a JSON code block. Required fields: `titleAr`, `titleEn
 
 ```json
 [
-  { "prerequisiteAr": "معرفة أساسية بالحاسب", "prerequisiteEn": "Basic computer knowledge", "orderIndex": 0 }
+  { "prerequisiteAr": "", "prerequisiteEn": "", "orderIndex": "" }
 ]
 ```
 
@@ -63,31 +65,34 @@ Put course fields inside a JSON code block. Required fields: `titleAr`, `titleEn
 
 ```json
 [
-  { "audienceAr": "المبتدئون", "audienceEn": "Beginners", "orderIndex": 0 }
+  { "audienceAr": "", "audienceEn": "", "orderIndex": "" }
 ]
 ```
 
 # Modules
 
+Each module is a chapter. Add lesson content, outcomes, files, and links inside its `modules` array. Use unique `importKey` values to connect lessons, quizzes, and resources.
+
 ```json
 [
   {
-    "importKey": "module-1",
-    "titleAr": "مقدمة",
-    "titleEn": "Introduction",
-    "orderIndex": 0,
+    "importKey": "",
+    "titleAr": "",
+    "titleEn": "",
+    "orderIndex": "",
     "modules": [
       {
-        "importKey": "lesson-1",
-        "titleAr": "الدرس الأول",
-        "titleEn": "Lesson 1",
-        "descriptionAr": "محتوى الدرس",
-        "descriptionEn": "Lesson content",
-        "durationMinutes": 20,
-        "orderIndex": 0,
-        "outcomes": [],
-        "files": [],
-        "links": []
+        "importKey": "",
+        "titleAr": "",
+        "titleEn": "",
+        "descriptionAr": "",
+        "descriptionEn": "",
+        "videoUrl": "",
+        "durationMinutes": "",
+        "orderIndex": "",
+        "outcomes": [{ "descriptionAr": "", "descriptionEn": "", "orderIndex": "" }],
+        "files": [{ "url": "", "nameAr": "", "nameEn": "" }],
+        "links": [{ "url": "", "labelAr": "", "labelEn": "" }]
       }
     ]
   }
@@ -101,24 +106,25 @@ The quiz types are `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, and `TRUE_FALSE`. Questio
 ```json
 [
   {
-    "quizKey": "quiz-1",
-    "titleAr": "اختبار المقدمة",
-    "titleEn": "Introduction Quiz",
-    "passScore": 60,
-    "isFinal": false,
-    "moduleRef": "lesson-1",
-    "orderIndex": 0,
+    "quizKey": "",
+    "titleAr": "",
+    "titleEn": "",
+    "descriptionAr": "",
+    "descriptionEn": "",
+    "passScore": "",
+    "isFinal": "",
+    "moduleRef": "",
+    "orderIndex": "",
     "questions": [
       {
-        "type": "SINGLE_CHOICE",
-        "textAr": "ما الهدف من المراقبة؟",
-        "textEn": "What is the goal of monitoring?",
-        "options": [
-          { "textAr": "اكتشاف التهديدات", "textEn": "Detect threats" },
-          { "textAr": "لا شيء", "textEn": "Nothing" }
-        ],
-        "correctIndex": 0,
-        "orderIndex": 0
+        "type": "",
+        "textAr": "",
+        "textEn": "",
+        "options": [{ "textAr": "", "textEn": "" }, { "textAr": "", "textEn": "" }],
+        "correctIndex": "",
+        "explanationAr": "",
+        "explanationEn": "",
+        "orderIndex": ""
       }
     ]
   }
@@ -127,7 +133,11 @@ The quiz types are `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, and `TRUE_FALSE`. Questio
 
 # Questions
 
-Questions belong to quizzes and are entered in each quiz's `questions` array.
+Questions belong to quizzes and are entered in each quiz's `questions` array above. Supported types are `SINGLE_CHOICE`, `MULTIPLE_CHOICE`, and `TRUE_FALSE`. `correctIndex` is zero-based.
+
+```json
+[]
+```
 
 # Resources
 
@@ -136,11 +146,13 @@ Attach resources to lessons using `lessonKey`, which must match a lesson `import
 ```json
 [
   {
-    "lessonKey": "lesson-1",
-    "type": "LINK",
-    "url": "https://example.com",
-    "labelAr": "مرجع الدرس",
-    "labelEn": "Lesson reference"
+    "lessonKey": "",
+    "type": "",
+    "url": "",
+    "nameAr": "",
+    "nameEn": "",
+    "labelAr": "",
+    "labelEn": ""
   }
 ]
 ```
@@ -148,10 +160,15 @@ Attach resources to lessons using `lessonKey`, which must match a lesson `import
 # FAQs
 
 ```json
-[]
+[
+  { "questionAr": "", "questionEn": "", "answerAr": "", "answerEn": "", "orderIndex": "" }
+]
 ```
+
 # Gallery
 
 ```json
-[]
+[
+  { "url": "", "altAr": "", "altEn": "", "orderIndex": "" }
+]
 ```

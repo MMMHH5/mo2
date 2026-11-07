@@ -1,107 +1,153 @@
 {
-  "titleAr": "مقدمة في الأمن السيبراني",
-  "titleEn": "Introduction to Cybersecurity",
-  "excerptAr": "تعرف على مبادئ الأمن السيبراني.",
-  "excerptEn": "Learn cybersecurity fundamentals.",
-  "descriptionAr": "وصف الدورة بالعربية.",
-  "descriptionEn": "Course description in English.",
-  "categoryAr": "الأمن السيبراني",
-  "categoryEn": "Cybersecurity",
-  "level": "BEGINNER",
-  "contentType": "RECORDED",
-  "language": "Arabic",
-  "hoursOfContent": 2,
-  "durationAr": "أسبوعان",
-  "durationEn": "2 weeks",
+  "titleAr": "",
+  "titleEn": "",
+  "excerptAr": "",
+  "excerptEn": "",
+  "descriptionAr": "",
+  "descriptionEn": "",
+  "categoryAr": "",
+  "categoryEn": "",
+  "level": "",
+  "contentType": "",
+  "language": "",
+  "hoursOfContent": "",
+  "durationAr": "",
+  "durationEn": "",
   "syllabusAr": "",
   "syllabusEn": "",
   "coverImageUrl": "",
   "introVideoUrl": "",
   "videoFileUrl": "",
-  "certificateIssued": true,
-  "quizzesIncluded": false,
-  "projectsIncluded": false,
-  "assignmentsIncluded": false,
-  "liveSessionsIncluded": false,
-  "downloadableResources": false,
-  "lifetimeAccess": false,
-  "communityAccess": false,
+  "certificateIssued": "",
+  "quizzesIncluded": "",
+  "projectsIncluded": "",
+  "assignmentsIncluded": "",
+  "liveSessionsIncluded": "",
+  "downloadableResources": "",
+  "lifetimeAccess": "",
+  "communityAccess": "",
   "objectives": [
     {
-      "objectiveAr": "تحليل التنبيهات الأمنية",
-      "objectiveEn": "Analyze security alerts",
-      "orderIndex": 0
+      "objectiveAr": "",
+      "objectiveEn": "",
+      "orderIndex": ""
     }
   ],
   "prerequisites": [
     {
-      "prerequisiteAr": "معرفة أساسية بالحاسب",
-      "prerequisiteEn": "Basic computer knowledge",
-      "orderIndex": 0
+      "prerequisiteAr": "",
+      "prerequisiteEn": "",
+      "orderIndex": ""
     }
   ],
-  "audiences": [],
+  "audiences": [
+    {
+      "audienceAr": "",
+      "audienceEn": "",
+      "orderIndex": ""
+    }
+  ],
   "chapters": [
     {
-      "importKey": "module-1",
-      "titleAr": "مقدمة",
-      "titleEn": "Introduction",
-      "orderIndex": 0,
+      "importKey": "",
+      "titleAr": "",
+      "titleEn": "",
+      "orderIndex": "",
       "modules": [
         {
-          "importKey": "lesson-1",
-          "titleAr": "الدرس الأول",
-          "titleEn": "Lesson 1",
-          "descriptionAr": "محتوى الدرس بالعربية.",
-          "descriptionEn": "Lesson content in English.",
-          "durationMinutes": 20,
-          "orderIndex": 0,
-          "outcomes": [],
-          "files": [],
-          "links": []
+          "importKey": "",
+          "titleAr": "",
+          "titleEn": "",
+          "descriptionAr": "",
+          "descriptionEn": "",
+          "videoUrl": "",
+          "durationMinutes": "",
+          "orderIndex": "",
+          "outcomes": [
+            {
+              "descriptionAr": "",
+              "descriptionEn": "",
+              "orderIndex": ""
+            }
+          ],
+          "files": [
+            {
+              "url": "",
+              "nameAr": "",
+              "nameEn": ""
+            }
+          ],
+          "links": [
+            {
+              "url": "",
+              "labelAr": "",
+              "labelEn": ""
+            }
+          ]
         }
       ]
     }
   ],
   "quizzes": [
     {
-      "quizKey": "quiz-1",
-      "titleAr": "اختبار المقدمة",
-      "titleEn": "Introduction Quiz",
-      "passScore": 60,
-      "isFinal": false,
-      "moduleRef": "lesson-1",
-      "orderIndex": 0,
+      "quizKey": "",
+      "titleAr": "",
+      "titleEn": "",
+      "descriptionAr": "",
+      "descriptionEn": "",
+      "passScore": "",
+      "isFinal": "",
+      "moduleRef": "",
+      "orderIndex": "",
       "questions": [
         {
-          "type": "SINGLE_CHOICE",
-          "textAr": "ما الهدف من المراقبة الأمنية؟",
-          "textEn": "What is the goal of security monitoring?",
+          "type": "",
+          "textAr": "",
+          "textEn": "",
           "options": [
             {
-              "textAr": "اكتشاف الأنشطة المشبوهة",
-              "textEn": "Detect suspicious activity"
+              "textAr": "",
+              "textEn": ""
             },
             {
-              "textAr": "لا شيء مما سبق",
-              "textEn": "None of the above"
+              "textAr": "",
+              "textEn": ""
             }
           ],
-          "correctIndex": 0,
-          "orderIndex": 0
+          "correctIndex": "",
+          "explanationAr": "",
+          "explanationEn": "",
+          "orderIndex": ""
         }
       ]
     }
   ],
   "resources": [
     {
-      "lessonKey": "lesson-1",
-      "type": "LINK",
-      "url": "https://example.com",
-      "labelAr": "مرجع الدرس",
-      "labelEn": "Lesson reference"
+      "lessonKey": "",
+      "type": "",
+      "url": "",
+      "nameAr": "",
+      "nameEn": "",
+      "labelAr": "",
+      "labelEn": ""
     }
   ],
-  "faqs": [],
-  "gallery": []
+  "faqs": [
+    {
+      "questionAr": "",
+      "questionEn": "",
+      "answerAr": "",
+      "answerEn": "",
+      "orderIndex": ""
+    }
+  ],
+  "gallery": [
+    {
+      "url": "",
+      "altAr": "",
+      "altEn": "",
+      "orderIndex": ""
+    }
+  ]
 }

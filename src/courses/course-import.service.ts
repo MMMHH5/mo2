@@ -41,6 +41,12 @@ const IMPORT_REQUIRED_COLUMNS: Record<string, Set<string>> = {
 const IMPORT_COLUMN_GUIDE: Record<string, string> = {
     Field: 'اسم حقل الدورة كما هو في بنية الاستيراد.',
     Value: 'قيمة الحقل في صف Course Info.',
+    objectiveAr: 'هدف التعلم بالعربية؛ أضف صفاً لكل هدف.',
+    objectiveEn: 'Learning objective in English; add one row per objective.',
+    prerequisiteAr: 'المتطلب السابق بالعربية؛ أضف صفاً لكل متطلب.',
+    prerequisiteEn: 'Prerequisite in English; add one row per requirement.',
+    audienceAr: 'الفئة المستهدفة بالعربية؛ أضف صفاً لكل فئة.',
+    audienceEn: 'Target audience in English; add one row per audience.',
     contentType: 'نوع تقديم الدورة: LIVE أو RECORDED.',
     level: 'المستوى: BEGINNER أو INTERMEDIATE أو ADVANCED أو ALL_LEVELS.',
     importKey: 'مفتاح نصي فريد يستخدم لربط العناصر.',
@@ -70,12 +76,6 @@ const IMPORT_COLUMN_GUIDE: Record<string, string> = {
     labelEn: 'Link label in English.',
     titleAr: 'العنوان بالعربية.',
     titleEn: 'Title in English.',
-    objectiveAr: 'هدف التعلم بالعربية.',
-    objectiveEn: 'Learning objective in English.',
-    prerequisiteAr: 'المتطلب السابق بالعربية.',
-    prerequisiteEn: 'Prerequisite in English.',
-    audienceAr: 'الفئة المستهدفة بالعربية.',
-    audienceEn: 'Target audience in English.',
     questionAr: 'السؤال بالعربية.',
     questionEn: 'Question in English.',
     answerAr: 'الإجابة بالعربية.',
@@ -84,126 +84,132 @@ const IMPORT_COLUMN_GUIDE: Record<string, string> = {
     altEn: 'English image alternative text.',
 };
 export const COURSE_IMPORT_JSON_TEMPLATE = JSON.stringify({
-    titleAr: 'مقدمة في الأمن السيبراني',
-    titleEn: 'Introduction to Cybersecurity',
-    excerptAr: 'تعرف على مبادئ الأمن السيبراني.',
-    excerptEn: 'Learn cybersecurity fundamentals.',
-    descriptionAr: 'وصف الدورة بالعربية.',
-    descriptionEn: 'Course description in English.',
-    categoryAr: 'الأمن السيبراني',
-    categoryEn: 'Cybersecurity',
-    level: 'BEGINNER',
-    contentType: 'RECORDED',
-    language: 'Arabic',
-    hoursOfContent: 2,
-    durationAr: 'أسبوعان',
-    durationEn: '2 weeks',
+    titleAr: '',
+    titleEn: '',
+    excerptAr: '',
+    excerptEn: '',
+    descriptionAr: '',
+    descriptionEn: '',
+    categoryAr: '',
+    categoryEn: '',
+    level: '',
+    contentType: '',
+    language: '',
+    hoursOfContent: '',
+    durationAr: '',
+    durationEn: '',
     syllabusAr: '',
     syllabusEn: '',
     coverImageUrl: '',
     introVideoUrl: '',
     videoFileUrl: '',
-    certificateIssued: true,
-    quizzesIncluded: false,
-    projectsIncluded: false,
-    assignmentsIncluded: false,
-    liveSessionsIncluded: false,
-    downloadableResources: false,
-    lifetimeAccess: false,
-    communityAccess: false,
-    objectives: [{ objectiveAr: 'تحليل التنبيهات الأمنية', objectiveEn: 'Analyze security alerts', orderIndex: 0 }],
-    prerequisites: [{ prerequisiteAr: 'معرفة أساسية بالحاسب', prerequisiteEn: 'Basic computer knowledge', orderIndex: 0 }],
-    audiences: [],
+    certificateIssued: '',
+    quizzesIncluded: '',
+    projectsIncluded: '',
+    assignmentsIncluded: '',
+    liveSessionsIncluded: '',
+    downloadableResources: '',
+    lifetimeAccess: '',
+    communityAccess: '',
+    objectives: [{ objectiveAr: '', objectiveEn: '', orderIndex: '' }],
+    prerequisites: [{ prerequisiteAr: '', prerequisiteEn: '', orderIndex: '' }],
+    audiences: [{ audienceAr: '', audienceEn: '', orderIndex: '' }],
     chapters: [{
-        importKey: 'module-1',
-        titleAr: 'مقدمة',
-        titleEn: 'Introduction',
-        orderIndex: 0,
+        importKey: '',
+        titleAr: '',
+        titleEn: '',
+        orderIndex: '',
         modules: [{
-            importKey: 'lesson-1',
-            titleAr: 'الدرس الأول',
-            titleEn: 'Lesson 1',
-            descriptionAr: 'محتوى الدرس بالعربية.',
-            descriptionEn: 'Lesson content in English.',
-            durationMinutes: 20,
-            orderIndex: 0,
-            outcomes: [],
-            files: [],
-            links: [],
+            importKey: '',
+            titleAr: '',
+            titleEn: '',
+            descriptionAr: '',
+            descriptionEn: '',
+            videoUrl: '',
+            durationMinutes: '',
+            orderIndex: '',
+            outcomes: [{ descriptionAr: '', descriptionEn: '', orderIndex: '' }],
+            files: [{ url: '', nameAr: '', nameEn: '' }],
+            links: [{ url: '', labelAr: '', labelEn: '' }],
         }],
     }],
     quizzes: [{
-        quizKey: 'quiz-1',
-        titleAr: 'اختبار المقدمة',
-        titleEn: 'Introduction Quiz',
-        passScore: 60,
-        isFinal: false,
-        moduleRef: 'lesson-1',
-        orderIndex: 0,
+        quizKey: '',
+        titleAr: '',
+        titleEn: '',
+        descriptionAr: '',
+        descriptionEn: '',
+        passScore: '',
+        isFinal: '',
+        moduleRef: '',
+        orderIndex: '',
         questions: [{
-            type: 'SINGLE_CHOICE',
-            textAr: 'ما الهدف من المراقبة الأمنية؟',
-            textEn: 'What is the goal of security monitoring?',
-            options: [
-                { textAr: 'اكتشاف الأنشطة المشبوهة', textEn: 'Detect suspicious activity' },
-                { textAr: 'لا شيء مما سبق', textEn: 'None of the above' },
-            ],
-            correctIndex: 0,
-            orderIndex: 0,
+            type: '',
+            textAr: '',
+            textEn: '',
+            options: [{ textAr: '', textEn: '' }, { textAr: '', textEn: '' }],
+            correctIndex: '',
+            explanationAr: '',
+            explanationEn: '',
+            orderIndex: '',
         }],
     }],
     resources: [{
-        lessonKey: 'lesson-1',
-        type: 'LINK',
-        url: 'https://example.com',
-        labelAr: 'مرجع الدرس',
-        labelEn: 'Lesson reference',
+        lessonKey: '',
+        type: '',
+        url: '',
+        nameAr: '',
+        nameEn: '',
+        labelAr: '',
+        labelEn: '',
     }],
-    faqs: [],
-    gallery: [],
+    faqs: [{ questionAr: '', questionEn: '', answerAr: '', answerEn: '', orderIndex: '' }],
+    gallery: [{ url: '', altAr: '', altEn: '', orderIndex: '' }],
 }, null, 2);
 export const COURSE_IMPORT_MARKDOWN_TEMPLATE = `# Course Information
 
-Put course fields inside a JSON code block. Required fields: \`titleAr\`, \`titleEn\`, and \`contentType\`. \`contentType\` is \`LIVE\` or \`RECORDED\`; \`level\` is \`BEGINNER\`, \`INTERMEDIATE\`, \`ADVANCED\`, or \`ALL_LEVELS\`.
+Put course fields inside the JSON code block. Required fields: \`titleAr\`, \`titleEn\`, and \`contentType\`. Use \`LIVE\` or \`RECORDED\` for \`contentType\`, and \`BEGINNER\`, \`INTERMEDIATE\`, \`ADVANCED\`, or \`ALL_LEVELS\` for \`level\`.
 
 \`\`\`json
 {
-  "titleAr": "مقدمة في الأمن السيبراني",
-  "titleEn": "Introduction to Cybersecurity",
-  "excerptAr": "نبذة قصيرة",
-  "excerptEn": "Short summary",
-  "categoryAr": "الأمن السيبراني",
-  "categoryEn": "Cybersecurity",
-  "level": "BEGINNER",
-  "contentType": "RECORDED",
-  "language": "Arabic",
-  "hoursOfContent": 2,
-  "durationAr": "أسبوعان",
-  "durationEn": "2 weeks",
+  "titleAr": "",
+  "titleEn": "",
+  "excerptAr": "",
+  "excerptEn": "",
+  "categoryAr": "",
+  "categoryEn": "",
+  "level": "",
+  "contentType": "",
+  "language": "",
+  "hoursOfContent": "",
+  "durationAr": "",
+  "durationEn": "",
   "syllabusAr": "",
   "syllabusEn": "",
   "coverImageUrl": "",
   "introVideoUrl": "",
   "videoFileUrl": "",
-  "certificateIssued": true,
-  "quizzesIncluded": false,
-  "projectsIncluded": false,
-  "assignmentsIncluded": false,
-  "liveSessionsIncluded": false,
-  "downloadableResources": false,
-  "lifetimeAccess": false,
-  "communityAccess": false
+  "certificateIssued": "",
+  "quizzesIncluded": "",
+  "projectsIncluded": "",
+  "assignmentsIncluded": "",
+  "liveSessionsIncluded": "",
+  "downloadableResources": "",
+  "lifetimeAccess": "",
+  "communityAccess": ""
 }
 \`\`\`
 
 # Course Description
 
+The description fields can also be supplied in the course information block above.
+
 \`\`\`json
 {
-  "descriptionAr": "الوصف التفصيلي بالعربية",
-  "descriptionEn": "Full description in English",
-  "syllabusAr": "المنهج بالعربية",
-  "syllabusEn": "Syllabus in English"
+  "descriptionAr": "",
+  "descriptionEn": "",
+  "syllabusAr": "",
+  "syllabusEn": ""
 }
 \`\`\`
 
@@ -211,7 +217,7 @@ Put course fields inside a JSON code block. Required fields: \`titleAr\`, \`titl
 
 \`\`\`json
 [
-  { "objectiveAr": "تحليل التنبيهات", "objectiveEn": "Analyze alerts", "orderIndex": 0 }
+  { "objectiveAr": "", "objectiveEn": "", "orderIndex": "" }
 ]
 \`\`\`
 
@@ -219,7 +225,7 @@ Put course fields inside a JSON code block. Required fields: \`titleAr\`, \`titl
 
 \`\`\`json
 [
-  { "prerequisiteAr": "معرفة أساسية بالحاسب", "prerequisiteEn": "Basic computer knowledge", "orderIndex": 0 }
+  { "prerequisiteAr": "", "prerequisiteEn": "", "orderIndex": "" }
 ]
 \`\`\`
 
@@ -227,31 +233,34 @@ Put course fields inside a JSON code block. Required fields: \`titleAr\`, \`titl
 
 \`\`\`json
 [
-  { "audienceAr": "المبتدئون", "audienceEn": "Beginners", "orderIndex": 0 }
+  { "audienceAr": "", "audienceEn": "", "orderIndex": "" }
 ]
 \`\`\`
 
 # Modules
 
+Each module is a chapter. Add lesson content, outcomes, files, and links inside its \`modules\` array. Use unique \`importKey\` values to connect lessons, quizzes, and resources.
+
 \`\`\`json
 [
   {
-    "importKey": "module-1",
-    "titleAr": "مقدمة",
-    "titleEn": "Introduction",
-    "orderIndex": 0,
+    "importKey": "",
+    "titleAr": "",
+    "titleEn": "",
+    "orderIndex": "",
     "modules": [
       {
-        "importKey": "lesson-1",
-        "titleAr": "الدرس الأول",
-        "titleEn": "Lesson 1",
-        "descriptionAr": "محتوى الدرس",
-        "descriptionEn": "Lesson content",
-        "durationMinutes": 20,
-        "orderIndex": 0,
-        "outcomes": [],
-        "files": [],
-        "links": []
+        "importKey": "",
+        "titleAr": "",
+        "titleEn": "",
+        "descriptionAr": "",
+        "descriptionEn": "",
+        "videoUrl": "",
+        "durationMinutes": "",
+        "orderIndex": "",
+        "outcomes": [{ "descriptionAr": "", "descriptionEn": "", "orderIndex": "" }],
+        "files": [{ "url": "", "nameAr": "", "nameEn": "" }],
+        "links": [{ "url": "", "labelAr": "", "labelEn": "" }]
       }
     ]
   }
@@ -265,24 +274,25 @@ The quiz types are \`SINGLE_CHOICE\`, \`MULTIPLE_CHOICE\`, and \`TRUE_FALSE\`. Q
 \`\`\`json
 [
   {
-    "quizKey": "quiz-1",
-    "titleAr": "اختبار المقدمة",
-    "titleEn": "Introduction Quiz",
-    "passScore": 60,
-    "isFinal": false,
-    "moduleRef": "lesson-1",
-    "orderIndex": 0,
+    "quizKey": "",
+    "titleAr": "",
+    "titleEn": "",
+    "descriptionAr": "",
+    "descriptionEn": "",
+    "passScore": "",
+    "isFinal": "",
+    "moduleRef": "",
+    "orderIndex": "",
     "questions": [
       {
-        "type": "SINGLE_CHOICE",
-        "textAr": "ما الهدف من المراقبة؟",
-        "textEn": "What is the goal of monitoring?",
-        "options": [
-          { "textAr": "اكتشاف التهديدات", "textEn": "Detect threats" },
-          { "textAr": "لا شيء", "textEn": "Nothing" }
-        ],
-        "correctIndex": 0,
-        "orderIndex": 0
+        "type": "",
+        "textAr": "",
+        "textEn": "",
+        "options": [{ "textAr": "", "textEn": "" }, { "textAr": "", "textEn": "" }],
+        "correctIndex": "",
+        "explanationAr": "",
+        "explanationEn": "",
+        "orderIndex": ""
       }
     ]
   }
@@ -291,7 +301,11 @@ The quiz types are \`SINGLE_CHOICE\`, \`MULTIPLE_CHOICE\`, and \`TRUE_FALSE\`. Q
 
 # Questions
 
-Questions belong to quizzes and are entered in each quiz's \`questions\` array.
+Questions belong to quizzes and are entered in each quiz's \`questions\` array above. Supported types are \`SINGLE_CHOICE\`, \`MULTIPLE_CHOICE\`, and \`TRUE_FALSE\`. \`correctIndex\` is zero-based.
+
+\`\`\`json
+[]
+\`\`\`
 
 # Resources
 
@@ -300,11 +314,13 @@ Attach resources to lessons using \`lessonKey\`, which must match a lesson \`imp
 \`\`\`json
 [
   {
-    "lessonKey": "lesson-1",
-    "type": "LINK",
-    "url": "https://example.com",
-    "labelAr": "مرجع الدرس",
-    "labelEn": "Lesson reference"
+    "lessonKey": "",
+    "type": "",
+    "url": "",
+    "nameAr": "",
+    "nameEn": "",
+    "labelAr": "",
+    "labelEn": ""
   }
 ]
 \`\`\`
@@ -312,13 +328,17 @@ Attach resources to lessons using \`lessonKey\`, which must match a lesson \`imp
 # FAQs
 
 \`\`\`json
-[]
+[
+  { "questionAr": "", "questionEn": "", "answerAr": "", "answerEn": "", "orderIndex": "" }
+]
 \`\`\`
 
 # Gallery
 
 \`\`\`json
-[]
+[
+  { "url": "", "altAr": "", "altEn": "", "orderIndex": "" }
+]
 \`\`\`
 `;
 
@@ -534,21 +554,20 @@ export class CourseImportService {
     async structuredTemplate(): Promise<Buffer> {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'LaxaLab Academy';
-        workbook.created = new Date();
-        const sheets: { name: string; headers: string[]; sample: unknown[] }[] = [
-            { name: 'Course Info', headers: ['Field', 'Value'], sample: ['titleAr', 'مقدمة في الأمن السيبراني'] },
-            { name: 'Objectives', headers: ['objectiveAr', 'objectiveEn', 'orderIndex'], sample: ['تحليل التنبيهات الأمنية', 'Analyze security alerts', 0] },
-            { name: 'Requirements', headers: ['prerequisiteAr', 'prerequisiteEn', 'orderIndex'], sample: ['معرفة أساسية بالحاسب', 'Basic computer knowledge', 0] },
-            { name: 'Modules', headers: ['importKey', 'titleAr', 'titleEn', 'orderIndex'], sample: ['module-1', 'مقدمة', 'Introduction', 0] },
-            { name: 'Lessons', headers: ['importKey', 'chapterKey', 'titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'videoUrl', 'durationMinutes', 'orderIndex', 'outcomes', 'files', 'links'], sample: ['lesson-1', 'module-1', 'الدرس الأول', 'Lesson 1', '', '', '', 20, 0, '[]', '[]', '[]'] },
-            { name: 'Quizzes', headers: ['quizKey', 'titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'passScore', 'isFinal', 'orderIndex', 'moduleRef'], sample: ['quiz-1', 'اختبار المقدمة', 'Introduction Quiz', '', '', 60, false, 0, 'lesson-1'] },
-            { name: 'Questions', headers: ['quizKey', 'type', 'textAr', 'textEn', 'options', 'correctIndex', 'explanationAr', 'explanationEn', 'orderIndex'], sample: ['quiz-1', 'SINGLE_CHOICE', 'ما الهدف من المراقبة؟', 'What is the goal of monitoring?', '[{"textAr":"اكتشاف الأنشطة المشبوهة","textEn":"Detect suspicious activity"},{"textAr":"لا شيء","textEn":"Nothing"}]', 0, '', '', 0] },
-            { name: 'Resources', headers: ['lessonKey', 'type', 'url', 'nameAr', 'nameEn', 'labelAr', 'labelEn'], sample: ['lesson-1', 'LINK', 'https://example.com', '', '', 'مرجع الدرس', 'Lesson reference'] },
-            { name: 'Audiences', headers: ['audienceAr', 'audienceEn', 'orderIndex'], sample: ['المبتدئون', 'Beginners', 0] },
-            { name: 'FAQs', headers: ['questionAr', 'questionEn', 'answerAr', 'answerEn', 'orderIndex'], sample: ['هل توجد شهادة؟', 'Is there a certificate?', 'نعم', 'Yes', 0] },
-            { name: 'Gallery', headers: ['url', 'altAr', 'altEn', 'orderIndex'], sample: ['/uploads/courses/gallery/example.webp', 'صورة الدورة', 'Course image', 0] },
+        const sheets: { name: string; headers: string[] }[] = [
+            { name: 'Course Info', headers: ['Field', 'Value'] },
+            { name: 'Objectives', headers: ['objectiveAr', 'objectiveEn', 'orderIndex'] },
+            { name: 'Requirements', headers: ['prerequisiteAr', 'prerequisiteEn', 'orderIndex'] },
+            { name: 'Modules', headers: ['importKey', 'titleAr', 'titleEn', 'orderIndex'] },
+            { name: 'Lessons', headers: ['importKey', 'chapterKey', 'titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'videoUrl', 'durationMinutes', 'orderIndex', 'outcomes', 'files', 'links'] },
+            { name: 'Quizzes', headers: ['quizKey', 'titleAr', 'titleEn', 'descriptionAr', 'descriptionEn', 'passScore', 'isFinal', 'orderIndex', 'moduleRef'] },
+            { name: 'Questions', headers: ['quizKey', 'type', 'textAr', 'textEn', 'options', 'correctIndex', 'explanationAr', 'explanationEn', 'orderIndex'] },
+            { name: 'Resources', headers: ['lessonKey', 'type', 'url', 'nameAr', 'nameEn', 'labelAr', 'labelEn'] },
+            { name: 'Audiences', headers: ['audienceAr', 'audienceEn', 'orderIndex'] },
+            { name: 'FAQs', headers: ['questionAr', 'questionEn', 'answerAr', 'answerEn', 'orderIndex'] },
+            { name: 'Gallery', headers: ['url', 'altAr', 'altEn', 'orderIndex'] },
         ];
-        for (const [index, definition] of sheets.entries()) {
+        for (const definition of sheets) {
             const sheet = workbook.addWorksheet(definition.name, { views: [{ state: 'frozen', ySplit: 1, rightToLeft: true }] });
             sheet.columns = definition.headers.map(header => ({ header, width: Math.max(20, Math.min(42, header.length + 12)) }));
             sheet.getRow(1).height = 30;
@@ -562,31 +581,18 @@ export class CourseImportService {
                     fgColor: { argb: required ? 'FFB8860B' : 'FF17365D' },
                 };
                 cell.alignment = { vertical: 'middle', wrapText: true };
-                const fieldDescription = IMPORT_COLUMN_GUIDE[header] ?? 'راجع اسم الحقل ومثال الصف الأول.';
-                cell.note = `${required ? 'مطلوب | Required' : 'اختياري | Optional'}: ${fieldDescription}\nمثال: ${definition.sample[columnIndex] ?? ''}`;
+                const fieldDescription = IMPORT_COLUMN_GUIDE[header] ?? 'أدخل القيمة المناسبة لهذا الحقل.';
+                cell.note = `${required ? 'مطلوب | Required' : 'اختياري | Optional'}: ${fieldDescription}`;
             });
-            if (index === 0) {
-                const examples: Record<string, string> = {
-                    titleAr: 'مقدمة في الأمن السيبراني',
-                    titleEn: 'Introduction to Cybersecurity',
-                    excerptAr: 'تعرف على مبادئ الأمن السيبراني.',
-                    excerptEn: 'Learn cybersecurity fundamentals.',
-                    contentType: 'RECORDED',
-                    level: 'BEGINNER',
-                    language: 'Arabic',
-                    hoursOfContent: '2',
-                };
-                const courseRows = COURSE_FIELDS.map(field => [field, examples[field] ?? '']);
-                courseRows.forEach(row => sheet.addRow(row));
-            } else {
-                sheet.addRow(definition.sample);
-            }
             if (definition.name === 'Course Info') {
                 sheet.getColumn(1).width = 28;
                 sheet.getColumn(2).width = 48;
-                sheet.getCell('B2').note = 'استبدل قيمة المثال قبل الاستيراد. الحقول المطلوبة: titleAr، titleEn، contentType.';
                 const fieldRows = new Map<string, number>();
-                COURSE_FIELDS.forEach((field, fieldIndex) => fieldRows.set(field, fieldIndex + 2));
+                COURSE_FIELDS.forEach((field, fieldIndex) => {
+                    const rowNumber = fieldIndex + 2;
+                    fieldRows.set(field, rowNumber);
+                    sheet.addRow([field, '']);
+                });
                 for (const [field, rowNumber] of fieldRows) {
                     const required = ['titleAr', 'titleEn', 'contentType'].includes(field);
                     sheet.getCell(rowNumber, 1).note = `${required ? 'مطلوب | Required' : 'اختياري | Optional'}: ${FIELD_GUIDE[field] ?? field}`;
@@ -596,6 +602,7 @@ export class CourseImportService {
                         }
                     }
                 }
+                sheet.getCell('B2').note = 'أدخل قيمة الحقل المقابل. الحقول المطلوبة: titleAr، titleEn، contentType.';
                 const contentTypeRow = fieldRows.get('contentType')!;
                 sheet.getCell(contentTypeRow, 2).dataValidation = {
                     type: 'list',
@@ -608,9 +615,6 @@ export class CourseImportService {
                     allowBlank: true,
                     formulae: ['"BEGINNER,INTERMEDIATE,ADVANCED,ALL_LEVELS"'],
                 };
-                for (const field of ['titleAr', 'titleEn']) {
-                    sheet.getCell(fieldRows.get(field)!, 2).note = 'مطلوب.';
-                }
             }
             if (definition.name === 'Questions') {
                 for (let rowNumber = 2; rowNumber <= 200; rowNumber += 1) {

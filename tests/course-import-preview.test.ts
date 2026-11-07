@@ -9,6 +9,44 @@ import {
 } from '../src/courses/course-import.service';
 import { CoursesService } from '../src/courses/courses.service';
 
+const validCourseData = (): Record<string, any> => ({
+    titleAr: 'عنوان الدورة',
+    titleEn: 'Course title',
+    contentType: 'RECORDED',
+    objectives: [],
+    chapters: [{
+        importKey: 'module-1',
+        titleAr: 'الوحدة الأولى',
+        titleEn: 'Module one',
+        modules: [{
+            importKey: 'lesson-1',
+            titleAr: 'الدرس الأول',
+            titleEn: 'Lesson one',
+            links: [{ url: 'https://example.test/lesson', labelAr: 'رابط', labelEn: 'Link' }],
+        }],
+    }],
+    quizzes: [{
+        quizKey: 'quiz-1',
+        titleAr: 'الاختبار الأول',
+        titleEn: 'Quiz one',
+        moduleRef: 'lesson-1',
+        questions: [{
+            type: 'SINGLE_CHOICE',
+            textAr: 'السؤال',
+            textEn: 'Question',
+            options: [{ textAr: 'خيار', textEn: 'Option' }, { textAr: 'خيار آخر', textEn: 'Another option' }],
+            correctIndex: 0,
+        }],
+    }],
+    resources: [{
+        lessonKey: 'lesson-1',
+        type: 'LINK',
+        url: 'https://example.test/resource',
+        labelAr: 'مرجع',
+        labelEn: 'Reference',
+    }],
+});
+
 describe('course import preview', () => {
     const service = new CourseImportService({} as never);
 
@@ -23,14 +61,46 @@ describe('course import preview', () => {
         );
     });
 
-    test('normalizes the JSON template and retains linked quizzes and resources', async () => {
+    test('keeps all downloadable templates free of prefilled course data', async () => {
+        const isBlankStructure = (value: unknown): boolean => {
+            if (Array.isArray(value)) return value.every(isBlankStructure);
+            if (value !== null && typeof value === 'object') {
+                return Object.values(value).every(isBlankStructure);
+            }
+            return value === '';
+        };
+        assert.equal(isBlankStructure(JSON.parse(COURSE_IMPORT_JSON_TEMPLATE)), true);
+        assert.doesNotMatch(COURSE_IMPORT_MARKDOWN_TEMPLATE, /مقدمة في الأمن السيبراني|example\.com/);
+
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(readFileSync('course-template.xlsx') as any);
+        for (const sheet of workbook.worksheets) {
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber === 1) return;
+                if (sheet.name === 'Course Info') {
+                    assert.equal(String(row.getCell(2).value ?? ''), '', `unexpected course value in ${sheet.name}:${rowNumber}`);
+                    return;
+                }
+                assert.equal(
+                    row.values.slice(1).some(value => String(value ?? '').trim() !== ''),
+                    false,
+                    `unexpected sample row in ${sheet.name}:${rowNumber}`,
+                );
+            });
+        }
+    });
+
+    test('provides a blank JSON template with the complete course structure', async () => {
         const result = await service.previewFile('course.json', Buffer.from(COURSE_IMPORT_JSON_TEMPLATE));
-        assert.equal(result.valid, true, JSON.stringify(result.errors));
-        assert.equal(result.data.titleAr, 'مقدمة في الأمن السيبراني');
-        assert.equal(result.data.chapters?.[0].modules?.[0].importKey, 'lesson-1');
-        assert.equal(result.data.chapters?.[0].modules?.[0].links?.[0].url, 'https://example.com');
-        assert.equal(result.data.quizzes?.[0].moduleRef, 'lesson-1');
-        assert.equal(result.data.quizzes?.[0].questions[0].correctIndex, 0);
+        const template = JSON.parse(COURSE_IMPORT_JSON_TEMPLATE);
+        assert.equal(result.valid, false);
+        assert.ok(result.errors.some(error => error.includes('titleAr')));
+        assert.ok(template.chapters[0].modules[0].descriptionAr !== undefined);
+        assert.ok(template.chapters[0].modules[0].outcomes !== undefined);
+        assert.ok(template.chapters[0].modules[0].files !== undefined);
+        assert.ok(template.chapters[0].modules[0].links !== undefined);
+        assert.ok(template.quizzes[0].questions[0].options.length >= 2);
+        assert.ok(template.resources[0].lessonKey !== undefined);
     });
 
     test('reports missing required course fields without creating anything', async () => {
@@ -41,7 +111,7 @@ describe('course import preview', () => {
     });
 
     test('preserves multiple chapter, lesson, quiz, and question relationships', async () => {
-        const course = JSON.parse(COURSE_IMPORT_JSON_TEMPLATE) as Record<string, any>;
+        const course = validCourseData();
         course.chapters.push({
             importKey: 'module-2',
             titleAr: 'الوحدة الثانية',
@@ -83,10 +153,10 @@ describe('course import preview', () => {
 
     test('parses the documented Markdown sections deterministically', async () => {
         const result = await service.previewFile('course.md', Buffer.from(COURSE_IMPORT_MARKDOWN_TEMPLATE));
-        assert.equal(result.valid, true, JSON.stringify(result.errors));
-        assert.equal(result.data.descriptionEn, 'Full description in English');
-        assert.equal(result.data.chapters?.[0].modules?.[0].titleEn, 'Lesson 1');
-        assert.equal(result.data.quizzes?.[0].questions.length, 1);
+        assert.equal(result.valid, false);
+        assert.ok(result.errors.some(error => error.includes('titleAr')));
+        assert.equal(result.data.chapters?.[0].modules?.[0].descriptionEn, '');
+        assert.equal(result.data.quizzes?.[0].questions[0].options.length, 2);
     });
 
     test('rejects malformed or unsupported Markdown sections', async () => {
@@ -94,7 +164,7 @@ describe('course import preview', () => {
         await assert.rejects(service.previewFile('course.md', Buffer.from('# Overview\n\nNo course section')));
     });
 
-    test('reads the structured Excel workbook and preserves relationships', async () => {
+    test('provides an empty structured Excel template and reads complete relationships', async () => {
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(await service.structuredTemplate() as any);
         const info = workbook.getWorksheet('Course Info')!;
@@ -113,17 +183,35 @@ describe('course import preview', () => {
         info.getCell(contentType, 2).value = 'RECORDED';
         info.getCell(level, 2).value = null;
         info.getCell(hours, 2).value = null;
+        workbook.getWorksheet('Modules')!.addRow(['module-1', 'الوحدة الأولى', 'Module one', 0]);
+        workbook.getWorksheet('Lessons')!.addRow([
+            'lesson-1', 'module-1', 'الدرس الأول', 'Lesson one', '', '', '', '', 0,
+            '[{"descriptionAr":"مخرج","descriptionEn":"Outcome","orderIndex":0}]',
+            '[]',
+            '[{"url":"https://example.test/lesson","labelAr":"رابط","labelEn":"Link"}]',
+        ]);
+        workbook.getWorksheet('Quizzes')!.addRow(['quiz-1', 'الاختبار الأول', 'Quiz one', '', '', 60, false, 0, 'lesson-1']);
+        workbook.getWorksheet('Questions')!.addRow([
+            'quiz-1', 'SINGLE_CHOICE', 'السؤال', 'Question',
+            '[{"textAr":"خيار","textEn":"Option"},{"textAr":"خيار آخر","textEn":"Another option"}]',
+            0, '', '', 0,
+        ]);
+        workbook.getWorksheet('Resources')!.addRow([
+            'lesson-1', 'LINK', 'https://example.test/resource', '', '', 'مرجع', 'Reference',
+        ]);
 
         const result = await service.previewFile('course.xlsx', Buffer.from(await workbook.xlsx.writeBuffer()));
         assert.equal(result.valid, true, JSON.stringify(result.errors));
         assert.equal(result.data.chapters?.[0].modules?.[0].importKey, 'lesson-1');
+        assert.equal(result.data.chapters?.[0].modules?.[0].outcomes?.[0].descriptionEn, 'Outcome');
         assert.equal(result.data.quizzes?.[0].questions[0].correctIndex, 0);
-        assert.equal(result.data.chapters?.[0].modules?.[0].links?.[0].url, 'https://example.com');
+        assert.equal(result.data.chapters?.[0].modules?.[0].links?.[0].url, 'https://example.test/lesson');
+        assert.equal(result.data.chapters?.[0].modules?.[0].links?.[1].url, 'https://example.test/resource');
         assert.equal('level' in result.data, false);
         assert.equal('hoursOfContent' in result.data, false);
 
         const checkedInTemplate = await service.previewFile('course-template.xlsx', readFileSync('course-template.xlsx'));
-        assert.equal(checkedInTemplate.valid, true);
+        assert.equal(checkedInTemplate.valid, false);
         assert.equal('certificateIssued' in checkedInTemplate.data, false, 'blank Excel booleans must use database defaults');
     });
 
