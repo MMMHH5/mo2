@@ -110,9 +110,10 @@ const readBilingual = (value: unknown): BilingualText => {
 
 /** Every profile field the edit modal writes, empty. */
 const EMPTY_FORM = {
-    nameAr: '', nameEn: '', fullName: '', phone: '', country: '', city: '',
+    nameAr: '', nameEn: '', fullName: '', age: '', phone: '', country: '', city: '',
     bio: '', specialty: '', gender: '', birthDate: '', university: '',
     studyStatus: '', studyLevel: '',
+    inboxDisplayName: '', inboxUseOfficialName: true,
     // Instructor CV. Public on the instructor profile, so they are bilingual.
     jobTitleAr: '', jobTitleEn: '', bioEn: '', experienceYears: '',
 };
@@ -256,6 +257,7 @@ function ProfileContent() {
             nameAr: (m.nameAr as string) || '',
             nameEn: (m.nameEn as string) || '',
             fullName: (m.fullName as string) || '',
+            age: m.age != null ? String(m.age) : '',
             phone: (m.phone as string) || '',
             country: (m.country as string) || '',
             city: (m.city as string) || '',
@@ -266,6 +268,8 @@ function ProfileContent() {
             university: (m.university as string) || '',
             studyStatus: (m.studyStatus as string) || '',
             studyLevel: (m.studyLevel as string) || '',
+            inboxDisplayName: (m.inboxDisplayName as string) || '',
+            inboxUseOfficialName: m.inboxUseOfficialName !== false,
             jobTitleAr: (m.jobTitleAr as string) || '',
             jobTitleEn: (m.jobTitleEn as string) || '',
             bioEn: (m.bioEn as string) || '',
@@ -279,10 +283,14 @@ function ProfileContent() {
     const saveProfile = async () => {
         setSaving(true);
         try {
-            const { jobTitleAr, jobTitleEn, bioEn, experienceYears, specialty, ...personalForm } = form;
-            const metadata = isInstructor
+            const { jobTitleAr, jobTitleEn, bioEn, experienceYears, specialty, inboxDisplayName, inboxUseOfficialName, ...personalForm } = form;
+            const metadata: Record<string, unknown> = isInstructor
                 ? personalForm
                 : { ...personalForm, specialty, jobTitleAr, jobTitleEn, bioEn, experienceYears };
+            if (profile?.role === 'STUDENT') {
+                metadata.inboxDisplayName = inboxDisplayName;
+                metadata.inboxUseOfficialName = inboxUseOfficialName;
+            }
             await api.patch('/users/me', { metadata });
             toast.success(t('profile.saved'));
             setEditing(false);
@@ -451,6 +459,7 @@ function ProfileContent() {
         { icon: UserRound, label: t('profile.field_name_ar'), value: nameAr || str('fullName') },
         { icon: Globe2, label: t('profile.field_name_en'), value: str('nameEn'), dir: 'ltr' },
         { icon: Users, label: t('profile.field_gender'), value: genderLabel },
+        { icon: Cake, label: t('profile.field_age'), value: str('age') },
         { icon: Cake, label: t('profile.field_birth_date'), value: str('birthDate'), dir: 'ltr' },
     ];
 
@@ -781,6 +790,19 @@ function ProfileContent() {
                                     <div className="flex items-start gap-4">
                                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-gold/10 text-brand-gold-dark dark:text-brand-gold-light">
                                             <Briefcase size={23} />
+                                        </div>
+                                        <div>
+                                            <label className={labelCls} htmlFor="pf-age">{t('profile.field_age')}</label>
+                                            <input
+                                                id="pf-age"
+                                                type="number"
+                                                min={1}
+                                                max={120}
+                                                step={1}
+                                                value={form.age}
+                                                onChange={(e) => setForm({ ...form, age: e.target.value })}
+                                                className={inputCls}
+                                            />
                                         </div>
                                         <div>
                                             <h2 className="text-xl font-black text-brand-navy dark:text-white">{t('instructorProfile.heading')}</h2>
@@ -1190,7 +1212,7 @@ function ProfileContent() {
                                     />
                                 </div>}
                             </div>
-                            <div className={`grid grid-cols-1 gap-4 ${isInstructor ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+                            <div className={`grid grid-cols-1 gap-4 ${isInstructor ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-4'}`}>
                                 <div>
                                     <label className={labelCls} htmlFor="pf-gender">{t('profile.field_gender')}</label>
                                     <SelectField
@@ -1270,6 +1292,36 @@ function ProfileContent() {
                                     dir="auto"
                                 />
                             </div>
+                            {profile.role === 'STUDENT' && (
+                                <div className="rounded-2xl border border-brand-gold/20 bg-brand-gold/5 p-4 space-y-3">
+                                    <div>
+                                        <h3 className="font-bold text-brand-navy dark:text-white">{t('profile.inbox_name_title')}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('profile.inbox_name_description')}</p>
+                                    </div>
+                                    <label className="flex items-center gap-3 text-sm font-bold text-brand-navy dark:text-white cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={form.inboxUseOfficialName}
+                                            onChange={(e) => setForm({ ...form, inboxUseOfficialName: e.target.checked })}
+                                            className="accent-amber-500"
+                                        />
+                                        {t('profile.inbox_use_official_name')}
+                                    </label>
+                                    {!form.inboxUseOfficialName && (
+                                        <div>
+                                            <label className={labelCls}>{t('profile.inbox_display_name')}</label>
+                                            <input
+                                                type="text"
+                                                value={form.inboxDisplayName}
+                                                onChange={(e) => setForm({ ...form, inboxDisplayName: e.target.value })}
+                                                maxLength={80}
+                                                className={inputCls}
+                                                dir="auto"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                         </div>
 

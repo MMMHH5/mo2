@@ -187,7 +187,9 @@ describe('PHASE 5: privileged roles can manage optional 2FA', () => {
             const { svc } = makeAuthService({
                 user: fullUser({ role, twoFactorEnabled: false }),
             });
-            const out: any = await svc.googleLogin({ user: { email: 'admin@test.test' } });
+            const out: any = await svc.googleLogin({
+                user: { email: 'admin@test.test', emailVerified: true, providerId: 'google-subject-1' },
+            });
             assert.equal(out.requiresTwoFactor, false);
             assert.equal(out.requiresTwoFactorSetup, undefined);
             assert.equal(out.access_token, 'tok');

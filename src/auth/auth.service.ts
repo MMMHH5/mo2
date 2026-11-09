@@ -37,7 +37,7 @@ export type LoginResult =
     | { requiresTwoFactor: true; tempToken: string }
     | { requiresPasswordChange: true; tempToken: string }
     | { requiresTwoFactorSetup: true; tempToken: string }
-    | { requiresTwoFactor: false; access_token: string; refresh_token: string; user: PublicUser };
+    | { requiresTwoFactor: false; access_token: string; refresh_token: string; user: PublicUser; isNewGoogleUser?: boolean };
 
 @Injectable()
 export class AuthService {
@@ -491,17 +491,35 @@ export class AuthService {
     async googleLogin(req: any): Promise<LoginResult> {
         if (!req.user) throw new UnauthorizedException('No user from google');
 
+        if (req.user.emailVerified !== true || typeof req.user.providerId !== 'string' || !req.user.providerId.trim()) {
+            throw new UnauthorizedException('Google account must provide a verified email and identifier');
+        }
         const email = String(req.user.email || '').trim().toLowerCase();
         if (!email) throw new UnauthorizedException('Google account email is missing');
 
         let user = await this.prisma.user.findUnique({ where: { email } });
+        let isNewGoogleUser = false;
 
         if (!user) {
             // Use a random bcrypt hash (not a sentinel string) to prevent timing-based user enumeration
             const randomHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+            const fullName = [req.user.firstName, req.user.lastName]
+                .filter((part: unknown): part is string => typeof part === 'string' && part.trim().length > 0)
+                .join(' ')
+                .slice(0, 120);
             user = await this.prisma.user.create({
-                data: { email, passwordHash: randomHash, role: 'STUDENT', emailVerifiedAt: new Date() },
+                data: {
+                    email,
+                    passwordHash: randomHash,
+                    role: 'STUDENT',
+                    emailVerifiedAt: new Date(),
+                    metadata: {
+                        googleOnboardingPending: true,
+                        ...(fullName ? { fullName } : {}),
+                    },
+                },
             });
+            isNewGoogleUser = true;
         }
 
         if (!user.isActive) throw new ForbiddenException('Account is suspended');
@@ -515,6 +533,6 @@ export class AuthService {
         }
 
         const tokens = await this.issueTokens(user.id, user.email, user.role, user.tokenVersion);
-        return { ...tokens, requiresTwoFactor: false, user: this.publicUser(user) };
+        return { ...tokens, requiresTwoFactor: false, user: this.publicUser(user), ...(isNewGoogleUser ? { isNewGoogleUser: true } : {}) };
     }
 }

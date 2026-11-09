@@ -625,6 +625,8 @@ export class CoursesService {
         return {
             enrolled: !!enrollment,
             approved,
+            openingId: enrollment?.openingId ?? null,
+            enrollmentStatus: enrollment?.status ?? null,
             teaches: teachesCourse,
             chatEnabled: approved || teachesCourse || isStaff,
         };

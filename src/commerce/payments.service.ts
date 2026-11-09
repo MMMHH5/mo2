@@ -267,6 +267,13 @@ export class PaymentsService {
       include: {
         student: { select: { id: true, email: true } },
         opening: { select: { id: true, nameAr: true, nameEn: true, course: { select: { id: true, titleAr: true, titleEn: true } } } },
+        enrollment: {
+          select: {
+            reviewedAt: true,
+            reviewedBy: { select: { id: true, email: true, role: true } },
+            course: { select: { id: true, titleAr: true, titleEn: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

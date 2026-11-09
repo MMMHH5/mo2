@@ -347,6 +347,7 @@ export class EnrollmentsService {
             include: {
                 student: { select: { id: true, email: true } },
                 course: { select: { id: true, titleAr: true, titleEn: true } },
+                reviewedBy: { select: { id: true, email: true, role: true } },
                 opening: {
                     select: {
                         id: true,
@@ -607,6 +608,11 @@ export class EnrollmentsService {
             },
         });
         if (!enrollment) throw new NotFoundException('Enrollment not found');
+        const reviewer = await this.prisma.user.findUnique({
+            where: { id: reviewerId },
+            select: { email: true, role: true },
+        });
+        if (!reviewer) throw new NotFoundException('Reviewer not found');
 
         // Restrict transitions: only PENDING enrollments awaiting review can be
         // decided, and only once. Already-decided / reserved / revoked records
@@ -621,10 +627,18 @@ export class EnrollmentsService {
         // it PAID, rejection marks it REJECTED — in the same transaction as the
         // enrollment decision so the ledger can never drift from the enrollment.
         const updated = await this.prisma.$transaction(async (tx) => {
-            const u = await tx.enrollment.update({
-                where: { id: enrollmentId },
-                data: { status, financeOfficerNotes: notes },
+            const result = await tx.enrollment.updateMany({
+                where: { id: enrollmentId, status: EnrollmentStatus.PENDING },
+                data: {
+                    status,
+                    financeOfficerNotes: notes?.trim() || null,
+                    reviewedAt: new Date(),
+                    reviewedById: reviewerId,
+                },
             });
+            if (result.count !== 1) {
+                throw new ConflictException('Enrollment has already been reviewed');
+            }
             if (pendingPayment) {
                 await tx.payment.update({
                     where: { id: pendingPayment.id },
@@ -653,14 +667,29 @@ export class EnrollmentsService {
             if (status === EnrollmentStatus.REJECTED && enrollment.openingId) {
                 await releaseSeat(tx, enrollment.openingId);
             }
-            return u;
+            return tx.enrollment.findUniqueOrThrow({ where: { id: enrollmentId } });
         });
 
-        await this.audit.logAction(
-            `Finance reviewed Enrollment ${enrollmentId} with status ${status}`,
+        const decision = status === EnrollmentStatus.APPROVED ? 'approved' : 'rejected';
+        const targetLabel = `${enrollment.student.email} — ${enrollment.course.titleAr || enrollment.course.titleEn}`.slice(0, 250);
+        await this.audit.logAdminActivity({
+            action: `Enrollment ${decision}`,
+            userId: reviewerId,
+            actorEmail: reviewer.email,
+            actorRole: reviewer.role,
+            targetType: 'تسجيل طالب أو إيصال',
+            targetId: enrollmentId,
+            targetLabel,
+            method: 'PATCH',
+            route: `/enrollments/${enrollmentId}/review`,
             ipAddress,
-            reviewerId
-        );
+            details: {
+                status,
+                notes: notes || '',
+                reviewedAt: updated.reviewedAt?.toISOString() || '',
+                paymentId: pendingPayment?.id || '',
+            },
+        });
 
         const courseTitle = enrollment.course.titleEn;
         await this.notifications.notify({

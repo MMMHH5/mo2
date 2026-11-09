@@ -10,9 +10,9 @@ export function useFetchData<T>(url: string | null) {
     const [loading, setLoading] = useState<boolean>(!!url);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (options?: { silent?: boolean }) => {
         if (!url) return;
-        setLoading(true);
+        if (!options?.silent) setLoading(true);
         setError(null);
         try {
             const res = await api.get(url);

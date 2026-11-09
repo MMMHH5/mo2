@@ -158,6 +158,7 @@ export class UsersService {
             university: 120,
             studyStatus: 20,
             studyLevel: 80,
+            inboxDisplayName: 80,
             // Instructor CV. `jobTitle*` is bilingual because the public
             // profile is served to both locales, and `bioEn` falls back to
             // `bio` when an instructor has not written an English summary.
@@ -166,6 +167,14 @@ export class UsersService {
             bioEn: 500,
         };
         const out: Record<string, unknown> = {};
+
+        if (
+            'inboxDisplayName' in input
+            && input.inboxDisplayName !== null
+            && typeof input.inboxDisplayName !== 'string'
+        ) {
+            throw new BadRequestException('inboxDisplayName must be a string');
+        }
 
         for (const [key, max] of Object.entries(LIMITS)) {
             // Absent means "leave it alone", so a partial PATCH is safe.
@@ -181,6 +190,26 @@ export class UsersService {
             }
             if (typeof v !== 'string') continue;
             out[key] = v.trim().slice(0, max);
+        }
+
+        if ('inboxUseOfficialName' in input) {
+            if (typeof input.inboxUseOfficialName !== 'boolean') {
+                throw new BadRequestException('inboxUseOfficialName must be a boolean');
+            }
+            out.inboxUseOfficialName = input.inboxUseOfficialName;
+        }
+
+        if ('age' in input) {
+            const value = input.age;
+            if (value === null || value === '') {
+                out.age = null;
+            } else {
+                const age = typeof value === 'number' ? value : Number(String(value).trim());
+                if (!Number.isInteger(age) || age < 1 || age > 120) {
+                    throw new BadRequestException('Age must be a whole number between 1 and 120');
+                }
+                out.age = age;
+            }
         }
 
         // Years of experience is a count, not prose. Accept a number or a
@@ -335,10 +364,25 @@ export class UsersService {
         }
 
         if (dto.metadata) {
+            const currentMetadata = (user.metadata as Record<string, unknown> | null) ?? {};
+            const incomingMetadata = dto.metadata as Record<string, unknown>;
             const merged = {
-                ...((user.metadata as Record<string, unknown> | null) ?? {}),
-                ...this.sanitizeProfileMetadata(dto.metadata as Record<string, unknown>),
+                ...currentMetadata,
+                ...this.sanitizeProfileMetadata(incomingMetadata),
             };
+            if (currentMetadata.googleOnboardingPending === true && incomingMetadata.googleOnboardingPending === false) {
+                const studyStatus = merged.studyStatus;
+                if (
+                    typeof merged.fullName !== 'string' || !merged.fullName.trim()
+                    || typeof merged.university !== 'string' || !merged.university.trim()
+                    || typeof merged.age !== 'number'
+                    || !['STUDENT', 'GRADUATE', 'OTHER'].includes(String(studyStatus))
+                    || (studyStatus === 'STUDENT' && (typeof merged.studyLevel !== 'string' || !merged.studyLevel.trim()))
+                ) {
+                    throw new BadRequestException('Complete the required personal and academic information');
+                }
+                merged.googleOnboardingPending = false;
+            }
             data.metadata = merged as unknown as Prisma.InputJsonObject;
         }
 

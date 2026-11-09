@@ -11,8 +11,9 @@ import { PageHeader } from '@/app/dashboard/admin/components';
 
 interface Conv {
     id: string;
-    otherUser: { id: string; email: string; role: string };
+    otherUser: { id: string; nameAr?: string | null; nameEn?: string | null; role: string };
     course: { id: string; titleAr?: string | null; titleEn?: string | null } | null;
+    opening?: { id: string } | null;
     lastMessage: { content: string; createdAt: string; fromMe: boolean; read: boolean };
     unreadCount: number;
     updatedAt: string;
@@ -26,9 +27,14 @@ interface ThreadMsg {
 }
 interface Contact {
     id: string;
-    email: string;
+    nameAr?: string | null;
+    nameEn?: string | null;
     role: string;
     course?: { id: string; titleAr?: string | null; titleEn?: string | null } | null;
+    openingId?: string | null;
+    requestId?: string | null;
+    requestStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+    requestDirection?: 'INCOMING' | 'OUTGOING' | null;
 }
 interface Contacts {
     admins: Contact[];
@@ -45,7 +51,7 @@ const roleLabel: Record<string, string> = {
 };
 
 export default function InboxPage() {
-    const { t, pick } = useI18n();
+    const { t, pick, locale } = useI18n();
     const { user } = useAuth();
     const [conversations, setConversations] = useState<Conv[]>([]);
     const [loadingConv, setLoadingConv] = useState(true);
@@ -91,6 +97,7 @@ export default function InboxPage() {
         setLoadingThread(true);
         const params = new URLSearchParams({ with: conv.otherUser.id });
         if (conv.course) params.set('courseId', conv.course.id);
+        if (conv.opening?.id) params.set('openingId', conv.opening.id);
         try {
             const res = await api.get(`/messages/thread?${params.toString()}`);
             setThread(res.data);
@@ -124,6 +131,7 @@ export default function InboxPage() {
             await api.post('/messages', {
                 recipientId: active.otherUser.id,
                 ...(active.course ? { courseId: active.course.id } : {}),
+                ...(active.opening?.id ? { openingId: active.opening.id } : {}),
                 content: text.trim(),
             });
             setText('');
@@ -147,9 +155,10 @@ export default function InboxPage() {
 
     const startContact = (c: Contact) => {
         const conv: Conv = {
-            id: `${c.id}|${c.course?.id ?? ''}`,
-            otherUser: { id: c.id, email: c.email, role: c.role },
+            id: `${c.id}|${c.course?.id ?? ''}|${c.openingId ?? ''}`,
+            otherUser: { id: c.id, nameAr: c.nameAr, nameEn: c.nameEn, role: c.role },
             course: c.course ? { id: c.course.id, titleAr: c.course.titleAr, titleEn: c.course.titleEn } : null,
+            opening: c.openingId ? { id: c.openingId } : null,
             lastMessage: { content: '', createdAt: '', fromMe: false, read: true },
             unreadCount: 0,
             updatedAt: '',
@@ -157,6 +166,34 @@ export default function InboxPage() {
         setNewOpen(false);
         openThread(conv, false);
     };
+
+    const messageRequest = async (c: Contact) => {
+        if (!c.openingId) return;
+        try {
+            await api.post('/messages/requests', { recipientId: c.id, openingId: c.openingId });
+            toast.success(t('inbox.request_sent'));
+            const res = await api.get('/messages/contacts');
+            setContacts(res.data);
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('inbox.request_failed'));
+        }
+    };
+
+    const respondToRequest = async (c: Contact, approved: boolean) => {
+        if (!c.requestId) return;
+        try {
+            await api.patch(`/messages/requests/${c.requestId}`, { approved });
+            toast.success(t(approved ? 'inbox.request_approved' : 'inbox.request_rejected'));
+            const res = await api.get('/messages/contacts');
+            setContacts(res.data);
+        } catch (err) {
+            toast.error(getErrorMessage(err) || t('inbox.request_failed'));
+        }
+    };
+
+    const contactName = (contact: Pick<Contact, 'nameAr' | 'nameEn' | 'role'>) =>
+        (locale === 'ar' ? contact.nameAr || contact.nameEn : contact.nameEn || contact.nameAr)
+        || t(roleLabel[contact.role] ?? 'roles.unknown');
 
     const isStudent = user?.role === 'STUDENT';
     const isInstructor = user?.role === 'INSTRUCTOR';
@@ -204,7 +241,7 @@ export default function InboxPage() {
                                         className={`w-full text-left px-4 py-3.5 border-b border-gray-200 dark:border-white/5 hover:bg-brand-navy/5 dark:hover:bg-white/5 transition cursor-pointer ${active?.id === c.id ? 'bg-brand-navy/5 dark:bg-white/10' : ''}`}
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="font-bold text-brand-navy dark:text-white text-sm truncate">{c.otherUser.email}</span>
+                                            <span className="font-bold text-brand-navy dark:text-white text-sm truncate">{contactName(c.otherUser)}</span>
                                             {c.unreadCount > 0 && (
                                                 <span className="bg-brand-gold text-black text-[10px] font-black rounded-full min-w-5 h-5 px-1.5 inline-flex items-center justify-center">
                                                     {c.unreadCount}
@@ -237,7 +274,7 @@ export default function InboxPage() {
                             <>
                                 <div className="px-5 py-4 border-b border-gray-200 dark:border-white/5 bg-gray-50/80 dark:bg-white/5 flex items-center justify-between gap-3">
                                     <div className="min-w-0">
-                                        <p className="font-black text-brand-navy dark:text-white truncate">{active.otherUser.email}</p>
+                                        <p className="font-black text-brand-navy dark:text-white truncate">{contactName(active.otherUser)}</p>
                                         {active.course && (
                                             <p className="text-xs text-brand-gold-dark dark:text-brand-gold-light font-bold truncate">{t('inbox.course')} {pick(active.course, 'title')}</p>
                                         )}
@@ -304,19 +341,50 @@ export default function InboxPage() {
                                             <p className="text-xs text-gray-500">{t('inbox.no_contacts')}</p>
                                         ) : (
                                             <div className="space-y-1.5">
-                                                {items.map((c) => (
-                                                    <button
-                                                        key={c.id + (c.course?.id ?? '')}
-                                                        onClick={() => startContact(c)}
-                                                        className="w-full text-left px-4 py-3 rounded-xl border border-white/10 bg-brand-navy hover:bg-white/5 transition cursor-pointer"
-                                                    >
-                                                        <span className="block font-bold text-white text-sm">{c.email}</span>
-                                                        <span className="block text-xs text-gray-400">
-                                                            {t(roleLabel[c.role] ?? 'roles.unknown')}
-                                                            {c.course && <> · {pick(c.course, 'title')}</>}
-                                                        </span>
-                                                    </button>
-                                                ))}
+                                                {items.map((c) => {
+                                                    const peerStudent = isStudent && c.role === 'STUDENT';
+                                                    const canOpen = !peerStudent || c.requestStatus === 'APPROVED';
+                                                    return (
+                                                        <div
+                                                            key={`${c.id}|${c.openingId ?? ''}`}
+                                                            className="px-4 py-3 rounded-xl border border-white/10 bg-brand-navy"
+                                                        >
+                                                            <button
+                                                                onClick={() => canOpen && startContact(c)}
+                                                                disabled={!canOpen}
+                                                                className={`w-full text-left ${canOpen ? 'cursor-pointer' : 'cursor-default'}`}
+                                                            >
+                                                                <span className="block font-bold text-white text-sm">{contactName(c)}</span>
+                                                                <span className="block text-xs text-gray-400">
+                                                                    {t(roleLabel[c.role] ?? 'roles.unknown')}
+                                                                    {c.course && <> · {pick(c.course, 'title')}</>}
+                                                                </span>
+                                                                {peerStudent && c.requestStatus === 'APPROVED' && (
+                                                                    <span className="block text-xs text-brand-gold-light mt-1">{t('inbox.open_thread')}</span>
+                                                                )}
+                                                            </button>
+                                                            {peerStudent && (
+                                                                <div className="mt-2">
+                                                                    {c.requestStatus === 'APPROVED' ? null : c.requestStatus === 'PENDING' && c.requestDirection === 'INCOMING' ? (
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <span className="text-xs text-gray-300">{t('inbox.request_incoming')}</span>
+                                                                            <div className="flex gap-2">
+                                                                                <button onClick={() => respondToRequest(c, true)} className="text-xs font-bold text-emerald-300 hover:underline">{t('inbox.request_approve')}</button>
+                                                                                <button onClick={() => respondToRequest(c, false)} className="text-xs font-bold text-red-300 hover:underline">{t('inbox.request_reject')}</button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : c.requestStatus === 'PENDING' ? (
+                                                                        <span className="text-xs text-gray-400">{t('inbox.request_pending')}</span>
+                                                                    ) : (
+                                                                        <button onClick={() => messageRequest(c)} className="text-xs font-bold text-brand-gold-light hover:underline">
+                                                                            {t('inbox.request_message')}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>

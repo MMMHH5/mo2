@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
-import { Role } from '@prisma/client';
+import { EnrollmentStatus, Role, StudentMessageRequestStatus } from '@prisma/client';
+import { toPublicInstructor } from '../common/public-instructor';
 
 @Injectable()
 export class MessagesService {
@@ -23,7 +24,64 @@ export class MessagesService {
         return !!enrollment;
     }
 
-    private async validateSend(user: { userId: string; role: Role }, recipientId: string, courseId?: string) {
+    private inboxNames(user: { role: Role; metadata?: unknown }): { nameAr: string | null; nameEn: string | null } {
+        const metadata = user.metadata && typeof user.metadata === 'object' && !Array.isArray(user.metadata)
+            ? user.metadata as Record<string, unknown>
+            : {};
+        const official = [metadata.nameAr, metadata.nameEn, metadata.fullName]
+            .filter((name): name is string => typeof name === 'string' && !!name.trim());
+        const alias = typeof metadata.inboxDisplayName === 'string' ? metadata.inboxDisplayName.trim() : '';
+        const selected = user.role === Role.STUDENT && metadata.inboxUseOfficialName !== true && alias
+            ? alias
+            : null;
+        const fallback = selected || official.find((name) => typeof name === 'string') || null;
+        return {
+            nameAr: selected || (typeof metadata.nameAr === 'string' && metadata.nameAr.trim()) || fallback,
+            nameEn: selected || (typeof metadata.nameEn === 'string' && metadata.nameEn.trim()) || fallback,
+        };
+    }
+
+    private safeContact(user: { id: string; role: Role; metadata?: unknown }) {
+        const names = this.inboxNames(user);
+        return {
+            id: user.id,
+            role: user.role,
+            nameAr: names.nameAr ?? (user.role === Role.ADMIN ? 'إدارة المنصة' : null),
+            nameEn: names.nameEn ?? (user.role === Role.ADMIN ? 'Platform Administration' : null),
+        };
+    }
+
+    private async hasAcceptedEnrollment(userId: string, openingId: string) {
+        return this.prisma.enrollment.findFirst({
+            where: {
+                studentId: userId,
+                openingId,
+                status: { in: [EnrollmentStatus.APPROVED, EnrollmentStatus.RESERVED] },
+            },
+            select: { id: true },
+        });
+    }
+
+    private async hasApprovedPeerRequest(openingId: string, firstId: string, secondId: string) {
+        return this.prisma.studentMessageRequest.findFirst({
+            where: {
+                openingId,
+                status: StudentMessageRequestStatus.APPROVED,
+                OR: [
+                    { requesterId: firstId, recipientId: secondId },
+                    { requesterId: secondId, recipientId: firstId },
+                ],
+            },
+            select: { id: true },
+        });
+    }
+
+    private async validateSend(
+        user: { userId: string; role: Role },
+        recipientId: string,
+        courseId?: string,
+        openingId?: string,
+    ) {
         if (!recipientId) throw new BadRequestException('recipientId is required');
         if (recipientId === user.userId) throw new BadRequestException('Cannot message yourself');
 
@@ -32,26 +90,51 @@ export class MessagesService {
 
         if (courseId) {
             const course = await this.getCourseOrThrow(courseId);
-            // Course-scoped threads:
-            // - STUDENT  -> may talk only to the course instructor of a course they are enrolled in
-            // - INSTRUCTOR -> may talk to students of the course they teach (or an admin)
-            // - ADMIN/CM/FINANCE -> any participant
             if (user.role === Role.STUDENT) {
-                const enrolled = await this.isEnrolled(user.userId, courseId);
-                if (!enrolled) throw new ForbiddenException('You are not enrolled in this course');
-                if (recipient.id !== course.instructorId) {
-                    throw new ForbiddenException('Students can only message the instructor of the course');
+                if (recipient.role === Role.STUDENT) {
+                    if (!openingId) throw new BadRequestException('Opening is required for student-to-student messages');
+                    const opening = await this.prisma.courseOpening.findFirst({
+                        where: { id: openingId, courseId, archivedAt: null },
+                        select: { id: true },
+                    });
+                    if (!opening) throw new ForbiddenException('Opening does not belong to this course');
+                    const [senderEnrollment, recipientEnrollment, approvedRequest] = await Promise.all([
+                        this.hasAcceptedEnrollment(user.userId, openingId),
+                        this.hasAcceptedEnrollment(recipient.id, openingId),
+                        this.hasApprovedPeerRequest(openingId, user.userId, recipient.id),
+                    ]);
+                    if (!senderEnrollment || !recipientEnrollment) {
+                        throw new ForbiddenException('Both students must be enrolled in the same opening');
+                    }
+                    if (!approvedRequest) throw new ForbiddenException('Student messaging requires an approved request');
+                } else {
+                    const enrollment = openingId
+                        ? await this.hasAcceptedEnrollment(user.userId, openingId)
+                        : await this.isEnrolled(user.userId, courseId);
+                    if (!enrollment) throw new ForbiddenException('You are not enrolled in this course');
+                    if (openingId) {
+                        const opening = await this.prisma.courseOpening.findFirst({
+                            where: { id: openingId, courseId, instructorId: recipient.id, archivedAt: null },
+                            select: { id: true },
+                        });
+                        if (!opening || recipient.role !== Role.INSTRUCTOR) {
+                            throw new ForbiddenException('Recipient is not the instructor of your opening');
+                        }
+                    } else if (recipient.id !== course.instructorId || recipient.role !== Role.INSTRUCTOR) {
+                        throw new ForbiddenException('Students can only message their course instructor');
+                    }
                 }
             } else if (user.role === Role.INSTRUCTOR) {
-                const isCourseInstructor = course.instructorId === user.userId;
-                const isOpeningInstructor = await this.prisma.courseOpening.count({
-                    where: { courseId, instructorId: user.userId },
-                }) > 0;
-                if (!isCourseInstructor && !isOpeningInstructor) {
-                    throw new ForbiddenException('You do not teach this course');
+                if (recipient.role === Role.ADMIN) return recipient;
+                if (recipient.role !== Role.STUDENT || !openingId) {
+                    throw new ForbiddenException('Instructors can only message their assigned students or platform admins');
                 }
-                if (recipient.role !== Role.STUDENT && recipient.role !== Role.ADMIN) {
-                    throw new ForbiddenException('Instructors can only message their students or platform admins');
+                const opening = await this.prisma.courseOpening.findFirst({
+                    where: { id: openingId, courseId, instructorId: user.userId, archivedAt: null },
+                    select: { id: true },
+                });
+                if (!opening || !(await this.hasAcceptedEnrollment(recipient.id, openingId))) {
+                    throw new ForbiddenException('Student is not enrolled in your opening');
                 }
             }
             return recipient;
@@ -65,24 +148,30 @@ export class MessagesService {
         return recipient;
     }
 
-    async send(user: { userId: string; role: Role }, dto: { recipientId: string; courseId?: string; content: string }) {
+    async send(user: { userId: string; role: Role }, dto: { recipientId: string; courseId?: string; openingId?: string; content: string }) {
         if (!dto.content || !dto.content.trim()) {
             throw new BadRequestException('Message content is required');
         }
-        const recipient = await this.validateSend(user, dto.recipientId, dto.courseId);
+        const recipient = await this.validateSend(user, dto.recipientId, dto.courseId, dto.openingId);
         const message = await this.prisma.message.create({
             data: {
                 senderId: user.userId,
                 recipientId: dto.recipientId,
                 courseId: dto.courseId ?? null,
+                openingId: dto.openingId ?? null,
                 content: this.encryption.encrypt(dto.content.trim()),
             },
             include: {
-                sender: { select: { id: true, email: true, role: true } },
-                recipient: { select: { id: true, email: true, role: true } },
+                sender: { select: { id: true, role: true, metadata: true } },
+                recipient: { select: { id: true, role: true, metadata: true } },
             },
         });
-        return { ...message, content: this.encryption.tryDecrypt(message.content), recipientEmail: recipient.email };
+        return {
+            ...message,
+            sender: this.safeContact(message.sender),
+            recipient: this.safeContact(message.recipient),
+            content: this.encryption.tryDecrypt(message.content),
+        };
     }
 
     async getConversations(userId: string) {
@@ -91,9 +180,10 @@ export class MessagesService {
                 OR: [{ senderId: userId }, { recipientId: userId }],
             },
             include: {
-                sender: { select: { id: true, email: true, role: true } },
-                recipient: { select: { id: true, email: true, role: true } },
+                sender: { select: { id: true, role: true, metadata: true } },
+                recipient: { select: { id: true, role: true, metadata: true } },
                 course: { select: { id: true, titleAr: true, titleEn: true } },
+                opening: { select: { id: true } },
             },
             orderBy: { createdAt: 'asc' },
         });
@@ -101,7 +191,7 @@ export class MessagesService {
         const groups = new Map<string, typeof messages>();
         for (const m of messages) {
             const otherId = m.senderId === userId ? m.recipientId : m.senderId;
-            const key = `${otherId}|${m.courseId ?? ''}`;
+            const key = `${otherId}|${m.courseId ?? ''}|${m.openingId ?? ''}`;
             const list = groups.get(key) ?? [];
             list.push(m);
             groups.set(key, list);
@@ -109,15 +199,15 @@ export class MessagesService {
 
         const conversations = Array.from(groups.entries()).map(([key, msgs]) => {
             const last = msgs[msgs.length - 1];
-            const otherId = last.senderId === userId ? last.recipientId : last.senderId;
             const other = last.senderId === userId ? last.recipient : last.sender;
             const unreadCount = msgs.filter((m) => m.recipientId === userId && !m.readAt).length;
             return {
                 id: key,
-                otherUser: { id: other.id, email: other.email, role: other.role },
+                otherUser: this.safeContact(other),
                 course: last.course
                     ? { id: last.course.id, titleAr: last.course.titleAr, titleEn: last.course.titleEn }
                     : null,
+                opening: last.opening,
                 lastMessage: {
                     content: this.encryption.tryDecrypt(last.content),
                     createdAt: last.createdAt,
@@ -133,35 +223,43 @@ export class MessagesService {
         return conversations;
     }
 
-    async getThread(userId: string, otherId: string, courseId?: string) {
+    async getThread(user: { userId: string; role: Role }, otherId: string, courseId?: string, openingId?: string) {
         if (!otherId) throw new BadRequestException('with (userId) is required');
+        await this.validateSend(user, otherId, courseId, openingId);
         const where: any = {
             OR: [
-                { senderId: userId, recipientId: otherId },
-                { senderId: otherId, recipientId: userId },
+                { senderId: user.userId, recipientId: otherId },
+                { senderId: otherId, recipientId: user.userId },
             ],
         };
         if (courseId) {
             where.courseId = courseId;
             await this.getCourseOrThrow(courseId);
         }
+        if (openingId) where.openingId = openingId;
         return this.prisma.message.findMany({
             where,
             include: {
-                sender: { select: { id: true, email: true, role: true } },
+                sender: { select: { id: true, role: true, metadata: true } },
             },
             orderBy: { createdAt: 'asc' },
-        }).then((messages) => messages.map((m) => ({ ...m, content: this.encryption.tryDecrypt(m.content) })));
+        }).then((messages) => messages.map((m) => ({
+            ...m,
+            sender: this.safeContact(m.sender),
+            content: this.encryption.tryDecrypt(m.content),
+        })));
     }
 
-    async markRead(userId: string, otherId: string, courseId?: string) {
+    async markRead(user: { userId: string; role: Role }, otherId: string, courseId?: string, openingId?: string) {
         if (!otherId) throw new BadRequestException('with (userId) is required');
+        await this.validateSend(user, otherId, courseId, openingId);
         const where: any = {
             senderId: otherId,
-            recipientId: userId,
+            recipientId: user.userId,
             readAt: null,
         };
         if (courseId) where.courseId = courseId;
+        if (openingId) where.openingId = openingId;
         const result = await this.prisma.message.updateMany({
             where,
             data: { readAt: new Date() },
@@ -177,75 +275,239 @@ export class MessagesService {
     }
 
     async getSupportAdmins() {
-        return this.prisma.user.findMany({
+        const admins = await this.prisma.user.findMany({
             where: { role: Role.ADMIN, isActive: true },
-            select: { id: true, email: true, role: true },
+            select: { id: true, role: true, metadata: true },
             orderBy: { createdAt: 'asc' },
         });
+        return admins.map((admin) => this.safeContact(admin));
     }
 
     async getContacts(user: { userId: string; role: Role }) {
         const admins = await this.getSupportAdmins();
+        const accepted = [EnrollmentStatus.APPROVED, EnrollmentStatus.RESERVED];
 
         if (user.role === Role.STUDENT) {
             const enrollments = await this.prisma.enrollment.findMany({
-                where: { studentId: user.userId },
+                where: { studentId: user.userId, status: { in: accepted } },
                 include: {
                     course: {
                         select: {
                             id: true,
                             titleAr: true,
                             titleEn: true,
-                            instructor: { select: { id: true, email: true, role: true } },
+                        },
+                    },
+                    opening: {
+                        select: {
+                            id: true,
+                            instructor: { select: { id: true, role: true, metadata: true } },
                         },
                     },
                 },
                 orderBy: { createdAt: 'desc' },
             });
-            const instructors = enrollments
-                .filter((e) => e.course.instructor && e.course.instructor.id !== user.userId)
-                .map((e) => ({
-                    id: e.course.instructor.id,
-                    email: e.course.instructor.email,
-                    role: e.course.instructor.role,
-                    course: { id: e.course.id, titleAr: e.course.titleAr, titleEn: e.course.titleEn },
-                }));
-            return { admins, instructors };
+            const instructorsByKey = new Map<string, Record<string, unknown>>();
+            const openingIds = enrollments.flatMap((enrollment) => enrollment.openingId ? [enrollment.openingId] : []);
+            for (const enrollment of enrollments) {
+                const instructor = enrollment.opening?.instructor;
+                if (!enrollment.openingId || !instructor || instructor.role !== Role.INSTRUCTOR || instructor.id === user.userId) continue;
+                const key = `${instructor.id}|${enrollment.courseId}|${enrollment.openingId}`;
+                const publicInstructor = toPublicInstructor(instructor);
+                instructorsByKey.set(key, {
+                    id: instructor.id,
+                    role: instructor.role,
+                    nameAr: publicInstructor.nameAr,
+                    nameEn: publicInstructor.nameEn,
+                    course: { id: enrollment.course.id, titleAr: enrollment.course.titleAr, titleEn: enrollment.course.titleEn },
+                    openingId: enrollment.openingId,
+                });
+            }
+
+            const peers = openingIds.length > 0
+                ? await this.prisma.enrollment.findMany({
+                    where: {
+                        openingId: { in: openingIds },
+                        studentId: { not: user.userId },
+                        status: { in: accepted },
+                    },
+                    include: {
+                        student: { select: { id: true, role: true, metadata: true } },
+                        course: { select: { id: true, titleAr: true, titleEn: true } },
+                    },
+                    orderBy: { createdAt: 'asc' },
+                })
+                : [];
+            const requests = openingIds.length > 0
+                ? await this.prisma.studentMessageRequest.findMany({
+                    where: {
+                        openingId: { in: openingIds },
+                        OR: [{ requesterId: user.userId }, { recipientId: user.userId }],
+                    },
+                    select: { id: true, openingId: true, requesterId: true, recipientId: true, status: true, updatedAt: true },
+                })
+                : [];
+            const peerContacts = peers.map((enrollment) => {
+                const matchingRequests = requests.filter((candidate) =>
+                    candidate.openingId === enrollment.openingId
+                    && ((candidate.requesterId === user.userId && candidate.recipientId === enrollment.studentId)
+                        || (candidate.requesterId === enrollment.studentId && candidate.recipientId === user.userId)),
+                );
+                matchingRequests.sort((left, right) => {
+                    const priority = (status: StudentMessageRequestStatus) =>
+                        status === StudentMessageRequestStatus.PENDING ? 2 : status === StudentMessageRequestStatus.APPROVED ? 1 : 0;
+                    return priority(right.status) - priority(left.status) || right.updatedAt.getTime() - left.updatedAt.getTime();
+                });
+                const request = matchingRequests[0];
+                const direction = request
+                    ? request.requesterId === user.userId ? 'OUTGOING' : 'INCOMING'
+                    : null;
+                return {
+                    ...this.safeContact(enrollment.student),
+                    course: { id: enrollment.course.id, titleAr: enrollment.course.titleAr, titleEn: enrollment.course.titleEn },
+                    openingId: enrollment.openingId,
+                    requestId: request?.id ?? null,
+                    requestStatus: request?.status ?? null,
+                    requestDirection: direction,
+                };
+            });
+            const uniquePeers = Array.from(new Map(
+                peerContacts.map((contact) => [`${contact.id}|${contact.openingId}`, contact]),
+            ).values());
+            return { admins, instructors: [...instructorsByKey.values()], students: uniquePeers };
         }
 
         if (user.role === Role.INSTRUCTOR) {
-            const courses = await this.prisma.course.findMany({
-                where: { OR: [{ instructorId: user.userId }, { openings: { some: { instructorId: user.userId } } }] },
+            const openings = await this.prisma.courseOpening.findMany({
+                where: { instructorId: user.userId, archivedAt: null },
                 select: {
                     id: true,
-                    titleAr: true,
-                    titleEn: true,
-                    enrollments: { select: { student: { select: { id: true, email: true, role: true } } } },
+                    course: { select: { id: true, titleAr: true, titleEn: true } },
+                    enrollments: {
+                        where: { status: { in: accepted } },
+                        select: { student: { select: { id: true, role: true, metadata: true } } },
+                    },
                 },
             });
-            const students = Array.from(
-                new Map(
-                    courses.flatMap((c) =>
-                        c.enrollments.map((e) => [
-                            e.student.id,
-                            {
-                                id: e.student.id,
-                                email: e.student.email,
-                                role: e.student.role,
-                                course: { id: c.id, titleAr: c.titleAr, titleEn: c.titleEn },
-                            },
-                        ])
-                    )
-                ).values()
-            );
+            const students = Array.from(new Map(openings.flatMap((opening) =>
+                opening.enrollments.map(({ student }) => [`${student.id}|${opening.id}`, {
+                    ...this.safeContact(student),
+                    course: opening.course,
+                    openingId: opening.id,
+                }]),
+            )).values());
             return { admins, instructors: [], students };
         }
 
-        const students = await this.prisma.user.findMany({
+        const userRows = await this.prisma.user.findMany({
             where: { role: Role.STUDENT, isActive: true },
-            select: { id: true, email: true, role: true },
+            select: { id: true, role: true, metadata: true },
             orderBy: { createdAt: 'asc' },
         });
+        const students = userRows.map((student) => this.safeContact(student));
         return { admins, instructors: [], students };
+    }
+
+    async createStudentMessageRequest(user: { userId: string; role: Role }, recipientId: string, openingId: string) {
+        if (user.role !== Role.STUDENT) throw new ForbiddenException('Only students can request peer messaging');
+        if (!recipientId || !openingId) throw new BadRequestException('recipientId and openingId are required');
+        if (recipientId === user.userId) throw new BadRequestException('Cannot request a conversation with yourself');
+
+        const opening = await this.prisma.courseOpening.findFirst({
+            where: { id: openingId, archivedAt: null },
+            select: { id: true },
+        });
+        if (!opening) throw new NotFoundException('Opening not found');
+        const [requesterEnrollment, recipientEnrollment, recipient] = await Promise.all([
+            this.hasAcceptedEnrollment(user.userId, openingId),
+            this.hasAcceptedEnrollment(recipientId, openingId),
+            this.prisma.user.findUnique({ where: { id: recipientId }, select: { id: true, role: true } }),
+        ]);
+        if (!requesterEnrollment || !recipientEnrollment || recipient?.role !== Role.STUDENT) {
+            throw new ForbiddenException('Both students must be enrolled in the same opening');
+        }
+
+        const activeRequest = await this.prisma.studentMessageRequest.findFirst({
+            where: {
+                openingId,
+                status: { in: [StudentMessageRequestStatus.PENDING, StudentMessageRequestStatus.APPROVED] },
+                OR: [
+                    { requesterId: user.userId, recipientId },
+                    { requesterId: recipientId, recipientId: user.userId },
+                ],
+            },
+        });
+        if (activeRequest) return activeRequest;
+
+        const previous = await this.prisma.studentMessageRequest.findUnique({
+            where: { openingId_requesterId_recipientId: { openingId, requesterId: user.userId, recipientId } },
+        });
+        return previous
+            ? this.prisma.studentMessageRequest.update({
+                where: { id: previous.id },
+                data: { status: StudentMessageRequestStatus.PENDING },
+            })
+            : this.prisma.studentMessageRequest.create({
+                data: { openingId, requesterId: user.userId, recipientId },
+            });
+    }
+
+    async getStudentMessageRequests(user: { userId: string; role: Role }) {
+        if (user.role !== Role.STUDENT) return [];
+        const rows = await this.prisma.studentMessageRequest.findMany({
+            where: {
+                status: StudentMessageRequestStatus.PENDING,
+                OR: [{ requesterId: user.userId }, { recipientId: user.userId }],
+            },
+            include: {
+                requester: { select: { id: true, role: true, metadata: true } },
+                recipient: { select: { id: true, role: true, metadata: true } },
+                opening: {
+                    select: {
+                        id: true,
+                        course: { select: { id: true, titleAr: true, titleEn: true } },
+                        enrollments: {
+                            where: { status: { in: [EnrollmentStatus.APPROVED, EnrollmentStatus.RESERVED] } },
+                            select: { studentId: true },
+                        },
+                    },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        return rows
+            .filter((request) => {
+                const enrolledIds = new Set(request.opening.enrollments.map((enrollment) => enrollment.studentId));
+                return enrolledIds.has(request.requesterId) && enrolledIds.has(request.recipientId);
+            })
+            .map((request) => ({
+            id: request.id,
+            status: request.status,
+            incoming: request.recipientId === user.userId,
+            otherUser: this.safeContact(request.recipientId === user.userId ? request.requester : request.recipient),
+            course: request.opening.course,
+            openingId: request.openingId,
+            createdAt: request.createdAt,
+            }));
+    }
+
+    async respondToStudentMessageRequest(user: { userId: string; role: Role }, requestId: string, approved: boolean) {
+        if (user.role !== Role.STUDENT) throw new ForbiddenException('Only students can respond to peer messaging requests');
+        const request = await this.prisma.studentMessageRequest.findUnique({ where: { id: requestId } });
+        if (!request || request.recipientId !== user.userId) throw new NotFoundException('Message request not found');
+        if (request.status !== StudentMessageRequestStatus.PENDING) throw new BadRequestException('Message request has already been answered');
+        const [recipientEnrollment, requesterEnrollment] = await Promise.all([
+            this.hasAcceptedEnrollment(request.recipientId, request.openingId),
+            this.hasAcceptedEnrollment(request.requesterId, request.openingId),
+        ]);
+        if (!recipientEnrollment || !requesterEnrollment) {
+            throw new ForbiddenException('Both students must remain enrolled in the same opening');
+        }
+        const result = await this.prisma.studentMessageRequest.updateMany({
+            where: { id: requestId, recipientId: user.userId, status: StudentMessageRequestStatus.PENDING },
+            data: { status: approved ? StudentMessageRequestStatus.APPROVED : StudentMessageRequestStatus.REJECTED },
+        });
+        if (result.count !== 1) throw new BadRequestException('Message request has already been answered');
+        return { ok: true, status: approved ? StudentMessageRequestStatus.APPROVED : StudentMessageRequestStatus.REJECTED };
     }
 }

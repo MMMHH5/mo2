@@ -98,11 +98,77 @@ describe('PATCH /users/me metadata merge', () => {
         assert.equal((after.bio as string).length, 500);
     });
 
+    test('messaging alias preferences are trimmed, length-limited, and type-checked', async () => {
+        const after = await patch({
+            inboxDisplayName: `  ${'A'.repeat(100)}  `,
+            inboxUseOfficialName: false,
+        });
+        assert.equal((after.inboxDisplayName as string).length, 80);
+        assert.equal(after.inboxUseOfficialName, false);
+        await assert.rejects(() => patch({ inboxDisplayName: 42 }), /inboxDisplayName must be a string/);
+        await assert.rejects(() => patch({ inboxUseOfficialName: 'false' }), /inboxUseOfficialName must be a boolean/);
+    });
+
     test('experienceYears is clamped to a believable range', async () => {
         assert.equal((await patch({ experienceYears: '9999' })).experienceYears, 80);
         assert.equal((await patch({ experienceYears: 4.6 })).experienceYears, 5);
         // Junk is dropped rather than stored as NaN.
         assert.equal((await patch({ experienceYears: 'abc' })).experienceYears, undefined);
+    });
+
+    test('age is stored as a bounded integer', async () => {
+        assert.equal((await patch({ age: '24' })).age, 24);
+        assert.equal((await patch({ age: 24 })).age, 24);
+        assert.equal((await patch({ age: '' })).age, null);
+    });
+
+    test('invalid ages are rejected instead of stored as profile text', async () => {
+        await assert.rejects(() => patch({ age: 'not-an-age' }), /Age must be a whole number/);
+        await assert.rejects(() => patch({ age: 121 }), /Age must be a whole number/);
+    });
+
+    test('Google onboarding cannot be completed without its required fields', async () => {
+        const row = { ...stored(), metadata: { googleOnboardingPending: true } };
+        const service = new UsersService({
+            user: {
+                findUnique: async () => row,
+                update: async () => row,
+            },
+        } as never, { logAction: async () => {} } as never, { invalidate: async () => {} } as never);
+
+        await assert.rejects(
+            () => service.updateMe('u1', { metadata: { googleOnboardingPending: false } } as never),
+            /Complete the required personal and academic information/,
+        );
+    });
+
+    test('valid Google onboarding saves the profile and clears its pending marker', async () => {
+        let written: Record<string, unknown> | undefined;
+        const row = { ...stored(), metadata: { googleOnboardingPending: true } };
+        const service = new UsersService({
+            user: {
+                findUnique: async () => row,
+                update: async (args: { data: { metadata?: Record<string, unknown> } }) => {
+                    written = args.data.metadata;
+                    return { ...row, metadata: written };
+                },
+            },
+        } as never, { logAction: async () => {} } as never, { invalidate: async () => {} } as never);
+
+        await service.updateMe('u1', {
+            metadata: {
+                googleOnboardingPending: false,
+                fullName: 'New Student',
+                age: 22,
+                university: 'Example University',
+                studyStatus: 'STUDENT',
+                studyLevel: 'Third year',
+            },
+        } as never);
+
+        assert.equal(written?.googleOnboardingPending, false);
+        assert.equal(written?.fullName, 'New Student');
+        assert.equal(written?.age, 22);
     });
 
     test('a null birthDate is a clear, not a malformed date', async () => {

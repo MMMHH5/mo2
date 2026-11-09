@@ -69,6 +69,7 @@ export interface PublicCourse {
     /** Mean of published CourseReview rows, 0 when nobody has reviewed yet. */
     averageRating?: number;
     reviewCount?: number;
+    enrollmentStatus?: string;
 }
 
 interface CourseCardProps {
@@ -127,6 +128,21 @@ export default function CourseCard({
     const reviewCount = course.reviewCount ?? 0;
     const averageRating = course.averageRating ?? 0;
     const studentCount = course._count?.enrollments ?? 0;
+    const enrollmentStatus = course.enrollmentStatus;
+    const enrollmentMessage = enrollmentStatus === 'APPROVED'
+        ? t('explore.enrollment_approved')
+        : enrollmentStatus === 'PENDING'
+            ? t('explore.enrollment_pending')
+            : enrollmentStatus === 'LOADING'
+                ? t('explore.enrollment_loading')
+            : enrollmentStatus === 'RESERVED'
+                ? t('explore.enrollment_reserved')
+                : enrollmentStatus === 'REJECTED'
+                    ? t('explore.enrollment_rejected')
+                    : enrollmentStatus === 'REVOKED'
+                        ? t('explore.enrollment_revoked')
+                        : null;
+    const hasEnrollment = !!enrollmentMessage;
 
     const outline = course.outline ?? [];
     const chapters = outline.filter(c => c.lessons.length > 0);
@@ -138,7 +154,7 @@ export default function CourseCard({
         : 0;
 
     const count = (key: string, n: number) => t(key).replace('{n}', formatNumber(n, locale));
-    const hasSecondCta = isOpen ? !!onEnroll : announced ? !!onReserve : closed && !!onNotify;
+    const hasSecondCta = !hasEnrollment && (isOpen ? !!onEnroll : announced ? !!onReserve : closed && !!onNotify);
 
     return (
         <article
@@ -356,7 +372,24 @@ export default function CourseCard({
                     >
                         <Eye size={16} /> {t('explore.view_details')}
                     </Link>
-                    {isOpen && onEnroll && (
+                    {hasEnrollment && (
+                        <div
+                            role="status"
+                            className={`flex items-center justify-center gap-2 rounded-xl border py-3.5 text-center text-sm font-black ${
+                                enrollmentStatus === 'APPROVED' || enrollmentStatus === 'RESERVED'
+                                    ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                    : enrollmentStatus === 'REJECTED' || enrollmentStatus === 'REVOKED'
+                                        ? 'border-red-500/25 bg-red-500/10 text-red-700 dark:text-red-300'
+                                        : 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                            }`}
+                        >
+                            {enrollmentStatus === 'APPROVED' || enrollmentStatus === 'RESERVED'
+                                ? <CheckCircle2 size={16} />
+                                : <Clock size={16} />}
+                            {enrollmentMessage}
+                        </div>
+                    )}
+                    {!hasEnrollment && isOpen && onEnroll && (
                         <button
                             type="button"
                             onClick={() => onEnroll(course)}
@@ -369,7 +402,7 @@ export default function CourseCard({
                             <Sparkles size={16} /> {t('explore.enroll_now')}
                         </button>
                     )}
-                    {announced && onReserve && (
+                    {!hasEnrollment && announced && onReserve && (
                         <button
                             type="button"
                             onClick={() => onReserve(course)}
@@ -382,7 +415,7 @@ export default function CourseCard({
                             <Unlock size={16} /> {t('courseDetail.reserve_seat')}
                         </button>
                     )}
-                    {closed && onNotify && (
+                    {!hasEnrollment && closed && onNotify && (
                         <button
                             type="button"
                             onClick={() => onNotify(course)}
@@ -395,7 +428,7 @@ export default function CourseCard({
                             <Bell size={16} /> {t('explore.notify_me')}
                         </button>
                     )}
-                    {!isOpen && !announced && !onNotify && (
+                    {!hasEnrollment && !isOpen && !announced && !onNotify && (
                         <span className={`rounded-xl py-3.5 text-center text-sm font-bold ${isDark ? 'bg-ink/[0.04] text-ink-muted' : 'bg-surface-sunken text-ink-subtle'}`}>
                             {t('courseDetail.not_open_yet')}
                         </span>

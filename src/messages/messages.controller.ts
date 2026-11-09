@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Patch, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Patch, Param, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MessagesService } from './messages.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,13 +16,14 @@ export class MessagesController {
     send(
         @Body('recipientId') recipientId: string,
         @Body('courseId') courseId: string | undefined,
+        @Body('openingId') openingId: string | undefined,
         @Body('content') content: string,
         @Request() req: any,
     ) {
         if (!recipientId || !content) {
             throw new BadRequestException('recipientId and content are required');
         }
-        return this.messagesService.send(req.user, { recipientId, courseId, content });
+        return this.messagesService.send(req.user, { recipientId, courseId, openingId, content });
     }
 
     @ApiOperation({ summary: 'My conversations (with last message + unread count)' })
@@ -33,14 +34,24 @@ export class MessagesController {
 
     @ApiOperation({ summary: 'Message thread with another user' })
     @Get('thread')
-    thread(@Query('with') otherId: string, @Query('courseId') courseId: string | undefined, @Request() req: any) {
-        return this.messagesService.getThread(req.user.userId, otherId, courseId);
+    thread(
+        @Query('with') otherId: string,
+        @Query('courseId') courseId: string | undefined,
+        @Query('openingId') openingId: string | undefined,
+        @Request() req: any,
+    ) {
+        return this.messagesService.getThread(req.user, otherId, courseId, openingId);
     }
 
     @ApiOperation({ summary: 'Mark a conversation as read' })
     @Patch('read')
-    markRead(@Query('with') otherId: string, @Query('courseId') courseId: string | undefined, @Request() req: any) {
-        return this.messagesService.markRead(req.user.userId, otherId, courseId);
+    markRead(
+        @Query('with') otherId: string,
+        @Query('courseId') courseId: string | undefined,
+        @Query('openingId') openingId: string | undefined,
+        @Request() req: any,
+    ) {
+        return this.messagesService.markRead(req.user, otherId, courseId, openingId);
     }
 
     @ApiOperation({ summary: 'Total unread message count for the current user' })
@@ -59,5 +70,32 @@ export class MessagesController {
     @Get('contacts')
     contacts(@Request() req: any) {
         return this.messagesService.getContacts(req.user);
+    }
+
+    @ApiOperation({ summary: 'List pending student-to-student messaging requests' })
+    @Get('requests')
+    requests(@Request() req: any) {
+        return this.messagesService.getStudentMessageRequests(req.user);
+    }
+
+    @ApiOperation({ summary: 'Request permission to message a fellow student in the same opening' })
+    @Post('requests')
+    createRequest(
+        @Body('recipientId') recipientId: string,
+        @Body('openingId') openingId: string,
+        @Request() req: any,
+    ) {
+        return this.messagesService.createStudentMessageRequest(req.user, recipientId, openingId);
+    }
+
+    @ApiOperation({ summary: 'Accept or reject a student-to-student messaging request' })
+    @Patch('requests/:id')
+    respondToRequest(
+        @Param('id') id: string,
+        @Body('approved') approved: boolean,
+        @Request() req: any,
+    ) {
+        if (typeof approved !== 'boolean') throw new BadRequestException('approved must be a boolean');
+        return this.messagesService.respondToStudentMessageRequest(req.user, id, approved);
     }
 }

@@ -23,6 +23,12 @@ enum EnrollmentStatus {
   REVOKED
 }
 
+enum StudentMessageRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum CourseOpeningStatus {
   DRAFT
   ANNOUNCEMENT
@@ -188,6 +194,7 @@ model User {
   openingInstructorGrants        OpeningInstructorGrant[]        @relation("OpeningInstructor")
   openingInstructorGrantsCreated OpeningInstructorGrant[]        @relation("OpeningInstructorGrantor")
   enrollments                    Enrollment[]
+  reviewedEnrollments            Enrollment[]                   @relation("EnrollmentReviewedBy")
   certificates                   Certificate[]
   certificatesSigned             Certificate[]                   @relation("CertificateInstructor")
   certificateInstructorSignature CertificateInstructorSignature?
@@ -204,6 +211,8 @@ model User {
   tickets                   SupportTicket[]
   sentMessages              Message[]                  @relation("SentMessages")
   receivedMessages          Message[]                  @relation("ReceivedMessages")
+  sentStudentMessageRequests StudentMessageRequest[]   @relation("StudentMessageRequestSender")
+  receivedStudentMessageRequests StudentMessageRequest[] @relation("StudentMessageRequestRecipient")
   openingRequests           OpeningRequest[]
   closeRequests             CloseRequest[]
   courseSuggestions         CourseSuggestion[]
@@ -374,6 +383,8 @@ model CourseOpening {
   instructorSharePercent Decimal? @db.Decimal(5, 2)
 
   enrollments      Enrollment[]
+  messages         Message[]
+  studentMessageRequests StudentMessageRequest[]
   assessments      Assessment[]
   closeRequests    CloseRequest[]
   tasks            CourseTask[]
@@ -586,6 +597,8 @@ model Enrollment {
   status              EnrollmentStatus @default(PENDING)
   receiptFileUrl      String?
   financeOfficerNotes String?
+  reviewedAt          DateTime?
+  reviewedById        String?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
@@ -600,6 +613,7 @@ model Enrollment {
   // on a course that is not open yet).
   openingId String?
   opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: SetNull)
+  reviewedBy User?         @relation("EnrollmentReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   grades           Grade[]
   submissions      TaskSubmission[]
@@ -612,6 +626,7 @@ model Enrollment {
 
   // A student can only enroll in a specific course once (or have one active record)
   @@unique([studentId, courseId])
+  @@index([reviewedById])
 }
 
 // A scheduled live meeting inside one batch.
@@ -982,9 +997,30 @@ model Message {
   courseId String?
   course   Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
+  openingId String?
+  opening   CourseOpening? @relation(fields: [openingId], references: [id], onDelete: SetNull)
+
   @@index([senderId])
   @@index([recipientId])
   @@index([courseId])
+  @@index([openingId])
+}
+
+model StudentMessageRequest {
+  id          String                       @id @default(uuid())
+  status      StudentMessageRequestStatus  @default(PENDING)
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+  requesterId String
+  requester   User                         @relation("StudentMessageRequestSender", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User                         @relation("StudentMessageRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  openingId   String
+  opening     CourseOpening                @relation(fields: [openingId], references: [id], onDelete: Cascade)
+
+  @@unique([openingId, requesterId, recipientId])
+  @@index([recipientId, status])
+  @@index([requesterId, status])
 }
 
 // ===== Group chat rooms (one per course opening/batch) =====

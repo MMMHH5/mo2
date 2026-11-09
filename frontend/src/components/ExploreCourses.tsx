@@ -2,7 +2,7 @@
 
 import { useFetchData } from '@/lib/useFetchData';
 import { AlertTriangle, BookOpen, Sparkles, Bell, Route } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -33,6 +33,10 @@ interface BrowseLearningPath {
 }
 
 type Course = PublicCourse;
+interface MyEnrollmentSummary {
+    courseId: string;
+    status: string;
+}
 
 export default function ExploreCourses({ hideHeader = false, dark }: { hideHeader?: boolean; dark?: boolean }) {
     const { t, pick, locale } = useI18n();
@@ -42,6 +46,11 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const { user } = useAuth();
     const router = useRouter();
     const { data: courses, loading, error } = useFetchData<Course[]>('/public/courses');
+    const {
+        data: myEnrollments,
+        error: myEnrollmentsError,
+        refetch: refetchMyEnrollments,
+    } = useFetchData<MyEnrollmentSummary[]>(user?.role === 'STUDENT' ? '/enrollments/my' : null);
     const { data: learningPaths, loading: pathsLoading, error: learningPathsError } = useFetchData<BrowseLearningPath[]>('/learning-paths');
     const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -59,6 +68,28 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
     const [interestMethod, setInterestMethod] = useState<'EMAIL' | 'PHONE'>('EMAIL');
     const [interestValue, setInterestValue] = useState('');
     const [interestSubmitting, setInterestSubmitting] = useState(false);
+    const [enrollmentsLoadedFor, setEnrollmentsLoadedFor] = useState<string | null>(null);
+    const [enrollmentOverrides, setEnrollmentOverrides] = useState<Record<string, Record<string, string>>>({});
+
+    useEffect(() => {
+        if (user?.role !== 'STUDENT' || !user.userId) return;
+        let active = true;
+        const refreshEnrollments = () => {
+            if (document.visibilityState === 'visible') {
+                void refetchMyEnrollments({ silent: true });
+            }
+        };
+        void refetchMyEnrollments({ silent: true }).then(() => {
+            if (active) setEnrollmentsLoadedFor(user.userId);
+        });
+        const interval = window.setInterval(refreshEnrollments, 30_000);
+        window.addEventListener('focus', refreshEnrollments);
+        return () => {
+            active = false;
+            window.clearInterval(interval);
+            window.removeEventListener('focus', refreshEnrollments);
+        };
+    }, [refetchMyEnrollments, user?.role, user?.userId]);
 
     const openOpening = (course: Course): Opening | undefined => course.openings?.find(o => o.status === 'OPEN');
     const announcedOpening = (course: Course): Opening | undefined => course.openings?.find(o => o.status === 'ANNOUNCEMENT');
@@ -83,6 +114,21 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                 return course ? [course] : [];
             });
     }, [courses, selectedLearningPath]);
+    const enrollmentStatuses = useMemo(() => {
+        if (user?.role !== 'STUDENT' || !user.userId || enrollmentsLoadedFor !== user.userId) {
+            return new Map<string, string>();
+        }
+        const statuses = new Map((myEnrollments ?? [])
+            .map((enrollment) => [enrollment.courseId, enrollment.status]));
+        for (const [courseId, status] of Object.entries(enrollmentOverrides[user.userId] ?? {})) {
+            statuses.set(courseId, status);
+        }
+        return statuses;
+    }, [enrollmentOverrides, enrollmentsLoadedFor, myEnrollments, user]);
+    const enrollmentStatusFor = (courseId: string) => enrollmentStatuses.get(courseId)
+        ?? (user?.role === 'STUDENT' && user.userId && enrollmentsLoadedFor !== user.userId && !myEnrollmentsError
+            ? 'LOADING'
+            : undefined);
 
     const handleEnrollClick = (course: Course) => {
         const opening = currentOpening(course);
@@ -159,6 +205,14 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
             });
 
             toast.success(t('explore.review_success'));
+            if (user?.role === 'STUDENT' && user.userId) {
+                setEnrollmentOverrides((current) => ({
+                    ...current,
+                    [user.userId]: { ...current[user.userId], [selectedCourse.id]: 'PENDING' },
+                }));
+                setEnrollmentsLoadedFor(user.userId);
+                void refetchMyEnrollments({ silent: true });
+            }
             setSelectedCourse(null);
             setReceiptFile(null);
             setGatewayId(null);
@@ -220,6 +274,12 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                 </div>
             )}
 
+            {user?.role === 'STUDENT' && myEnrollmentsError && (
+                <div role="alert" className={`rounded-xl border p-4 text-sm font-semibold ${isDark ? 'border-red-500/20 bg-red-500/10 text-red-300' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                    {myEnrollmentsError}
+                </div>
+            )}
+
             <section aria-labelledby="open-courses-heading" className="space-y-6">
                 <div>
                     <h2 id="open-courses-heading" className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-brand-navy'}`}>
@@ -238,7 +298,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                         {openCourses.map((course) => (
                             <CourseCard
                                 key={`open-${course.id}`}
-                                course={course}
+                                course={{ ...course, enrollmentStatus: enrollmentStatusFor(course.id) }}
                                 isDark={isDark}
                                 onEnroll={handleEnrollClick}
                             />
@@ -325,7 +385,7 @@ export default function ExploreCourses({ hideHeader = false, dark }: { hideHeade
                             {selectedPathCourses.map((course) => (
                                 <CourseCard
                                     key={`path-${selectedLearningPath.id}-${course.id}`}
-                                    course={course}
+                                    course={{ ...course, enrollmentStatus: enrollmentStatusFor(course.id) }}
                                     isDark={isDark}
                                     onEnroll={handleEnrollClick}
                                     onReserve={handleReserveClick}

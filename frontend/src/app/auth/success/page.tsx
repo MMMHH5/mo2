@@ -23,6 +23,7 @@ function SuccessHandler() {
         const tempToken = params.get('tempToken');
         const token = params.get('token');
         const refresh = params.get('refresh');
+        const completeProfile = params.get('completeProfile') === '1';
 
         if (twoFactor === '1' && tempToken) {
             router.push(`/auth/two-factor?tempToken=${encodeURIComponent(tempToken)}`);
@@ -46,7 +47,7 @@ function SuccessHandler() {
                     role: payload.role as Role
                 }, refresh || undefined);
 
-                router.push('/dashboard');
+                router.push(completeProfile ? '/auth/complete-profile' : '/dashboard');
             } catch (err) {
                 console.error('Failed to parse token', err);
                 router.push('/login');

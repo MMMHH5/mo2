@@ -164,7 +164,7 @@ export class AuthController {
         // from being logged in browser history, server logs, referrer headers, etc.
         if ('access_token' in result) {
             return res.redirect(
-                `${frontendUrl}/auth/success#token=${encodeURIComponent(result.access_token)}&refresh=${encodeURIComponent(result.refresh_token)}`
+                `${frontendUrl}/auth/success#token=${encodeURIComponent(result.access_token)}&refresh=${encodeURIComponent(result.refresh_token)}${result.isNewGoogleUser ? '&completeProfile=1' : ''}`
             );
         }
         if ('requiresTwoFactor' in result && result.requiresTwoFactor) {

@@ -3,12 +3,18 @@
 import { useFetchData } from '@/lib/useFetchData';
 import { api, getErrorMessage, fetchProtectedFile, downloadProtectedFile } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-context';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
-import { Check, X, FileImage, ExternalLink, RefreshCw, ShieldCheck, Wallet, CreditCard, Save, Tag, RotateCcw } from 'lucide-react';
+import { Check, X, FileImage, ExternalLink, RefreshCw, ShieldCheck, Wallet, CreditCard, Save, Tag, RotateCcw, UserRound } from 'lucide-react';
 import { PageHeader, Badge, EmptyState, BtnSoft, BtnPrimary, type Tone } from '../components';
 import { formatPrice } from '@/lib/format';
+
+interface FinanceReviewer {
+    id: string;
+    email: string;
+    role: string;
+}
 
 interface EnrollmentPayment {
     id: string;
@@ -31,6 +37,8 @@ interface Enrollment {
     status: string;
     receiptFileUrl?: string | null;
     financeOfficerNotes?: string | null;
+    reviewedAt?: string | null;
+    reviewedBy?: FinanceReviewer | null;
     student?: { email: string } | null;
     course?: { titleAr?: string | null; titleEn?: string | null } | null;
     opening?: { price: string; nameAr?: string | null; nameEn?: string | null; isPublished: boolean } | null;
@@ -44,7 +52,11 @@ interface Payment {
     method?: string | null;
     createdAt: string;
     user?: { email: string } | null;
-    enrollment?: { course?: { titleAr?: string | null; titleEn?: string | null } | null } | null;
+    enrollment?: {
+        reviewedAt?: string | null;
+        reviewedBy?: FinanceReviewer | null;
+        course?: { titleAr?: string | null; titleEn?: string | null } | null;
+    } | null;
 }
 
 interface RefundRequest {
@@ -96,7 +108,7 @@ export default function AdminFinancePage() {
     const { data: payments, loading: paymentsLoading, error: paymentsError } = useFetchData<Payment[]>(activeTab === 'payments' ? '/payments' : null);
     const { data: refunds, loading: refundsLoading, error: refundsError, refetch: refetchRefunds } = useFetchData<RefundRequest[]>(activeTab === 'refunds' ? '/refunds' : null);
     const { t, pick, locale } = useI18n();
-    const [statusFilter, setStatusFilter] = useState<Filter>('ALL');
+    const [statusFilter, setStatusFilter] = useState<Filter>('PENDING');
     const [selected, setSelected] = useState<Enrollment | null>(null);
     const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
     const [receiptLoading, setReceiptLoading] = useState(false);
@@ -112,6 +124,19 @@ export default function AdminFinancePage() {
     const [refundReceiptUrl, setRefundReceiptUrl] = useState<string | null>(null);
     const [refundReceiptLoading, setRefundReceiptLoading] = useState(false);
     const [refundReceiptError, setRefundReceiptError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (activeTab !== 'enrollments') return;
+        const refreshVisible = () => {
+            if (document.visibilityState === 'visible') void refetch({ silent: true });
+        };
+        const timer = window.setInterval(refreshVisible, 30_000);
+        window.addEventListener('focus', refreshVisible);
+        return () => {
+            window.clearInterval(timer);
+            window.removeEventListener('focus', refreshVisible);
+        };
+    }, [activeTab, refetch]);
 
     const counts = {
         ALL: (enrollments || []).length,
@@ -250,7 +275,7 @@ export default function AdminFinancePage() {
         >
             <div className="admin-stat-value">{counts[s]}</div>
             <div className={`text-[11px] font-black mt-1 ${statusFilter === s ? 'text-brand-gold-light' : 'text-gray-500 dark:text-gray-400'}`}>
-                {s === 'ALL' ? t('admin.filter_all') : t('statuses.' + s.toLowerCase())}
+                {s === 'ALL' ? t('admin.filter_all') : s === 'PENDING' ? t('finance.recent_records') : t('statuses.' + s.toLowerCase())}
             </div>
         </button>
     );
@@ -305,6 +330,9 @@ export default function AdminFinancePage() {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-fade-in-up">
                 {(['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'RESERVED'] as const).map(s => statBtn(s))}
             </div>
+            <p className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <RefreshCw size={13} /> {t('finance.auto_refresh')}
+            </p>
 
             {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl">{error}</div>}
 
@@ -319,6 +347,7 @@ export default function AdminFinancePage() {
                                 <th>{t('finance.col_course')}</th>
                                 <th>{t('admin.col_status')}</th>
                                 <th className="text-center">{t('finance.col_receipt')}</th>
+                                <th>{t('finance.review_action')}</th>
                                 <th className="text-right">{t('finance.col_actions')}</th>
                             </tr>
                         </thead>
@@ -354,6 +383,23 @@ export default function AdminFinancePage() {
                                         <button onClick={() => openReceipt(e)} className="inline-flex items-center gap-2 px-3.5 py-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 hover:text-brand-navy dark:hover:text-white rounded-xl text-sm font-bold transition-all duration-200">
                                             <FileImage size={16} /> {t('finance.view_receipt')}
                                         </button>
+                                    </td>
+                                    <td className="p-4">
+                                        {e.reviewedAt ? (
+                                            <div className="space-y-1.5 text-xs">
+                                                <div className={`font-bold ${e.status === 'APPROVED' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                    {e.status === 'APPROVED' ? t('finance.action_approved') : t('finance.action_rejected')}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                                                    <UserRound size={13} />
+                                                    <span>{e.reviewedBy ? `${e.reviewedBy.email} · ${t('roles.' + e.reviewedBy.role.toLowerCase())}` : t('finance.reviewer_unavailable')}</span>
+                                                </div>
+                                                <div className="text-gray-500 dark:text-gray-400">{new Date(e.reviewedAt).toLocaleString(locale)}</div>
+                                                {e.financeOfficerNotes && <div className="max-w-xs whitespace-normal text-gray-600 dark:text-gray-300">{e.financeOfficerNotes}</div>}
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">{t('finance.new_review')}</span>
+                                        )}
                                     </td>
                                     <td className="p-4 text-right whitespace-nowrap">
                                         {e.status === 'PENDING' ? (
@@ -484,6 +530,7 @@ export default function AdminFinancePage() {
                                         <th>{t('admin.col_status')}</th>
                                         <th>{t('finance.col_method')}</th>
                                         <th>{t('finance.col_date')}</th>
+                                        <th>{t('finance.review_action')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 dark:divide-white/5">
@@ -505,6 +552,20 @@ export default function AdminFinancePage() {
                                                 )}
                                             </td>
                                             <td className="p-4 text-sm text-gray-500 dark:text-gray-400">{new Date(p.createdAt).toLocaleDateString()}</td>
+                                            <td className="p-4">
+                                                {p.enrollment?.reviewedAt ? (
+                                                    <div className="space-y-1 text-xs">
+                                                        <div className={`font-bold ${p.status === 'PAID' ? 'text-emerald-600 dark:text-emerald-400' : p.status === 'REJECTED' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                            {p.status === 'PAID' ? t('finance.action_approved') : p.status === 'REJECTED' ? t('finance.action_rejected') : t('statuses.' + p.status.toLowerCase())}
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+                                                            <UserRound size={13} />
+                                                            <span>{p.enrollment.reviewedBy ? `${p.enrollment.reviewedBy.email} · ${t('roles.' + p.enrollment.reviewedBy.role.toLowerCase())}` : t('finance.reviewer_unavailable')}</span>
+                                                        </div>
+                                                        <div className="text-gray-500 dark:text-gray-400">{new Date(p.enrollment.reviewedAt).toLocaleString(locale)}</div>
+                                                    </div>
+                                                ) : <span className="text-xs text-gray-500 dark:text-gray-400">—</span>}
+                                            </td>
                                         </tr>
                                     ))}
                                     {(payments || []).length === 0 && (

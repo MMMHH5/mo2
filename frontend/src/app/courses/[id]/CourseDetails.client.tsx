@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { api, API_BASE_URL, getErrorMessage, isUnauthorized } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
-    BookOpen, Clock, User, CheckCircle, Loader, Award, Star, Users,
+    BookOpen, Clock, User, CheckCircle, Loader, Award, Users,
     CalendarDays, Globe, ChevronDown, GraduationCap, PlayCircle, MessagesSquare, ListChecks, Target,
     AlertTriangle, ClipboardList, Settings2, Radio
 } from 'lucide-react';
@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useTheme } from '@/lib/theme-context';
 import { useFetchData } from '@/lib/useFetchData';
-import { formatPrice, formatDate, formatNumber } from '@/lib/format';
+import { formatPrice, formatDate } from '@/lib/format';
 import PublicMobileMenu from '@/components/PublicMobileMenu';
 import CourseChat from '@/components/CourseChat';
 import StudentTasksPanel from '@/components/StudentTasksPanel';
@@ -22,7 +22,6 @@ import StudentGradesPanel from '@/components/StudentGradesPanel';
 import RosterGrades from '@/components/RosterGrades';
 import TasksPanel from '@/components/TasksPanel';
 import LessonExplorer from '@/components/LessonExplorer';
-import InstructorRating from '@/components/InstructorRating';
 import PaymentMethods, { type PaymentGateway } from '@/components/payment/PaymentMethods';
 import ReceiptDropzone from '@/components/payment/ReceiptDropzone';
 import EnrollSteps from '@/components/payment/EnrollSteps';
@@ -63,26 +62,6 @@ export interface Opening {
     instructor?: PublicInstructorCard | null;
     _count?: { enrollments?: number };
 }
-
-export interface CourseReview {
-    id: string;
-    rating: number;
-    commentAr?: string | null;
-    commentEn?: string | null;
-    createdAt: string;
-    user?: { id: string; email?: string } | null;
-}
-
-// Mirrors GET /reviews/course/:courseId (published reviews only).
-export interface CourseReviews {
-    total: number;
-    average: number;
-    distribution: { stars: number; count: number }[];
-    reviews: CourseReview[];
-}
-
-// How many written reviews to list before asking people to read the rest.
-const REVIEWS_PREVIEW = 5;
 
 export interface Course {
     id: string;
@@ -131,7 +110,14 @@ export interface Course {
      * on the anonymous server render, which is why the page re-fetches with a
      * token once it knows who is asking.
      */
-    viewerAccess?: { enrolled: boolean; approved: boolean; teaches: boolean; chatEnabled: boolean };
+    viewerAccess?: {
+        enrolled: boolean;
+        approved: boolean;
+        teaches: boolean;
+        chatEnabled: boolean;
+        openingId?: string | null;
+        enrollmentStatus?: string | null;
+    };
     modules?: Module[];
     chapters?: Chapter[];
     _count?: { enrollments?: number; modules?: number };
@@ -213,7 +199,6 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
     // the fold instead of a section the visitor may never scroll to.
     const [showTrailer, setShowTrailer] = useState(false);
     const { data: gateways, loading: gatewaysLoading } = useFetchData<PaymentGateway[]>('/payment-gateways');
-    const { data: reviews, loading: reviewsLoading } = useFetchData<CourseReviews>(`/reviews/course/${id}`);
     const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'grades' | 'chat' | 'roster'>('overview');
 
     // Prefer the server's verdict; fall back to `mode` for a payload that
@@ -346,6 +331,17 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
             await api.post('/enrollments', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
+            setCourse((current) => current ? {
+                ...current,
+                viewerAccess: {
+                    enrolled: true,
+                    approved: false,
+                    teaches: current.viewerAccess?.teaches ?? false,
+                    chatEnabled: current.viewerAccess?.chatEnabled ?? false,
+                    openingId: selectedOpening.id,
+                    enrollmentStatus: 'PENDING',
+                },
+            } : current);
             toast.success(t('explore.review_success'));
             setSelectedOpening(null);
             setReceiptFile(null);
@@ -408,13 +404,16 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
 
     const opening = course.openings?.find(o => o.status === 'OPEN') || null;
     const announced = course.openings?.find(o => o.status === 'ANNOUNCEMENT') || null;
-    const metaOpening = opening || announced;
+    const enrolledOpening = access?.openingId
+        ? course.openings?.find((candidate) => candidate.id === access.openingId) ?? null
+        : null;
+    const startedOpening = course.openings?.find((candidate) => candidate.status === 'STARTED') ?? null;
+    const metaOpening = enrolledOpening || opening || announced || startedOpening;
     const courseInstructor = metaOpening?.instructor || course.instructor;
     // The public instructor payload has no email on purpose, so the display
     // name falls back through the bilingual pair and then to a generic label.
     const instructorName = (courseInstructor && pick(courseInstructor, 'name')) || '';
     const instructorJobTitle = (courseInstructor && pick(courseInstructor, 'jobTitle')) || '';
-    const enrolledCount = course._count?.enrollments ?? metaOpening?._count?.enrollments ?? 0;
 
     const getVideoUrl = (url?: string | null) => {
         if (!url) return null;
@@ -632,17 +631,6 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                     </div>
                                 </div>
                             ) : null}
-                            {enrolledCount ? (
-                                <div className={statCard}>
-                                    <div className={statIcon}>
-                                        <Users size={17} />
-                                    </div>
-                                    <div>
-                                        <div className={statCaption}>{t('explore.students')}</div>
-                                        <div className={`${statValue} text-brand-gold-light`}>{enrolledCount}</div>
-                                    </div>
-                                </div>
-                            ) : null}
                             <div className={statCard}>
                                 <div className={statIcon}>
                                     <User size={17} />
@@ -650,20 +638,33 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 <div>
                                     <div className={statCaption}>{t('courseDetail.expert_instructor')}</div>
                                     <div className={`${statValue} max-w-[55vw] sm:max-w-[160px] truncate`}>{instructorName || t('courseDetail.expert_instructor')}</div>
-                                    {courseInstructor?.id && (
-                                        <InstructorRating
-                                            instructorId={courseInstructor.id}
-                                            courseId={course.id}
-                                            showRateButton={!!opening}
-                                        />
-                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* CTA */}
+                        {/* Enrollment status replaces the CTA once the student has a record. */}
                         <div className="flex flex-wrap items-center gap-3">
-                            {opening ? (
+                            {access?.enrollmentStatus ? (
+                                <div
+                                    role="status"
+                                    className={`inline-flex items-center gap-2 rounded-2xl border px-6 py-3.5 font-black ${
+                                        access.enrollmentStatus === 'APPROVED' || access.enrollmentStatus === 'RESERVED'
+                                            ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-100'
+                                            : access.enrollmentStatus === 'REJECTED' || access.enrollmentStatus === 'REVOKED'
+                                                ? 'border-red-400/30 bg-red-500/10 text-red-100'
+                                                : 'border-amber-300/30 bg-amber-500/10 text-amber-100'
+                                    }`}
+                                >
+                                    {access.enrollmentStatus === 'APPROVED' || access.enrollmentStatus === 'RESERVED'
+                                        ? <CheckCircle size={18} />
+                                        : <Clock size={18} />}
+                                    {access.enrollmentStatus === 'APPROVED' ? t('explore.enrollment_approved')
+                                        : access.enrollmentStatus === 'RESERVED' ? t('explore.enrollment_reserved')
+                                            : access.enrollmentStatus === 'PENDING' ? t('explore.enrollment_pending')
+                                                : access.enrollmentStatus === 'REJECTED' ? t('explore.enrollment_rejected')
+                                                    : t('explore.enrollment_revoked')}
+                                </div>
+                            ) : opening ? (
                                 <>
                                     <button onClick={() => handleEnrollClick(opening)} className="bg-gradient-to-r from-brand-gold to-brand-gold-dark hover:from-brand-gold-light hover:to-brand-gold text-black flex items-center gap-3 font-black py-4 px-8 rounded-2xl shadow-xl shadow-brand-gold/25 hover:shadow-[0_0_30px_rgba(245,158,11,0.45)] transition-all transform hover:-translate-y-0.5 cursor-pointer animate-[pulse_2.5s_ease-in-out_infinite] hover:animate-none">
                                         <BookOpen size={20} />
@@ -893,72 +894,6 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                 </div>
                             )}
 
-                            {/* Student reviews */}
-                            <div>
-                                <SectionTitle icon={<Star size={18} />}>{t('courseDetail.reviews_heading')}</SectionTitle>
-                                {reviewsLoading ? (
-                                    <div className={`h-20 animate-pulse rounded-2xl ${dark ? 'bg-ink/[0.04]' : 'bg-surface-sunken'}`} />
-                                ) : !reviews || reviews.total === 0 ? (
-                                    <p className={`rounded-2xl border border-dashed p-5 text-sm ${'border-line text-ink-subtle'}`}>
-                                        {t('courseDetail.reviews_empty')}
-                                    </p>
-                                ) : (
-                                    <div className="space-y-4">
-                                    <div className={`flex flex-wrap items-center gap-4 sm:gap-5 rounded-2xl p-4 sm:p-5 ${'bg-surface-sunken border border-line'}`}>
-                                            <div className="text-center">
-                                                <div className="text-4xl font-black text-accent dark:text-brand-gold-light">
-                                                    {reviews.average.toFixed(1)}
-                                                </div>
-                                                <div className="mt-1 flex items-center justify-center gap-0.5" aria-hidden>
-                                                    {[1, 2, 3, 4, 5].map(s => (
-                                                        <Star key={s} size={13} className={s <= Math.round(reviews.average) ? 'fill-brand-gold text-accent' : dark ? 'text-ink-subtle' : 'text-ink-muted'} />
-                                                    ))}
-                                                </div>
-                                                <div className={`mt-1 text-xs font-bold 'text-ink-subtle'`}>
-                                                    {t('courseDetail.reviews_count').replace('{n}', formatNumber(reviews.total, locale))}
-                                                </div>
-                                            </div>
-                                            <ul className="flex-1 space-y-1">
-                                                {reviews.distribution.map(d => (
-                                                    <li key={d.stars} className="flex items-center gap-2 text-xs">
-                                                        <span className={`w-8 shrink-0 font-black 'text-ink-subtle'`}>{d.stars}★</span>
-                                                        <span className={`h-2 flex-1 overflow-hidden rounded-full ${'bg-ink/[0.08]'}`}>
-                                                            <span
-                                                                className="block h-full rounded-full bg-brand-gold"
-                                                                style={{ width: `${reviews.total ? (d.count / reviews.total) * 100 : 0}%` }}
-                                                            />
-                                                        </span>
-                                                        <span className={`w-6 shrink-0 text-end font-bold 'text-ink-subtle'`}>{d.count}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <ul className="space-y-3">
-                                            {reviews.reviews.slice(0, REVIEWS_PREVIEW).map(r => (
-                                                <li key={r.id} className={`rounded-2xl p-4 ${dark ? 'bg-surface-sunken border border-line' : 'bg-surface-raised border border-line'}`}>
-                                                    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-                                                        <span className="flex items-center gap-0.5 shrink-0" aria-label={`${r.rating}/5`}>
-                                                            {[1, 2, 3, 4, 5].map(s => (
-                                                                <Star key={s} size={12} className={s <= r.rating ? 'fill-brand-gold text-accent' : dark ? 'text-ink-subtle' : 'text-ink-muted'} />
-                                                            ))}
-                                                        </span>
-                                                        <span className={`truncate text-[13px] font-bold max-w-[55vw] sm:max-w-[220px] 'text-ink-subtle'`} dir="ltr">
-                                                            {r.user?.email}
-                                                        </span>
-                                                        <span className={`ms-auto shrink-0 text-xs 'text-ink-subtle'`}>
-                                                            {fmtDate(r.createdAt)}
-                                                        </span>
-                                                    </div>
-                                                    {(pick(r, 'comment')) && (
-                                                        <p className={`text-sm leading-relaxed ${dark ? 'text-ink-muted' : 'text-ink-subtle'}`}>{pick(r, 'comment')}</p>
-                                                    )}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-
                             {/* FAQ */}
                             {course.faqs && course.faqs.length > 0 && (
                                 <div>
@@ -1017,7 +952,6 @@ export default function CourseDetailsPage({ initialCourse }: { initialCourse?: C
                                         isLiveCourse
                                             ? { icon: <Radio size={16} />, label: `${t('courseDetail.delivery_label')}: ${deliveryLabel}` }
                                             : course.hoursOfContent ? { icon: <PlayCircle size={16} />, label: `${t('courseDetail.hours_label')}: ${course.hoursOfContent}` } : null,
-                                        enrolledCount ? { icon: <Users size={16} />, label: `${enrolledCount} ${t('courseDetail.student_label')}` } : null,
                                         metaOpening?.maxStudents ? { icon: <Users size={16} />, label: `${t('createCourse.max_students_label')}: ${metaOpening.maxStudents}` } : null,
                                         fmtDate(metaOpening?.startDate) ? { icon: <CalendarDays size={16} />, label: `${t('courseDetail.starts_label')}: ${fmtDate(metaOpening?.startDate)}` } : null,
                                         fmtDate(metaOpening?.endDate) ? { icon: <CalendarDays size={16} />, label: `${t('courseDetail.ends_label')}: ${fmtDate(metaOpening?.endDate)}` } : null,
